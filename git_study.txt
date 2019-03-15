@@ -35,6 +35,10 @@ clip < ~/.ssh/id_rsa.pub
 # Test the ssh connection
 ssh -T git@github.com
 
+git config --global user.email "saroj.raut@gmail.com"
+git config --global user.name "Saroj Raut"
+
+git commit -m "Added git study file"
 Git Study 
 
 A Git repository is the local collection of all the files related to a particular Git version control system and contains a .git subdirectory in its root. Git keeps track of the state of the files in the repository’s directory on disk.
