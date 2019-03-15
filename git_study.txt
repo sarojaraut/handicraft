@@ -45,6 +45,8 @@ fatal: The current branch git_study has no upstream branch.
 
 git push origin git_study
 
+git push origin master:refs/heads/experimental
+
 Git Study 
 
 A Git repository is the local collection of all the files related to a particular Git version control system and contains a .git subdirectory in its root. Git keeps track of the state of the files in the repository’s directory on disk.
