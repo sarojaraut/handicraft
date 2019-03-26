@@ -1,0 +1,123 @@
+﻿INSERT ALL
+INTO table_a VALUES(…,…,…)
+INTO table_b VALUES(…,…,…)
+INTO table_c VALUES(…,…,…)
+SELECT …
+FROM sourcetab
+WHERE …;
+
+Multitable INSERT statements offer the benefits of the INSERT ... SELECT statement when multiple tables are involved as targets. Using functionality prior to Oracle9i Database, you had to deal with n independent INSERT ... SELECT statements, thus processing the same source data n times and increasing the transformation workload n times.
+
+The different types of multitable INSERT statements are:
+• Unconditional INSERT
+• Conditional ALL INSERT
+• Conditional FIRST INSERT
+• Pivoting INSERT
+
+Unconditional INSERT: ALL into_clause
+Specify ALL followed by multiple insert_into_clauses to perform an unconditional multitable insert. The Oracle server executes each insert_into_clause once for each row returned by the subquery.
+
+INSERT ALL
+INTO sal_history VALUES(EMPID,HIREDATE,SAL)
+INTO mgr_history VALUES(EMPID,MGR,SAL)
+SELECT employee_id EMPID, hire_date HIREDATE,
+salary SAL, manager_id MGR
+FROM employees
+WHERE employee_id > 200;
+
+The feedback 12 rows created can be interpreted to mean that a total of eight insertions were performed on the base tables, SAL_HISTORY and MGR_HISTORY.
+
+Conditional ALL INSERT
+INSERT ALL
+	WHEN SAL > 10000 THEN
+		INTO sal_history VALUES(EMPID,HIREDATE,SAL)
+	WHEN MGR > 200 THEN
+		INTO mgr_history VALUES(EMPID,MGR,SAL)
+SELECT employee_id EMPID,hire_date HIREDATE,
+salary SAL, manager_id MGR
+FROM employees
+WHERE employee_id > 200;
+
+The feedback 4 rows created can be interpreted to mean that a total of four inserts were performed on the base tables, SAL_HISTORY and MGR_HISTORY.
+
+Conditional INSERT FIRST
+
+INSERT FIRST
+WHEN SAL > 25000 THEN
+INTO special_sal VALUES(DEPTID, SAL)
+WHEN HIREDATE like ('%00%') THEN
+INTO hiredate_history_00 VALUES(DEPTID,HIREDATE)
+WHEN HIREDATE like ('%99%') THEN
+INTO hiredate_history_99 VALUES(DEPTID, HIREDATE)
+ELSE
+INTO hiredate_history VALUES(DEPTID, HIREDATE)
+SELECT department_id DEPTID, SUM(salary) SAL,
+MAX(hire_date) HIREDATE
+FROM employees
+GROUP BY department_id;
+
+• If the first WHEN clause evaluates to true, then the subsequent WHEN clauses for this row should be skipped.
+• For the rows that do not satisfy the first WHEN condition, insert into the HIREDATE_HISTORY_00, HIREDATE_HISTORY_99, or HIREDATE_HISTORY tables, based on the value in the HIRE_DATE column using a conditional multitable INSERT.
+
+Pivoting INSERT
+• Suppose you receive a set of sales records from a nonrelational database table, SALES_SOURCE_DATA, in the following format: 
+EMPLOYEE_ID, WEEK_ID, SALES_MON, SALES_TUE, SALES_WED, SALES_THUR, SALES_FRI 
+• You want to store these records in the SALES_INFO table in a more typical relational format: EMPLOYEE_ID, WEEK, SALES
+INSERT ALL
+INTO sales_info VALUES (employee_id,week_id,sales_MON)
+INTO sales_info VALUES (employee_id,week_id,sales_TUE)
+INTO sales_info VALUES (employee_id,week_id,sales_WED)
+INTO sales_info VALUES (employee_id,week_id,sales_THUR)
+INTO sales_info VALUES (employee_id,week_id, sales_FRI)
+SELECT EMPLOYEE_ID, week_id, sales_MON, sales_TUE,
+sales_WED, sales_THUR,sales_FRI
+FROM sales_source_data;
+
+The MERGE Statement
+• Provides the ability to conditionally update or insert data into a database table
+• Performs an UPDATE if the row exists, and an INSERT if it is a new row:
+
+MERGE INTO table_name table_alias
+USING (table|view|sub_query) alias
+ON (join condition)
+WHEN MATCHED THEN
+UPDATE SET
+col1 = col_val1,
+col2 = col2_val
+WHEN NOT MATCHED THEN
+INSERT (column_list)
+VALUES (column_values);
+
+MERGE INTO empl3 c
+USING employees e
+ON (c.employee_id = e.employee_id)
+WHEN MATCHED THEN
+UPDATE SET
+c.first_name = e.first_name,
+c.last_name = e.last_name,
+...
+c.department_id = e.department_id
+WHEN NOT MATCHED THEN
+INSERT VALUES(e.employee_id, e.first_name, e.last_name,
+e.email, e.phone_number, e.hire_date, e.job_id,
+e.salary, e.commission_pct, e.manager_id,
+e.department_id);
+
+Tracking Changes in Data
+
+ELECT salary FROM employees3 WHERE employee_id = 107;
+
+UPDATE employees3 SET salary = salary * 1.30 WHERE employee_id = 107;
+COMMIT;
+
+SELECT salary FROM employees3
+VERSIONS BETWEEN SCN MINVALUE AND MAXVALUE
+WHERE employee_id = 107;
+
+SELECT versions_starttime "START_DATE",
+versions_endtime "END_DATE",
+salary
+FROM employees
+VERSIONS BETWEEN SCN MINVALUE
+AND MAXVALUE
+WHERE last_name = 'Lorentz';

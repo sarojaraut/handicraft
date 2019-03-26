@@ -1,0 +1,18 @@
+Expert Oracle Practices - Oracle Database Administration from the Oak Table
+
+Which should be used, file systems, “raw” devices, or Automated Space Management (ASM)?
+Here are some things to consider, and you can decide which are most important to your requirements:
+• Raw devices are undeniably the optimal form of storage for Oracle database files from a performance perspective, because of the lack of redundant memory caching, access to kernelized asynchronous I/O, and the more direct access to data.
+• File systems are undeniably the optimal form of storage for Oracle database files from a manageability perspective, because of decades of familiarity and ease of access using OS utilities as well as Oracle utilities, as well as the ability to change file attributes (that is, size) easily and quickly.
+• Raw devices are generally the most difficult form of storage for Oracle DBAs to manage because these devices are managed by system administrators and because they typically cannot be created, renamed, extended, shrunk, or dropped on an on-demand basis.
+• Most of the recent advances in file system technology (asynchronous I/O, direct or unbuffered I/O, clustered file systems, and so forth) have to do with dismantling the internal services of file systems and making them seem more like raw devices.
+
+Oracle ASM provides all of the performance advantages of raw devices mentioned in the preceding list, with most of the ease of manageability of a file system mentioned, without any of the disadvantages mentioned. Lots of people are suspicious of Oracle ASM because they feel it is too new, unfamiliar, and buggy. But I have worked with Oracle ASM in some of the most extreme database environments I have ever experienced, and it nicely complements the best features of the Oracle database without limitations.
+
+Database Block Size
+In a VLDB environment, choose the largest database block size supported by your platform. Most platforms have a maximum DB_BLOCK_SIZE value of 16,384 bytes (16 kilobytes), some have a maximum size of 32,768 bytes (32KB). The most common database block size used by Oracle databases is 8,192 bytes (8KB), and that is more than sufficient for many very large databases. However, there are numerous limits based on database block size, so it worthwhile to choose wisely:
+• Maximum size of an extent in a segment (4 billion database blocks for dictionary managed tablespaces, 2 billion database blocks for locally managed tablespaces)
+• Maximum control file size (20,000 database blocks)
+• Maximum data file size (4 million database blocks for SMALLFILE tablespaces, 4 billion database blocks for BIGFILE tablespaces)
+• Maximum database size (65,533 times the maximum data file sizes cited earlier)
+

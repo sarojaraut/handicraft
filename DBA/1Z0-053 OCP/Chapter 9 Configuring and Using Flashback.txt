@@ -1,0 +1,315 @@
+Chapter 9 Configuring and Using Flashback
+
+Oracle’s flashback features are supported by one of three structures in the database: undo data, the flash recovery area, and the recycle bin.
+
+Restore Dropped Tables from the Recycle Bin
+In a nutshell, the recycle bin is a data dictionary table that keeps track of dropped objects. The objects themselves still exist in the same location within the tablespace but they are renamed. 
+
+If you create an EMPLOYEES table and subsequently drop it on three different occasions, all three versions of the EMPLOYEES table will be available in the recycle bin as long as enough space is available in the tablespace. The recycle bin is enabled by default. To turn the recycle bin on and off, you can use the RECYCLEBIN initialization parameter: recyclebin = on. RECYCLEBIN is a dynamic initialization parameter, so you can change it using ALTER SYSTEM/SESSION. The change will take effect immediately if you specify SCOPE=MEMORY or SCOPE=BOTH:
+
+When you drop an object with the recycle bin enabled, the space allocated to the dropped object and all associated objects (such as indexes) is immediately reflected in the data dictionary view DBA_FREE_SPACE. However, the space used by the objects still counts toward a user’s quota until the object is explicitly removed from the recycle bin or is forced out by new objects in the tablespace. 
+
+The table and its dependent objects are renamed to a system-assigned name using this format: BIN$unique_id$version . The unique_id portion of the name is a 26-character globally unique name for the object. A table with the same name dropped in a different database will have a different unique_id. The version portion of the name is the version number of the dropped object, which is assigned by Oracle. The next time a table with the same name is dropped, both the unique_id and version are the same, but each will have different values for DROPTIME. 
+
+SQL> select owner, object_name, original_name, type, ts_name, droptime, can_undrop
+from dba_recyclebin;
+
+In this case no ALL_RECYCLEBIN data dictionary view exists but users_ecyclebin view exists
+
+To restore a table from the recycle bin, you use the FLASHBACK TABLE . . .TO BEFORE DROP command. If you specify the original table name in the command, the most recently dropped version of the table and its dependent objects are restored. If you want to restore a previous version of the same table, you must specify the name of the previous version in the recycle bin, as in this example: 
+SQL> flashback table "BIN$U/9fvJKcXOzgQKjAYAIWhw==$0" to before drop;
+
+If you attempt to restore a table that has been re-created since it was dropped, you will receive an error unless you use the RENAME TO clause to give the restored table  a new name. Here is an example:
+SQL> flashback table vac_sched to before drop rename to old_vac_sched;
+
+After restoring the table you have to rename the indexs and constraints.
+
+alter index "BIN$U/9fvJKaXOzgQKjAYAIWhw==$0" rename to sys_c0013050;
+
+Recycle Bin Space Reclamation
+All dropped objects remain available for recovery in the recycle bin as long as new objects don’t need the space occupied by dropped objects. If the tablespace is autoextensible (the tablespace has the AUTOEXTEND ON attribute), space from dropped objects is used first. If insufficient space is available for a new object, the tablespace autoextends. 
+
+You can manually remove objects from the recycle bin by using the PURGE command. When you purge a table from the recycle bin, the table and all its dependent objects are removed as well. 
+SQL> purge table "BIN$U/9fvJKfXOzgQKjAYAIWhw==$0";
+SQL> purge tablespace users;
+
+Using DROP TABLE . . . PURGE will prevent removal of a user’s other objects in the recycle bin even if enough free space exists in the tablespace itself.
+
+When an object resides in the recycle bin, you can still use a SELECT statement to access the dropped table. Also, the dropped table still appears in the data dictionary views DBA_TABLES, DBA_OBJECTS, and DBA_SEGMENTS.
+
+Perform Flashback Query
+
+To utilize flashback functionality fully, you need to configure your undo tablespace correctly. Your initialization parameters for the undo tablespace should look something like the following:
+
+undo_management = auto
+undo_tablespace = undotbs1
+undo_retention = 1800
+
+The UNDO_RETENTION parameter in this example specifies that the undo tablespace should retain undo data for at least 1800 seconds (30 minutes) as long as enough space exists in the undo tablespace. Setting UNDO_MANAGEMENT to AUTO directs Oracle to subsequently adjust the undo retention based on the size of the undo tablespace. By default, unexpired undos will be overwritten to ensure that DML operations will not fail due to a lack of available space in the undo tablespace.
+
+To ensure the success of flashback operations or long-running queries at the expense of DML activity, you must specify RETENTION GUARANTEE for the undo tablespace either when you create the tablespace or later with the ALTER TABLESPACE command, as in this example:
+SQL> alter tablespace undotbs1 retention guarantee;
+
+Using Flashback Query
+Flashback Query allows you to query data in one or more tables in a SELECT query as of a time in the past. Following query identifies records deleted in last 60 minutes.
+
+select * from hr.employees as of timestamp systimestamp - interval '60' minute
+where hr.employees.employee_id not in
+(select employee_id from hr.employees);
+
+It is preferable to use the SCN for flashback over a timestamp. SCNs are exact, whereas the timestamp values are stored only every 3 seconds to support flashback operations.
+
+Using Flashback Version Query
+SQL> select dbms_flashback.get_system_change_number from dual;
+GET_SYSTEM_CHANGE_NUMBER
+------------------------
+27153780
+SQL> update hr.employees set salary = salary*1.2 where employee_id=195;
+1 row updated.
+SQL> select dbms_flashback.get_system_change_number from dual;
+GET_SYSTEM_CHANGE_NUMBER
+------------------------
+27153831
+SQL> delete from hr.employees where employee_id = 196;
+1 row deleted.
+SQL> select dbms_flashback.get_system_change_number from dual;
+GET_SYSTEM_CHANGE_NUMBER
+------------------------
+27153862
+SQL> insert into hr.departments values (660,'Security', 100, 1700);
+1 row created.
+SQL> select dbms_flashback.get_system_change_number from dual;
+GET_SYSTEM_CHANGE_NUMBER
+------------------------
+27153917
+
+A Flashback Version Query uses the VERSIONS BETWEEN clause to specify a range of SCNs or timestamps for analysis of a given table (in this case, the EMPLOYEES table). When VERSIONS BETWEEN is used in a Flashback Version Query, a number of pseudocolumns are available to help identify the SCN and timestamp of the modifications.
+
+
+SQL> select versions_startscn startscn, versions_endscn endscn,
+2 versions_xid xid, versions_operation oper,
+3 employee_id empid, last_name name, manager_id mgrid, salary sal
+4 from hr.employees
+5 versions between scn 27153780 and 27154069
+6 where employee_id in (195,196);
+
+Pseudocolumn : Description
+VERSIONS_START{SCN|TIME}: The starting SCN or timestamp when the change was made to the row.
+VERSION_END{SCN|TIME} : The ending SCN or timestamp when the change was no longer valid for the row. If this is NULL, either the row version is still current or the
+row was deleted.
+VERSIONS_XID : The transaction ID of the transaction that created the row version.
+VERSIONS_OPERATION :The operation performed on the row (I=Insert, D=Delete, U=Update).
+
+Some restrictions and caveats do apply when you use Flashback Version Query. First, you can’t query these objects with the VERSIONS clause:
+■ External tables
+■ Fixed tables (internal Oracle X$ tables)
+■ Temporary tables
+■ Views
+
+Finally, you cannot use the VERSIONS clause across DDL statements that change the structure of the tables in the query. In other words, you can go back in time only up to the first transaction after the last DDL statement on the table.
+
+
+Use Flashback Transaction
+Once you have identified any erroneous or incorrect changes to a table, you can use Flashback Transaction Query to identify any other changes that were made by the transaction containing the inappropriate changes. Once identified, all changes within the transaction can be reversed as a group, typically to maintain referential integrity or the business rules used to process the transaction in the first place.
+
+Unlike a Flashback Version Query, a Flashback Transaction Query does not reference the table involved in DML transactions. Instead, you query the data dictionary view FLASHBACK_TRANSACTION_QUERY. The columns of FLASHBACK_TRANSACTION_QUERY are summarized
+
+Column Name : Description
+XID : Transaction ID number
+START_SCN SCN : for the first DML in the transaction
+START_TIMESTAMP : Timestamp of the first DML in the transaction
+COMMIT_SCN : SCN when the transaction was committed
+COMMIT_TIMESTAMP : Timestamp when the transaction was committed
+LOGON_USER : User who owned the transaction
+UNDO_CHANGE# : Undo SCN
+OPERATION DML : operation performed: DELETE, INSERT, UPDATE, BEGIN, or UNKNOWN
+TABLE_NAME : Table changed by DML
+TABLE_OWNER : Owner of the table changed by DML
+ROW_ID ROWID : of the row modified by DML
+UNDO_SQL SQL : statement to undo the DML operation
+
+The table FLASHBACK_TRANSACTION_QUERY contains all changes to the database, including DDL operations.
+
+Flashback Transaction Query Prerequisites
+Before you can use Flashback Transaction Query, you must enable additional logging to the redo log stream. The redo log stream is the same data that Log Miner uses, except with a different interface.
+
+SQL> alter database add supplemental log data;
+Database altered.
+SQL> alter database add supplemental log data (primary key) columns;
+Database altered.
+SQL> grant execute on dbms_flashback to hr;
+Grant succeeded.
+SQL> grant select any transaction to hr;
+Grant succeeded.
+
+To investigate the changes that were made to the EMPLOYEES table, you can query the view FLASHBACK_TRANSACTION_QUERY with the oldest transaction from the Flashback Version Query shown earlier in this chapter:
+SQL> select start_scn, commit_scn, logon_user,
+2 operation, table_name, undo_sql
+3 from flashback_transaction_query
+4 where xid = hextoraw('0400000044230000');
+
+Enterprise Manager (EM) provides an easy way to browse the contents of the FLASHBACK_TRANSACTION_QUERY view and optionally reverse some or all of the changes you see in that view. From the EM home page, select the Schema tab and click the Tables link. In the Search boxes, select the HR schema and the table EMPLOYEES and then flash back
+
+Perform Flashback Table Operations
+Oracle’s Flashback Table feature restores the state of rows in a table as of a point of time in the past. It also restores the table’s indexes, triggers, and constraints, while the database is online.
+
+A table can be restored as of a timestamp or an SCN. Flashback Table is preferable to other Flashback methods if the scope of user errors is small and limited to one or very few tables. It’s also the most straightforward if you know that you want to restore the table to a point in the past unconditionally. For recovering the state of a larger number of tables, Flashback Database may be a better choice.
+
+To perform Flashback Table, a user must have the FLASHBACK ANY TABLE privilege or the FLASHBACK object privilege on a specific table:
+SQL> grant flashback any table to m_phelps;
+Grant succeeded.
+
+To use Flashback Table on a table or tables, you must enable row movement on the table before performing the flashback operation.
+Any statistics gathered for the tables in the FLASHBACK TABLE command are not flashed back. As a result, it is a good practice to gather new statistics on the tables immediately after the Flashback Table operation is complete. You cannot perform Flashback Table on system tables, fixed (X$) tables, or remote tables.
+
+SQL> alter table employees enable row movement;
+Table altered.
+SQL> alter table departments enable row movement;
+Table altered.
+SQL> alter table jobs enable row movement;
+Table altered.
+SQL> delete from hr.employees
+2 /
+107 rows deleted.
+SQL> commit;
+
+SQL> flashback table employees to timestamp systimestamp - interval '15' minute;
+Flashback complete.
+SQL> select count(*) from employees;
+COUNT(*)
+----------
+107
+
+If the accidental deletions were not noticed right away, and changes were made to dependent tables in the meantime, you can include the dependent tables in the
+Flashback Table operation as well:
+SQL> flashback table employees, departments to timestamp systimestamp - interval '15' minute;
+
+Set Up and Use a Flashback Data Archive
+Retaining a historical record of all changes to rows in critical tables is error prone and requires custom applications or database triggers to maintain repositories for the historical changes. Every time you create a new application or update a table in an application that requires historical tracking, you must make changes to your tracking application as well. You can use Flashback Data Archive to save historical changes automatically to all key tables for as long as regulatory agencies or your stakeholders require.
+
+The Flashback Data Archive, also known as Oracle Total Recall, allows you to retain and track all transactional changes to a record over its lifetime. This eliminates the need to write custom programs to archive all transactional changes to data
+
+Flashback Data Archive is implemented natively in Oracle (as opposed to an application layer using triggers or a set of PL/SQL packages). In a nutshell, you create one or more repository areas (one of which can be the default), assign a default retention period for objects in the repository, and then mark the appropriate tables for tracking.
+
+A Flashback Data Archive acts much like an undo tablespace. However, a Flashback Data Archive records only UPDATE and DELETE statements but not INSERT statements. In addition, undo data is typically retained for a period of hours or days for all objects. Rows in Flashback Data Archives can span years or even decades. 
+
+You can create one or several Flashback Data Archives in existing tablespaces using the CREATE FLASHBACK ARCHIVE command. However, Oracle best practices recommend that you use dedicated tablespaces.
+
+SQL> create tablespace fbda1 datafile '+data' size 10g;
+
+Next, you create three Flashback Data Archives: one for the ES department with no quota limit and a ten-year retention period, a second one for the finance department with a 500MB limit and a seven-year retention period, and a third for all other users in the USERS4 tablespace as the default with a 250MB limit and a twoyear retention period:
+
+SQL> create flashback archive fb_es tablespace fbda1 retention 10 year;
+Flashback archive created.
+
+SQL> create flashback archive fb_fi  tablespace fbda1 quota 500m retention 7 year;
+Flashback archive created.
+
+SQL> create flashback archive default fb_dflt tablespace users4 quota 250m retention 2 year;
+Flashback archive created.
+
+Depending on your business requirements, you can enable and disable Flashback Data Archive on a table at will. For example, you might want to drop a column to a table being tracked by Flashback Data Archive. However, no DDL statements are allowed on tables being tracked using Flashback Data Archive except for adding columns. Once you disable Flashback Data Archive for a table, the historical data for the table is lost even if you immediately re-enable it for the table.
+
+select * from dba_flashback_archive_ts; -- to see he archive name, tablespace name, quota
+
+SQL> select flashback_archive_name, flashback_archive#, retention_in_days, status from dba_flashback_archive; -- status is default or null
+
+A user must have the FLASHBACK ARCHIVE ADMINISTER system privilege to create or modify Flashback Data Archives, and the FLASHBACK ARCHIVE object privilege to enable tracking on a table. Once enabled, a user doesn’t need any specific permissions to use the AS OF clause in a SELECT statement other than the SELECT permission on the table itself.
+
+SQL> alter flashback archive fb_dflt add tablespace users3 quota 400m;
+
+You can purge archive data with the purge clause. In this example, you want to purge all rows in the FB_DFLT archive before January 1, 2005:
+SQL> alter flashback archive fb_dflt
+2 purge before timestamp
+3 to_timestamp('2005-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS');
+
+You assign a table to an archive either at table creation using the standard CREATE TABLE syntax with the addition of the FLASHBACK ARCHIVE clause, or later with the ALTER TABLE command as in this example:
+SQL> alter table hr.employees flashback archive fb_es;
+
+if you did not specify an archive, Oracle assigns FB_DFLT. You can review the tables that use Flashback Data Archive by querying the data dictionary view DBA_FLASHBACK_ARCHIVE_TABLES:
+SQL> select * from dba_flashback_archive_tables;
+
+SQL> select employee_id, last_name, hire_date
+2 from employees
+3 as of timestamp (systimestamp - interval '28' day)
+4 where employee_id = 169;
+
+It is completely transparent to the user whether Oracle is using an undo tablespace or a Flashback Data Archive for a query containing AS OF.
+
+Configure, Monitor Flashback Database and Perform Flashback Database Operations
+You can use Flashback Database to bring your entire database quickly to a previous point in time. When you enable Flashback Database, the before images of modified blocks are saved in the flash recovery area as Flashback Database logs. When a logical corruption occurs that requires a recovery to a time in the past, the Flashback Database logs restore the data blocks’ before images, and then the archived and online redo logs roll forward to the desired flashback time. This process is typically much faster than performing a traditional restore and recovery operation, because the database’s datafiles do not need to be restored.
+
+How far back you can rewind the database depends on the amount of space in your flash recovery area and the guaranteed restore points you have configured. 
+To use Flashback Database, you must configure the flash recovery area (see Chapter 2 for more information on configuring the flash recovery area using the parameters DB_RECOVERY_FILE_DEST and DB_RECOVERY_FILE_DEST_SIZE). 
+
+Here is the typical sequence of commands you will use to enable Flashback Database:
+
+shutdown immediate;
+startup mount exclusive;
+alter database archivelog;
+/* if you are not already in ARCHIVELOG mode */
+alter system set db_flashback_retention_target=2880;
+alter database flashback on;
+alter database open;
+
+In this example, the target retention time for Flashback logs is 2880 minutes (2 days).
+
+You can use the FLASHBACK DATABASE command from RMAN or from the SQL> prompt. Some subtle syntactical differences exist between the two versions. The RMAN version offers you some additional granularity options, such as flashing back to a particular log sequence number and thread (instance). Here’s an example:
+
+RMAN> flashback database to sequence=307 thread=2;
+
+The basic syntax for the SQL FLASHBACK DATABASE command is as follows:
+
+flashback [standby] database [database]
+{ to {scn | timestamp} expr
+| to before {scn | timestamp } expr
+| to restore point expr
+}
+
+Use the ORA_ROWSCN pseudocolumn for a particular table row to see the SCNs of the most recent changes to the row:
+
+SQL> select ora_rowscn, last_name, first_name from employees where employee_id = 102;
+ORA_ROWSCN LAST_NAME FIRST_NAME
+---------- ------------------------- --------------------
+27247532 De Haan Lex
+
+shutdown;
+startup mount exclusive;
+flashback database to timestamp sysdate-(1/24);
+When you execute the FLASHBACK DATABASE command, Oracle checks to make sure all required archived and online redo log files are available. If the logs are available, the online datafiles are reverted to the time, SCN, or guaranteed restore point specified. If there is not enough data online in the archive logs and the flashback area, you will need to use traditional database recovery methods to recover the data. For example, you might need to use a file system recovery method followed by rolling the data forward.
+
+Once the flashback has completed, you must open the database using the RESETLOGS option to have write access to the database:
+
+alter database open resetlogs;
+
+Excluding Tablespaces from Flashback Database
+By default, all tablespaces will participate in a Flashback Database operation unless you change the FLASHBACK attribute to OFF at the time the tablespace is created or later using the ALTER TABLESPACE command. Here’s an example:
+SQL> alter tablespace example flashback off;
+Tablespace altered.
+SQL>
+To re-enable Flashback Database on this tablespace, you use ALTER TABLESPACE EXAMPLE FLASHBACK ON, as you’d expect, but the database must be shut down and reopened in MOUNT mode. When you need to use Flashback Database, offline all tablespaces with the FLASHBACK attribute set to OFF. When the database is back up, you can use other point-in-time recovery methods to recover the offline datafiles and eventually bring them back online.
+
+Using Guaranteed Restore Points
+A guaranteed restore point is similar to a regular restore point in that it can be used as an alias for an SCN during a recovery operation. A guaranteed restore point is different in that it is not aged out of the control file and must be explicitly dropped. 
+
+Here is an example of a guaranteed restore point created before a major application upgrade:
+SQL> create restore point before_app_upgr guarantee flashback database;
+
+Monitoring Flashback Database
+You can determine how far back you can flashback the database by querying the V$FLASHBACK_DATABASE_LOG view
+
+You can verify the database’s flashback status by querying V$DATABASE. The FLASHBACK_ON column will have a value of YES if the flashback has been enabled for the database:
+
+Finally, you can use the view V$FLASHBACK_DATABASE_STAT to monitor the rate at which flashback data is generated on an hour-by-hour basis:
+
+SQL> select to_char(begin_time,'dd-mon-yy hh24:mi') begin_time,
+2 to_char(end_time,'dd-mon-yy hh24:mi') end_time,
+3 flashback_data, db_data, redo_data,
+4 estimated_flashback_size est_fb_sz
+5 from v$flashback_database_stat;
+
+----------------- Sybex
+
+Flashback Database is best used as a replacement for incomplete recovery of the entire database. The main benefit of Oracle Flashback Database over incomplete database recovery is that Flashback Database is much quicker and more efficient. Flashback Database is not based on undo data but on flashback logs. It is best suited to recover from errors such as truncating a large table, an incomplete batch job, or a dropped user.
+
+Flashback Table allows point-in-time recovery (recovering one or more tables to a specified point in the past) without the need to take any part of the database offline. This offers a very desirable alternative to performing a full-blown point-in-time recovery.

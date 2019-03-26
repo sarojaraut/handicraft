@@ -1,0 +1,842 @@
+Chapter 12 Disk Space and Resource Management
+
+Resumable space allocation avoids headaches and saves time by suspending, instead of terminating, a large database operation requiring more disk space than is currently available. While the operation is suspended, you can allocate more disk space on the destination tablespace or increase the quota for the user. Once the low space condition is addressed, the large database operation automatically picks up where it left off.
+
+The following conditions can trigger resumable space allocation:
+■ Out of disk space in a permanent or temporary tablespace
+■ Maximum extents reached on a tablespace
+■ User space quota exceeded
+
+You can also control how long a statement can be suspended. The default time interval is two hours, at which point the statement fails and returns an error message to the user or application as if the statement was not suspended at all. There are four general categories of commands that can be resumable:
+
+(1) SELECT statements, (2) DML commands, (3) SQL*Loader operations, and (4) DDL statements that allocate disk space.
+
+SELECT statements are resumable only when they run out of space in a temporary tablespace, which typically means that the SELECT statement performs a sort operation such as ORDER BY, DISTINCT, or UNION.
+
+As you might expect, DML commands such as INSERT, UPDATE, and DELETE may cause an out of space condition. For example, a DELETE may cause an out of space condition in the undo tablespace. As with resumable SELECT statements, the DML may come from OCI calls or even PL/SQL programs. In addition, INSERT INTO . . . SELECT from internal or external tables are resumable.
+
+SQL*Loader import operations may cause an out of space condition. On the SQL*Loader command line (using the command sqlldr), you can set the RESUMABLE parameter to TRUE. Once you set RESUMABLE to TRUE, you can assign a name to the resumable operation with the RESUMABLE_NAME parameter, as well as set the resumable timeout with RESUMABLE_TIMEOUT. 
+
+All DDL commands that allocate disk space for new or existing segments are resumable:
+■ CREATE TABLE . . . AS SELECT (CTAS)
+■ CREATE INDEX
+■ ALTER TABLE . . . [MOVE | SPLIT] PARTITION
+■ ALTER INDEX . . . REBUILD
+■ ALTER INDEX . . . [REBUILD | SPLIT] PARTITION
+■ CREATE MATERIALIZED VIEW
+
+Resumable space allocation can be enabled at the instance level using the RESUMABLE_TIMEOUT initialization parameter, or by an ALTER SESSION command. The value you specify for the initialization parameter specifies how long the suspended operation will wait for more resources to be allocated before terminating the operation.
+
+SQL> alter system set resumable_timeout = 7200;
+By default, the value is 0,
+
+If you need more fine-grained control at users level then you grant have to grant the RESUMABLE system privilege to the users and then those users can alter their session.
+
+SQL> grant resumable to rjb;
+
+SQL> alter session enable resumable;
+
+The default resumable timeout value is 7200 seconds (two hours), unless the RESUMABLE_TIMEOUT parameter is set to a non-zero value or you override it with ALTER SESSION:
+
+To make it easy to identify your resumable statement in the data dictionary views DBA_RESUMABLE and USER_RESUMABLE, you can enable Resumable Space Allocation with the NAME parameter:
+
+SQL> alter session enable resumable name 'Create Big Index';
+
+When you query DBA_RESUMABLE or USER_RESUMABLE, you see the status of the session along with the current SQL statement executing for the sessions with Resumable Space Alocation enabled:
+SQL> select user_id, session_id, status, name, sql_text from dba_resumable;
+
+To intimate the DBA regarding space error you can write a trigger  which will automatically send an email to DBA group.
+
+create or replace trigger resumable_notify
+after suspend on database -- fired when resumable space event occurs
+declare
+-- variables, if required
+begin
+	-- check DBA_RESUMABLE for user ID, type of
+	-- object, then send e-mail
+	dbms_resumable.space_error_info(. . .);
+	if object_type = 'TABLE' and object_owner = 'HR' then
+	-- give DBA 2 hours to resolve
+	dbms_resumable.set_timeout(7200);
+	utl_mail.send ('jsmith_hr@example.com', . . . );
+	else – terminate all other suspended statements
+	dbms_resumable.abort(. . .);
+	end if;
+end;
+/
+
+SQL> grant resumable to hr;
+SQL> create tablespace users9 datafile '+DATA' size 10m
+autoextend off;
+SQL> connect hr/hr
+
+SQL> create table employee_search as select * from employees;
+create table employee_search as select * from employees
+*
+ERROR at line 1:
+ORA-01658: unable to create INITIAL extent for segment in
+tablespace USERS9
+
+SQL> alter session enable resumable timeout 3600;
+Now retry the CREATE TABLE statement in step 3. The statement
+does not terminate with an error but appears to hang. The alert log reflects the statement suspension:
+Sun Sep 21 21:50:30 2008
+statement in resumable session 'User HR(82),
+Session 145, Instance 1' was suspended due to
+ORA-01658: unable to create INITIAL extent for segment
+in tablespace USERS9
+
+As part of the Automatic Diagnostic Repository (ADR), the message also appears in XML format in the directory $ORACLE_BASE/DIAG/RDBMS/DW/DW/LOG.XML:
+
+The suspended statement and the out of space condition also appear on the EM home page in the Alert section.
+
+select user_id, instance_id, status, name, error_msg  from dba_resumable;
+
+As the DBA, allocate another 100MB for the USERS9 tablespace:
+SQL> alter tablespace users9 add datafile '+DATA' size 100m;
+
+The alert log indicates that the resumable statement for HR has resumed:
+Sun Sep 21 22:06:59 2008
+statement in resumable session
+'User HR(82), Session 145, Instance 1' was resumed
+
+Query DBA_RESUMABLE again to confirm the completion status of the resumable operation:
+SQL> select user_id, instance_id, status, name, error_msg from dba_resumable;
+status should have been changed from SUSPENDED to NORMAL and error_msg should have been set to null.
+
+Transportable Tablespaces and Databases
+
+There are many ways to move data from one database to another, such as database links, Data Pump Export/Import, and transportable tablespaces. For large volumes of data, using transportable tablespaces is by far the fastest method. In a nutshell, you export just the metadata for the objects in the tablespace using Data Pump, copy the datafiles comprising the tablespace to the destination database, and import the tablespace’s metadata into the destination database.
+
+Oracle’s transportable tablespace feature, although available for nearly every platform that Oracle Database runs on, requires an extra step depending on the underlying hardware platform. On Intel-based hardware, pairs of bytes in numeric or string values are reversed. For example, the value 2 is stored as 0x0200. This byte ordering is known as little-endian because the least significant byte is first. In contrast, a big-endian system stores bytes in order of most significant to least significant byte. Therefore, on a big-endian hardware platform, such as Sun SPARC, the value 2 is stored as 0x0002. Understandably, a conversion must be done on column data transported between platforms with different endian formats.
+
+Transporting Tablespaces
+1. Make tablespace(s) read-only on the source database.
+2. Use Data Pump Export to extract tablespace metadata from the source database.
+3. If target does not have the same endian format, convert the tablespace contents.
+	(RMAN> CONVERT DATAFILE
+	‘/orastage/user_data01.dbf’
+	TO PLATFORM=”Solaris[tm] OE (32-bit)“
+	FROM PLATFORM=”Microsoft Windows IA (32-bit)“
+	DB_FILE_NAME_CONVERT=”/oracle/oradata/LNEB/“;)
+4. Transfer tablespace datafiles and metadata dump file from source to target.
+5. Use Data Pump Import to import tablespace metadata into the target tablespace.
+6. Make tablespace(s) read-write on both source and target databases.
+
+Using SQL to Transport a Tablespace
+1. Set up the directory objects on the source and target databases for the dump file sets and the tablespace datafiles (one-time setup).
+2. Check for tablespace self-consistency with DBMS_TTS.TRANSPORT_SET_CHECK.
+(Here are some basic rules:
+The tablespace set must contain all of the partitions of a partitioned table if any of the table’s partitions are included in the tablespace set.
+If an index is included in a tablespace set, its corresponding table must also be included in the tablespace set.
+If you choose to include referential integrity constraints in the tablespace set, then all tablespaces required to support the constraints must be included in the set.
+If you have tables with LOB columns in the set, the tablespace that contains the LOBs must be included.
+
+SQL> CREATE INDEX SCOTT.FOO_INDX ON SCOTT.FOO (X) TABLESPACE USERS;
+Index created.
+SQL> ALTER TABLE SCOTT.FOO ADD (PRIMARY KEY (x));
+Table altered.
+SQL> exec dbms_tts.transport_set_check (‘USER_DATA’,TRUE);
+PL/SQL procedure successfully completed.
+SQL> SELECT * FROM TRANSPORT_SET_VIOLATIONS;
+VIOLATIONS
+----------------------------------------------------------
+ORA-39908: Index SCOTT.FOO_INDX in tablespace USERS
+enforces primary constraints
+of table SCOTT.FOO in tablespace USER_DATA.
+)
+3. Use expdp to create the metadata for the XPORT_DW tablespace.
+4. Use DBMS_FILE_TRANSFER to copy the dump file set(s) and datafile(s) to the target database.
+( You may copy the datafiles from the source to the target destination using an operating-system copy utility or FTP binary mode, RMAN, or the
+DBMS_FILE_TRANSFER package.)
+5. On the target database, use impdp to “plug in” the tablespace.
+
+On the dw source database you need to create the directory objects that will hold the dump file set as well as a directory object pointing to the location where the datafile for the XPORT_DW tablespace is stored. 
+SQL> create directory src_dpump_dir as '/Temp';
+SQL> create directory src_dbf_dir as '/u02/oradata';
+
+On the HR destination database you will execute similar commands as you can see here:
+SQL> create directory dest_dpump_dir as '/Temp';
+SQL> create directory dest_dbf_dir as '/u05/oradata';
+
+SQL> exec dbms_tts.transport_set_check('xport_dw', TRUE);
+SQL> select * from transport_set_violations;
+no rows selected
+SQL>
+Not finding any rows in TRANSPORT_SET_VIOLATIONS means that the tablespace has no external dependent objects or any objects owned by SYS. This view is re-created every time you run DBMS_TTS.TRANSPORT_SET_CHECK.
+
+SQL> alter tablespace XPORT_DW read only;
+
+
+expdp rjb/rjb dumpfile=EXPDAT_GENERATETTS000007.DMP directory=src_dpump_dir transport_tablespaces=xport_dw
+
+Use DBMS_FILE_TRANSFER to copy the dump file set(s) and datafile(s) to the target database.
+
+SQL> begin
+2 dbms_file_transfer.put_file
+3 ('src_dbf_dir','xport_dw.dbf',
+4 'dest_dbf_dir','xport_dw.dbf',
+5 'hr');
+6 end;
+7 /
+
+On the target database, use impdp to “plug in” the tablespace. In the final step, you will run impdp on the target database to read the metadatafile and “plug in” the tablespace datafile. Here is the output from this operation:
+
+impdp rjb/rjb directory=dest_dpump_dir dumpfile=EXPDAT_GENERATETTS000007.DMP  transport_datafiles=/u05/oradata/xport_dw.dbf
+
+SQL> alter tablespace xport_dw read write; --both in source and target
+
+
+-----------
+If you only want to see target platforms that are endian-compatible with the source platform, run this query at your source database:
+
+select d.platform_name "Source", t.platform_name "Compatible Targets", endian_format from v$transportable_platform t, v$database d
+where t.endian_format = (select endian_format from v$transportable_platform t, v$database d where d.platform_name = t.platform_name)
+
+Segment Shrink Functionality
+Frequent inserts, updates, and deletes on a table may over time leave the space within a table fragmented. Oracle can perform segment shrink on a table or index to reduce this fragmentation. 
+
+Here is a list of candidates for segment shrink:
+■ Heap- (standard) and index-organized tables
+■ Indexes
+■ Partitioned and sub-partitioned tables
+■ Materialized views and materialized view logs
+
+There are a few objects that cannot be shrunk:
+■ Clustered tables
+■ Tables with LONG columns
+■ Tables with on-commit or ROWID-based materialized views
+■ Index-organized table (IOT) mapping tables
+■ Tables containing function-based indexes
+
+SQL> alter table employees enable row movement;
+SQL> alter table employees shrink space compact;
+The COMPACT clause is optional. If you specify COMPACT, only the compaction step occurs, and the HWM stays in place until you run the same ALTER TABLE command again without the COMPACT keyword.
+
+SQL> alter table hr.employees add (work_record varchar2(4000));
+Table altered.
+SQL> alter table hr.employees enable row movement;
+Table altered.
+
+Perform DML on the HR.EMPLOYEES table, first inserting 100 rows with large values for WORK_RECORD and then updating those rows with small values.
+
+declare
+name varchar2(100);
+descr varchar2(500);
+obj_id number;
+begin
+name := ''; -- unique name generated from create_task
+descr := 'Check HR.EMPLOYEE table';
+dbms_advisor.create_task
+('Segment Advisor', :task_id, name, descr, NULL);
+dbms_advisor.create_object
+(name, 'TABLE', 'HR', 'EMPLOYEES', NULL, NULL, obj_id);
+dbms_advisor.set_task_parameter(name, 'RECOMMEND_ALL', 'TRUE');
+dbms_advisor.execute_task(name);
+end;
+PL/SQL procedure successfully completed.
+SQL> print task_id
+TASK_ID
+----
+384
+
+SQL> select owner, task_id, task_name, type,  message, more_info from dba_advisor_findings where task_id = 384;
+
+SQL> select owner, task_id, task_name, command, attr1 from dba_advisor_actions where task_id = 384;
+
+OWNER TASK_ID TASK_NAME COMMAND
+---------- ------- ---------- -----------------
+RJB 384 TASK_00003 SHRINK SPACE
+ATTR1
+-----------------------------------------------------
+alter table HR.EMPLOYEES shrink space
+
+
+Understand the Database Resource Manager
+You can use Database Resource Manager to control the distribution of resources among database sessions in a more efficient and fine-grained way than the operating system can. The three basic constructs of resource manager are resource consumer groups, resource plans (and subplans), and resource plan directives.
+
+First, you need resource consumer groups to identify groups of users or sessions that have similar resource needs. For example, you have system administrators that most
+likely need as many resources (CPU and disk space) as possible, you have batch job users that can wait longer for the results of a query, and therefore will consume less resources if there are other users, such as users in an OLTP group, that need near instantaneous response time when querying a customer’s order history.
+
+Second, you need a resource plan that assigns various resources at specific percentages or relative priority to a resource group. You can have as many resource plans as you want but only one resource plan can be active at a time. A resource plan can also have a subplan that further subdivides resource allocation within a plan. Resource plans prioritize resources by using up to eight levels, with level 1 at the highest priority and level 8 at the lowest priority. The consumer groups at level 1 must have their resource requests satisfied before groups in lower levels.
+
+Within the resource plan are resource plan directives which associate consumer groups with a resource plan and specify how the resources are divided among the consumer groups or subplans. For example, you may have a resource plan called WEEKDAY that manages three consumer groups: (1) OLTP, (2) REPORTING, and (3) OTHER_GROUPS. Any user or process not explicitly defined in a consumer group within the resource plan is in OTHER_GROUPS by default. The WEEKDAY plan has three directives:
+
+■ OLTP gets up to 70% of CPU resources
+■ REPORTING gets up to 20% of CPU resources
+■ OTHER_GROUPS gets up to 10% of CPU resources
+
+Note that if the only users requesting resources are in the REPORTING group, they can get more than 20% of the resources until any OLTP or OTHER_GROUPS users request CPU resources. 
+
+DRM allocates resources among resource consumer groups based on a resource plan. A resource plan consists of resource-plan directives that specify how resources should be distributed among the groups. Plan directives define resource-allocation rules by assigning resource-allocation methods to specific resource consumer groups.
+
+Before defining or updating any DRM objects, you must first establish a pending area. A pending area is a staging area where resource-management objects can be defined and validated before they are activated. If you forget to create the pending area, you will receive the following error message if you try to create or update a DRM object: 
+
+ORA-29371: pending area is not active
+ORA-06512: at “SYS.DBMS_RMIN”, line 115
+
+To create a pending area, simply execute the DBMS_RESOURCE_MANAGER.CREATE_PENDING_AREA procedure. This procedure accepts no parameters, so it can be called as follows:
+SQL> exec dbms_resource_manager.create_pending_area();
+
+Once a pending area has been created, all changes will automatically be stored there until they are validated and submitted.
+
+After changes have been made in the pending area, they need to be checked for validity before being activated. This can be accomplished through the DBMS_RESOURCE_GROUP.VALIDATE_PENDING_AREA procedure. The validation process verifies that
+
+No plan schema can contain a loop.
+All DRM objects identified in a plan directive must exist.
+All plan directives refer to either plans or resource groups.
+Allocation percentages for a given level cannot exceed 100.
+Deletes are not allowed for top plans being used by an active instance.
+Only plan directives that refer to resource consumer group are allowed to set the following parameters:
+	ACTIVE_SESS_POOL_P1
+	MAX_EST_EXEC_TIME
+	MAX_IDLE_BLOCKER_TIME
+	MAX_IDLE_TIME
+	PARALLEL_DEGREE_LIMIT_P1
+	QUEUEING_P1
+	SWITCH_ESTIMATE
+	SWITCH_GROUP
+	SWITCH_TIME
+	SWITCH_FOR_CALL
+	SWITCH_IO_MEGABYTES
+	SWITCH_IO_REQS
+	UNDO_POOL
+An active plan schema can contain no more than 32 resource consumer groups.
+Plan names cannot conflict with resource consumer group names.
+There must be a plan directive for the OTHER_GROUPS group to allocate resources for sessions not identified in the active plan.
+
+SQL> exec dbms_resource_manager.validate_pending_area;
+
+When you are ready to make your changes active, you can use the DBMS_RESOURCE_MANAGER.SUBMIT_PENDING_AREA procedure, as shown here:
+SQL> exec dbms_resource_manager.submit_pending_area;
+
+Submitting the pending area actually performs three distinct actions: it validates, submits, and clears the pending area. Therefore, it is not required to perform a separate validation before submitting. However, from a debugging standpoint, it is beneficial to validate changes on an incremental basis rather than waiting until submit time.
+Clearing the Pending Area
+To clear the pending area without submitting your changes, you can use the DBMS_RESOURCE_MANAGER.CLEAR_PENDING_AREA procedure, as shown here:
+SQL> exec dbms_resource_manager.clear_pending_area;
+
+Creating Resource Consumer Groups
+CREATE_CONSUMER_GROUP Parameters
+Parameter : Description
+CONSUMER_GROUP : Consumer group name.
+COMMENT : Any comment (usually a description of the group).
+CPU_MTH : Deprecated. Use MGMT_MTH.
+MGMT_MTH : Method used to schedule CPU resources between sessions in the group. Valid values are as follows: ROUND_ROBIN (the default) ensures fair distribution by using a round-robin schedule; RUN_TO_COMPLETION schedules the most active sessions ahead of other sessions.
+
+To create a new resource consumer group named DEVELOPERS that uses a round-robin
+CPU methodology, see the following example:
+SQL> begin
+dbms_resource_manager.create_consumer_group(‘developers’,‘application developers’);
+end;
+/
+
+SQL> select consumer_group, cpu_method, comments from dba_rsrc_consumer_groups where consumer_group = ‘DEVELOPERS’;
+
+SQL> begin
+dbms_resource_manager.update_consumer_group(
+CONSUMER_GROUP => ‘DEVELOPERS’,
+NEW_MGMT_MTH => ‘RUN-TO-COMPLETION’);
+end;
+
+SQL> begin
+dbms_resource_manager.delete_consumer_group(‘DEVELOPERS’);
+end;
+
+Deleting a resource group has a couple of implications that are important to understand:
+Users assigned to the deleted group as their initial resource consumer group will be assigned to the DEFAULT_CONSUMER_GROUP group.
+Current sessions assigned to the deleted group will be switched to the DEFAULT_CONSUMER_GROUP group.
+
+Assigning User Sessions to Consumer Groups
+DRM can be configured to automatically assign consumer groups to sessions based on specific session attributes. This process is called consumer group mapping. 
+
+Consumer group mappings can be created by using the DBMS_RESOURCE_MANAGER.SET_CONSUMER_GROUP_MAPPING procedure to create the mapping and the DBMS_RESOURCE_MANAGER.SET_CONSUMER_GROUP_MAPPING_PRI procedure to create the attributes for the mapping.
+
+SET_CONSUMER_GROUP_MAPPING_PRI : Session Attributes
+ORACLE_USER : Login Oracle Database username.
+SERVICE_NAME : Login Service name used by the client to establish a connection.
+CLIENT_OS_USER : Login Operating-system username of the client that is logging in.
+CLIENT_PROGRAM : Login Name of the client program used to log in to the server.
+CLIENT_MACHINE : Login Name of the computer from which the client is making the connection.
+MODULE_NAME : Runtime Module name that is currently executing, as defined by the DBMS_APPLICATION_INFO.SET_MODULE_NAME procedure.
+MODULE_NAME_ACTION : Runtime Module name and module action that are currently executing, as defined by the DBMS_APPLICATION_INFO.SET_MODULE_NAME/SET_ACTION procedures. Attribute is specified in the format SERVICE_NAME , ACTION.
+SERVICE_MODULE : Runtime Service name and module name in the format SERVICE_NAME.MODULE_NAME.
+SERVICE_MODULE_ACTION : Runtime Service name, module name, and action name in the format SERVICE_NAME.MODULE_NAME.ACTION_NAME.
+
+Mappings simply define a session attribute, a value for the attribute, and a consumer group. For example, if the session attribute CLIENT_OS_USER has a value of graciej, then assign the OLAP_GROUP to the session. The following code would create this mapping:
+SQL> begin
+dbms_resource_manager.set_consumer_group_mapping(
+ATTRIBUTE => CLIENT_OS_USER,
+VALUE => ‘graciej’, CONSUMER_GROUP => ‘OLAP_GROUP’);
+end;
+
+Note that session attributes are defined as Oracle constants and are therefore specified without surrounding single quotes.
+
+Establishing Mapping Pr ior ities
+It is possible that a session may map to more than one consumer group based on mapping rules. Therefore, Oracle allows the creation of mapping priorities through the use of the DBMS_RESOURCE_MANAGER.SET_CONSUMER_GROUP_MAPPING_PRI procedure, as follows:
+SQL> begin
+dbms_resource_manager.set_consumer_group_mapping_pri(
+EXPLICIT => 1,
+CLIENT_OS_USER => 2,
+CLIENT_MACHINE => 3,
+CLIENT_PROGRAM => 4,
+ORACLE_USER => 5,
+MODULE_NAME => 6,
+MODULE_NAME_ACTION => 7,
+SERVICE_NAME => 8,
+SERVICE_MODULE => 9,
+SERVICE_MODULE_ACTION => 10);
+end;
+
+
+The EXPLICIT attribute refers to an explicit consumer group switch (using one of the switching methods described in the next section).
+
+Two procedures are provided in the DBMS_RESOURCE_MANAGER package to allow you to explicitly change consumer groups for currently active user sessions: the SWITCH_CONSUMER_GROUP_FOR_SESS and SWITCH_CONSUMER_GROUP_FOR_USER procedures. In addition, users can be granted the privilege to change their own consumer group. When a user is granted the switch privilege, they can use the DBMS_SESSION.SWITCH_CURRENT_CONSUMER_GROUP procedure to change the consumer group for their current session.
+
+For example, the following SQL switches a session to the LOW_GROUP group:
+
+SQL> begin
+dbms_resource_manager.switch_consumer_group_for_sess (
+SESSION_ID => ‘56’,
+SESSION_SERIAL=> ‘106’,
+CONSUMER_GROUP => ‘LOW_GROUP’);
+end;
+
+This procedure changes all active sessions for a given Oracle username. Here’s an example:
+SQL> begin
+dbms_resource_manager.switch_consumer_group_for_user (
+USER => ‘BRANDON’,
+CONSUMER_GROUP => ‘LOW_GROUP’);
+end;
+
+Both of these procedures also switch all parallel sessions that may have been spawned by the session or user. Explicit consumer-group changes are not persistent. They affect only current sessions.
+
+SWITCH_CURRENT_CONSUMER_GROUP Procedure Parameters
+Parameter : Description
+NEW_CONSUMER_GROUP : The name of the consumer group to which the session is switching.
+OLD_CONSUMER_GROUP : An output parameter that returns the name of the original consumer group (before the switch).
+INITIAL_GROUP_ON_ERROR : If the switch fails, this parameter controls the outcome. If TRUE, the session reverts to its original group. If FALSE, an error is raised.
+
+DECLARE
+original_group varchar2(30);
+junk varchar2(30);
+BEGIN
+DBMS_SESSION.SWITCH_CURRENT_CONSUMER_GROUP(
+‘MARKETING’, original_group, FALSE);
+< execute some SQL>
+DBMS_SESSION.SWITCH_CURRENT_CONSUMER_GROUP(
+original_group, junk, FALSE);
+END;
+
+This PL/SQL block switches from the current consumer group to the MARKETING group and saves the original group name in a variable named ORIGINAL_GROUP. After executing some SQL, it uses the ORIGINAL_GROUP variable to switch back to the original group.
+
+Before a user can switch their own consumer group, they must have been granted the switch privilege. The switch privilege is granted to users and/or to roles through the DBMS_RESOURCE_MANAGER_PRIVS.GRANT_SWITCH_CONSUMER_GROUP procedure. 
+
+GRANT_SWITCH_CONSUMER_GROUP Procedure Parameters
+Parameter : Description
+GRANTEE_NAME : Username or role name receiving the grant.
+CONSUMER_GROUP : Name of the consumer group to which the grantee will be allowed to switch.
+GRANT_OPTION : Determines whether the grantee can, in turn, grant the switch privilege to another user. If TRUE, the grantee can grant the switch privilege to another user. If FALSE, the grantee cannot grant the switch privilege to another user.
+
+SQL> begin
+dbms_resource_manager_privs.grant_switch_consumer_group(
+‘PROG_ROLE’, ‘DEVELOPERS’, FALSE);
+end;
+
+This procedure revokes a user’s or role’s privilege to switch to the specified consumer group. Here’s an example:
+
+SQL> begin
+dbms_resource_manager_privs.revoke_switch_consumer_group(
+‘PROG_ROLE’, ‘DEVELOPERS’);
+end;
+
+Resource Plans
+DRM allocates resources among resource consumer groups based on a resource plan. A resource plan consists of directives specifying how resources should be distributed among resource consumer groups or other resource plans. Resource plans prioritize resource allocation through the use of levels, with level 1 being the highest priority and level 8 being the lowest. 
+
+Simple resource plans are limited to allocating only CPU resources to a small number of consumer groups. However, they are very simple to set up,
+Complex resource plans can use any of Oracle’s predefined resource-allocation methods and can include up to 32 consumer groups. Complex resource plans can also contain subplans. If subplans are defined, the plan would be classified as a multilevel resource plan.
+
+There is no difference between a plan and a subplan. They are defined in exactly the same manner. A subplan is simply a plan that is nested within the scope of a top-level plan, so it is allocated resources from the top-level plan
+
+Resource plans have two options regarding the CPU-allocation method—EMPHASIS and RATIO.
+EMPHASIS :The allocated amount is treated as a percentage (in other words, 80 = 80 percent) of available CPU. EMPHASIS is valid for both single- and multilevel plans and is the only option for simple resource plans (the default).
+RATIO : The allocated amount is treated as a ratio of the total CPU resources. The RATIO method can be defined only on single-level plans.
+
+Plan Directives Using the RATIO Method
+Consumer Group : CPU_P1 Parameter Setting
+PAYROLL : 10
+MARKETING : 2
+OTHER_GROUPS : 1
+
+The result of these directives will allocate CPU resources using a 10:2:1 ratio. The MARKETING group will get only two CPU cycles for every 10 that the PAYROLL group receives. The OTHER_GROUPS group will get one cycle for every for every two that the MARKETING group receives.
+
+Simple resource plans, though limited in their abilities and scope, offer an adequate solution for environments with only basic resource-management needs. They are distinct from complex plans in that they create a resource plan, resource-plan directives, and resource consumer groups in one simple procedure. Simple resource plans are limited to using only the CPU resource-plan directive. This means that the only resource that can be allocated is the CPU. Simple plans also limit the total number of resource groups to eight.
+
+CREATE_SIMPLE_PLAN Procedure Parameters
+Parameter Description
+SIMPLE_PLAN The name assigned to the plan
+CONSUMER_GROUP1 The name of the first consumer group
+GROUP1_PERCENT The CPU allocation for the first consumer group
+CONSUMER_GROUP2 The name of the second consumer group
+GROUP2_PERCENT The CPU allocation for the second consumer group
+..
+..
+CONSUMER_GROUP8 The name of the eighth consumer group
+GROUP8_PERCENT The CPU allocation for the eighth consumer group
+
+SQL> begin
+DBMS_RESOURCE_MANAGER.CREATE_SIMPLE_PLAN(
+SIMPLE_PLAN => ‘DEPARTMENTS’,
+CONSUMER_GROUP1 => ‘PAYROLL’,
+GROUP1_PERCENT => 50,
+CONSUMER_GROUP2 => ‘SALES’,
+GROUP2_PERCENT => 25,
+CONSUMER_GROUP3 => ‘MARKETING’,
+GROUP3_PERCENT => 25);
+end;
+
+Simple resource plans always use the EMPHASIS CPU resource-allocation policy. This means that the value entered for the CPU allocations will be interpreted as a percentage of total CPU.
+
+When a simple plan is created, the results might be somewhat surprising, you can see that Oracle has added two additional consumer groups to it: SYS_GROUP and OTHER_GROUPS.
+
+Notice also that the final plan is a multilevel plan and the elements that you defined are assigned to the second level. This ensures that members of the SYS_GROUP (at level 1) will have no CPU restrictions. Groups at level 2 will share CPU resources not used by level-1 groups. Likewise, users not assigned to any group in the plan (at level 3) will receive CPU time only after levels 1 and 2 have satisfied their requirements.
+
+Complex resource plans differ from simple resource plans in how they are defined. When you create a simple plan, you can create the plan, resource groups, and plan directives in one operation. For complex plans, each of these elements is defined and stored separately. This method offers more flexibility when building resource plans.
+
+To create a new plan, use the DBMS_RESOURCE_MANAGER.CREATE_PLAN procedure, whose parameters are:
+PLAN : The name of the resource plan.
+COMMENT : A comment or a description of the plan.
+CPU_MTH : Deprecated. Use MGMT_MTH.
+ACTIVE_SESS_POOL_MTH : The method of allocating session pool resources (limiting the number of active sessions). ACTIVE_SESS_POOL_ABSOLUTE
+is the only method available. Treats the number specified in a plan directive as the maximum number of active sessions allowed.
+PARALLEL_DEGREE_LIMIT_MTH : The method of specifying degree of parallelism for any operation. PARALLEL_DEGREE_LIMIT_ABSOLUTE is the only method available. Treats the number specified in plan directives as the maximum degree of parallelism that will be allowed.
+QUEUEING_MTH : The Method of allocating execution of queued sessions.
+FIFO_TIMEOUT : is the only method available. Uses a first-in/first-out method for prioritizing sessions waiting in queue due to resource limitations.
+MGMT_MTH : The method of allocating CPU resources. EMPHASIS (default): CPU will be distributed on a percentage basis for single and multilevel plans. RATIO: CPU will be distributed on a ratio basis for singlelevel plans.
+SUB_PLAN : If TRUE, the plan can’t be used as the top-level plan. Default is FALSE.
+
+As you can see, only the PLAN, COMMENT, and MGMT_MTH parameters actually have any effect on the plan. The others (ACTIVE_SESS_POOL_MTH, PARALLEL_DEGREE_LIMIT_MTH, and QUEUEING_MTH) offer only one option, which is also the default. It is expected that future releases will expand the choices for these parameters. For the SUB_PLAN parameter, you can specify if this plan cannot be used as a top-level plan. Therefore, a plan can be created as follows:
+SQL> begin
+dbms_resource_manager.create_plan(
+PLAN => ‘DAY’,
+COMMENT => ‘Use during daytime’);
+end;
+SQL>/
+
+SQL> select plan, num_plan_directives, cpu_method from dba_rsrc_plans;
+
+As you can see, the plan was indeed created, and in fact it already has one plan directive assigned to it. Remember that Oracle requires all plans to have a directive for the OTHER_GROUPS resource group. Therefore, Oracle automatically creates this directive for you.
+
+A resource subplan is created in exactly the same manner as a resource plan. That’s because there is no difference between them. A subplan is a plan. It becomes a subplan only if a higher level plan allocates resources to it (through a resource plan directive) or if you explicitly define that it can be only a subplan when you create the plan.
+
+SQL> exec dbms_resource_manager.update_plan(
+PLAN => ‘DAY’,
+NEW_COMMENT => ‘Plan for scheduled work hours’);
+
+Resource plans can be deleted by using either the DBMS_RESOURCE_MANAGER.DELETE_PLAN procedure or the DBMS_RESOURCE_MANAGER.DELETE_PLAN_CASCADE procedure. The former removes the resource plan but leaves all subordinate objects (consumer groups, plan directives, and subplans) intact. The latter removes the resource plan, along with all subordinate objects. If the DELETE_PLAN_CASCADE procedure attempts to delete a subordinate object that happens to also be part of the currently active plan, the delete will fail and the entire plan will be restored.
+
+SQL> exec dbms_resource_manager.delete_plan(‘DAY’);
+
+Resource-Plan Directives
+Resource-plan directives assign consumer groups to resource plans and define the resource allocations for each. Resource-allocation methods are predefined by Oracle and, as such, are not modifiable. They represent the various methods available to DRM to allocate resources. The following methods are available:
+
+CPU : The CPU method specifies how CPU resources are to be allocated among consumer groups or subplans. Up to eight levels can be defined, allowing for the prioritization of CPU resources. For example, level 2 gets CPU only if level 1 is unable to utilize all of its allocated CPU.
+
+Active session pool with queuing : This method limits the number of concurrent active sessions available to a consumer group. If the allocated number of sessions is reached, new session requests will be placed in a queue until an active session completes.
+
+Degree of parallelism limit: This method specifies the maximum parallel degree for any operation within a consumer group. If a higher degree is specified, it will automatically be altered down to the value specified for this parameter.
+
+Automatic consumer-group switching : This switching method allows sessions exceeding certain execution-time criteria to be dynamically switched to a different group. For example, if a session exceeds the defined execution-time threshold, it can be automatically switched to a lower priority group or cancel the operation or even kill .
+
+Canceling SQL and terminating sessions : This method specifies that long-running queries or long-running sessions will be automatically terminated if the execution-time threshold is exceeded..
+
+Execution time limit : The execution time-limit method specifies the maximum estimated execution time allowed for any operation. If Oracle estimates that an operation will exceed the specified execution time, it will terminate the operation and return an error. It does this before actual execution begins.
+
+Undo pool : The undo-pool method specifies the amount of undo that can be generated by a consumer group. If the group exceeds the allocated amount, the current DML statement is terminated and no other group members may perform data manipulation until undo space is freed.
+
+Idle time limit : This method specifies the maximum amount of time that a session can remain idle. If this limit is exceeded, the session will automatically be terminated.
+
+
+Resource-plan directives can set levels for one or more of these methods for each consumer group or subplan. However, only CPU methods may be defined for subplans. The other methods are invalid for assigning resources to subplans.
+
+Creating Resource-Plan Directives
+To create a resource-plan directive, the DBMS_RESOURCE_MANAGER.CREATE_PLAN_DIRECTIVE procedure is used.
+
+CREATE_PLAN_DIRECTIVE Procedure Parameters
+PLAN : The name of the resource plan to which this directive belongs.
+GROUP_OR_SUBPLAN : The name of the consumer group or subplan being allocated resources by this directive.
+COMMENT : A comment or a description of the plan directive.
+CPU_Pn [n=1 to 8] : Deprecated. Use MGMT_P1.
+ACTIVE_SESS_POOL_P1 : Specifies the maximum number of concurrently active sessions for a consumer group or subplan. The default is NULL, which means unlimited.
+QUEUEING_P1 : The number of seconds before a job in the inactive session queue times out. The default is NULL, meaning that queued jobs will never time out.
+PARALLEL_DEGREE_LIMIT_P1 : The maximum degree of parallelism that can be defined for any operation. The default is NULL, meaning that no limit is imposed.
+SWITCH_GROUP : The consumer group to which this session will be switched if the switch criteria is met. The default is NULL. Other options are CANCEL_SQL, which will kill the query when switch criteria is met, and KILL_SESSION, which will kill the session when the switch criteria is met.
+SWITCH_TIME : The number of seconds for which a session can execute an operation before a group switch will occur. The default is NULL, meaning that there is no limit on execution time. After the operation is complete, the session remains in the new consumer group rather than reverting to its original consumer group.
+SWITCH_ESTIMATE : Directs Oracle to estimate the execution time for an operation before execution begins. If the estimated time exceeds the value set for SWITCH_TIME, Oracle will perform the switch before execution of the query begins. Valid settings are TRUE and FALSE. The default is FALSE.
+MAX_EST_EXEC_TIME : Directs Oracle to estimate the execution time for an operation before execution begins. If the estimated time exceeds the number of seconds defined in this parameter, the operation is not started and an ORA-07455 error is issued. The default is NULL, meaning that no estimate limit is imposed.
+UNDO_POOL : Maximum kilobytes (KB) of undo that can be generated by the consumer group/subplan. The default is NULL, meaning that no limit is imposed.
+MAX_IDLE_TIME : The number of seconds that a session can remain idle before the session is killed. The default is NULL, meaning that no idle time limit is imposed.
+MAX_IDLE_BLOCKER_TIME : The number of seconds that a blocking session can remain idle before the session is killed. (A blocking session is a session that is locking a resource that is needed by another session.) The default is NULL, meaning that no idle time limit is imposed.
+MGMT_P1 : If the resource plan uses the EMPHASIS allocation method, this parameter defines the percentage of CPU allocated at level 1 for the group/subplan. If the plan uses the RATIO allocation method for CPU resources, this parameter defines the weight of CPU usage for the group/subplan. The default is NULL for all MGMT_Pn parameters, which provides no allocation of CPU resources.
+MGMT_Pn (2 to 8) : The percentage of CPU allocated at level 2 for the group/subplan (if the plan uses the EMPHASIS method). Not applicable for the RATIO method. The default is NULL.
+SWITCH_IO_MEGABYTES : The number of megabytes of I/O that a session can transfer (read and write) before action is taken. The default is UNLIMITED. Action specified by SWITCH_GROUP.
+SWITCH_IO_REQS : Specifies the number of I/O requests that a session is allowed to execute before action is taken. The default is UNLIMITED. Action specified by SWITCH_GROUP.
+
+The following example creates a resource-plan directive for the DAY plan, which limits the parallel degree settings for the DEVELOPERS group:
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY’,
+COMMENT => ‘DEVELOPERS DAY PLAN’,
+GROUP_OR_SUBPLAN => ‘DEVELOPERS’,
+PARALLEL_DEGREE_LIMIT_P1 => ‘4’);
+end;
+
+For example, to define a subplan under the DAY plan, you would set the GROUP_OR_SUBPLAN parameter to the name of the target plan, as follows:
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY’,
+COMMENT => ‘DEPARTMENTS SUB-PLAN’,
+GROUP_OR_SUBPLAN => ‘DEPARTMENTS’,
+MGMT_P2=> 50);
+end;
+SQL> /
+
+In this example, the plan DEPARTMENTS was defined as a subplan of the DAY plan and limited to 50 percent of the level-2 CPU resources. The subplan still retains all of its original functionality. However, the total CPU resources it can allocate are limited to those it receives from the top-level plan. The total resources allocated at any one level cannot exceed 100 percent.
+
+Creating Multilevel Plan Directives
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY’,
+COMMENT => ‘SYSTEM USERS’,
+GROUP_OR_SUBPLAN => ‘SYS_GROUP’,
+MGMT_P1=> 100);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY’,
+COMMENT => ‘DEPARTMENTS SUB-PLAN’,
+GROUP_OR_SUBPLAN => ‘DEPARTMENTS’,
+MGMT_P2=> 50);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY’,
+COMMENT => ‘DEVELOPERS GROUP CPU ALLOCATION’,
+GROUP_OR_SUBPLAN => ‘DEVELOPERS’,
+MGMT_P2=> 50);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY’,
+COMMENT => ‘OTHER_GROUPS CPU ALLOCATION’,
+GROUP_OR_SUBPLAN => ‘OTHER_GROUPS’,
+MGMT_P3=> 100);
+end;
+
+In this example, four directives are created for the DAY plan. The first directive allocates 100 percent of level-1 CPU resources to the SYS_GROUP group. The second directive allocates 50 percent of level-2 CPU resources to the DEPARTMENTS subplan. The third directive allocates the other 50 percent of level-2 CPU resources to the DEVELOPERS consumer group. Finally, the fourth directive allocates 100 percent of level-3 CPU resources to the OTHER_GROUPS group.
+
+To create a plan directive that automatically cancels operations that execute for more than one hour, see the following example:
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY’,
+COMMENT => ‘LIMIT DEVELOPERS EXECUTION TIME’,
+GROUP_OR_SUBPLAN => ‘DEVELOPERS’,
+SWITCH_GROUP => ‘CANCEL_SQL’,
+SWITCH_TIME => 3600);
+end;
+
+To create a plan directive that temporarily moves DEVELOPERS sessions to a lower-priority group whenever the actual I/O transferred in exceeds 3,000 megabytes, then returns them to their original group following the completion of the PL/SQL block, see this example:
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY’,
+COMMENT => ‘SWITCH DEVELOPERS TEMPORARILY’,
+GROUP_OR_SUBPLAN => ‘DEVELOPERS’,
+SWITCH_IO_MEGABYTES => 3000,
+SWITCH_GROUP => ‘LOW_GROUP’,
+SWITCH_FOR_CALL => TRUE);
+end;
+SQL> /
+
+Updating Resource Plan-Directives
+Resource-plan directives can be updated using the DBMS_RESOURCE_MANAGER.UPDATE_PLAN_DIRECTIVE procedure. The parameters for this procedure are identical to the parameters for the CREATE_PLAN_DIRECTIVE procedure, except that the prefix NEW_ has been added to all of the modifiable parameters (for example, NEW_COMMENT, NEW_MGMT_P1, and so on). The only parameters that cannot be modified are PLAN and GROUP_OR_SUBPLAN. All of the others can be updated. Consider the following example:
+
+SQL> begin
+dbms_resource_manager.update_plan_directive(
+PLAN => ‘DAY’,
+GROUP_OR_SUBPLAN => ‘DEVELOPERS’,
+NEW_SWITCH_ESTIMATE => FALSE);
+end;
+
+SQL> begin
+dbms_resource_manager.delete_plan_directive(
+PLAN => ‘DAY’,
+GROUP_OR_SUBPLAN => ‘DEVELOPERS’);
+end;
+SQL>/
+
+Creating and Using Database Resource Manager Components
+First, the pending area will be created. Next, the resource consumer groups will be created. After that, the resource plans will be created. And, finally, the resource-plan directives will be created to tie them all together.
+Once all of the elements are in place, they will be validated and activated. Finally, you’ll learn to enable the resource plans, as well as how to switch the enabled resource plan.
+
+SQL> exec dbms_resource_manager.create_pending_area();
+
+SQL> begin
+dbms_resource_manager.create_consumer_group(
+‘OLTP_GROUP’,’Incoming orders’);
+end;
+
+SQL> begin
+dbms_resource_manager.create_consumer_group(
+‘DAY_REPORTS_GROUP’,’DAYTIME REPORTS’);
+end;
+
+SQL> begin
+dbms_resource_manager.create_consumer_group(
+‘NIGHTLY_PROCESSING_GROUP’,’BULK LOADS, ETL, ETC.’);
+end;
+
+SQL> begin
+dbms_resource_manager.create_consumer_group(
+‘OLAP_REPORTS_GROUP’,’OFF HOURS REPORTS’);
+end;
+
+Because the SYS_GROUP and the OTHER_GROUPS consumer groups are created automatically at Oracle installation time, there is no need to create them.
+
+Creating the Resource Plans
+Three distinct plans are required. Both the DAY_PLAN and the OLTP_PLAN plan use the default EMPHASIS CPU-allocation method, whereas the OFF_HOURS_PLAN plan utilizes the RATIO method.
+
+SQL> begin
+dbms_resource_manager.create_plan(
+PLAN => ‘DAY_PLAN’,
+COMMENT => ‘GOVERNS NORMAL WORKING HOURS ‘);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan(
+PLAN => ‘OLTP_PLAN’,
+COMMENT => ‘ORDER ENTRY SUB-PLAN’);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan(
+PLAN => ‘OFF_HOURS_PLAN’,
+COMMENT => ‘GOVERNS NON-WORKING HOURS’,
+MGMT_MTH => ‘RATIO’);
+end;
+
+Creating the OFF_HOURS_PLAN Plan Directives
+The OFF_HOURS_PLAN plan is a single-level plan using the RATIO method for CPU allocation. The plan directives can be created as follows:
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘OFF_HOURS_PLAN’,
+GROUP_OR_SUBPLAN => ‘SYS_GROUP’,
+COMMENT => ‘CPU ALLOCATION FOR SYS_GROUP’,
+MGMT_P1 => 10);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘OFF_HOURS_PLAN’,
+GROUP_OR_SUBPLAN => ‘NIGHTLY_PROCESSING_GROUP’,
+COMMENT => ‘CPU ALLOCATION FOR NIGHTLY JOBS’,
+MGMT_P1 => 5);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘OFF_HOURS_PLAN’,
+GROUP_OR_SUBPLAN => ‘OLAP_REPORTS_GROUP’,
+COMMENT => ‘CPU ALLOCATION FOR NIGHTLY REPORTS’,
+MGMT_P1 => 2);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘OFF_HOURS_PLAN’,
+GROUP_OR_SUBPLAN => ‘OTHER_GROUPS’,
+COMMENT => ‘CPU ALLOCATION FOR OTHER_GROUPS’,
+MGMT_P1 => 1);
+end;
+
+The CPU-allocation ratio for the OFF_HOURS_PLAN plan will be 10:5:2:1.
+
+Next, the plan directives for the OLTP_PLAN plan can be created:
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘OLTP_PLAN’,
+GROUP_OR_SUBPLAN => ‘OLTP_GROUP’,
+COMMENT => ‘CPU ALLOCATION FOR OLTP USERS’,
+MGMT_P1 => 90);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘OLTP_PLAN’,
+GROUP_OR_SUBPLAN => ‘DAY_REPORTS_GROUP’,
+COMMENT => ‘CPU ALLOCATION FOR DAYTIME REPORTING’,
+MGMT_P1 => 10);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘OLTP_PLAN’,
+GROUP_OR_SUBPLAN => ‘OTHER_GROUPS’,
+COMMENT => ‘CPU ALLOCATION FOR OTHER_GROUPS’,
+MGMT_P2 => 100);
+end;
+
+As you can see, the directives for the OLTP_PLAN plan allocate 90 percent of level-1 CPU resources to the OLTP_GROUP group and the other 10 percent to the DAY_REPORTS_GROUP group. One hundred percent of level-2 CPU resources are allocated to the OTHER_GROUPS group.
+
+Now the directives for the DAY_PLAN plan can be created:
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY_PLAN’,
+GROUP_OR_SUBPLAN => ‘SYS_GROUP’,
+COMMENT => ‘CPU ALLOCATION FOR SYS_GROUP’,
+MGMT_P1 => 100);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY_PLAN’,
+GROUP_OR_SUBPLAN => ‘OLTP_PLAN’,
+COMMENT => ‘CPU ALLOCATION FOR OLTP_PLAN SUB-PLAN’,
+MGMT_P2 => 100);
+end;
+
+SQL> begin
+dbms_resource_manager.create_plan_directive(
+PLAN => ‘DAY_PLAN’,
+GROUP_OR_SUBPLAN => ‘OTHER_GROUPS’,
+COMMENT => ‘CPU ALLOCATION FOR OTHER_GROUPS’,
+MGMT_P3 => 100);
+end;
+
+Validation will be done for all elements in the pending area, as shown here:
+SQL> exec dbms_resource_manager.validate_pending_area;
+
+If you are using SQL*Plus, make sure the SERVEROUTPUT option is on before validating. Otherwise, no error messages will be displayed on screen. Use the SET SERVEROUTPUT ON statement to turn it on.
+
+The final step is to activate the plans by submitting the pending area. This step moves the DRM elements to the data dictionary. Once the elements are in the data dictionary, they are considered active and eligible to be enabled (resource plans) or referenced by enabled plans (resource consumer groups and resource-plan directives). Remember that this step does not actually enable a plan; it only makes it eligible to be enabled.
+
+SQL> exec dbms_resource_manager.submit_pending_area;
+
+Enabling the Resource Plans
+
+ALTER SYSTEM SET RESOURCE_MANAGER_PLAN = ‘DAY_PLAN’ [SCOPE = BOTH];
+
+Switching the Enabled Resource Plan
+The enabled plan can be changed at any time by using the ALTER SYSTEM command, as you saw earlier, but it would be very inconvenient to have to always make this change manually. Instead, you can use Oracle’s scheduler to schedule the switch so that it is executed automatically based on a specific schedule.
+
+If for some reason you don't want to change the plan for some time, You can simply execute the following statement:
+SQL> ALTER SYSTEM SET RESOURCE_MANAGER_PLAN = ‘FORCE:OFF_HOURS_PLAN’;
+System altered.
+When the prefix FORCE: is added to the name of the plan, Oracle will restrict the active plan from being changed by the scheduler. The scheduler will still attempt to make the change, but it will fail.
+
+When the nightly loads are finished, the restriction can be lifted by reissuing the identical ALTER SYSTEM statement without the FORCE: prefix, as shown here:
+SQL> ALTER SYSTEM SET RESOURCE_MANAGER_PLAN = ‘OFF_HOURS_PLAN’;

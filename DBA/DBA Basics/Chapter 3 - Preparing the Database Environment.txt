@@ -1,0 +1,528 @@
+Chapter 3 - Preparing the Database Environment
+
+The Oracle Universal Installer
+The OUI is written in Java, using JDK/JRE1.5. This means that it is the same on all platforms, with the exception of certain well-know and trivial variations in the
+Java user interface. Central to the OUI is the inventory. This is a set of files that (ideally) exists outside any Oracle Home. The inventory stores details of all the Oracle products installed on the machine, including the exact version, the location, and in some cases details of patches that have been applied.
+
+The location of the Linux inventory can be chosen by the DBA the first time the OUI (any version) is run on the machine. On Windows, the location is
+always created in 
+%SystemRoot%\Program files\Oracle\Inventory
+
+All platforms have a hard-coded, platform-specific technique by which the OUI will find an existing inventory. On Linux this is a file:
+/etc/oraInst.loc
+On Solaris it is also a file: /var/opt/oracle/oraInst.loc
+One Windows it is a key in the registry: HKEY_LOCAL_MACHINE\SOFTWARE\ORACLE\inst_loc
+
+The user running the installer for the first time
+will need permission to write to the appropriate directory. Usually only the root user can write to /etc or /var. As it is not acceptable for security reasons to run the OUI as the root user, OUI will generate a script (the orainstRoot.sh script) to be run by the root user that will create the  oraInst.loc file. On Windows, the user running the OUI will need privileges that will let him/her create the registry key.
+
+To launch the OUI, on Windows run the setup.exe file in the root of the CD or DVD, on Linux and Unix, run the runInstaller shell script.
+
+Database Creation and Upgrade Tools
+The DBCA, the Database Configuration Assistant, is a graphical tool for creating a database.
+
+As with database creation, database upgrade can be done manually or through a graphical tool. The graphical tool is the DBUA, the Database Upgrade Assistant. It, too, can be called by OUI, if OUI detects an existing database Oracle Home of an earlier version. The DBUA will ensure that no steps are missed, but many DBAs prefer to do upgrades manually. They believe that it gives them more control, and in some cases a manual upgrade can be quicker.
+
+SQL*Plus
+SQL*Plus is available on all platforms to which the database has been ported, installed into both Oracle database and Oracle client Oracle Homes. On Linux, the executable file is sqlplus.
+
+Your Linux account should be set up appropriately to run SQL*Plus. There are
+some environment variables that will need to be set. These are
+ORACLE_HOME
+PATH
+LD_LIBRARY_PATH
+
+The PATH must include the bin directory in the Oracle Home. The LD_LIBRARY_PATH should include the lib directory in the Oracle Home, but in practice you may get away without setting this.
+
+Oracle Enterprise Manager
+The version of Oracle Enterprise Manager relevant to the OCP examination is Database Control. This is a tool for managing one database (which can be a RAC  database), whereas Grid Control can manage many databases (and more). Database Control is installed into the Oracle Home. It consist of a Java process that monitors a port for incoming connection requests from browsers. If there are several database instances running off the same Oracle Home, each instance will be accessible through Database Control on a different port.
+
+Database Control connects to the database on behalf of the user. It has built-in monitoring capability and will display real-time information regarding alert conditions, activity, and resource usage.
+
+Oracle Net Manager, Oracle Net Configuration Assistant
+These are two Java graphical tools for configuring the Oracle networking environment. There is considerable overlap in their functionality, but each does have some capability lacking in the other. Most network administration tasks can also be done through Database Control, and all can be done by editing configuration files by hand.
+
+Data Loading and Unloading Utilities
+The old utilities for transferring data between Oracle databases were the Export and Import tools. Export runs queries against a database to extract object definitions and data, and writes them out to an operating system file as a set of DDL and DML commands. Import reads the file and executes the DDL and DML statements to create the objects and enter the data into them.
+
+The replacement for Export and Import is Datapump, introduced with release 10g. Functionally, Datapump is very similar: it extracts data from one database, writes it out to a file, and inserts it into another database (possibly a different version, on a different platform). But the implementation is completely different. Datapump uses background processes, not server sessions, to read and write data. This makes it much faster. Launching, controlling, and monitoring Datapump jobs is done through client-server sessions, but the job itself all happens within the instance. Export and Import are still supported, but Datapump is the preferred utility.
+
+Backup Utilities
+It is possible to back up an Oracle database using operating system utilities. Operating system backups (known as user-managed backups) are fully supported, and there are circumstances when they may be the best option. But the preferred tool is RMAN, the Recovery Manager. RMAN backups are known as server-managed backups.
+
+Plan an Oracle Database Installation
+Choice of Operating System
+When selecting an operating system, the choice should be informed by many factors, including
+Cost
+Ease of use
+Choice of hardware
+Available skills
+Scalability
+Fault tolerance
+Performance
+
+Confirm Available Hardware Resources
+Linux:run free to show main memory and swap space, which should ideally both be at least 1 GB.
+Run df –h to show the free space in each mounted file system. Confirm that there is a file system with 5 GB free for the Oracle Home and the database.
+Use rpm to check that all required packages are installed, at the correct (or later) version. In the illustration , the sysstat package is being checked.
+Use sysctl to check that all the required kernel settings have been made— you may need to have root privilege to do this. In the illustration, the IP port range is being checked.
+
+Optimal Flexible Architecture
+----
+This standard is widely employed for specifying consistent directory structures and the file-naming conventions used when installing and creating Oracle databases.
+
+The OFA standard includes several directories that you should be familiar with:
+• Oracle inventory directory
+• Oracle base directory (ORACLE_BASE)
+• Oracle home directory (ORACLE_HOME)
+• Oracle network files directory (TNS_ADMIN)
+• Automatic Diagnostic Repository (ADR_HOME)
+
+Oracle Inventory Directory 
+The Oracle inventory directory stores the inventory of Oracle software installed on the server. This directory is required and is shared among all installations of Oracle software on a server. When you first install Oracle, the installer checks to see whether there is an existing OFA-compliant directory structure in the format /u[01–09]/app. If such a directory exists, then the installer creates an Oracle inventory directory, such as /u01/app/oraInventory
+
+If the ORACLE_BASE variable is defined for the oracle operating system (OS) user, then the installer creates a directory for the location of Oracle inventory, as follows:
+ORACLE_BASE/../oraInventory. For example, if ORACLE_BASE is defined as /ora01/app/oracle, then the installer defines the location of Oracle inventory as /ora01/app/oraInventory
+
+If the installer doesn’t find a recognizable OFA-compliant directory structure or an ORACLE_BASE variable, then the location for Oracle inventory is created under the HOME directory of the oracle user. For instance, if the HOME directory is /home/oracle, then the location of Oracle inventory is /home/oracle/oraInventory
+
+Oracle Base Directory
+The Oracle base directory is the topmost directory for Oracle software installation. You can install one or more versions of the Oracle software beneath this directory. The OFA standard for the Oracle base directory is as: /<mount_point>/app/<software_owner>
+Typical names for the mount point include /u01, /ora01, /oracle, and /oracle01. You can name the mount point according to whatever your standard is for your environment. I prefer to use a mount-point name such as /ora01. It’s short, and when I look at the mount points on a database server, I can immediately tell which are used for the Oracle database. Also, a short mount-point name is easier to use when you’re querying the data dictionary to report on the physical aspects of your database. Additionally, a shorter mount-point name makes for less typing when you’re navigating through directories via OS commands. The software owner is typically named oracle. This is the OS user you use to install the Oracle software (binaries). Listed next is an example of a fully formed Oracle base directory path: 
+/u01/app/oracle
+
+Oracle Home Directory
+The Oracle home directory defines the installation location of software for a particular product, such as Oracle Database 12c or Oracle Database 11g. You must install different products or different releases of a product in separate Oracle homes. The recommended OFA-compliant Oracle home directory is as follows:
+ORACLE_BASE/product/<version>/<install_name>
+
+Here is an example of an Oracle home name for a 12.1 database:
+/u01/app/oracle/product/12.1.0.1/db_1
+
+Oracle Network Files Directory
+Some Oracle utilities use the value TNS_ADMIN to locate network configuration files. This directory is defined as ORACLE_HOME/network/admin. It typically contains the tnsnames.ora and listener.ora Oracle Net files.
+
+Automatic Diagnostic Repository
+Starting with Oracle Database 11g, the ADR_HOME directory specifies the location of the diagnostic files related to Oracle. These files are crucial for troubleshooting problems with the Oracle database. This directory is defined as ORACLE_BASE/diag/rdbms/lower(db_unique_name)/instance_name. You can query the V$PARAMETER view to get the values of db_unique_name and instance_name. For example, in the next line, the lowercase database unique name is o12c, and the instance name is O12C: /u01/app/oracle/diag/rdbms/o12c/O12C
+You can verify the location of the ADR_HOME directory via this query:
+SQL> select value from v$diag_info where name='ADR Home';
+----
+Oracle Corporation has designed OFA, the Optimal Flexible Architecture, as a file system directory structure that should make maintaining multiple versions of multiple Oracle products straightforward. The heart of OFA is two environment variables: ORACLE_BASE and ORACLE_HOME. The ORACLE_BASE directory is one directory on the server, beneath which all the Oracle software (all products, all versions) should be installed. Each version of each product will then have its own ORACLE_HOME. 
+
+The Linux and Unix OFA standard for ORACLE_BASE is that it should be a directory named according the template /pm/h/u, where p is a string constant such as u, m is a numeric constant such as 01, h is a standard directory name such as app, and u is the operating system account that will own all the Oracle software, such as oracle.
+
+The Windows OFA standard for ORACLE_BASE is \oracle\app off the root of any suitable drive letter.
+
+The OFA standard for the database ORACLE_HOME is $ORACLE_BASE/product/v/db_n, where product is a the constant product, v is the release number of the product such as 11.1.0, and db_n is a name derived by the installer based on which product it is, such as db for database, and an incrementing number for each installation of that product, such as 1.
+
+Typical Linux values for ORACLE_BASE and ORACLE_HOME are
+/u01/app/oracle
+/u01/app/oracle/product/11.1.0/db_1
+
+and typical Windows values are
+D:\oracle\app
+D:\oracle\app\product\11.1.0\db_1
+
+The OFA location for the database itself is ORACLE_BASE/q/d, where q is the string oradata and d is the name of the database. A Linux example for a database called orcl is
+/u01/app/oracle/oradata/orcl
+
+Within the database directory, the controlfile copies, online redo log files, and datafiles should be named as follows:
+
+Controlfile -- controlnn.ctl -- nn is a unique number -- control01.ctl,control02.ctl
+Redo log files -- redonn.log --nn is the online redo log file group number-- redo01.log, redo02.log
+Datafiles -- tablespacenamenn.dbf  -- the datafile’s tablespace name and a number -- system01.dbf, system02.dbf
+
+OFA does not specify the naming convention for multiplexed online redo log files. Most DBAs will suffix the OFA name with a letter to differentiate members in the same group: redo01a.log, redo01b.log.
+
+Environment Variables
+
+The Oracle database makes use of several environment variables, some of which can be set before even running the OUI. The OUI will prompt for them, using the preset values as defaults. On Linux, the one variable that must be set before the installer can run is the DISPLAY.
+
+The highest level for variables is in the registry. The OUI creates a key in the registry,
+HKEY_LOCAL_MACHINE\SOFTWARE\ORACLE and defines variables for each installed Oracle product beneath this.
+At the ORACLE level, the variable inst_loc defines the location of the OUI inventory,
+Beneath this level there are keys for each installed product.
+In the example shown, there are two products installed: JInitiator (which is Oracle’s client-side JVM for running the Forms viewing applet—two versions have been installed on the system) and Database 11g.
+
+In the key KEY_OraDb11g_home1 there are a number of variables, two of the more significant being the ORACLE_BASE and the ORACLE_HOME.
+
+Variables in Linux
+
+To simulate setting what might be thought of as “global” variables applying to all sessions by all users, set them in the /etc/ profile file, which is executed at each logon.
+
+If the DISPLAY is not set appropriately, OUI will not be able to open any windows and will throw an error.
+
+Install the Oracle Software by Using the Oracle Universal Installer (OUI)
+
+setup.exe (Windows)
+runInstaller.sh (Linux)
+
+To bypass the prerequisite checks (not advised, but may be useful), add a switch:
+runinstaller –ignoreSysPrereqs
+
+It is possible to do an installation silently. This will be necessary if there is no graphics device, and is very convenient if you are performing many identical installs on identical machines. A silent install requires a response file, which includes answers to all the prompts that would otherwise be given. The syntax for running the OUI in this way is
+
+runInstaller –silent –reponsefile responsefilename
+
+The response file can be created manually (there are examples in the /response directory on the installation DVD), or it can be recorded by OUI from an interactive install:
+runInstaller –record –destinationFile responsefilename
+
+Before doing a silent install, the inventory pointer file (/etc/oraInst.loc on Linux) must have been created, or OUI will not be able to locate (or create if necessary) the inventory.
+
+Log on to Linux as a user who is a member of the group dba. In the examples following, the user is db11g. Confirm the username and group membership with the id command, as in this illustration:
+
+>id db11g
+
+uid=501(db11g) gid=501(dba) groups=100(users), 501(dba)
+
+Switch to the root user with su and create an OFA-compliant directory for the Oracle Base with the mkdir command. In the example, this is /u02/app/db11g. Change the ownership and access modes of the directory such that the Oracle user has full control of it with the chown and chmod commands
+> su
+
+> mkdir -p /u02/app/db11g
+>chown db11g:dba /u02/app/db11g
+>chmod 770 /u02/app/db11g
+
+exit
+logout
+
+If you are not working on the console machine, set your DISPLAY variable to point to an X Window server on the machine on which you are working. In the illustration, this is 10.0.0.12:0.0.
+
+export DISPLAY=10.0.0.20:0.0 
+
+Launch the OUI by running the runInstaller shell script from the root of the installation DVD
+
+The first OUI window will appear
+
+Select the Basic Installation radio button.
+Specify the Oracle Base as the directory created in above Step.
+The Oracle Home will default to an OFA-compliant name beneath it.
+Select the Enterprise Edition installation type.
+Select dba as the Unix DBA group.
+Deselect the option to create a database.
+
+If this is the first Oracle install on the machine, the next window will prompt for the location of the OUI inventory. Be sure to specify a directory to which the Oracle user has write permission.
+
+Toward the end of the install, the window shown in the illustration that follows will appear. This prompts you to run two scripts as the root user: the orainstRoot.sh script that will write the /etc/oraInst.loc file, and the root.sh script that adjusts permissions on files in the new Oracle home. If this is not the first time the OUI has run on the machine, there will not be a prompt for orainstRoot.sh. Run the script(s) as root from an operating system prompt (accept defaults for any prompts) and then click OK.
+
+
+-------------
+This process of oracle installation from scratch involves several steps:
+1. Create the appropriate OS groups. In Oracle Database 12c there are several OS groups that you can form and use to manage the level of granularity of SYSDBA permissions. Minimally, you’ll need to create an OS dba group and the OS oracle user.
+2. Ensure that the OS is configured adequately for an Oracle database.
+3. Obtain the database installation software from Oracle.
+4. Unzip the database installation software.
+5. If using the silent installer when first installing Oracle software on the box, create an oraInst.loc file. This step only needs to be done once per server. Subsequent installations do not require this step to be performed.
+6. Configure the response file, and run the Oracle silent installer.
+7. Troubleshoot any issues.
+
+
+Step 1. Create the OS Groups and User
+In the old days, a typical Oracle installation would contain one OS group (dba) and one OS user (oracle). You can still install the Oracle software, using this minimalistic, one-group, one-user approach; it works fine. If there is just one DBA in your shop, and you don’t need a more granular division of privileges among team members, then go ahead, and create only the dba group and the oracle OS user. There is nothing wrong with this method.
+
+Nowadays, there are multiple OS groups that Oracle recommends you create—the idea being that you can add different OS users and assign them to groups on an as-needed basis, depending on the job function. Examples of OS Groups are: oinstall, dba, oper, asmdba, asmoper, asmadmin, backupdba, dgdba.
+
+Once you decide which groups you need, then you need access to the root user to run the groupadd command. As root, add the OS groups that you need. Here, I add the three groups that I foresee will be needed:
+# groupadd oinstall
+# groupadd dba
+# groupadd oper
+
+You can verify that each group was added successfully by inspecting the contents of the /etc/group file. Here are typical entries created in the /etc/group file:
+oinstall:x:500:
+dba:x:501:
+oper:x:502:
+
+Now, create the oracle OS user. The following example explicitly sets the group ID to 500 (your company may require use of the same group ID for all installations), establishes the primary group as oinstall, and assigns the dba and oper groups to the newly created oracle user:
+# useradd -u 500 -g oinstall -G dba,oper oracle
+
+You can verify user account information by viewing the /etc/passwd file. Here is what you can expect to see for the oracle user:
+oracle:x:500:500::/home/oracle:/bin/bash
+
+You can use other commands like groupmod, groupdel, usermod, userdel for modifying/deleting groups and users.
+
+Step 2. Ensure That the OS Is Adequately Configured
+The tasks associated with this step vary somewhat for each database release and OS. You must refer to the Oracle installation manual for the database release and OS vendor to get the exact requirements.
+
+Run the following command to confirm the memory size on a Linux server: $ grep MemTotal /proc/meminfo
+To verify the amount of memory and swap space, run the following command: $ free -t
+To verify the amount of space in the /tmp directory, enter this command: $ df -h /tmp
+To display the amount of free disk space, execute this command: $ df -h
+To verify the OS version, enter this command: $ cat /proc/version
+To verify kernel information, run the following command: $ uname -r
+To determine whether the required packages are installed, execute this query, and provide the required package name: $ rpm -q <package_name>
+
+Step 3. Obtain the Oracle Installation Software
+Usually, the easiest way to obtain the Oracle software is to download it from the Oracle web site.
+
+Step 4. Unzip the Files
+Before you unzip the files, I recommend that you create a standard directory where you can place the Oracle installation media.
+
+I like to store the installation media in a directory such as /home/oracle/orainst and then create a subdirectory there for each version of the Oracle software that is installed on the box:
+$ mkdir -p /home/oracle/orainst/11.2.0.2
+$ mkdir -p /home/oracle/orainst/12.1.0.1
+Now, move the installation files to the appropriate directory, and unzip them there:
+
+Use the unzip command for unbundling zipped files. The Oracle Database 11g Release 2 software is unzipped, as shown:
+$ unzip linux_12cR1_database_1of2.zip
+$ unzip linux_12cR1_database_2of2.zip
+
+Step 5: Creating oraInst.loc File
+If an oraInst.loc file already exists on your server, then you can skip this step. Creating the oraInst.loc file only needs to be performed the first time you install binaries on a server, using the silent install method. If you’re using the OUI graphical installer, then the oraInst.loc file is created automatically for you.
+
+On Linux servers the oraInst.loc file is usually located in the /etc directory. On other Unix systems (such as Solaris) this file is located in the /var/opt/oracle directory. The oraInst.loc file contains the following information:
+• Oracle inventory directory path
+• Name of OS group that has permissions for installing and upgrading Oracle software
+
+The Oracle inventory directory path is the location of files associated with managing Oracle installations and upgrades. Typically, there is one Oracle inventory per host. Within this directory structure is the inventory.xml file, which contains a record of where various versions of Oracle have been installed on the server.
+
+The Oracle inventory OS group has the OS permissions required for installing and upgrading Oracle software. Oracle recommends that you name this group oinstall. You’ll find that sometimes DBAs assign the inventory group to the dba group. If your environment doesn’t require a separate group (such as oinstall), then using the dba group is fine. You can create the oraInst.loc file with a utility such as vi. Here are some sample entries in the file:
+
+inventory_loc=/u01/app/oraInventory
+inst_group=oinstall
+
+As root, ensure that the this file is owned by the oracle OS user and that it has the proper file access privileges:
+# chown oracle:oinstall oraInst.loc
+# chmod 664 oraInst.loc
+
+Step 6. Configure the Response File, and Run the Installer
+You can run the OUI in one of two modes: graphical or silent. Typically, DBAs use the graphical installer. However, I strongly prefer using the silent install option for the following reasons:
+Silent installs don’t require the availability of X Window System software.
+You avoid performance issues with remote graphical installs, which can be extremely slow when trying to paint screens locally.
+Silent installs can be scripted and automated.
+The key to performing a silent install is to use a response file.
+
+After unzipping the Oracle software, navigate to the database directory : $ cd /home/oracle/orainst/12.1.0.1/database
+
+Next, find the sample response files that Oracle provides: $ find . -name "*.rsp"
+
+Copy one of the response files so that you can modify it. This example copies the db_install.rsp file to the current working directory and names the file inst.rsp:
+$ cp response/db_install.rsp inst.rsp
+
+Keep in mind that the format of response files can differ quite a bit, depending on the Oracle database version. For example, there are major differences between Oracle Database 11g Release 1 and Oracle Database 11g Release 2. When you install a new release, you have to inspect the response file and determine which parameters must be set.
+
+Here is a partial listing of an Oracle Database 11g Release 2 response file (the first two lines are actually a single line of code but have been placed on two lines in order to fit on the page). The lines of code are the only variables that I modified. I removed the comments so that you could more clearly see which variables were modified:
+
+oracle.install.responseFileVersion=
+/oracle/install/rspfmt_dbinstall_response_schema_v11_2_0
+oracle.install.option=INSTALL_DB_SWONLY
+ORACLE_HOSTNAME=ora03
+UNIX_GROUP_NAME=dba
+oracle.install.db.DBA_GROUP=dba
+oracle.install.db.OPER_GROUP=dba
+INVENTORY_LOCATION=/ora01/orainst/11.2.0.1/database/stage/products.xml
+SELECTED_LANGUAGES=en
+ORACLE_HOME=/oracle/app/oracle/product/11.2.0/db_1
+ORACLE_BASE=/oracle/app/oracle
+DECLINE_SECURITY_UPDATES=true
+oracle.install.db.InstallEdition=EE
+oracle.install.db.isCustomInstall=true
+Be sure to modify the appropriate parameters for your environment.
+
+There are sometimes idiosyncrasies to these parameters that are specific to a release. For instance, in Oracle Database 11g Release 2, if you don’t want to specify your My Oracle Support (MOS) login information, then you need to set the following parameter as follows: DECLINE_SECURITY_UPDATES=true
+If you don’t set DECLINE_SECURITY_UPDATES to TRUE, then you will be expected to provide your MOS login information. Failure to do so will cause the installation to fail. After you’ve configured your response file, you can run the Oracle installer in silent mode. Note that you have to enter the entire directory path for the location of your response file:
+$ ./runInstaller -ignoreSysPrereqs -force -silent -responseFile \
+/ora01/orainst/11.2.0.1/database/inst.rsp
+
+The previous command is entered on two lines. The first line is continued to the second line via the backward slash (\).
+
+If you encounter errors with the installation process, you can view the associated log file. Each time you attempt to run the installer, it creates a log file with a unique name that includes a timestamp. The log file is located in the oraInventory/logs directory. 
+
+If everything runs successfully, in the output you’re notified that you need to run the root.sh script as the
+root user:
+#Root scripts to run
+/oracle/app/oracle/product/11.2.0/db_1/root.sh
+
+Oracle Database 12c Release 1 Scenario response file
+
+oracle.install.responseFileVersion=/oracle/install/rspfmt_dbinstall_response_schema_v12.1.0
+oracle.install.option=INSTALL_DB_SWONLY
+ORACLE_HOSTNAME=oraserv1
+UNIX_GROUP_NAME=oinstall
+INVENTORY_LOCATION=/home/oracle/orainst/12.1.0.1/database/stage/products.xml
+SELECTED_LANGUAGES=en
+ORACLE_HOME=/u01/app/oracle/product/12.1.0.1/db_1
+ORACLE_BASE=/u01/app/oracle
+oracle.install.db.InstallEdition=EE
+oracle.install.db.DBA_GROUP=dba
+oracle.install.db.OPER_GROUP=oper
+oracle.install.db.BACKUPDBA_GROUP=dba
+oracle.install.db.DGDBA_GROUP=dba
+oracle.install.db.KMDBA_GROUP=dba
+DECLINE_SECURITY_UPDATES=true
+
+Step 7. Troubleshoot Any Issues
+If you encounter an error, using a response file, 90 percent of the time it’s due to an issue with how you set the variables in the file.
+
+Also, be sure to provide the correct command-line syntax when running a response file. If you incorrectly specify or misspell an option, you may receive a misleading error message, such as DISPLAY not set.
+
+Problems can also occur when you specify an ORACLE_HOME, and the silent installation “thinks” the given home already exists:
+Check complete: Failed <<<<
+Recommendation: Choose a new Oracle Home for installing this product.
+Check your inventory.xml file (in the oraInventory/ContentsXML directory), and make sure there isn’t a conflict with an already existing Oracle home name.
+
+Installing with a Copy of an Existing Installation
+DBAs sometimes install Oracle software by using a utility such as tar to copy an existing installation of the Oracle binaries to a different server (or a different location on the same server). This approach is fast and simple. This technique allows DBAs to easily install the Oracle software on multiple servers, while ensuring that each installation is identical.
+Installing Oracle with an existing copy of the binaries is a two-part process:
+1. Copy the binaries, using an OS utility.
+2. Attach the Oracle home.
+
+Step 1. Copy the Binaries, Using an OS Utility
+$ echo $ORACLE_HOME
+/ora01/app/oracle/product/12.1.0.1/db_1
+
+$ cd $ORACLE_HOME
+$ cd ..
+$ tar -cvf orahome.tar db_1
+
+Now, copy the orahome.tar file to the server on which you want to install the Oracle software. In this example the tar file is copied to the /u01/app/oracle/product/12.1.0.1 directory on a different server.
+
+$ cd /u01/app/oracle/product/12.1.0.1
+A typical Oracle installation can consume at least 3–4GB of space. Use the Linux/Unix df command to verify that you have enough space:
+$ df -h | sort 
+
+$ tar -xvf orahome.tar
+When the tar command completes, there should be a db_1 directory beneath the /u01/app/oracle/product/12.1.0.1 directory.
+
+Listed next is a powerful one-line combination of commands that allows you to bundle the Oracle files, copy them to a remote server, and have them extracted remotely:
+
+$ tar -cvf - <locDir> | ssh <remoteNode> "cd <remoteDir>; tar -xvf -"
+
+For instance, the following command copies everything in the dev_1 directory to the remote ora03 server /home/oracle directory:
+$ tar -cvf - dev_1 | ssh ora03 "cd /home/oracle; tar -xvf -"
+
+Step 2. Attach the Oracle Home
+To attach an Oracle home, you need to know the location of your oraInst.loc file on your server. On Linux servers this file is usually located in the /etc directory. On Solaris this file can generally be found in the /var/opt/oracle directory.
+After you’ve located your oraInst.loc file, navigate to the ORACLE_HOME/oui/bin directory (on the server on which you installed the Oracle binaries from a copy):
+$ cd $ORACLE_HOME/oui/bin
+
+Now, attach the Oracle home by running the runInstaller utility, as shown:
+
+$ ./runInstaller -silent -attachHome -invPtrLoc /etc/oraInst.loc \
+ORACLE_HOME="/u01/app/oracle/product/12.1.0.1/db_1" ORACLE_HOME_NAME="ONEW"
+
+ You should see this as the last message in the output, if successful: 'AttachHome' was successful.
+ 
+ You can also examine the contents of your oraInventory/ContentsXML/inventory.xml file. Here is a snippet of the line inserted into the inventory.xml file as a result of running the runInstaller utility with the attachHome option:
+<HOME NAME="ONEW" LOC="/u01/app/oracle/product/12.1.0.1/db_1" TYPE="O" IDX="2"/>
+
+Upgrading Oracle Software
+
+Depending on the version being upgraded, you may be presented with two different scenarios. Here is scenario A:
+1. Shut down any databases using the Oracle home to be upgraded.
+2. Upgrade the Oracle home binaries.
+3. Start up the database, and run any required upgrade scripts.
+Here are the steps for the scenario B approach to an upgrade:
+1. Leave the existing Oracle home as it is—don’t upgrade it.
+2. Install a new Oracle home that is the same version as the old Oracle home.
+3. Upgrade the new Oracle home to the desired version.
+4. When you’re ready, shut down the database using the old Oracle home; set the OS variables to point to the new, upgraded Oracle home; start up the database; and run any required upgrade scripts.
+
+Scenario B has the advantage of leaving the old Oracle home as it is; therefore, if, for any reason, you need to switch back to the old Oracle home, you have those binaries available. Scenario B has the disadvantage of requiring extra disk space to contain two installations of Oracle home. This usually isn’t an issue, because after the upgrade is complete, you can delete the old Oracle home when it’s convenient.
+
+Reinstalling After Failed Installation
+You may run into a situation in which you’re attempting to install Oracle, and for some reason the installation fails. You correct the issue and attempt to rerun the Oracle installer. However, you receive this message:
+
+CAUSE: The chosen installation conflicted with software already
+installed in the given Oracle home.
+ACTION: Install into a different Oracle home.
+
+In this situation, Oracle thinks that the software has already been installed, for a couple of reasons:
+• Files in the ORACLE_HOME directory are specified in the response file.
+• An existing Oracle home and location in your oraInventory/ContentsXML/inventory.xml file match what you have specified in the response file.
+
+Oracle doesn’t allow you to install a new set of binaries over an existing Oracle home. If you’re sure you don’t need any of the files in the ORACLE_HOME directory, you can remove them (be very careful—ensure that you absolutely want to do this). 
+$ cd $ORACLE_HOME
+$ cd ..
+$ rm -rf db_1
+
+In the inventory.xml file you must remove the entry corresponding to the Oracle home location that matches the Oracle home you’re trying to install to. To remove the entry, first, locate your oraInst.loc file, which contains the directory of your oraInventory. Next, navigate to the oraInventory/ ContentsXML directory. Make a copy of inventory.xml before you modify it:
+$ cp inventory.xml inventory.xml.old
+Then, edit the inventory.xml file with an OS utility (such as vi), and remove the line that contains the Oracle home information of your previously failed installation. 
+
+Applying Interim Patches
+Here are the basic steps for applying a patch:
+1. Obtain the patch from MOS (requires a valid support contract).
+2. Unzip the patch file.
+3. Carefully read the README.txt file for special instructions.
+4. Shut down any databases and processes using the Oracle home to which the patch is being applied.
+5. Apply the patch.
+6. Verify that the patch was installed successfully.
+
+Example
+First, download the p14390252_112030_SOLARIS64.zip file from MOS (https://support.oracle.com). Next, unzip the file on the server to which the patch is being applied:
+
+$ unzip p14390252_112030_SOLARIS64.zip
+The README.txt instructs you to change the directory, as follows:
+$ cd 14390252
+Make sure you follow the instructions included in the README.txt, such as shutting down any databases that use the Oracle home to which the patch is being applied:
+$ sqlplus / as sysdba
+SQL> shutdown immediate;
+Next, apply the patch. Ensure that you perform this step as the owner of the Oracle software (usually the oracle OS account). Also make sure your ORACLE_HOME variable is set to point to the Oracle home to which you’re applying the patch. In this example, because the opatch utility isn’t in a path included in the PATH directory, you specify the entire path:
+$ $ORACLE_HOME/OPatch/opatch napply -skip_subset -skip_duplicate
+Finally, verify that the patch was applied by listing the inventory of patches:
+$ $ORACLE_HOME/OPatch/opatch lsinventory
+Here is some sample output for this example:
+Patch 13742433 : applied on Sun Nov 04 13:49:07 MST 2012
+Unique Patch ID: 15427576
+
+See MOS note 242993.1 for more information regarding the opatch utility.
+
+Installing Remotely with the Graphical Installer
+Listed below are the steps for setting up your environment to display the graphical screens on your local computer while remotely running the Oracle installer:
+1. Install software on the local computer that allows for X Window System emulation and secure networking.
+2. Start an X session on the local computer, and issue the startx command.
+3. Copy the Oracle installation files to the remote server.
+4. Run the xhost command.
+5. Log in to the remote computer from an X terminal.
+6. Ensure that the DISPLAY variable is set correctly on the remote computer.
+7. Execute the runInstaller utility on the remote server.
+8. Troubleshoot.
+
+Step 1. Install X Software and Networking Utilities on the Local PC
+First you need to install software on your PC that allows you to run X Window System software and to run commands such as ssh (secure shell) and scp (secure copy). Several free tools are available that provide this functionality. One such tool is Cygwin, which you can download from the Cygwin web site (http://x.cygwin.com). Be sure to install the packages that provide the X emulation and secure networking utilities, such as ssh and scp.
+
+Step 2. Start an X Session on the Local Computer
+you can open an X terminal window and start the X server via the startx command: $ startx
+Here is a snippet of the output: 
+xauth: creating new authority file /home/test/.serverauth.3012
+waiting for X server to begin accepting connections.
+When the X software has started, run a utility such as xeyes to determine whether X is working properly:
+$ xeyes
+
+If you can’t get a utility such as xeyes to execute, stop at this step until you get it working.
+
+Step 3. Copy the Oracle Installation Media to the Remote Server
+$ scp <localfile> <username>@<remote_server>:<remote_directory>
+The next line of code copies the Oracle installation media to a remote Oracle OS user on a remote server in the home directory oracle: 
+$ scp linux_11gR2_database_1of2.zip oracle@shrek2:.
+
+Step 4. Run the xhost Command
+From the X screen, enable access to the remote host via the xhost command. This command must be run from your local computer:
+$ xhost +
+access control disabled, clients can connect from any host.
+
+The prior command allows any client to connect to the local X server. If you want to enable remote access specifically for the remote computer on which you’re installing the software, provide an Internet protocol (IP) address or hostname (of the remote server). In this example the remote hostname is tst-z1.central.sun.com
+$ xhost +tst-z1.central.sun.com
+tst-z1.central.sun.com being added to access control list
+
+Step 5. Log In to the Remote Computer from X
+
+From your local X terminal, use the ssh utility to log in to the remote server on which you want to install the Oracle software:
+$ ssh -Y -l oracle <hostname>
+
+Step 6. Ensure that the DISPLAY Variable Is Set Correctly on the Remote Computer
+When you’ve logged in to the remote box, verify that your DISPLAY variable has been set:
+$ echo $DISPLAY
+You should see something similar to this: localhost:10.0
+
+If your DISPLAY variable is set to localhost:10.0, then proceed to the next step. Otherwise, follow the next set of recommendations.
+If your DISPLAY variable isn’t set, you must ensure that it’s set to a value that reflects your local home computer location. From your local home computer, you can use the ping or arp utility to determine the IP address that
+identifies your local computer. Run the following command on your home computer:
+C:\> ping <local_computer>
+
+Now, from the remote server, execute this command to set the DISPLAY variable to contain the IP address of the local computer:
+$ export DISPLAY=129.151.31.147:0.0
+Note that you must append the :0.0 to the end of the IP address. If you’re using the C shell, use the setenv command to set the DISPLAY variable:
+
+Step 7. Execute the runInstaller Utility
+Navigate to the directory where you copied and unzipped the Oracle software on the remote server. Locate the runInstaller utility, and run it, as shown:
+$ ./runInstaller
+If everything goes well, you should see a screen on the localmachine.

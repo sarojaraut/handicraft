@@ -1,0 +1,165 @@
+implementing Automatic Workload Repository (AWR) in a database, enables Oracle to store interval-based historical statistics in your database for future reference. This information can be used to see what was going on within your database within a given period of time.
+
+By default, the AWR should be enabled within your database. The key initialization parameter to validate is the STATISTICS_LEVEL parameter: if it's set to typical or all then AWR is enabled. 
+
+alter system set statistics_level=TYPICAL scope=both;
+
+The type of information that is stored in the AWR includes the following:
+• Statistics regarding object access and usage
+• Time model statistics
+• System statistics
+• Session statistics
+• SQL statements
+• Active Session History (ASH) information
+
+The information gathered is then grouped and formatted by category. Some of the categories found on the report include the following:
+• Load profile
+• Instance efficiency
+• Top 10 foreground events
+• Memory, CPU, and I/O statistics
+• Wait information
+• SQL statement information
+• Miscellaneous operating system and database statistics
+• Database file and tablespace usage information
+
+
+SELECT EXTRACT(day from retention) || ':' ||
+EXTRACT(hour from retention) || ':' ||
+EXTRACT (minute from retention) awr_snapshot_retention_period,
+EXTRACT (day from snap_interval) *24*60+
+EXTRACT (hour from snap_interval) *60+
+EXTRACT (minute from snap_interval) awr_snapshot_interval
+FROM dba_hist_wr_control;
+
+changing the retention and interval of AWR info.
+exec DBMS_WORKLOAD_REPOSITORY.MODIFY_SNAPSHOT_SETTINGS(retention=>43200, interval=>30); -- 30 days 30*24*60
+
+exec DBMS_WORKLOAD_REPOSITORY.MODIFY_SNAPSHOT_SETTINGS(retention=>0); -- indefinitely (110 years)
+
+Generating an AWR Report Manually
+
+In order to generate an AWR report, run the awrrpt.sql script found under the $ORACLE_HOME/rdbms/admin directory.
+
+sqlplus / as sysdba @awrrpt
+Enter value for report_type: text
+Enter value for num_days: 7
+Enter value for begin_snap: 258
+Enter value for end_snap: 268
+Enter value for report_name: /tmp/awrrpt_1_258_268.txt
+
+
+Although it is recommended to use the awrrpt.sql script to generate the desired AWR report, you can manually
+use the AWR_REPORT_TEXT or AWR_REPORT_HTML functions within the DBMS_WORKLOAD_REPOSITORY package to generate
+an AWR report,
+
+SELECT dbms_workload_repository.awr_report_text
+(l_dbid=>2334201269,l_inst_num=>1,l_bid=>258,l_eid=>268)
+FROM dual;
+
+For Real Application Cluster (RAC) environments, run the awrgrpt.sql script, which will generate an AWR report that includes all instances for a RAC database. If using the DBMS_WORKLOAD_REPOSITORY package, use the AWR_GLOBAL_REPORT_TEXT function to generate an AWR report for any or all instances in a RAC environment.
+
+You can also generate an AWR report from within Enterprise Manager.
+oracle database -> performance -> availability -> schema -> administration 
+
+Generating an AWR Report for a Single SQL Statement - > You can run the awrsqrpt.sql script,
+Enter value for sql_id: 5z1b3z8rhutn6
+
+to list our the snapshots generated within last 24 hours
+SELECT snap_id, begin_interval_time, end_interval_time
+FROM DBA_HIST_SNAPSHOT
+WHERE begin_interval_time > sysdate-1
+ORDER BY 2
+
+Quickly Analyzing AWR Output
+
+The first three places on the report to gauge how your database is performing are as follows:
+1. DB Time
+2. Instance Efficiency
+3. Top 10 Foreground Events by Wait Time
+
+The first section displayed on the report shows a summary of the snapshot window for your report, as well as a brief look at the elapsed time, which represents the snapshot window, and the DB time, which represents activity on your database. If the DB time exceeds the elapsed time, it denotes a busy database. If it is a lot higher than the elapsed time, it may mean that some sessions are waiting for resources. While not specific, it can give you a quick view to see if your overall database is busy and possibly overtaxed.
+
+The instance efficiency section gives you a very quick view to determine if things are running adequately on your database. As indicated from the section, the ideal target for these metrics is 100%. If any of the metrics within the section fall below a general threshold of 90%, it may be an area to investigate.
+
+The Parse CPU to Parse Elapsd metric often shows a low percentage on many databases. While the target is 100% for this metric, it is not necessary a cause for great alarm.
+
+The third place to get a quick glance at your database performance is the Top 10 Foreground Events section. This section gives you a quick look at exactly where the highest amount of resources are being consumed within your database for the snapshot period.
+
+You need to do performance analysis on sessions that run too frequently or are too short to be available on AWR snapshots. The AWR snapshots are not taken often enough to capture the information that you need.
+
+You can use the Oracle Active Session History (ASH) information in order to get real-time or near real-time session information. While the AWR information is very useful, it is bound by the reporting periods, which are by default run every hour on your database. The ASH information has active session information and is sampled every second from V$SESSION, and it can show more real-time or near real-time session information to assist in doing performance analysis on your database. There are a few ways to get active session information from the database:
+• Running the canned ASH report
+• Running an ASH report from within Enterprise Manager
+• Getting ASH information from the data dictionary
+
+The easiest method to get information on active sessions is to run the ashrpt.sql script, When you run the ashrpt.sql script, it asks you for the following:
+• Report type (text or HTML)
+• Begin time for report (defaults to current time minus 15 minutes)
+• End time for report (defaults to current time)
+• Report name
+
+Getting ASH information from the data dictionary
+There are a couple of data dictionary views you can use to get ASH information. The first, V$ACTIVE_SESSION_HISTORY, can be used to get information on current or recent sessions within your database. The second, DBA_HIST_ACTIVE_SESS_HISTORY, is used to store older, historical ASH information.
+
+If you wanted to see the datafiles associated with waits, which could help pinpoint access hot spots in your database, and you could perform some file management and reorganization activities to alleviate such contention, you could issue the following query:
+
+SELECT 
+	d.file_id file#, d.file_name, count(*) wait_count, sum(s.time_waited) time_waited
+FROM 
+	v$active_session_history s, dba_data_files d
+WHERE
+	d.file_id = s.current_file#
+	GROUP BY d.file_id, d.file_name
+	ORDER BY 3 desc;
+	
+	
+If you wanted to see the top five events and their total wait time for activity within the past 15 minutes in your database, you could issue the following query:
+
+select * from 
+	(
+	SELECT NVL(event, 'ON CPU') event, COUNT(*) total_wait_tm
+	FROM v$active_session_history
+	WHERE sample_time > SYSDATE - 15/(24*60)
+	GROUP BY event
+	ORDER BY 2 desc
+	)
+where rownum <= 5;
+
+If you wanted to get session-specific information, and wanted to see the top five sessions that were using the most CPU resources within the last 15 minutes, you could issue the following query:
+
+column username format a12
+column module format a30
+
+SELECT * FROM
+	(
+	SELECT s.username, s.module, s.sid, s.serial#, count(*)
+	FROM v$active_session_history h, v$session s
+	WHERE h.session_id = s.sid
+		AND h.session_serial# = s.serial#
+		AND session_state= 'ON CPU' 
+		AND sample_time > sysdate - interval '15' minute
+	GROUP BY s.username, s.module, s.sid, s.serial#
+	ORDER BY count(*) desc
+	)
+where rownum <= 5;
+
+The SESSION_STATE column has two valid values, ON CPU and WAITING, which denote whether a session is active or is waiting for resources. If you wanted to see the sessions that are waiting for resources, you could issue the same query as previously, with a SESSION_STATE of WAITING.
+
+The DBA_HIST_ACTIVE_SESS_HISTORY view can give you historical information on sessions that have aged out of the V$ACTIVE_SESSION_HISTORY view.
+
+if you wanted to get the users that were consuming the most resources for a given day when performance was poor, you could issue the following query:
+
+SELECT * FROM
+(
+	SELECT u.username, h.module, h.session_id sid, h.session_serial# serial#, count(*)
+	FROM dba_hist_active_sess_history h, dba_users u
+	WHERE h.user_id = u.user_id
+		AND session_state= 'ON CPU'
+		AND (sample_time between to_date('2013-07-25:00:00:00','yyyy-mm-dd:hh24:mi:ss')
+		AND to_date('2013-07-25:23:59:59','yyyy-mm-dd:hh24:mi:ss'))
+		AND u.username != 'SYS'
+	GROUP BY u.username, h.module, h.session_id, h.session_serial#
+	ORDER BY count(*) desc
+)
+where rownum <= 5;
+

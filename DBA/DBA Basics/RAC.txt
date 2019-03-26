@@ -1,0 +1,77 @@
+RAC
+
+At the heart of Oracle RAC is a shared disk subsystem. All nodes in the cluster must be able to access all of the data, redo log files, control files and parameter files for all nodes in the cluster. The data disks must be globally available to allow all nodes to access the database. Each node has its own redo log and control files but the other nodes must be able to access them in order to recover that node in the event of a system failure.
+
+
+
+A Real Application Cluster is highly available and scalable. The failure of one node in the cluster
+does not affect client sessions or the availability of the cluster itself until the last node in the
+cluster fails; the only impact a lost node has on the cluster is a slight degradation in response
+time
+
+A RAC database has a few disadvantages. Licensing costs are higher, because each node in
+the cluster has to have its own Oracle license. The close physical proximity of the nodes in the
+cluster due to the high-speed requirements of the cluster interconnect means that a natural disaster
+can take out the entire cluster;
+
+Software Configuration
+Cluster Ready Services (CRS) is the clustering solution that can be used on
+all major platforms instead of an OS vendor or third-party clusterware.
+CRS is installed before the RDBMS and must be in its own home directory, referred to as the
+CRS_HOME. If you are only using a single instance in the near future but plan to cluster at a later
+date, it is useful to install CRS first so that the components of CRS that are needed for ASM and
+RAC are in the RDBMS directory structure. If you do not install CRS first, you will have to perform
+some extra steps later to remove the CRS-related process executables from the RDBMS home
+directory.
+
+After CRS is installed, you install the database software in the home directory, referred to as
+the ORACLE_HOME. On some platforms, such as Microsoft Windows, this directory can be a
+directory common to all nodes, whereas other platforms, such as Linux, require OCFS version
+2.x or later. Otherwise, each node will have its own copy of the binary executables.
+
+Network Configuration
+Each node in a RAC has a minimum of three IP addresses: one for the public network, one for the
+private network interconnect, and a virtual IP address to support faster failover in the event of a
+node failure. As a result, a minimum of two physical network cards are required to support RAC;
+additional network cards are used to provide redundancy on the public network and thus an
+alternate network path for incoming connections. For the private network, additional network
+cards can boost performance by providing more total bandwidth for interconnect traffic.
+
+additional network cards are used to provide redundancy on the public network and thus an
+alternate network path for incoming connections. For the private network, additional network
+cards can boost performance by providing more total bandwidth for interconnect traffic.
+
+Raw Device, ASM,     Physical Device Name Capacity Purpose
+or File System Name
+-----------------------------------------------------------
+DVOL1 				/dev/sdc1 			10GB 	ASM Disk #1: +DATA1
+DVOL2 				/dev/sdd1 			10GB 	ASM Disk #1: +DATA1
+RVOL1				/dev/sde1 			10GB 	ASM Disk #2: +RECOV1
+RVOL2 				/dev/sdf1 			10GB 	ASM Disk #2: +RECOV1
+/dev/raw/raw5 		/dev/sdg1 			512MB 	OCR Disk
+/dev/raw/raw6 		/dev/sdh1 			512MB 	Voting Disk
+/dev/raw/raw7 		/dev/sdi1 			512MB 	OCR Disk Mirror
+/dev/raw/raw8 		/dev/sdj1 			512MB 	Voting Disk Mirror
+/u01 				/dev/sdk1 			8GB 	Shared Oracle binaries
+/dev/raw/raw9 		/dev/sdl1 			512MB 	Second Voting Disk Mirror
+
+There are five raw disks that are 512MB in size reserved for the voting disk, the OCR disk,
+and their mirrors (one mirror for the OCR disk and two mirrors for the voting disk);
+The shared file system /u01 uses
+Oracle Cluster File System (OCFS2) to share the Oracle executable files among all nodes in the
+cluster, saving installation time and duplication of the same Oracle executables on each node in
+the cluster.
+
+Oracle Enterprise Linux bundles many features not automatically
+available with the corresponding Red Hat distributions, such as
+OCFS2 and the ASMlib library. More importantly, Oracle Enterprise
+Linux is supported and tightly integrated with Oracle Unbreakable
+Linux, a support program for Oracle on Linux solutions through
+Oracle MetaLink.
+
+On each node, the Oracle software will reside in a shared ORACLE_HOME; the database and
+recovery files will use ASM disks configured with Oracle ASMLib, and the OCR and voting disks
+will use raw devices.
+
+
+378

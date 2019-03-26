@@ -1,0 +1,45 @@
+
+
+SELECT NAMESPACE, GETS, PINS, GETHITRATIO FROM V$LIBRARYCACHE
+
+We are interested in the SQL AREA values, the first in the response, which indicates a GETHITRATIO of 26 percent (poor value) for our example. For an OLTP database, we probably want a value of .99999, while in a data warehouse environment a value above .9 is good.
+
+To investigate further
+
+SELECT S.NAME, V.VALUE FROM V$STATNAME S, V$MYSTAT V
+WHERE S.STATISTIC# = V.STATISTIC# AND S.NAME LIKE 'parse%';
+
+If for test purposes we want to flush the content of the library cache, we can execute the following statement, which flushes the content of the shared pool (so the  library cache):
+
+ALTER SYSTEM FLUSH SHARED_POOL;
+
+Flushig shared pool in production can have a drastic effect.
+-----------------------------------------------------------------------------------
+
+To estimate the size of a table using different values for the PCTFREE parameter, we can use
+the CREATE_TABLE_COST of the DBMS_SPACE package:
+SET SERVEROUTPUT ON
+declare
+l_used_bytes number;
+l_alloc_bytes number;
+begin
+dbms_space.create_table_cost (
+tablespace_name => 'EXAMPLE',
+avg_row_size => 4500,
+row_count => 100,
+pct_free => 10,
+used_bytes => l_used_bytes,
+alloc_bytes => l_alloc_bytes
+);
+dbms_output.put_line('Used Bytes: '||l_used_bytes);
+dbms_output.put_line('Allocated Bytes: '||l_alloc_bytes);
+end;
+/
+In this procedure, we have set the tablespace to use the average row size and the row count, we can try different pct_free parameters to estimate the space needed by  the table, both allocated and used.
+
+-----------------------------------------------------------------------------------
+ANALYZE INDEX index_name VALIDATE STRUCTURE;
+SELECT HEIGHT, DEL_LF_ROWS, LF_ROWS, LF_BLKS FROM INDEX_STATS;
+If the value for DEL_LF_ROWS/LF_ROWS is greater than 2, or LF_ROWS is lower than
+LF_BLKS, or HEIGHT is 4 then the index should be rebuilt.
+

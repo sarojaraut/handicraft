@@ -1,0 +1,200 @@
+Creating and Maintaining an RMAN Catalog
+
+Without a recovery catalog, your backup information is limited to the RMAN information stored in the target database’s control file.
+
+Identify Situations that Require RMAN Recovery Catalog
+
+RMAN always stores its metadata (information about the database structure, backup sets, and image copies) in the target database’s control file. However, there are several advantages, and a few disadvantages, to storing this metadata in a recovery catalog stored in a separate database.
+
+Using the Control File for RMAN Metadata
+Whether you use a recovery catalog or not, the RMAN backup information is always stored in the control file of the target database. using your control file as the only repository for RMAN information is easier to manage, because you don’t need a second database, which in turn, needs to be backed up. Finally, if you are mirroring your control file in several locations and you create an offsite backup of your control file after every database structure change or RMAN backup, then you will likely never lose your control file and will always be able to restore your database successfully from any media failure, even a complete loss of the database.
+
+Using a Recovery Catalog for RMAN Metadata
+If you manage more than one database in your environment, and you want to keep your recovery information for a much longer time, then using a recovery catalog might be justified. A single recovery catalog can store RMAN information for a virtually unlimited number of target databases. In addition, all information in the control file of the target database resides in the RMAN recovery catalog after you perform the first RESYNC CATALOG operation.
+
+Using stored scripts is another reason to use a recovery catalog; you cannot store scripts in the target database’s control file. You can save a sequence of commands as a single script to make it easy to run the sequence of commands on demand, or perhaps on a specific schedule. A script can be tied to a specific target database (a local script), or it can be available to all target databases (a global script).
+
+Because you can put the metadata from several databases into a single recovery catalog, you can use the RC_ views, such as RC_ARCHIVED_LOG, RC_BACKUP_FILES, and RC_DATABASE, in the recovery catalog database to retrieve metadata for all target databases.
+
+Finally, using a recovery catalog permits you to use the following RMAN commands:
+■ BACKUP...KEEP UNTIL TIME Keep a backup for a period of time that differs from the configured retention policy.
+■ BACKUP...KEEP FOREVER Keep a backup indefinitely or until you manually remove it.
+■ REPORT SCHEMA...AT Show the structure of the database at a specific time in the past.
+
+Create and Configure a Recovery Catalog
+Three basic steps are required: configure the recovery catalog database, create the recovery catalog owner, and create the recovery catalog itself.
+
+Connect to the repository database with SYSDBA privileges and create the recovery catalog in the RMAN tablespace as follows:
+SQL> create tablespace rman datafile '+data size 125m autoextend on;
+
+Create the Recovery Catalog Owner
+
+SQL> create user rman
+2 identified by rman
+3 default tablespace rman
+4 quota unlimited on rman;
+
+SQL> grant recovery_catalog_owner to rman;
+
+You could just as easily create a user called FRED to own the recovery catalog. Using RMAN as the catalog owner makes it easier to identify the purpose of the account:
+
+Create the Recovery Catalog
+
+Now that the RMAN user account exists in the repository database, you can start RMAN, connect to the catalog, and initialize the repository with the CREATE CATALOG command:
+
+rman catalog rman/rman@rcat
+
+RMAN> create catalog;
+
+Synchronize the Recovery Catalog
+Registering a Database
+For each database for which RMAN will perform a backup or recovery, you must register the database in the RMAN repository; this operation records information such as the target database schema and the unique DBID of the target database. The database must be in the MOUNT or OPEN state to be successfully registered.
+
+The following example connects to the target database using operating system authentication, and to the repository with password authentication:
+
+rman target / catalog rman@rcat
+
+register database;
+
+All databases registered with the repository must have unique DBIDs; trying to register the database again yields an error. 
+
+If you want to migrate your backup information from one recovery catalog to another, either because of space pressure on the existing catalog, or an erroneously registered database, you can unregister a database from a recovery catalog using, as you might expect, the UNREGISTER command.
+
+Cataloging Additional Backup Files
+If you have created backups outside of RMAN, or you have registered your database and RMAN backups have already been aged out of the control file, you can use
+the CATALOG command to add these backups to the RMAN recovery catalog. The CATALOG command can add the following types of backup files to the recovery catalog 
+■ Data file copies DATAFILECOPY
+■ Backup pieces BACKUPPIECE
+■ Control file copies CONTROLFILECOPY
+■ Archived redo log files ARCHIVELOG
+
+
+Manually resynchronizing the recovery catalog is a straightforward process. After you start RMAN (and connect to a recovery catalog, of course), run the RESYNC CATALOG command, as in this example:
+RMAN> resync catalog;
+
+Create and Use RMAN Stored Scripts
+RMAN stored scripts helps you automate repetitive groups of RMAN commands, easing the daily grind of being an Oracle DBA. Stored scripts are a good alternative to scripts you store on a traditional file system.
+
+Creating RMAN Stored Scripts
+You create an RMAN script with the CREATE SCRIPT or CREATE GLOBAL SCRIPT command. The GLOBAL parameter specifies that the script is available to all RMAN target databases sharing this recovery catalog
+
+This example creates a global script called GLOBAL_BACKUP_DB that creates a full backup including archived log files:
+RMAN> CREATE GLOBAL SCRIPT global_backup_db { BACKUP DATABASE PLUS ARCHIVELOG; }
+
+Executing RMAN Stored Scripts
+RUN
+{ ...other commands...;
+EXECUTE [GLOBAL] SCRIPT scriptname;
+...other commands...;
+}
+
+Here is how to run the global script you created in the previous section:
+
+RMAN> run { execute script global_backup_db; }
+
+Creating a Parameterized Stored Script
+
+RMAN> create global script backup_ts
+2> {
+3> backup tablespace &1;
+Enter value for 1: users
+4> }
+created global script backup_ts
+
+
+Retrieving RMAN Stored Script Metadata
+
+RMAN> list script names;
+
+This example uses the LIST SCRIPT NAMES command to show both the local and global scripts. The LIST GLOBAL SCRIPT NAMES returns only the global script names.
+
+This example retrieves the contents of the global_backup_db script:
+
+RMAN> print global script global_backup_db;
+
+RMAN> replace global script backup_ts
+2> {
+3> backup tablespace system, &1;
+
+RMAN> delete script local_backup_db;
+
+Back Up the Recovery Catalog
+Since the recovery catalog resides in an Oracle database, it must be backed up and restored just like any other database.
+
+Types of RMAN Backups
+
+Consistent and Inconsistent Backups
+A physical backup can be classified as being a consistent or an inconsistent backup. In a consistent backup, all datafiles have the same System Change Number (SCN).
+
+Full and Incremental Backups
+Full backups include all blocks of every datafile within a tablespace or a database; it is essentially a bit-for-bit copy of one or more datafiles in the database. Either
+RMAN or an operating system command can be used to perform a full backup. 
+
+In Oracle 11g, incremental backups can be level 0 or level 1. A level 0 backup is a full backup of all blocks in the database that can be used in conjunction with differential, incremental, or cumulative incremental level 1 backups in a database recovery operation. A distinct advantage to using an incremental backup in a recovery strategy is that archived and online redo log files may not be necessary to restore a database or tablespace to a consistent state; the incremental backups may have some or all of the blocks needed. Incremental backups can be performed only within RMAN.
+
+Image Copies
+Image copies are full backups created by operating system commands or RMAN BACKUP AS COPY commands. Although a full backup created with a Linux cp command can be later registered in the RMAN catalog as a database backup, doing the same image copy backup in RMAN has the advantage of checking for corrupt blocks as they are being read by RMAN and recording the information about the bad blocks in the data dictionary. Image copies are the default backup file format in RMAN.
+
+Backupsets and Backup Pieces
+backupsets can be created and restored only with RMAN. A backupset is an RMAN backup consisting of one or more backup pieces. Each backup piece belongs only to one backupset and can contain backups of one or many datafiles in the database. All backupsets and pieces are recorded in the RMAN repository, the same as any other RMAN-initiated backup.
+
+By default, when you create a backup in RMAN, it writes the backups to physical files. These physical files are called backup set pieces. A given backup may create more than one backup set piece. A collection of related backup set pieces is called a backup set. A backup set is a logical entity that is used to maintain the association of independent backup set pieces.
+
+Compressed Backups
+For any Oracle11g RMAN backup creating a backupset, compression is available to reduce the amount of disk space or tape needed to store the backup. Compressed backups are usable only by RMAN, and they need no special processing when used in a recovery operation; RMAN automatically decompresses the backup.
+
+RMAN Backup Destinations
+RMAN backup destinations include a file system disk directory, a tape-based media library, or the flash recovery area. Oracle best practices dictate that you use a flash recovery area for many reasons; 
+One of the many benefits of a flash
+recovery area include automatic file naming for backup files. In addition, RMAN automatically deletes obsolete files in the flash recovery area when it’s pressed for space.
+
+RMAN uses the flash recovery area in a very organized fashion—with separate directories for archived logs, backupsets, image copies, block change tracking files, and automatic backups of the control file and SPFILE. In addition, each subdirectory is named with the date of the backup (for example, +RECOV/dw/autobackup/2008_09_28), making it easy to find a backupset or image copy when the need arises.
+
+Control File Autobackups
+Because of the importance of the control file, you should back it up at least as often as it changes due to modifications in the structure of the database. By default, the backup of the control file does not occur automatically. This is a strange default. Fortunately, RMAN can easily be configured to back up the control file automatically.
+
+RMAN> configure controlfile autobackup on;
+
+Allocate Channels to Use in Backing Up You can allocate channels in two different ways in RMAN: you can set channels with the CONFIGURE command, or you can set them by using the ALLOCATE CHANNEL within a RUN block to override the default channel or if no default channel is defined. You don’t have to specify any channels if your destination is a disk location.
+
+----------------------------
+Using the recovery catalog has some clear benefits that need to be carefully considered. The first is that it acts as a single location to store all your RMAN backup-related information. The views of the recovery catalog are well documented, and as a result you can build reports off of those views that will help you to understand the current status of your database backups.
+
+Not all environments will need a recovery catalog. If you have just one or two databases, then a recovery catalog may be more trouble than it’s worth. If you have a large environment though, the recovery catalog can make managing that environment much easier.
+
+All the recovery catalog views start with an RC_ prefix and then end with a descriptive name of the data contained in the view. The following are some more popular recovery catalog views:
+RC_DATABASE
+RC_BACKUP_PIECE
+RC_PIECE_DETAILS
+RC_ARCHIVED_LOG
+RC_BACKUP_ARCHIVELOG_SUMMARY
+RC_BACKUP_SET
+RC_BACKUP_SET_DETAILS
+RC_BACKUP_SPFILE
+
+create tablespace rcat_data datafile 'C:\ORACLE\APP\ORADATA\rcat\rcat_data_01.dbf' size 60m autoextend on next 10m maxsize 200m;
+
+create user rcat_user identified by rcat_user default tablespace rcat_data quota unlimited on rcat_data;
+
+grant recovery_catalog_owner to rcat_user;
+
+connect rcat_user/rcat_user
+
+Rman catalog=rcat_user/rcat_user@rcat
+
+RMAN> create catalog
+
+Rman target / catalog=rcat_user/rcat_user@rcat
+
+RMAN> register database;
+
+ -- RMAN> unregister database;
+
+ 
+You might have noticed that the catalog-schema owner has access to all data in the recovery catalog. You may want to allow other users access to the recovery catalog, but you may want them to see information on only specific databases. Oracle provides the RMAN virtual private catalog for just such cases.
+
+To create the RVPC account for someone, you would execute the following steps:
+Create the RVPC database account using create user option.
+log into RMAN and use the create virtual catalog command, as shown here: Create virtual catalog;
+Grant the RVPC access to the appropriate catalog databases. grant catalog for database orcl to rcat_001;
+ 

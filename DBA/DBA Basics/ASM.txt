@@ -1,0 +1,448 @@
+To allow for sufficient time to recover from disk failures that do not involve the
+actual failure of a disk, ASM provides the ASM fast disk resync feature.
+
+By default, when a disk in an ASM disk group fails (including any associated infrastructure
+pieces), the disk will be taken offline automatically. The disk will be dropped some 3.6 hours
+later. As a result, you have only 3.6 hours by default to respond to a disk outage. If you correct
+the problem and the physical disk media is not corrupted, then ASM fast disk resync will
+quickly resynchronize the disk when it comes back online, correcting the problem very quickly.
+This type of resynchronization is much faster than rebuilding a newly added disk should the
+disk media be corrupted.
+
+Alter diskgroup dgroup1 set attribute ‘disk_repair_time’=’18h’;
+
+ASM Preferred Mirror Read
+The ASM preferred mirror read feature allows you to define a primary set of disks that are
+the preferred disks to read from for a given instance. This is most prevalent when using
+RAC databases.In a RAC configuration, you could have two or more sets of disk arrays.
+Each disk array might be local to a given RAC instance. ASM preferred mirror read allows
+you to indicate which disk array is local to a specific RAC instance.
+
+ASM AU Size and Extents
+ASM files are stored in disk groups. In each disk group, space is allocated in extents, and an
+extent consists of one or more units of space called allocation units (AUs). Allocation units
+default to a size of 10MB and can be configured from 1 to 64MB at the time the disk group is
+created.
+
+Adding an ASM Disk Group
+
+CREATE DISKGROUP dgroup1 NORMAL REDUNDANCY
+failgroup diskcontrol1 DISK
+‘/devices/diska1’
+failgroup diskcontrol2 DISK
+‘/devices/diskb1’;
+
+In this case, we have created a disk group called dgroup1. It is using normal redundancy
+and the default template. Two named failure groups are assigned, diskcontrol1 and diskcontrol2.
+Each failure group represents one physical or logical disk unit, which has been discovered
+by ASM. Two separate disks and failure groups are required because of the normal
+redundancy. If we used high redundancy, we would need to add a third disk to the command,
+as shown here:
+CREATE DISKGROUP dgroup1 HIGH REDUNDANCY
+failgroup diskcontrol1 DISK
+‘/devices/diska1’ NAME diska1
+failgroup diskcontrol2 DISK
+‘/devices/diskb1’ NAME diskb1
+failgroup diskcontrol3 DISK
+‘/devices/diskc1’ NAME diskc1;
+
+Failure to use the name clause will result in each
+disk receiving its own system-default assigned name.
+
+When you create an ASM disk group, Oracle will add that disk group to the ASM_
+DISKGROUPS parameter on the ASM instance only if you are using an spfile. If you are
+not using an spfile, you will need to manually add the disk group to the ASM_DISKGROUPS
+parameter.
+
+CREATE DISKGROUP dgroup1 EXTERNAL REDUNDANCY
+failgroup diskcontrol1 DISK
+‘/oracle01/oradata/asm/disk group1.dsk’ NAME dgroup1_0000;
+
+You can reference the disk group and the disk name by joining the V$ASM_DISK and
+V$ASM_DISKGROUP views, as shown in this query:
+select adg.name dg_name, ad.name fg_name, path
+from v$asm_disk ad
+right outer join v$ASM_DISKGROUP adg
+on ad.group_number=adg.group_number
+where adg.name=’DGROUP1’;
+
+
+You can choose from fast and expensive solid-state disks
+that costs $50 a gigabyte. Then there are the Fibre Channel disks that are a bit slower but
+only $30 a gigabyte. Finally, there are the slow SATA drives at $20 a gigabyte.
+You can, of course, architect your 1 terabyte database with all solid-state disks at a cost of
+$50 million. It will be fast, no doubt, but is this the best choice for Amalgamated?
+Amalgamated decides to analyze the needs of the database and determine if it can benefit
+from a tiered storage approach. If you determined that you need only 100GB of solid-state
+disk and that you could store the remaining 900GB on your $20 SATA drives, that would be
+cost savings of $27 million. That’s quite a big savings.
+
+Dropping an ASM Disk Group
+To remove an ASM disk group, you use the drop diskgroup command. By default, if any
+files exist in the disk group, ASM will not allow you to drop it unless you use the including
+contents clause. The drop diskgroup statement is synchronous in nature, so once the prompt
+returns, the deed is done. When the drop diskgroup command is executed,
+ASM will unmount the disk from the ASM instance and write over all the ASM-related
+information on that disk. The ASM_DISKGROUPS parameter will also be changed. 
+Here is an example of removing an ASM disk group with the drop diskgroup command:
+Drop diskgroup sp_dgroup2;
+If the ASM disk group has files in it, use this version:
+Drop diskgroup sp_dgroup2 including contents;
+
+Adding Disks to an ASM Disk Group
+As databases grow, you need to add disk space. The alter diskgroup command allows
+you to add disks to a given disk group to increase the amount of space available. Adding
+a disk to an existing disk group is easy with the alter diskgroup command, as shown in
+this example:
+alter diskgroup cooked_dgroup1
+add disk ‘c:\oracle\asm_disk\_file_disk3’
+name new_disk;
+
+Removing Disks from an ASM Disk Group
+The alter diskgroup command allows you to remove disks from an ASM disk group using
+the drop disk parameter. ASM will first rebalance the data on the disks to be dropped,
+assuming enough space is available. If insufficient space is available to move the data from
+the disk to be dropped to another disk, then an error will be raised. You can use the force
+parameter to force ASM to drop the disk, but this can result in data loss. Here is an example
+of dropping a disk from a disk group:
+alter diskgroup cooked_dgroup1
+drop disk ‘c:\oracle\asm_disk\_file_disk4’;
+
+To determine if the operation has completed, you will need to review the V$ASM_DISK view.
+When the disk drop is complete the column HEADER_STATUS will take on the value of FORMER,
+as shown in this example:
+SQL> select disk_number, header_status from v$asm_disk;
+DISK_NUMBER HEADER_STATU
+----------- ------------
+0 FORMER
+1 FORMER
+1 MEMBER
+2 MEMBER
+If the drop is not complete (the V$ASM_DISK column STATE will read dropping), you can
+check the V$ASM_OPERATION view and it will give you an idea of how long the operation is
+expected to take before it is complete. Here is an example query that will provide you with
+this information:
+select group_number, operation, state, power, est_minutes
+from v$asm_operation;
+
+Adding and Dropping Disks from an ASM Disk Group
+The alter diskgroup command will allow you to add and drop a disk from a disk group at
+the same time. Assuming you want to add a disk /dev/raw/raw6 and drop a disk called d2c,
+you could issue this command:
+alter diskgroup mydisk group
+add failgroup fg4 disk ‘/dev/raw/raw6/ name d2d
+drop disk d2c;
+
+If you have accidentally dropped a disk,
+simply use the alter diskgroup command with the undrop disks parameter, as shown here:
+alter diskgroup sp_dgroup2 undrop disks;
+This will cancel the pending drop of disks from that disk group. You can not use this
+command to restore disks dropped if you dropped the entire disk group with the drop
+diskgroup command.
+
+Resizing Disks in an ASM Disk Group
+
+Sometimes when more space is needed, all a disk administrator needs to do is add that
+additional space to the disk devices that are being presented for ASM to use. If this is the
+case, you will want to indicate to ASM that it needs to update its metadata to represent
+the correct size of the disks it’s using so you get the benefit of the additional space. This
+is accomplished using the alter diskgroup command with the resize all parameter, as
+shown in this example:
+alter diskgroup cooked_dgroup1 resize all;
+
+You can indicate that a specific disk needs to be resized by including the disk
+name (from the NAME column in V$ASM_DISK), as shown in this example:
+alter diskgroup cooked_dgroup1 resize disk FILE_DISKB1;
+You can also resize an entire failure group at one time:
+alter diskgroup cooked_dgroup1 resize disks in failgroup DISKCONTROL2;
+
+Manually Rebalancing Disks Assigned to an ASM Disk Group
+Manually rebalancing disks within ASM is typically not required since ASM will perform
+this operation automatically. However, in cases where you might want to have some more
+granular control over the disk-rebalance process, you can use the alter diskgroup command
+along with the rebalance parameter to manually rebalance ASM disks.
+
+Manually Mounting and Unmounting an ASM Disk Group
+If an ASM disk group is not assigned to the ASM_DISKGROUPS parameter, or if the disk group
+is unmounted for some other reason, you will need to mount the ASM disk group.
+
+alter diskgroup sp_dgroup2 dismount;
+alter diskgroup sp_dgroup2 mount;
+
+Note that when you dismount a disk group, that disk group will be automatically removed
+from the ASM_DISKGROUPS parameter if you are using an spfile. This means that when ASM is
+restarted, that disk group will not be remounted. If you are using a regular text parameter file,
+you will need to remove the disk group manually
+
+Checking the Consistency of a Disk Group
+
+This need might arise
+because of an error that occurs when the ASM instance is started or as the result of an Oracle
+database error that might be caused by some ASM corruption. To perform this check, simply
+use the alter diskgroup command with the check all parameter, as shown in this example:
+alter diskgroup sp_dgroup2 check all;
+
+When you execute the alter diskgroup check all command the results are written to
+the alert log of the instance. ASM will attempt to correct any errors that are detected.
+
+Creating ASM Disk Group Directories
+When you create an ASM disk group, it includes a system-generated directory structure for
+the ASM files that will be stored in that disk group. The system-generated directory structure
+takes on the following format, where disk_group is the root of the directory hierarchy:
++disk_group/database_name/object_type/ASM_file_name
+The database name will be the name of the database that the data is associated with. The
+object_type is the type of object being stored (for example, datafile) and the ASM_file_
+name is the system-generated filename assigned to that ASM file.
+ASM allows you to create your own directories within these predefined structures.
+
+To create a directory structure, you use the alter diskgroup command with the add
+directory parameter, as shown in this example:
+ALTER DISKGROUP cooked_dgroup1
+ADD DIRECTORY ‘+cooked_dgroup1/stuff’;
+
+Using the ASMCMD Command-Line Utility
+
+With ASMCMD, you can do the following:
+NN List contents of ASM disk groups
+NN Perform searches (like directory listings)
+NN Add or remove directories
+NN Display space availability and utilization
+
+C:\>set ORACLE_SID=+ASM
+C:\>asmcmd
+
+You can start ASMCMD with the –p option and it will display the current directory
+level, as shown in this example:
+C:\oracle\product\11.1.0.6\DB01\BIN>asmcmd -p
+ASMCMD [+] >
+
+Command : Purpose : Example
+cd : Changes ASM directory. : cd +group1
+du : Gets disk use. : du
+find : Finds directory or file. : find + rob11g
+help : Displays the help screen. : help
+ls : Lists files in directory. : ls –l
+lsct : Lists all clients using the ASM instance. : lsct
+lsdg : Lists information on disk groups in the ASM instance. : lsdg
+lsdsk : Lists ASM visible disks. Supported only in Unix. : lsdsk -k -d DATA *
+mkalias : Creates an ASM alias for a given ASM filename. : mkalias +cooked_dgroup1/11gDB/controlfile/Current.258.613087119 +cooked_dgroup1/control01.ctl
+mkdir : Creates an ASM directory. : mkdir old
+md_backup : Backs up ASM metadata. md_backup –b /tmp/dgbackup070222 -g dgroup1 -g dgroup2
+md_restore : Restores ASM metadata. : md_restore –t full –g dgroup1 –i /tmp/dgbackup070222
+pwd : Locates where you are on the ASM directory tree. : pwd
+remap : Remaps a range of physical blocks on disk. : remap data data_0003 6000-8000
+rm : Removes an ASM directory or file.: rm Current.258.613087119, rm current* , rm -r current*
+rmalias : Removes an ASM alias. : rmalias +cooked_dgroup1/11gDB/datafile/alias_tbs_01.dbfs
+
+Overview of ASM Data Dictionary Views
+
+View Name : In ASM Instance : In Database
+
+V$ASM_DISKGROUP : This view will describe a given disk group. : This view contains a single row for each ASM disk group that is mounted by the local ASM instance. Note that discovery will occur each time you query this view. This can have performance impacts.
+
+V$ASM_DISK : This view describes each disk that was discovered by the ASM instance. All disks are reported, even those not assigned to disk groups. : This view describes each disk that is assigned to a database. Note that discovery will occur each time you query this view. This can have performance impacts.
+
+V$ASM_DISKGROUP_STAT : This view is equivalent to the V$ASM_DISKGROUP view. : This view contains a single row for each ASM disk group that is mounted by the local ASM instance. No discovery will occur when this view is queried.
+
+V$ASM_FILE : Displays each ASM file contained in the ASM instance.: Not used in a database instance.
+
+V$ASM_DISK_STAT : This view is equivalent to the V$ASM_DISK view. : This view describes each disk that is assigned to a database. No discovery will occur when this view is queried.
+
+V$ASM_TEMPLATE : Displays each ASM template contained in the ASM instance by disk group. : Not used in a database instance.
+
+V$ASM_ALIAS : Displays each alias contained in the ASM instance by disk group. :  Not used in a database instance.
+
+V$ASM_OPERATION : Displays each long-running operation occurring on the ASM instance. : Not used in a database instance.
+
+V$ASM_CLIENT : Displays each database that is using at least one disk group managed by the ASM instance. : Not used in a database instance.
+
+To actually use the ASM disk groups, we have to populate them with ASM files. 
+
+ASM Files
+ASM files are created in a number of different ways; for example, when you execute the
+create tablespace command and you indicate that the resulting datafile(s) should be
+stored in an ASM disk group, the result will be the creation of ASM files in that ASM
+disk group.
+
+There are some Oracle files that cannot be stored in
+an ASM group. These are mostly the administrative files like trace files, the alert log, and
+so on.
+
+ASM Filename Types
+When a file is created on an ASM disk, the filename is generated by ASM. There is a number of different kinds of ASM filename types:
+NN Fully qualified ASM filenames
+NN Numeric ASM filenames
+NN Alias ASM filenames
+NN Alias filenames with templates
+NN Incomplete filenames
+NN Incomplete filenames with templates
+
+The full filename is known as the fully qualified ASM filename. Here is an example of a fully qualified ASM filename:
++sp_dgroup2/mydb/controlfile/Current.56.544956473
+
+The naming format for a fully qualified ASM filename is as follows:
+NN The +group is listed (in our case, +sp_dgroup2). Note that the + indicates the root of the ASM filename.
+NN The database name (in our case mydb).
+NN The file type (in our case, this is a control file).
+NN Next we have the start of the actual ASM file. First we have the file type flag (in our case, Current). This provides additional information on the file type in question. In this case, this is a current control file, as opposed to a control-file backup, which would be listed as backup.
+NN Finally we have two numbers delineated by a period (56.544956473), which represent the file number and an incarnation number. These two numbers combined guarantee that the ASM filename will be unique from any other ASM filename on the system.
+
+ASM Numeric Filenames
+The ASM numeric filename is a subset of the fully qualified filename, as you might have
+noticed. The numeric filename for the fully qualified filename in the preceding section
+would be
++sp_dgroup2.56.544956473
+
+Adding ASM Filename Aliases to Existing Files
+You can add filename aliases to ASM files that have already been created. To add the alias, use
+the alter diskgroup command with the add alias parameter. For example, if you wanted to
+create an alias for ALIAS_TBS.260.613168611, you would issue the following command:
+Alter diskgroup cooked_dgroup1
+add alias ‘+cooked_dgroup1/alias_dir/alias_tbs_01.dbf’
+FOR ‘+cooked_dgroup1/11GDB/datafile/alias_tbs. 260.613168611’;
+
+creating an ASM tablespace, allowing the default ASM disk location to be used (as a result of having set the DB_CREATE_FILE_DEST parameter). 
+
+create tablespace test_rgf datafile size 100k;
+
+Let’s see where Oracle put the datafile now by querying the DBA_DATA_FILES view: 
+Select tablespace_name, file_name from dba_data_files Where tablespace_name=’TEST_RGF’;
+TABLESPACE FILE_NAME
+---------- ---------------------------------------------------------
+TEST_RGF +COOKED_DGROUP1/11gDB/datafile/test_rgf.256.613064385
+
+We can also see this new file
+in the ASM instance using the V$ASM_FILES view, as shown here:
+SQL> select group_number, file_number, type, blocks, bytes from v$asm_file;
+
+If you want to drop a tablespace that contains ASM files, you need only issue the
+drop tablespace command.
+
+You can have a mix of ASM datafiles and normal datafiles assigned to a
+tablespace, as shown in this create table statement:
+Create tablespace part_asm_tbs
+Datafile ’c:\oracle\oradata\11gDB\part_
+
+asm_tbs_01.dbf’ size 10m,
+’+COOKED_DGROUP1’ size 100k;
+Let’s look and see where the datafiles were created:
+Select tablespace_name, file_name
+from dba_data_files Where tablespace_name=’PART_ASM_TBS’;
+TABLESPACE_NAME FILE_NAME
+--------------- ------------------------------------------------------------
+PART_ASM_TBS C:\ORACLE\ORADATA\11GDB\PART_ASM_TBS_01.DBF
+PART_ASM_TBS +COOKED_DGROUP1/11GDB/datafile/part_asm_tbs.256.613066047
+
+Creating Tablespaces Referencing Specific ASM Disk Groups
+create tablespace another_test
+datafile ’+COOKED_DGROUP1’ size 100k;
+
+Let’s see where Oracle put the datafile now by querying the DBA_DATA_FILES view:
+select tablespace_name, file_name
+from dba_data_files Where tablespace_name=’ANOTHER_TEST’;
+TABLESPACE_NAME FILE_NAME
+--------------- ------------------------------------------------------------
+ANOTHER_TEST +COOKED_DGROUP1/11GDB/datafile/another_test.256.613065911
+
+You can create a database that completely uses ASM disk group locations. You can do this
+when creating the database through the DBCA interface or if you are going to manually
+create the database.
+
+Creating a Control File in an ASM Disk Group Location
+
+SQL> alter system set control_files=’’ scope=SPFILE;
+SQL> alter system set
+DB_CREATE_FILE_DEST=’+COOKED_DGROUP1’,’+COOKED_DGROUP2’ scope=spfile;
+SQL> shutdown immediate
+SQL> startup nomount
+SQL>CREATE CONTROLFILE REUSE DATABASE “11GDB”
+NORESETLOGS NOARCHIVELOG
+MAXLOGFILES 16
+MAXLOGMEMBERS 3
+MAXDATAFILES 100
+MAXINSTANCES 8
+MAXLOGHISTORY 292
+LOGFILE
+GROUP 1 ‘C:\ORACLE\ORADATA\11GDB\REDO01.LOG’ SIZE 50M,
+GROUP 2 ‘C:\ORACLE\ORADATA\11GDB\REDO02.LOG’ SIZE 50M,
+GROUP 3 ‘C:\ORACLE\ORADATA\11GDB\REDO03.LOG’ SIZE 50M
+-- STANDBY LOGFILE
+DATAFILE
+‘C:\ORACLE\ORADATA\11GDB\SYSTEM01.DBF’,
+‘C:\ORACLE\ORADATA\11GDB\UNDOTBS01.DBF’,
+‘C:\ORACLE\ORADATA\11GDB\SYSAUX01.DBF’,
+‘C:\ORACLE\ORADATA\11GDB\USERS01.DBF’,
+‘C:\ORACLE\ORADATA\11GDB\EXAMPLE01.DBF’,
+‘C:\ORACLE\ORADATA\11GDB\PART_ASM_TBS_01.DBF’,
+‘+COOKED_DGROUP1/11GDB/datafile/part_asm_tbs.256.613066047’,
+‘+COOKED_DGROUP1/11GDB/datafile/part_asm_tbs.257.613083267’
+CHARACTER SET WE8MSWIN1252;
+SQL>RECOVER DATABASE;
+SQL>ALTER DATABASE OPEN NORESETLOGS;
+
+
+You can also use RMAN to restore the control file to an ASM disk location, as shown in
+this example (this assumes you are connected to a recovery catalog):
+SQL> alter system set control_files=’’ scope=SPFILE;
+SQL> alter system set
+DB_CREATE_FILE_DEST=’+COOKED_DGROUP1’ scope=spfile;
+RMAN>shutdown
+RMAN>startup nomount
+RMAN>restore controlfile;
+RMAN>recover database;
+RMAN>alter database open resetlogs;
+
+Creating Spfiles or Parameter Files on an ASM Disk Group
+create spfile ‘+COOKED_DGROUP1’ from pfile;
+
+Creating Online Redo Logs in an ASM Disk Group Location
+
+Assuming that the parameter DB_ONLINE_CREATE_LOG_DEST_n or DB_CREATE_
+FILE_DEST is set, you can simply issue the alter database add logfile command and
+Oracle will add a new redo log group to your database for you, as shown in this example:
+alter database add logfile size 100m;
+
+You can also manually add a redo log file group to a disk group if you prefer using SQL,
+such as in the following, which will create a new log file group, and multiplex it, between
+two ASM disk groups:
+
+alter database add logfile (’+COOKED_DGROUP1’,’+COOKED_DGROUP2’) size 100m;
+
+Creating Database Objects Using ASM Filename Aliases
+Aliases can be created at the time the file is created (such as when you issue the create
+tablespace command), or you can add the alias later. Here is an example of creating
+a tablespace with an alias filename:
+create tablespace alias_tbs
+Datafile’+COOKED_DGROUP1/myalias.dbf’ size 10m;
+The resulting ASM file would be as follows:
++COOKED_DGROUP1/11GDB/datafile/alias_tbs.256.613066047
+
+Copying Database Datafiles to an ASM Disk with RMAN
+If you want to move your entire database to ASM, you can easily do this with RMAN.
+First you make an image copy of the database, copying it to an ASM disk group. Then use
+the RMAN switch database to copy command to switch the database from using the
+old datafiles to using the new datafiles that were copied onto the ASM drives.
+
+RMAN>shutdown
+RMAN>startup mount
+RMAN>backup as copy database format ’+COOKED_DGROUP1’;
+RMAN>switch database to copy;
+RMAN>alter database open;
+
+Creating RMAN Backups on ASM
+There are two different
+ways of using ASM for backups. You can send individual backups directly to an ASM
+disk group, or you can define the flash recovery area to be a disk group and cause backups to
+be sent to the flash recovery area.
+
+RMAN>backup as compressed backupset database format ’+COOKED_DGROUP1’;
+
+You
+define the flash recovery area by setting the DB_ RECOVERY_FILE_DEST and DB_RECOVERY_
+FILE_DEST_SIZE parameters as required. Here is an example of using the alter system
+command to point the flash recovery area to an ASM disk group.
+alter system set db_recovery_file_dest=’+COOKED_DGROUP1’;
+alter system set db_recovery_file_dest_size=4G;
+Once these parameters have been set, RMAN backups will start using the flash recovery
+area and ASM since the flash recovery area has been configured to use an ASM disk group.
+

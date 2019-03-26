@@ -1,0 +1,378 @@
+Chapter 2 Configuring the Oracle Data Guard Physical Standby Database
+
+Before preparing the configuration, you should know the business criticality of your database, how to avoid failures, and how much data you are ready to lose.
+
+Before implementing a Data Guard configuration, take into account concepts such as high data availability, efficient systems utilization, and data protection.
+
+Availability: Outages should be tolerated transparently and should be recovered quickly in case of server failures or any network failures
+Protection: Ensure minimum data loss; standby data should be isolated from production faults such as storage failures, site failures, data corruptions, or operator errors
+Utilization: Standby resources should be utilized for productive use in case of any planned maintenance or for application access
+
+Data loss consideration
+Before implementing any high-availability solution, you need to determine the acceptable amount of data loss. Data loss should not be calculated in terms of time (for example, seconds or minutes); it should be calculated in terms of transactions. The following example is drafted from a production database. Notice how much data can be lost in 60 seconds. During the peak hours of your business, run the Stats pack or AWR snapshot at periodic intervals 2-3 times. In the report, take a look at the Load profile section. The Per second column of the Redo size row is the redo generation rate of your database:
+
+In the Instance activity stats table, the redo size generated is 16615645.13 bytes per second—that is nearly 15.9 MB per second and nearly 950 MB per minute. Are you ready to lose 950 MB of data? You may want to rethink your recover plan. It must be calculated in terms of transactions. Based on your transactions rate, calculate how much redo is generated and how much data loss is acceptable. You can configure Data Guard to have zero data loss.
+
+After 9i: To execute the AWR report, use SQL>@?/rdbms/admin/awrrpt.sql
+
+Network bandwidth consideration
+We need to determine the network bandwidth required for a Data Guard physical standby implementation. Network latency is a huge factor in the amount of redo you will be able to transport from your primary site to the standby site. This value is unique to your network, and if you have a high latency network you might not be able to sustain the required rate of redo shipping. The wide area network between the primary site and standby site may be used by more than just Data Guard. So, the bandwidth requirements have to be sorted out. The formula used by Oracle, assuming a conservative TCP/IP network overhead of 30 percent, is as follows: Required bandwidth (Mbps) = ((Redo rate bytes per sec. / 0.7) * 8) / 1,000,000 Based on this formula, according to the redo size from the preceding example, the required bandwidth is equal to 189.8930872 mbps (((16615645.13/ 0.7) * 8) / 1,000,000).
+
+Preparing the primary database
+
+Archive log mode
+Run the primary database in the archive log mode, which is a mandatory step. 
+
+Force logging
+For a physical standby to be a mirror copy, it must receive redo for the changes made to the primary database. In the primary database, when a segment is defined with the NOLOGGING attribute and if a NOLOGGING operation updates the segment, the online redo logfile will be updated with minimal information. This is preferred to complete operations faster but it's not supported in a primary database with the Data Guard configuration
+
+SQL> select name, force_logging from v$database;
+SQL> alter database force logging;
+
+Standby redo logs
+Standby redo logfiles are used by a standby database to store the redo received from the primary database. The redo received by a standby database via redo transport is written to the current SRL group by the Remote File Server (RFS) background process. When a log switch occurs on the primary database, RFS writes the redo to the next standby redo log group and the previously used standby redo log group is archived on the standby database by an ARCn process.
+
+Configuring the standby redo logfiles on the primary database is optional. After a switchover, the primary database role will be changed to standby; if SRLs were configured, the new standby will be ready to receive redo data and write them into the standby redo logfiles.
+
+The SRL files must be the same size as your online redo log (ORL) files. You also need to have enough SRL groups; that is, one more than the number of ORL groups. Let's suppose you have three ORL groups in the primary database; then, n+1 (that is, four) SRL groups should be configured. On RAC databases you should create n+1 SRL groups for each thread.
+
+Some other considerations on creating SRL groups are as follows:
+ In RAC, do not forget to create SRLs for each thread by specifying the thread number on the shared disks.
+ If you add any ORLs in the primary database later, you'll have to add SRLs on primary and each standby database. If you resize ORLs, you have to resize SRLs too.
+ It's not recommended to multiplex SRLs, because multiplexing may adversely affect redo transport performance and SRL availability is not crucial as ORL availability is.
+
+1. Check the ORL's members and the sizes of each member as follows:
+SQL> select a.group#, a.status, a.bytes/1024/1024 SizeMB, b.member from v$log a, v$logfile b where a.group#=b.group# order by group#;
+
+In this single instance of the primary database, we have four redo log groups, each with one member and a size of 100 MB. We should create at least five standby redo log groups.
+
+2. Add the standby redo logfiles as shown in the following example:
+SQL> alter database add standby logfile group 11 ('/u01/app/oracle/oradata/orcl/standby_redo01.log') size 100m;
+SQL> alter database add standby logfile group 12 ('/u01/app/oracle/oradata/orcl/standby_redo02.log') size 100m;
+SQL> alter database add standby logfile group 13 ('/u01/app/oracle/oradata/orcl/standby_redo03.log') size 100m;
+SQL> alter database add standby logfile group 14 ('/u01/app/oracle/oradata/orcl/standby_redo04.log') size 100m;
+SQL> alter database add standby logfile group 15 ('/u01/app/oracle/oradata/orcl/standby_redo05.log') size 100m;
+
+3. Check the status of new the standby redo logfiles:
+SQL> select group#,bytes,status from v$standby_log;
+
+Fast recovery area (FRA)
+It's a place on the disk where the database automatically manages naming, retention, and deletion of recovery-related files. FRA can contain control files, online redo logfiles, archived redo logs, flashback logs, and RMAN backups. It's not mandatory but strongly recommended to configure FRA.
+
+In order to enable FRA, you need to set two initialization parameters and you don't need to shut down and restart the database. Note that, in Oracle RAC, these parameters should have the same values across instances and the location must be on shared storage.
+
+alter system set db_recovery_file_dest_size=4g;
+SQL> alter system set db_recovery_file_dest='/u01/app/oracle/flash_recovery_area';
+
+Understanding initialization parameters
+In the primary database, there are some parameters that are related to the Data Guard configuration and need to be verified or modified. Now we're going to look into the details of these parameters.
+
+DB_NAME
+The DB_NAME parameter specifies the database identifier up to eight characters. This parameter must be the same in all the instances of the RAC database and also in the physical standby database. This parameter is validated at MOUNT status when the instance reads the control file; if the DB_NAME parameter does not match the name of the database mentioned in the control file, you will get the following error: "ORA-01504: database name 'Dummy' does not match parameter db_name 'orcl'".
+
+DB_UNIQUE_NAME
+This parameter specifies a unique name for each database having the same DB_NAME parameter. This parameter must be different on the primary, standby, or logical standby database. The DB_UNIQUE_NAME parameter is limited to 30 characters. 
+
+SQL> alter system set db_unique_name='turkey_un' scope=spfile;
+
+ The DB_UNIQUE_NAME parameter allows a location-specific alias to be created for a database. It is better to avoid using names related to the role, such as primary and standby. These names work well until a switchover is performed, at which point the switchback operation can be very confusing.
+
+The DB_UNIQUE_NAME parameter will be the same in all RAC databases across all instances. In RAC databases, only the instances are hosted in different nodes but they are using only one database. Database-unique names can be different in primary and standby because they are sharing neither configuration files nor datafiles.
+
+The following table shows the naming format that we're going to use for the physical standby Data Guard configuration example:
+Parameter           : Primary Physical             : standby
+Instance name       : TURKEY                       : INDIA
+DB_NAME             : ORCL                         : ORCL
+DB_UNIQUE_NAME      : TURKEY_UN                    : INDIA_UN
+Net service name    : TURKEY                       : INDIA
+
+LOG_ARCHIVE_CONFIG
+Using this parameter, you can enable or disable sending/receiving redo logs to/from databases. You also specify the list of the DB_UNIQUE_NAME parameter of each database in the Data Guard configuration with this parameter.
+
+Use the following syntax to change this parameter:
+LOG_ARCHIVE_CONFIG =
+{
+[ SEND | NOSEND ]
+[ RECEIVE | NORECEIVE ]
+[ DG_CONFIG=(remote_db_unique_name1, ... remote_db_unique_name9) |
+NODG_CONFIG ]
+}
+
+Its default value is SEND, RECEIVE, NODG_CONFIG and we only need to update the DG_CONFIG part as follows:
+SQL> alter system set log_archive_config= 'DG_CONFIG=(turkey_un,india_un)' scope=both;
+
+This is a dynamic parameter in which you can add or remove the DB_UNIQUE_NAME parameters from the configuration. It's mandatory to set this parameter for RAC databases in Data Guard. However, it's also recommended to set this for single-instance databases. The order of unique names doesn't matter and all unique names in the Data Guard configuration should be included.
+
+LOG_ARCHIVE_MAX_PROCESSES
+This parameter specifies the number of archiver processes in a database. Think of the value of this parameter as the number of channels where redo can be transferred to the standby database. In peak database times and in gap resolution, if the number of the LOG_ARCHIVE_MAX_PROCESSES value is not sufficient on the primary database, redo shipping may suffer.
+Its default value is 2 in 10g (which is generally not sufficient in Data Guard) and 4 in 11g. Depending on the number of remote destinations and redo activity on the primary database, you may need to increase the value. Keep in mind that increasing the value means more resource usage and database start/stop times will also be affected.
+
+LOG_ARCHIVE_DEST_n
+These parameters, where n is from 1 to 31 in 11g R2, are used to define destinations to the archive redo data. The LOCATION or SERVICE attribute must be defined with this parameter and indicates a local disk destination and remote database destination respectively. It's an important part of the Data Guard configuration and shows the redo transport flow and its properties. You must use one of the DB_UNIQUE_NAME parameters of DG_CONFIG in every modification of this parameter.
+
+Following is the list of attributes that can be used within this parameter.
+
+LOCATION and SERVICE
+Each destination must specify a valid attribute, either of LOCATION or SERVICE, to identify either a local location or a remote destination where redo transport services will send redo data.
+
+The destinations from LOG_ARCHIVE_DEST_1 through LOG_ARCHIVE_DEST_10 can contain either the LOCATION or SERVICE attribute, while destinations from LOG_ARCHIVE_DEST_11 through LOG_ARCHIVE_DEST_31 can contain only the SERVICE attribute, which does not support the LOCAL destination. For the LOCAL destination, you can specify a disk
+location or FRA. When specifying the SERVICE attribute, a valid Oracle Net Service name that identifies the remote Oracle database instance is used, where the redo data will be sent.
+The following is the example for the LOCATION attribute:
+SQL> alter system set log_archive_dest_1='LOCATION=/u01/app/oracle/oraarch';
+If you are using FRA, it will be as follows:
+SQL> alter system set log_archive_dest_1='LOCATION=USE_DB_RECOVERY_FILE_DEST';
+The following is an example for the SERVICE attribute:
+SQL> alter system set log_archive_dest_2='SERVICE=india db_unique_name=india_un';
+
+VALID_FOR
+This attribute specifies in which states the destination will be valid. It's optional when setting the LOG_ARCHIVE_DEST_n parameter but has to be specified for each redo transport destination of the Data Guard databases so that the redo transport continues after a role transition. This attribute works with two pair of keywords, which are REDO_LOG_TYPE and DATABASE_ROLE.
+
+REDO_LOG_TYPE can be set to the following values:
+ ONLINE_LOGFILE is valid only when archiving online redo logfiles
+ STANDBY_LOGFILE is valid only when archiving standby redo logfiles
+ ALL_LOGFILES is valid when archiving either ORLs or SRLs
+
+DATABASE_ROLE can be set to the following values:
+ PRIMARY_ROLE is valid only when the database role is primary
+ STANDBY_ROLE is valid only when the database role is standby
+ ALL_ROLES is valid when the database is either primary or standby
+
+When the VALID_FOR attribute is not specified, online redo logfiles and standby redo logfiles will be archived depending on the role of the database. The destination will be enabled even if the role is primary or standby. This is equivalent to the ALL_LOGFILES,ALL_ROLES setting on the VALID_FOR attribute.
+
+SYNC and ASYNC
+
+SYNC will be specified when you want to send redo using the synchronous method. In order to commit a transaction on the primary database, related redo data needs to be received by all the destinations that are set with the SYNC attribute.This protection mode is used in either Maximum Protection or Maximum Availability mode. The SYNC attribute does not support destinations from LOG_ARCHIVE_DEST_11 through LOG_ARCHIVE_DEST_31.
+
+SQL> alter system set log_archive_dest_2='SERVICE=india LGWR SYNC db_unique_name=india_un';
+
+The redo data generated by a transaction doesn't need to be received by a destination that has the ASYNC attribute before that transaction can commit. This attribute will be selected by default if you do not specify either the SYNC or ASYNC keyword. This method is used in the Maximum Performance mode:
+
+SQL> alter system set log_archive_dest_2='SERVICE=india LGWR ASYNC db_unique_name=india_un';
+
+AFFIRM and NOAFFIRM
+These attributes control when the destination database acknowledges received redo data. The AFFIRM attribute ensures that a redo transport destination will send an acknowledgment after writing it to the standby redo logfiles; NOAFFIRM ensures that the redo transport destination will send an acknowledgment before writing it to the standby redo log. This attribute is used with the SERVICE attribute when specifying remote destinations. To view the attribute configuration, you can use the v$archive_dest view with the AFFIRM column.
+
+If both AFFIRM and NOAFFIRM are not specified, it defaults to AFFIRM when the SYNC attribute is specified and NOAFFIRM when the ASYNC attribute is specified.
+
+SQL> alter system set log_archive_dest_2='SERVICE=india SYNC AFFIRM DB_UNIQUE_NAME=india_un';
+
+SQL> select affirm from v$archive_dest where dest_id=2;
+
+COMPRESSION
+This attribute is used to specify whether redo data is compressed before transmission. Compression of redo is useful when there is a bandwidth issue in the network between primary and standby databases.
+
+You should remember that compression is a CPU-intensive operation and this compression is an option of Oracle Advanced Compression; so, in order to enhance this feature you must purchase a license. The COMPRESSION attribute example is as shown follows:
+
+SQL> alter system set log_archive_dest_2='SERVICE=india COMPRESSION=ENABLE DB_UNIQUE_NAME=INDIA_UN';
+
+MAX_CONNECTIONS
+This specifies the number of connections to the redo destination when sending archived redo logfiles. MAX_CONNECTIONS will be used only if the redo transport services use ARCH. You can set the MAX_CONNECTIONS value from 1 through 5. However, it's limited with the number of ARCn processes that is specified with LOG_ARCHIVE_MAX_PROCESSES.
+
+Any standby database using ARCn processes will not use standby redo logs if the MAX_CONNECIONS attribute is specified. So we cannot use real-time Redo Apply with MAX_CONNECTIONS.
+
+SQL> alter system set log_archive_dest_2='SERVICE=india MAX_CONNECTIONS=3 db_unique_name=india_un';
+
+MAX_FAILURE
+This attribute defines how many times the database will attempt to reconnect to a failed standby database before giving up. When you set the MAX_FAILURE attribute, you also have to set the REOPEN attribute. Once the failure count is greater than or equal to the value you specified, the REOPEN attribute value will set to zero internally. This will cause the database to transport redo data to an alternate destination corresponding to the ALTERNATE attribute.
+
+SQL> alter system set log_archive_dest_1='LOCATION=USE_DB_RECOVERY_FILE_DEST REOPEN=8 MAX_FAILURE=4';
+
+SQL> select MAX_FAILURE,FAILURE_COUNT,REOPEN_SECS from v$archive_dest where dest_id=1;
+
+REOPEN
+The redo transport services will try to reopen the failed remote destination after a specified number of seconds. By default, the database attempts to reopen failed destinations at the set log-switch time. You can use this attribute to shorten the interval of redo transport
+reconnect attempts.
+SQL> alter system set log_archive_dest_2='SERVICE=INDIA reopen=90 db_unique_name=INDIA_UN';
+
+SQL> select reopen_secs,max_failure from v$archive_dest where dest_id=2;
+
+NET_TIMEOUT
+This attribute is used only with the SYNC redo transport mode. Depending on the value of the NET_TIMEOUT attribute, the LGWR process will block and wait for acknowledgment from a redo transport destination. If the acknowledgment is not received within the time specified, an error will be logged and the transport session to that destination is terminated. If not set, its default value is 30 seconds. Before setting this attribute, consider your network bandwidth. If you specify lower values such as 1 to 5 seconds, the primary database may often disconnect from the standby database due to transient network errors. A minimum value of 10 should be considered.
+
+SQL> alter system set log_archive_dest_2='SERVICE=INDIA SYNC NET_TIMEOUT=20 db_unique_name=india_un';
+
+SQL> select net_timeout from v$archive_dest where dest_id=2;
+
+DELAY
+This attribute is used to set a delay between the primary and standby databases. When DELAY is used, redo is sent to the standby database with no delay but Redo Apply waits
+for the delay time before applying the archived log.
+
+SQL> alter system set log_archive_dest_2='SERVICE=india delay=10 db_unique_name=india_un';
+
+SQL> select delay_mins,destination from v$archive_dest where dest_id=2;
+
+Now we've finished learning the most important attributes of the LOG_ARCHIVE_DEST_n parameter. Remember that these optional attributes should be used depending on the need. You should use the defaults in the initial configuration and consider changing the defaults later depending on the necessity.
+
+LOG_ARCHIVE_DEST_STATE_n
+These parameters, where n is from 1 to 31, indicate the state of the related redo log destination configured by the LOG_ARCHIVE_DEST_n parameter. The default value is ENABLE, which means the redo destination is active. If you want to make the destination inactive, you can set the LOG_ARCHIVE_DEST_STATE_n parameter to DEFER. This destination will be excluded until it is reenabled. If any log archive destination has been configured as a failover archive location, the LOG_ARCHIVE_DEST_STATE_n status will be ALTERNATE. 
+
+SQL> alter system set log_archive_dest_state_2='defer';
+SQL> show parameter log_archive_dest_state_2
+
+Creating the physical standby database - page 53
+
+The following are the important Data-Guard-related initialization parameters we set on physical standby databases.
+
+FAL_SERVER
+This parameter specifies from where the standby database should request missing archived logs if there is a gap in the logs. It is used only when the database is in the standby role and has a gap in the received archived logs.
+
+On the standby database, you need to set the Oracle Net Service name of the primary database as the value of this parameter. Also, taking account of a possible switchover, don't forget to set FAL_SERVER on the primary database with the value of the standby database service name.
+
+STANDBY_FILE_MANAGEMENT
+The STANDBY_FILE_MANAGEMENT parameter is used only for the environment of the physical standby databases. By default, its value is MANUAL. By setting this parameter to AUTO, we'll make sure that, when we add or drop datafiles on our primary database, those files are also added or dropped on the standby database. Setting this parameter to AUTO can cause files to be created automatically on the standby database and it can even overwrite existing files;
+
+SQL> alter system set standby_file_management='AUTO';
+
+When the parameter is set to MANUAL, if any datafile is added in primary, you'll see the following errors:
+
+File #5 added to control file as 'UNNAMED0007' because
+the parameter STANDBY_FILE_MANAGEMENT is set to MANUAL
+The file should be manually created to continue.
+MRP0: Background Media Recovery terminated with error 1274
+Some recovered datafiles maybe left media fuzzy
+Media recovery may continue but open resetlogs may fail
+
+DB_FILE_NAME_CONVERT
+In some cases, the directory structure may not be the same in source/primary and destination/standby database locations. The DB_FILE_NAME_CONVERT parameter is used to convert the file locations of datafiles. When you add a datafile in the primary database, assuming you have a STANDBY_FILE_MANAGEMENT parameter setting of AUTO, it will create a datafile on the standby database according to the settings of the DB_FILE_NAME_CONVERT parameter. Before setting DB_FILE_NAME_CONVERT, make sure that filesystem exists and is writable.
+
+alter system set db_file_name_convert= "'/u01/app/oracle/oradata/turkey_un', '/u01/app/oracle/oradata/india_un'" scope=spfile;
+
+Note that this is a static parameter and it requires the instance to restart for the change to become active.
+
+LOG_FILE_NAME_CONVERT
+This parameter plays a similar role to DB_FILE_NAME_CONVERT and is valid for online and standby redo logfiles. The LOG_FILE_NAME_CONVERT parameter converts the file location of a new logfile on the primary database to the desired location on the standby database.
+
+SQL> alter system set log_file_name_convert= "'/u01/app/oracle/oradata/turkey_un', '/u01/app/oracle/oradata/india_un'" scope=spfile;
+
+oradim -NEW -SID INDIA -STARTMODE manual -PFILE C:\oracle\app\product\11.2.0\dbhome_1\database\INITindia.ora
+Instance created.
+
+set ORACLE_SID=INDIA
+
+sqlplus / as sysdba
+
+startup nomount
+
+--------- Error
+SQL> startup nomount;
+ORA-16025: parameter LOG_ARCHIVE_DEST_2 contains repeated or conflicting attributes
+SQL> startup nomount;
+ORA-00119: invalid specification for system parameter LOCAL_LISTENER
+ORA-00132: syntax error or unresolved network name 'LISTENER'
+SQL> startup nomount;
+------------- commented these two params to get rid of this problem
+
+rman target sys/oracle@ocp11g auxiliary sys/oracle@india
+
+duplicate target database for standby from active database;
+
+primary database
+Configure the primary database initialization parameters required for Data Guard.
+alter system set log_archive_dest_2='SERVICE=INDIA LGWR ASYNC VALID_FOR=(ONLINE_LOGFILES,PRIMARY_ROLE) DB_UNIQUE_NAME=INDIA_UN' scope=both sid='*';
+
+alter system set log_archive_config= 'DG_CONFIG=(ocp11g,india_un)' scope=both sid='*';
+
+alter system set log_archive_max_processes=8 scope=both sid='*';
+
+
+Configure the following parameters in order to make the Data Guard configuration ready for a role-change operation:
+
+alter system set fal_server='INDIA' scope=both sid='*'; 
+
+alter system set standby_file_management='AUTO' scope=both sid='*';
+
+alter system set db_file_name_convert= 'C:\oracle\app\oradata\india','C:\oracle\app\oradata\ocp11g' scope=spfile sid='*';
+
+alter system set log_file_name_convert= 'C:\oracle\app\oradata\india','C:\oracle\app\oradata\ocp11g' scope=spfile sid='*';
+
+
+After creating the physical standby database and enabling redo transport services, you may want to verify the standby database configuration and also check if the database changes are being successfully transmitted from the primary database to standby.
+
+select db_unique_name,database_role,open_mode from v$database;
+
+show parameter spfile
+
+select name from v$datafile;
+
+select group#,type,member from v$logfile;
+
+-- This step was required to fix the problem faced earlier
+--alter system set log_archive_dest_2='SERVICE=OCP11G LGWR ASYNC VALID_FOR=(ONLINE_LOGFILES,PRIMARY_ROLE) DB_UNIQUE_NAME=OCP11G';
+
+Verify if the redo transport service is active using the v$managed_standby view on
+the standby database:
+SELECT THREAD#,SEQUENCE#,PROCESS,CLIENT_PROCESS,STATUS,BLOCKS FROM V$MANAGED_STANDBY;
+
+Start Redo Apply in the foreground. in the stand by database
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE;
+
+To Start Redo Apply in the background.
+alter database recover managed standby database disconnect from session;
+
+Check the Redo Apply service status.
+
+SELECT THREAD#,SEQUENCE#,PROCESS,CLIENT_PROCESS,STATUS,BLOCKS FROM V$MANAGED_STANDBY;
+
+Stop Redo Apply.
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+
+To start Redo Apply in real-time apply mode, you must use the USING CURRENT LOGFILE option as follows:
+
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
+
+ERROR at line 1:
+ORA-38500: USING CURRENT LOGFILE option not available without standby redo logs
+
+to avoid the above error
+ALTER DATABASE ADD STANDBY LOGFILE GROUP 4 'C:\ORACLE\APP\ORADATA\INDIA\REDO04.LOG' SIZE 50M;
+
+ALTER DATABASE ADD STANDBY LOGFILE GROUP 5 'C:\ORACLE\APP\ORADATA\INDIA\REDO05.LOG' SIZE 50M;
+
+
+Check the Redo Apply service status.
+From SQL*Plus, you can check whether the Media Recover Process (MRP) is running using the V$MANAGED_STANDBY view:
+
+SELECT THREAD#,SEQUENCE#,PROCESS,CLIENT_PROCESS,STATUS,BLOCKS FROM V$MANAGED_STANDBY;
+
+We must now ensure that the standby database is synchronized with the primary database after starting Redo Apply.
+
+On the standby database, query the V$ARCHIVED_LOG view for the archived and applied sequences. For the last archived sequence, use the following:
+SELECT MAX(SEQUENCE#) FROM V$ARCHIVED_LOG; 
+
+For the last applied sequence, use the following:
+SELECT MAX(SEQUENCE#) FROM V$ARCHIVED_LOG WHERE APPLIED='YES';
+
+There's expected to be a lag of one sequence between archived and applied columns.
+Check the status of the latest log sequence.
+SELECT SEQUENCE#,APPLIED FROM V$ARCHIVED_LOG ORDER BY SEQUENCE#;
+
+If real-time apply is enabled, the apply services can apply redo data without waiting for the current standby redo logfile to be archived. In this example, we'll see how changes are transferred and applied to the standby database.
+
+1. In order to use real-time apply, the redo transport service from primary to standby must use LGWR. 
+show parameter log_archive_dest_2
+NAME TYPE VALUE
+------------------- -------- ----------
+log_archive_dest_2 string SERVICE=INDIA LGWR ASYNC VALID_FOR =(ONLINE_LOGFILES,PRIMARY_ROLE) DB_UNIQUE_NAME=INDIA_UN
+
+2. In the standby database, start Redo Apply using the USING CURRENT LOGFILE option.
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE USING CURRENT LOGFILE DISCONNECT FROM SESSION;
+
+3. Check the current status of processes related to Data Guard in the physical standby database. You need to verify that the status of the MRP0 process is APPLYING LOG:
+SELECT THREAD#,SEQUENCE#,PROCESS,CLIENT_PROCESS,STATUS,BLOCK#,BLOCKS FROM V$MANAGED_STANDBY;
+
+4. Create a table in the primary database by selecting the data logs from another table.
+create table oracle as select * from hr.emp;
+
+select count(*) from oracle;
+
+5. Now monitor the number of redo blocks for the current redo log, written on primary, sent to standby, and applied on standby.
+The redo blocks for the primary database:
+SELECT THREAD#,SEQUENCE#,PROCESS,CLIENT_PROCESS,STATUS,BLOCK#,BLOCKS FROM V$MANAGED_STANDBY;
+
+The redo blocks for the standby database:
+SELECT THREAD#,SEQUENCE#,PROCESS,CLIENT_PROCESS,STATUS,BLOCK#,BLOCKS FROM V$MANAGED_STANDBY;
+
+6. You can also check the apply lag on the standby database using the V$DATAGUARD_STATS view in terms of time. Run the following query on the standby database:
+SELECT name, value, datum_time, time_computed FROM V$DATAGUARD_STATS WHERE name like 'apply lag';
+
+The DATUM_TIME parameter shows when this data was last sent from primary to the standby database. The TIME_COMPUTED column shows when the apply lag value was calculated.

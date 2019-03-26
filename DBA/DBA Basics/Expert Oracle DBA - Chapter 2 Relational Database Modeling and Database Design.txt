@@ -1,0 +1,126 @@
+Expert Oracle DBA - Chapter 2: Relational Database Modeling and Database Design
+
+My own general rule of thumb is that if database design isn't your forte, find a person who is good at database design to help you. Putting some effort into good design up front will pay rich dividends later on.
+
+The Relational Database Model
+
+Three key terms are used extensively in relational database models: relations, attributes, and domains. A relation is a table with columns and rows. The named columns of the relation are called the attributes, and the domain is the set of values the attributes are allowed to take.
+
+The basic data structure of the relational model is the table, where information about the particular entity (say, an employee) is represented in columns and rows (also called tuples). Thus, the "relation" in "relational database" refers to the various tables in the database; a relation is a set of tuples. The columns enumerate the various attributes of the entity (the employee's address or phone number, for example), and the rows are actual instances of the entity (specific employees) that is represented by the relation. As a result, each tuple of the employee table represents various attributes of a single employee.
+
+All relations (and thus tables) in a relational database have to adhere to some basic rules to qualify as relations. First, the ordering of the columns is immaterial in a table. Second, there can't be identical tuples or rows in a table. And third, each tuple will contain a single value for each of its attributes.
+
+Tables can have a single attribute or a set of attributes that can act as a "key," which you can then use to uniquely identify each tuple in the table. Keys serve many important functions. They are commonly used to join or combine data from two or more tables. Keys are also critical in the creation of indexes, which facilitate fast retrieval of data from large tables. Although you can use as many columns as you wish as part of the key, it is easier to handle small keys that are (ideally) based on just one or two attributes.
+
+Database Schemas
+
+The database schema, a set of related tables and other database objects, is a fundamental concept in relational databases, and it is part of the logical database structure of an Oracle database. A schema is always associated with a user, and it can be defined as a named collection of objects owned by a user. 
+
+Relational Algebra
+unary operations, because they involve the manipulation of tuples in a single relation.
+Selection: A selection operation extracts (or eliminates) a set of tuples from a relation based on the values of the attributes of the relation.
+Projection: A projection operation extracts (or eliminates) a specified set of columns of a relation.
+relational algebra supports binary or set operations to manipulate the relations themselves.
+
+Union: A union combines two relations to produce a new, larger relation.
+Intersection: Intersection creates a new relation that has only the common tuples in two relations.
+Difference: Difference creates a new relation that has only the noncommon tuples in two relations.
+Cartesian product: The Cartesian product creates a new relation that concatenates every tuple in relation A with every tuple in relation B. The Cartesian product is just one example of a join operation.
+
+Note- Join operations combine two or more relations to derive a new relation based on identical values in the columns (join columns) on the basis they are joined. The resulting relation would be a Cartesian product if you include all the tuples in both relations. However, you usually need only a part of this Cartesian product.
+
+Relational Database Life Cycle : The essential steps of a typical relational database life cycle are as follows:
+
+Requirements gathering and analysis
+Logical database design
+Physical database design
+Production implementation
+
+Requirements Gathering and Analysis
+Why is this new database necessary?
+What objective is this database going to help achieve?
+What current systems is the database going to replace?
+What systems (if any) will the database have to interact with?
+Who are the target users of the database?
+
+Let's use an educational institution as an example to identify the processes. Say that a college has four processes: Manage Student Records, Manage Course Information, Manage Enrollment, and Manage Class Schedules. The Manage Student Records process maintains all student records, and it updates that information as necessary. The Manage Course Information process takes care of collecting all future course information from the various departments of the college. It is also responsible for making changes in the course list when departments add or drop courses for any reason.
+
+The Manage Enrollment process is more complex than others because it receives inputs from several processes. For example, when a student attempts to enroll in a new course, the Manage Enrollment process needs to first verify from the Manage Student Records process whether the student is in good standing. Next, it has to find out from the Manage Course Information process whether the course is indeed being offered. Then the Manage Enrollment process will enter this new student and course information in its part of the data flow. Only after the successful completion of all these processes can the Manage Class Schedules process send the new schedule out to the student.
+
+Logical Database Design
+
+Database design is both an art and a science. The science part comes in the form of adherence to certain rules and conditions, such as normalization (more about this later in the chapter). Database design is also an art, because you need to model relationships using your understanding of the real-world functioning of the organization.
+
+Accuracy and completeness are the keys to this activity. One of the best things about this stage is that it's easy to take a draft design, throw it away, and start again, or simply amend it. It's a whole lot easier to tinker at the design stage than to deal with the production headaches of an already implemented database that isn't designed well.
+
+Entity-Relationship Modeling
+Before you can proceed to actually create databases, you need to conceptually model the organization's information system so you can easily see the interrelationships among the various components of the system.
+
+ER modeling views all objects of the business area being modeled as entities that have certain attributes. An entity is anything of interest to the system that exists in the business world. An entity can be real (for example, a student) or it can be conceptual (a student enrollment, which does not actually exist until the entity's student and course are combined when the student signs up for a particular course). Conceptual entities are generally the hardest to discover, but ER modeling, as you shall see, assists in their discovery.
+
+Attributes of entities are simply properties of the entities that are of interest to you. For example, a student entity may have attributes such as Student ID, Address, Phone Number, and so on.
+
+ER modeling further describes the relationships among these business entities. Relationships describe how the different entities are connected (or related) to one another. For example, an employee is an entity that possesses attributes such as Name and Address, and he or she is, or may be, related to another entity in the model called Department through the fact that the employee works in that department. In this case, "works" is the relationship between the employee and the department.
+
+Types of Relationships
+You can depict two or more entities in a relationship, and depending on the number of entities, you may describe the degree of relationship as binary, ternary, quaternary, etc. The most common degree of relationship in real life cases is binary, so let's examine a binary relationship in more detail.
+
+Cardinality in ER modeling expresses the number of occurrences of one entity in relation to another entity. Entity relationships can be one-to-one, one-to-many, many-to-many, or some other type. The most common relationships are the following (assume there are two entities, A and B):
+
+One-to-many (1:M) relationship: In this case, each instance of an entity A is related to several members of another entity, B. For example, an entity called Customer can check out many books from a library, but one and only one Customer can borrow each book at a time. Thus, the entity Customer and the entity Book have a one-to-many relationship. Of course, the relationship may not exist if you have a Customer who has not yet borrowed a Book.
+
+One-to-one (1:1) relationship: This relationship is a situation where only one instance of either entity can be related to an instance of the other entity. For example, a person could have only one legal social security number (SSN), and each SSN should refer to just one person.
+
+Many-to-many (M:M) relationship: In this situation, each instance of entity A is related to one or more instances of entity B, and an instance of entity B is related to one or more instances of entity A. As an example, let's take an entity called Movie Star and an entity called Movie. Each Movie Star can star in several Movies, and each Movie may have several Movie Stars. In real life, a many-to-many relationship is usually broken down into a simpler one-to-many relationship, which happens to be the predominant form of "cardinality" in the relationships among entities.
+
+Accurately determining cardinalities of relationships is the key to a well-designed relational database. Duplicated data, redundancy, and data anomalies are some of the problems that arise when you don't model relationship cardinalities correctly.
+
+Candidate Keys and Unique Identifiers
+Candidate keys are those attributes that can uniquely identify a row in a table, and a table can have more than one candidate key. For example, it's fairly common for an employee table to have both a uniquely generated sequence number as well as another identifier, like an employee number (or social security number).
+
+The primary key is the candidate key that's chosen to uniquely identify each row in a table. You should always strive to select a key based on a single attribute rather than on multiple attributes, for simplicity and efficiency.
+
+Almost all modern relational databases, including Oracle databases, also offer simple system numbers or sequenced numbers that are generated and maintained by the RDBMS as an alternative to a natural primary key (such as a sequence number to identify orders). Such keys are often referred to as surrogate or artificial primary keys.
+
+Whatever method you choose—a natural key or a surrogate key—certain rules apply:
+The primary key value must be unique.
+The primary key can't be null (blank).
+The primary key can't be changed (it must remain stable over the life of the entity).
+The primary key must be as concise as possible.
+
+Step-by-Step: Building an Entity-Relationship Diagram
+ In this section, you'll build a simple entity-relationship diagram describing a university, using entities called Student, Class, and Professor. You'll use a rectangle to depict an entity, and a diamond shape to show relationships (as is common practice), although you could use different notations.
+ 
+Let's assume the following relationship between two entities, Student and Class:
+A Student can enroll in one or more Classes.
+A Class has one or more Students enrolled.
+
+Here are the steps you need to follow to create the entity-relationship diagram:
+Define your entities—Student, Class, and Professor.
+Draw the entities using a rectangle to represent each one.
+For each of the entities in turn, look at its relationship with the others. It doesn't matter which entity you begin with. For example, look at the Student and the Professor. Is there a relationship between these entities? Well, a Professor teaches a class, and a student attends one or more classes, so at first glance there is a relationship between these entities. But in this case it is an indirect relationship via the Class entity.
+Examine the Student and Class entities. Is there a relationship? Yes, a Student may attend one or more Classes. One or more Students may attend a Class. This is a many-to-many relationship.
+Now look at the Class and Professor entities. One Professor teaches each Class and each Professor can teach many Classes. However, if a Professor is absent (due to illness, for example), do you need to record the fact that a different Professor taught his or her Class on that occasion? What if two Professors teach the same Class? Do you need to record that information? As a modeler, you need to address all questions of this nature so that your model is realistic and will serve you well.
+Assign the following attributes to the various entities:
+Student: Student ID, First Name, Last Name, Address, Year
+Professor: Staff ID, Social Security Number, First Name, Last Name, Office Address, Phone Number
+Class: Class ID, Classroom, Textbook, Credit Hours, Class Fee
+
+Look at the Textbook attribute in the Class entity. You can use this attribute to illustrate an important point. As the entity stands right now, you could assign only one Textbook per Class. This could be the case, depending on the business rules involved, but what do you do if you need to record the fact that there are several textbooks recommended for each Class? The current model would not permit you to do this unless you stored multiple data items in a single field. To resolve this, you could add a new entity called Textbooks, which could then be related to the Class entity. This way, you could associate many different Textbooks with each Class.
+
+The cardinality of a relationship, as you saw earlier, dictates whether a relationship is one-to-one, one-to-many, many-to-many, or something else. Define the cardinality of the system at this point. Assign the one-to-many or many-to-one cardinality indicators. Break down any many-to-many relationships to simpler relationships (such as two one-to-many relationships). For example:
+A Student can enroll in one or more Classes.
+Each Class can have many Students enrolled.
+This is a many-to-many relationship, which you must break down by using a link table. In this case, the link table turns out to be an entity in its own right. This new entity contains the individual enrollment record for each Class attended by a single Student.
+
+Normalization
+Normalization is the procedure through which you break down and simplify the relations (tables) in a database to achieve efficiency in retrieving and maintaining data. The most common reason for normalizing table data is to avoid redundancy, which reduces data storage requirements and leads to more efficient queries. Another reason to normalize data is to avoid data anomalies.
+
+Data Anomalies
+Three types of data anomalies can result from improperly designed databases:
+The update anomaly: In this well-known anomaly, you could fail to update all the occurrences of a certain attribute because of the repeating values problem.
+The insertion anomaly: In this anomaly, you are prevented from inserting certain data because you are missing other pieces of information. For example, you cannot insert a customer's data because that customer has not bought a product from your warehouse yet.
+The deletion anomaly: In this anomaly, you could end up losing data inadvertently because you are trying to remove some duplicate attributes from a customer's data.
+
+
+

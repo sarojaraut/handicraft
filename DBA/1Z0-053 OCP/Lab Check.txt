@@ -1,0 +1,59 @@
+To check
+
+delete a datafile
+ Any attempt to write to the damaged tablespace will immediately bring the tablespace offline.
+ query V$RECOVER_FILE and V$RECOVERY_LOG to find the files required for recovery
+ 
+ recovering from loss of control file
+ 
+ 
+ after direct loading
+ 
+ without/with separate for the concerned tablspace
+ 
+ 
+ ---------------
+ select dbms_flashback.get_system_change_number from dual;
+ 
+ select * from hr.employees as of timestamp systimestamp - interval '60' minute
+where hr.employees.employee_id not in
+(select employee_id from hr.employees);
+
+SQL> select versions_startscn startscn, versions_endscn endscn,
+2 versions_xid xid, versions_operation oper,
+3 employee_id empid, last_name name, manager_id mgrid, salary sal
+4 from hr.employees
+5 versions between scn 27153780 and 27154069
+6 where employee_id in (195,196);
+
+SQL> select salary
+from employees
+versions between scn minvalue and maxvalue
+where employee_id = 193;
+
+SQL> grant flashback any table to m_phelps;
+
+SQL> flashback table employees to timestamp systimestamp - interval '15' minute;
+SQL> flashback table employees, departments to timestamp systimestamp - interval '15' minute; -- including dependant tables
+
+SQL> flashback table job_history to before drop rename to job_hist;
+
+Use the ORA_ROWSCN pseudocolumn for a particular table row to see the SCNs of the most recent changes to the row:
+
+SQL> select ora_rowscn, last_name, first_name from employees where employee_id = 102;
+
+shutdown immediate;
+startup mount exclusive;
+alter database archivelog;
+/* if you are not already in ARCHIVELOG mode */
+alter system set db_flashback_retention_target=2880;
+alter database flashback on;
+alter database open;
+
+shutdown;
+startup mount exclusive;
+flashback database to timestamp sysdate-(1/24);
+
+Once the flashback has completed, you must open the database using the RESETLOGS option to have write access to the database:
+
+alter database open resetlogs;

@@ -1,0 +1,76 @@
+Chapter 10: Managing Data and Concurrency
+
+Any relational database must be able to pass the ACID test: it must guarantee atomicity, consistency, isolation, and durability.
+
+A Is for Atomicity : The principle of atomicity states that either all parts of transaction must complete, or none of them complete. For example, if your business analysts have said that every time you change an employee’s salary, you must also change his grade, then the atomic transaction will consist of two updates. The database must guarantee that both go through, or neither. If only one of the updates were to succeed, you would have an employee on a salary that was incompatible with his grade: Oracle guarantees atomicity absolutely through use of undo segments
+
+C Is for Consistency : The principle of consistency states that the results of a query must be consistent with the state of the database at the time the query started. Imagine a simple query that averages the value of a column of a table. If the table is large, it will take many minutes to pass through the table. If other users are updating the column while the query is in progress, The query should not include the new values. Through the use of undo segments Oracle guarantees that if a query succeeds, the result will be consistent. However, if your undo segments are incorrectly configured, the query may not succeed: there is a famous Oracle error, ORA-1555 “snapshot too old,” that is raised.
+
+I Is for Isolation : The principle of isolation states that an incomplete (that is, uncommitted) transaction must be invisible to the rest of the world. While the transaction is in progress, only the one session that is executing the transaction is allowed to see the changes: Oracle guarantees transaction isolation through use of undo segments.
+
+D Is for Durable : The principle of durability states that once a transaction completes, it must be impossible for the database to lose it. Oracle fulfils this requirement through the use of log files.
+
+Undo is not the opposite of redo! Redo protects all block changes, no matter whether it is a change to a block of a table segment, an index segment, or an undo segment. As far as redo is concerned, an undo segment is just another segment, and any changes to it must be made durable.
+
+If a column of a row is to be updated, then the rowid and the new value of the column are written to the log buffer (which is the change that will be applied to the table block), and also the old value (which is the change that will be applied to the undo block).
+
+If the column is part of an index key, then the changes to be applied to the index are also written to the log buffer, together with a change to be applied to an undo block to protect the index change. Having generated the redo, the update is carried out in the database buffer cache: the block of table data is updated with the new version of the changed column, and the old version of the changed column is written to the block of undo segment. From this point until the update is committed, all queries from other sessions addressing the changed row will be redirected to the undo data. Only the session that is doing the update will see the actual current version of the row in the table block.
+
+A crucial difference between INSERT and DELETE is in the amount of undo generated. When a row is inserted, the only undo generated is writing out the new rowid to the undo block. This is because to roll back an INSERT, the only information Oracle requires is the rowid, so that this statement can be constructed: delete from table_name where rowid=rowid_of_the_new_row ; Executing this statement will reverse the original change.
+
+For a DELETE, the whole row (which might be several kilobytes) must be written to the undo block, so that the deletion can be rolled back if need be by constructing a statement that will insert the complete row back into the table.
+
+ROLLBACK : in the case of an UPDATE, the preupdate versions of the columns, as stored in the block of undo segment, are used to construct another UPDATE command that will set the columns of the row in the table block back to their original values. To roll back an insert, Oracle retrieves the rowid of the inserted row from the undo block and uses it as the key for a DELETE statement on the table. To roll back a DELETE, Oracle constructs a complete INSERT statement from the data in the undo block. Thus, Oracle’s implementation of the ROLLBACK command is to use undo data to construct and execute another statement that will reverse the effect of the first statement. Then Oracle will issue a COMMIT that will commit both the original change and the rollback change, as one transaction.
+
+COMMIT involves nothing more than flushing the log buffer to disk, and flagging the transaction as complete. This is why a transaction involving millions of updates in thousands of files over many minutes or hours can be committed in a fraction of a second. Because LGWR writes in very nearly real time, virtually all the transaction’s changes are on disk already. 
+
+DBWn has nothing to do with commit processing, it does of course write changed, or “dirty,” blocks to disk—eventually. The algorithm used is intended to ensure that while changed blocks do get to disk, they will not be written so quickly as to impact on normal working. At any given moment DBWn may or may not have written out changed blocks of data segments or undo segments to the datafiles for both committed and uncommitted transactions. So in principle, your database
+on disk is corrupted: the datafiles may well be storing uncommitted work, and be missing committed changes. But in the event of a crash, the stream of redo on disk always has enough information to reinstantiate any committed transactions that are not in the datafiles (by use of the changes applied to data blocks), and to reinstantiate the undo segments (by use of the changes applied to undo blocks) needed to roll back any uncommitted transactions that are in the datafiles.
+
+DDL and Transaction Control
+The COMMIT and ROLLBACK statements only apply to DML. You cannot roll back a DDL statement: once executed, it is immediately durable. If it were possible to see the source code for (for example) the CREATE TABLE command, it would be obvious why. When you create a table, you are in fact doing a transaction against some data dictionary tables: at the very least, you are inserting a row into SYS.TAB$, which is a data dictionary table with one row to define every table in the database, and one or more rows into SYS.COL$, a data dictionary table with one row for the definition of every column of every table in the database. Then the command concludes with a COMMIT. This is to protect the data dictionary: if the COMMIT were not built into the CREATE TABLE command, the possibility of an incomplete transaction would arise, and an incomplete transaction in the data dictionary could have appalling side effects.
+
+Quite simply, there is no such thing as an automatic commit. When you execute a DDL statement, there is a perfectly normal COMMIT included in the source code that implements the DDL command. But what about when you exit from your user process? If you are using SQL*Plus on a Windows terminal (never mind what operating system the database server is running) and you issue a DML statement followed by an EXIT, your transaction will be committed. This is because built into the SQL*Plus EXIT command there is a COMMIT statement; if we could see the source code, it would be obvious. But what if you click in the top-right corner of the SQL*Plus window? The window will close, and if you log in again, you will see that the transaction has been rolled back. This is because the programmers who wrote SQL*Plus for Microsoft Windows included a ROLLBACK statement in the code that is executed when you close the window.
+
+There is a SQL*Plus command SET AUTOCOMMIT ON. This will cause SQL*Plus to modify its behavior: it will append a COMMIT to every DML statement issued. So all statements are committed immediately as soon as they are executed and cannot be rolled back. But this is happening purely on the user process side; there is still no autocommit in the database, and the changes made by a long-running statement will be isolated from other sessions until the statement completes.
+
+Monitor and Resolve Locking Conflicts
+The principle of transaction isolation—the I of the ACID test—requires that the database guarantee that one session cannot see or be affected by another session’s transaction until the transaction has completed. To accomplish this, the database must serialize concurrent access to data; it must ensure that even though multiple sessions have requested access to the same rows, they actually queue up, and take turns.
+
+The standard level of locking in an Oracle database guarantees the highest possible level of concurrency. This means that if a session is updating one row, the one row is locked; nothing else. Furthermore, the row is only locked to prevent other sessions from updating it—other sessions can read it at any time. The lock is held until the transaction completes, either with a COMMIT or a ROLLBACK. This is an exclusive lock:
+
+Only one session can take an exclusive lock on a row, or a whole table, at a time—but shared locks can be taken on the same object by many sessions. It would not make any sense to take a shared lock on one row, because the only purpose of a row lock is to gain the exclusive access needed to modify the row. Shared locks are taken on whole tables, and many sessions can have a shared lock on the same table. The purpose of taking a shared lock on a table is to prevent another session acquiring an exclusive lock on the table: you cannot get an exclusive lock if anyone else already has a shared lock. Exclusive locks on tables are required to execute DDL statements.
+
+To execute DML on rows, a session must acquire exclusive locks on the rows to be changed, and shared locks on the tables containing the rows. If another session already has exclusive locks on the rows, the session will hang until the locks are released by a COMMIT or a ROLLBACK. If another session already has a shared lock on the table and exclusive locks on other rows, that is not a problem. 
+
+If you do not want a session to queue up if it cannot get a lock, the only way to avoid this is to use the WAIT or NOWAIT clauses of the SELECT...FOR UPDATE command. To avoid sessions hanging, use either SELECT...FOR UPDATE NOWAIT or SELECT... FOR UPDATE WAIT <n>, where <n> is a number of seconds. Having obtained the locks with either of the SELECT...FOR UPDATE options, you can then issue the DML commands with no possibility of the session hanging.
+
+It is possible to append the keywords SKIP LOCKED to a SELECT FOR UPDATE statement, which will return and lock only rows that are not already locked by another session. This command existed with earlier releases but is only supported from release 11g.
+
+A common problem is repeatable reads. Consider this example:
+SQL> select * from regions;
+REGION_ID REGION_NAME
+---------- -------------------------
+1 Europe
+2 Americas
+3 Asia
+4 Middle East and Africa
+SQL> select count(*) from regions;
+COUNT(*)
+----------
+5
+
+The problem is that during the course of the first query, another session inserted and committed the fifth row.
+
+To avoid such situation a more sophisticated way would be to use the SET TRANSACTION READ ONLY statement. This will guarantee (without imposing any locks) that the session does not see any DML on any tables, committed or not, until it terminates the read-only transaction with a COMMIT or ROLLBACK.
+
+Deadlocks
+It is possible to construct a position where two sessions block each other in such a fashion that both will hang, each waiting for the other to release its lock. This is a deadlock.
+
+These transaction isolation levels supported by oracle are:
+
+Read Committed : Default  >> Explicit set at transaction level SET TRANSACTION ISOLATION LEVEL READ COMMITTED;  explit set at session level ALTER SESSION SET ISOLATION_LEVEL READ COMMITTED; 
+Serializable : SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; ALTER SESSION SET ISOLATION_LEVEL SERIALIZABLE; With the serializable transaction isolation level, only data that was committed at the start of the transaction plus those made by the transaction itself through INSERTs, UPDATEs and DELETEs can be accessed by a query.
+Read Only : SET TRANSACTION ISOLATION LEVEL READONLY; ALTER SESSION SET ISOLATION_LEVEL READONLY; With the Read Only transaction isolation level, only data that was committed at the start of the transaction can be accessed by a query.  No modification to the data is allowed.
+There is a fourth transition isolation level, read uncommitted, that is not supported by Oracle.
+

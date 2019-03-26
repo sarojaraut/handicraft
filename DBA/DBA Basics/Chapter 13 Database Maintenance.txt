@@ -1,0 +1,270 @@
+﻿Database Maintenance
+
+Use and Manage Optimizer Statistics
+
+The statistics are visible in the DBA_TABLES view; they include
+■ The number of rows in the table
+■ The number of blocks (used and never used) allocated to the table
+■ The amount of free space in the blocks that are being used
+■ The average length of each row
+■ The number of “chained” rows—rows that cut across two or more blocks, either because they are very long or because of poor storage settings
+
+Apart from statistics regarding the table as a whole, each column of the table is also analyzed. Column statistics are visible in the DBA_TAB_COLUMNS view; they include
+■ The number of distinct values
+■ The highest and lowest values
+■ The number of nulls
+■ The average column length
+When a table is analyzed, its indexes are also examined. The statistics on indexes are shown on the DBA_INDEXES view; they include
+■ The depth of the index tree
+■ The number of distinct key values
+■ The clustering factor—how closely the natural order of the rows follows the order of the keys
+
+The CLUSTERING_FACTOR is an indication of how ordered the table is with respect to the index itself
+
+• If the value is near the number of blocks, then the table is very well ordered. In this case, the index entries in a single leaf block tend to point to rows in the same data blocks.
+• If the value is near the number of rows, then the table is very randomly ordered. In this case, it is unlikely that index entries in the same leaf block point to rows in the same data blocks.
+
+select a.index_name, b.num_rows, b.blocks, a.clustering_factor 
+from user_indexes a, user_tables b 
+where index_name in (ʹCOLOCATED_PKʹ, ʹDISORGANIZED_PKʹ ) and a.table_name = b.table_name
+INDEX_NAME NUM_ROWS BLOCKS CLUSTERING_FACTOR
+‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐ ‐‐‐‐‐‐‐‐‐‐ ‐‐‐‐‐‐‐‐‐‐ ‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐‐
+COLOCATED_PK 100000 1063 1063
+DISORGANIZED_PK 100000 1064 99908
+
+The COLOCATED_PK is a classic ʹthe table is well orderedʹ example, whereas the DISORGANIZE_PK is the classic ʹthe table is very randomly orderedʹ example. for unordered table optimizer may choose full table scan as opposed to index range scan depending on the the number of estimated rows of output. 
+
+Manual statistics gathering can done with either the ANALYZE command or by executing procedures in the DBMS_STATS package
+
+The ANALYZE command is easy to use but has limited functionality. DBMS_STATS has many more options and is the recommended tool.
+
+GATHER_SCHEMA_STATS procedure, which will analyze all the objects belonging to one user. Taking the arguments in turn:
+■ OWNNAME specifies the schema to be analyzed.
+■ CASCADE will analyze indexes as well as tables. The setting given lets Oracle decide which indexes (if any) should be analyzed.
+■ ESTIMATE_PERCENT controls how much of each table to analyze. The setting given instructs Oracle to make an intelligent guess at the amount needed for a meaningful sample.
+■ DEGREE specifies whether to perform the analysis with parallel processing. The setting given lets Oracle decide the number of parallel processes according to the environment and the size of each table.
+■ NO_INVALIDATE controls whether to reparse any SQL with dependencies on the objects analyzed immediately or not. The setting given lets Oracle decide.
+■ GRANULARITY refers to how best to analyze objects consisting of a number of subobjects, such as a table that is divided into partitions. The setting given lets Oracle decide.
+■ METHOD_OPT controls for which columns to build up histograms, and how many buckets they should have. The setting given lets Oracle decide, according to the nature of the SQL being executed and the distribution  values in the data.
+■ OPTIONS determines which objects to analyze. The setting given instructs Oracle to analyze all objects where Oracle considers the statistics to be out of date.
+
+The gathering and visibility of statistics can be controlled by the STATISTICS_LEVEL instance parameter. This has three possible settings:
+■ BASIC
+■ TYPICAL
+■ ALL
+
+The parameter controls the automatic gathering of statistics at two levels:
+1. Statistics accumulated within the instance regarding activity 
+2. Object statistics within the database. 
+The instance statistics are accumulated in memory and flushed to the Automatic Workload Repository (the AWR) by the MMON (Manageability Monitor) background process. The object statistics are those gathered by analyzing objects with DBMS_STATS procedure calls.
+
+The default is setting is TYPICAL, which will be suitable for most databases in normal running mode. The TYPICAL setting will gather all the statistics needed by the self-management and tuning capabilities of the database and will also enable the automatic object analysis task that runs daily in the maintenance window. The BASIC setting disables computation of AWR statistics and disables the daily analysis.
+
+Gathering AWR Statistics
+Statistics are accumulated in memory, in data structures within the SGA. This causes no performance impact, because the statistics merely reflect what the instance is doing anyway. Periodically (by default, once an hour) they are flushed to disk, to the AWR. This is known as an AWR snapshot. The flushing to disk is done by a background process: the Manageability Monitor, or MMON.
+
+In earlier releases of the database, accessing performance tuning statistics was only possible by running queries against various views—the dynamic performance V$ views. Populating these views was an expensive process. The DBA had to launch a session against the database and then issue a query. The query forced Oracle to extract data from the SGA and present it to the session in a view. This approach is still possible—all the old views, and many  ore, are still available—but the AWR approach is far more efficient
+
+The MMON has direct access to the memory structures that make up the SGA, and therefore the statistics within them. It can extract data from the SGA without the need to go via a session.
+
+The AWR is a set of tables located in the SYSAUX tablespace—these tables cannot be relocated. They exist in the SYSMAN schema. You can log on to the database with tools such as SQL*Plus as user SYSMAN, but this should never be necessary.
+
+The most straightforward way to access AWR information is through Enterprise Manager; both Enterprise Manager Database Control and Enterprise Manager Grid Control log on to the database as SYSMAN, using a password that is encrypted in their configuration files. This is why changing the SYSMAN password requires more than executing an ALTER USER SYSMAN IDENTIFIED BY . .  command; in addition to this, you must also use the EMCTL utility:
+emctl setpasswd dbconsole
+
+which will update the encrypted password in the appropriate file.
+
+An AWR snapshot can be thought of as a copy of the contents of many V$ views  at the time the snapshot was taken. Snapshots of statistics data are kept in the AWR, by default, for eight days. This period is configurable. As a rough guide for sizing, if the snapshot collection is left on every hour and the retention time is left on eight days, then the AWR may well require between 200 MB and 300 MB of space in the SYSAUX tablespace. But this figure is highly variable and will to a large extent depend on the number of sessions. 
+
+To administer the AWR with Database Control, from the database home page take the Server tab, then the AWR link in the Statistics Management section.
+
+AWR snapshots contain statistics. What Oracle calls a statistic is a raw figure, which is meaningless in itself. To be useful, statistics must be converted into metrics. A metric is two or more statistics correlated together. For example, the number of disk reads is a statistic; perhaps the number is two billion. By itself, this is useless information. What the DBA needs to know is disk reads per second; disk reads per transaction; disk reads per SQL statement; disk reads per session. These figures are metrics. He/she will also need to do further correlations. For example, disk reads per transaction is very useful; it will identify the transactions that are stressing the I/O system and perhaps should be tuned. But he/she will need to observe this metric over time and see how it changes. 
+
+Database Control has interfaces for managing the AWR, but it does so by invoking procedures in a PL/SQL package: DBMA_WORKLOAD_REPOSITORY. The procedures can adjust the frequency and persistence of snapshots, generate an ad hoc snapshot (additional to those generated by MMON)
+
+The view V$SYSAUX_OCCUPANTS shows all the components installed into the SYSAUX tablespace. Find out how much space the AWR is taking up:
+
+select occupant_desc,space_usage_kbytes from v$sysaux_occupants where occupant_name='SM/AWR';
+
+Gather an AWR snapshot:
+execute dbms_workload_repository.create_snapshot;
+
+Rerun the above query and calculate the increase in size caused by taking the manual snapshot.
+
+Find out how many snapshot there are, and what date range they cover:
+
+select min(begin_interval_time), max(begin_interval_time),count(snap_id) from dba_hist_snapshot;
+
+Use the Advisory Framework
+
+The database comes preconfigured with a set of advisors. First among these is the Automatic Database Diagnostic Monitor, or ADDM. Studying ADDM reports, which are generated automatically whenever an AWR snapshot is taken, will usually be a regular part of the DBA’s routine. The ADDM reports are of great value in themselves and will highlight problems within the database and suggest solutions. The automatically generated ADDM reports always cover the period between the current snapshot and the previous one—so by default, you will have access to reports covering every hour.
+
+The Advisors
+The ADDM is the starting point for performance analysis and problem resolution, and it may well give all the advice needed. Its recommendations may be
+
+■ Hardware changes (such as adding CPUs)
+■ Database configuration (such as instance parameter settings)
+■ Schema changes (such as use of table and index partitioning)
+■ Application changes (such as using bid variables)
+■ Using other advisors (for more detailed analysis and recommendations)
+
+The Memory Advisors
+The memory advisors predict the effect of varying the size of memory structures, reporting the estimates in terms of processing time saved (the Shared Pool, Java Pool, and Streams Pool advisors), disk activity reduced (the Database Buffer Cache advisor), or both (the PGA advisor). There is no advisor for the Large Pool.
+
+The SQL Advisors
+There are three SQL advisors: the SQL Access Advisor, the SQL Tuning Advisor, and the SQL Repair Advisor.
+
+The SQL Access Advisor will observe a workload of SQL statements and make recommendations regarding segments that would mean that the workload would run
+more quickly. The recommendations can be to create or drop indexes and materialized views, and to make use of segment partitioning.
+
+The SQL Tuning Advisor can analyze individual statements, as well as recommending schema changes (as the Access Advisor does). It can recommend generating additional statistics on the statement’s execution that will assist the optimizer in choosing the best execution plan.
+
+Occasionally, an SQL statement can fail because of an internal Oracle error. This will be reported with the “ORA-600” error message. If the error condition (which is a polite name for a “bug”) is only encountered when following a particular execution plan, it follows that using a different execution plan could avoid the failure. The SQL Repair Advisor can investigate this and generate a patch to the statement that will force the optimizer to choose a safe plan, rather than a plan that hits the problem.
+
+---------------
+When you create the Oracle 11g database using DBCA, gathering optimizer statistics is automatically set up and enabled using the Automated Maintenance Tasks (AutoTask) infrastructure.
+
+You can enable and disable the automatic optimizer statistics gathering by using the DBMS_AUTO_TASK package.
+
+BEGIN
+DBMS_AUTO_TASK_ADMIN.DISABLE (
+client_name=>’auto optimizer stats collection’,
+operation=>NULL, window_name=>NULL);
+END;
+
+BEGIN
+DBMS_AUTO_TASK_ADMIN.ENABLE (
+client_name=>’auto optimizer stats collection’,
+operation=>NULL, window_name=>NULL);
+END;
+
+SELECT client_name, status FROM dba_autotask_client;
+
+Extended Statistics
+In Oracle 11g, you can tell the optimizer the relationship between columns by using the extended statistics feature (multicolumn statistics). The extended statistics feature also includes statistics on columns where a function is applied (function-based statistics). By collecting extended statistics on columns, the optimizer will be able to estimate the selectivity better.
+
+To define the extension and collect statistics in one step, you can do the following:
+
+SQL> exec dbms_stats.gather_table_stats(null, ‘customers’,
+	method_opt=>’for all columns size skewonly for columns (cust_country, cust_state)’);
+PL/SQL procedure successfully completed.
+
+select extension_name, extension from user_stat_extensions where table_name = ‘CUSTOMERS’;
+
+Most of the performance statistics information is available through V$ dictionary views (also known as dynamic performance views). The information in the V$ views are not persistent; that is, information is lost when the database is shut down. Automatic Workload Repository (AWR) saves the performance information in system tables
+
+Two background processes are responsible for collecting the performance statistics: Memory Monitor (MMON) and Memory Monitor Light (MMNL). These processes work together to collect performance statistics directly from the system global area (SGA). The MMON process does most of the work by waking up every 60 minutes and gathering statistical information from the data dictionary views, dynamic performance views, and optimizer and then storing this information in the database. The tables that store these statistics are the Automatic Workload Repository. These tables are owned by the user SYSMAN
+and are stored in the SYSAUX tablespace.
+
+To activate the AWR feature, you must set the pfile/spfile’s parameter STATISTICS_LEVEL to the appropriate value.
+values for STATISTICS_LEVEL can be:
+BASIC : Disables the AWR and most other diagnostic monitoring and advisory activities. 
+TYPICAL : Activates the standard level of collection activity. This is the default value for AWR and is appropriate for most environments.
+ALL : Captures all the statistics gathered by the TYPICAL collection level, plus the execution plans and timing information from the operating system.
+
+Once gathered, the statistics are stored in the AWR for a default duration of eight days. However, you can modify both the frequency of the snapshots and the duration for which they are saved in the AWR.
+
+SQL> execute dbms_workload_repository.modify_snapshot_settings
+	(interval=>60,retention=>43200);
+PL/SQL procedure successfully completed.
+
+The 30-day retention value shown here is expressed in minutes: 60 minutes per hour × 24 hours per day × 30 days = 43,200 minutes.
+
+Managing AWR Snapshots Manually
+EXECUTE DBMS_WORKLOAD_REPOSITORY.CREATE_SNAPSHOT ();
+
+SELECT snap_id, begin_interval_time, end_interval_time FROM dba_hist_snapshot ORDER BY snap_id;
+
+BEGIN
+DBMS_WORKLOAD_REPOSITORY.DROP_SNAPSHOT_RANGE (5, 15);
+END;
+/
+
+Once AWR snapshots are taken and stored in the database, the Automatic Database Diagnostic feature uses the AWR data
+
+AWR Baselines
+It is a good practice to baseline your database when everything is working as expected. When things go south, you can use this baseline to compare system statistics and performance metrics.
+
+SQL> BEGIN
+2 DBMS_WORKLOAD_REPOSITORY.CREATE_BASELINE(
+3 start_snap_id => 27,
+4 end_snap_id => 29,
+5 baseline_name => ‘OCP Example’,
+6 expiration => 21);
+7 END;
+SQL> /
+
+SQL> BEGIN
+2 DBMS_WORKLOAD_REPOSITORY.DROP_BASELINE(
+3 baseline_name => ‘OCP Example’,
+4 cascade => FALSE);
+5 END;
+SQL> /
+
+
+Automatic Database Diagnostic Monitoring
+Following each AWR statistics-collection process, the Automated Database Diagnostic Monitoring (ADDM) feature automatically analyzes the gathered statistics and compares them to the statistics gathered by the previous two AWR snapshots. By comparing the current statistics to these two previous snapshots, the ADDM can easily identify potential problems like 
+CPU and I/O bottlenecks
+Resource-intensive SQL or PL/SQL or Java execution
+Lock contention
+Utilization of Oracle’s memory structures within the SGA
+RAC-specific issues
+Issues with Oracle Net configuration
+Data-concurrency issues
+
+Based on these findings, the ADDM may recommend possible remedies.
+
+Understanding Automatic Diagnostic Repository
+The Automatic Diagnostic Repository (ADR) is a file-based repository for database diagnostic data such as alert log files, trace files, core dump files, health monitor reports, and so on.
+
+Starting with Oracle 11g, these files and much more are saved under the ADR framework. ADR replaces the BACKGROUND_DUMP_DEST, CORE_DUMP_DEST, and USER_DUMP_DEST locations. A new parameter, DIAGNOSTIC_DEST, specifies the base directory for the ADR. The default for DIAGNOSTIC_DEST is $ORACLE_BASE if available; otherwise, it’s $ORACLE_HOME/log.
+
+Type of File : Pre–Oracle 11g Location :Oracle 11g Location
+Alert log (text): BACKGROUND_DUMP_DEST : <ADR_HOME>/trace
+Alert log (XML) : None : <ADR_HOME>/alert
+Server trace files : BACKGROUND_DUMP_DEST : <ADR_HOME>/trace
+User trace files : USER_DUMP_DEST : <ADR_HOME>/trace
+Core dump files : CORE_DUMP_DEST : <ADR_HOME>/cdump
+
+The values for _DUMP_DEST parameters are ignored by Oracle 11g. The new view V$DIAG_INFO gives file locations:
+
+SELECT name, value FROM v$diag_info;
+
+BEGIN
+DBMS_MONITOR.SESSION_TRACE_ENABLE(session_id=>324,
+serial_num=>54385,
+waits=>TRUE,
+binds=>TRUE);
+END;
+
+BEGIN
+DBMS_MONITOR.SESSION_TRACE_DISABLE(session_id=>324,
+serial_num=>54385);
+END;
+
+SELECT * FROM v$sga_target_advice;
+
+Automatic Memory Management
+Automatic Memory Management (AMM) is new to Oracle 11g and further eases the memory management. AMM automatically tunes the SGA and PGA components. All you have to do is to specify the total memory available to the instance by using the MEMORY_TARGET parameter. When AMM is used, Oracle automates the sizing of SGA and PGA, and it causes the indirect transfer of memory from SGA to PGA, and vice versa, as required by the workload. The default for SGA is 60 percent and the default for PGA is 40 percent allocation when the instance is started.
+
+MEMORY_TARGET is a dynamic parameter; you can increase it up to the maximum specified by the static parameter MEMORY_MAX_TARGET. By default, AMM is not enabled in Oracle 11g— the default value for MEMORY_TARGET is zero.
+MEMORY_TARGET (MT) and  SGA_TARGET (ST)
+
+MT=0 means AMM is disabled
+ST=0 means ASMM is disabled
+In this case you must specify values for individual pools.
+
+MT>0 AMM is enabled
+ST=0 ASMM is disabled
+Full automatic tuning of SGA and PGA.
+
+MT>0 AMM is enabled
+ST>0 ASMM is enabled
+Automatic tuning of SGA and PGA, but SGA will keep the minimum value specified by ST.
+
+You can adjust the MEMORY_TARGET parameter size after reviewing the advisor view V$MEMORY_TARGET_ADVICE:
+
+SELECT * FROM v$memory_target_advice;
+
+If you want to know the size of all the AMM memory components
+SELECT component, current_size, min_size, max_size FROM v$memory_dynamic_components;

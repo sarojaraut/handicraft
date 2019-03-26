@@ -1,0 +1,767 @@
+Chapter 14 Using the Scheduler for Task Automation
+
+The Scheduler uses several distinct components to specify scheduled tasks:
+Jobs 
+A job instructs the Scheduler to run a specific program at a specific time on a specific date.
+
+Programs 
+A program contains the code (or a reference to the code) such as PL/SQL code or a binary executable that needs to be run to accomplish a task. It can also contain parameters that should be passed to the program at runtime. A program can be stored as an independent object that can be referenced by many jobs.
+
+Schedules 
+A schedule contains a start date, an optional end date, and a repeat interval. With these elements, an execution schedule can be calculated. A schedule can be stored as
+an independent object that can be referenced by many jobs.
+
+Windows 
+A window identifies a recurring block of time during which a specific resource plan should be enabled to govern resource allocation for the database. For instance, the weekend may be classified as a maintenance window, and you can enable a resource plan that allocates the bulk of the system resources to administrative users.
+
+Job classes 
+A job class is a logical method of classifying jobs with similar attributes. Job groups define specific attributes that will be inherited by all jobs assigned to the group. They also simplify management by allowing collections of jobs to be manipulated as one object.
+
+Window groups 
+A window group is a logical method of grouping windows. They simplify the management of windows by allowing the members of the group to be manipulated as one object. Unlike job groups, window groups don’t set default characteristics for windows that belong to the group.
+
+Chains 
+A chain consists of two or more Scheduler programs that are linked together to meet an objective. A chain is an implementation of dependency scheduling, where the outcome
+of one job determines which job or jobs will execute next.
+
+Scheduler Architecture
+The job table, which houses all the active jobs within the database
+The job coordinator, a key Oracle process that ensures that jobs are being run on schedule
+Job slaves, processes that carry out the execution of jobs under the guidance of the job coordinator
+
+SQL> select owner, job_name, state from dba_scheduler_jobs;
+
+The Oracle database itself monitors job schedules and starts the job-coordinator process (if it is not already started) when a job needs to be executed. The job coordinator pulls the job information from the memory cache and passes it to a job-slave (described in the next section) process for execution. The job coordinator controls all aspects of the job-slave pool of processes, so it can remove dormant slave processes and spawn new processes as needed to meet the needs of the Scheduler.
+
+The Job-Slave Processes
+Job-slave processes are tasked with carrying out the execution of job programs assigned to them by the Scheduler. When the job is complete, the transaction is committed and the session is closed by the job slave. Next, the slave performs the following actions:
+Reschedules the job if required.
+Updates the STATUS column to a value of COMPLETED in the job table for the current job.
+Updates the RUN_COUNT column to increment the current value by 1 in the job table for the current job. If necessary, updates the failure and retry count.
+Inserts an entry into the job log table.
+Cleans up.
+Looks for any new work that needs to be done.
+
+Exploring Common Administration Tools
+The Oracle Scheduler is implemented through a PL/SQL package named DBMS_SCHEDULER. This package offers a collection of procedures that are used to create and manage Scheduler objects (jobs, programs, schedules, windows, job classes, window groups, and chains).
+
+Most of the procedures in the DBMS_SCHEDULER package are specific to a certain object type. The object type can be derived from the name of the procedure. For example, the
+CREATE_PROGRAM procedure is obviously specific to program objects. However, because all Scheduler objects share some common attributes, there are also procedures that work with any Scheduler object type.
+
+ENABLE
+DISABLE
+SET_ATTRIBUTE
+SET_ATTRIBUTE_NULL
+
+Using the ENABLE Procedure
+With the exception of schedules, all Scheduler objects have a common attribute named ENABLED. The attribute is a Boolean (TRUE or FALSE) value that identifies whether the object is eligible for use by the Scheduler. By default, only schedule objects are enabled at creation time, because they cannot be disabled. All other objects will be disabled by default when they are created.
+
+To enable an object, the DBMS_SCHEDULER.ENABLE procedure is used. The procedure accepts only one argument, NAME, which designates one of the following:
+The name of one specific object
+A comma-separated list of objects
+
+SQL> begin
+2 dbms_scheduler.enable(‘BACKUP_JOB’);
+3 end;
+4 /
+
+SQL> begin
+2 dbms_scheduler.enable(
+3 ‘BACKUP_PROGRAM, BACKUP_JOB, STATS_JOB’);
+4 end;
+5 /
+
+There are a couple of special cases that should be noted about enabling group objects:
+When a job group is enabled, all members of that job group will be enabled.
+When a window group is enabled, only the window group object is enabled. Windows that are members of the group are not enabled.
+When a window or window group is referenced in the ENABLE procedure, it must always be prefixed with the SYS schema name as shown in the preceding example
+(SYS.WINDOW_GROUP_1).
+
+Using the DISABLE Procedure
+When a Scheduler object is disabled, it is ineligible for use by the Scheduler. Disabling a Scheduler object is accomplished by setting the object’s ENABLED attribute to FALSE. To disable an object, the DBMS_SCHEDULER.DISABLE procedure is used. This procedure accepts two parameters: NAME and FORCE. The NAME parameter designates one of the following:
+The name of one specific object
+A comma-separated list of objects
+The FORCE parameter is a Boolean (TRUE or FALSE) value that tells the procedure how to handle the request if dependencies exist. The default value is FALSE.
+There are two situations that could be classified as dependencies:
+A job object that references a program object is considered to be dependent on that object.
+If an instance of an object is currently running (for example, a window is open or a job is running), there may be a dependency issue.
+
+The effect of the FORCE option varies between object types. The differences are listed below.
+Object Type  ->> Effect
+Job ->> If the FORCE attribute is FALSE: If an instance of the job is currently running, the procedure will fail. If the FORCE attribute is TRUE: The job is disabled,
+but the currently running instance is allowed to finish.
+Schedule ->> N/A
+Program ->> If the FORCE attribute is FALSE: If the program is referenced by any job, the procedure will fail. If the FORCE attribute is TRUE: The program will be
+disabled. Jobs that reference the program will not be disabled but will fail at runtime if the program is still disabled.
+Window ->> If the FORCE attribute is FALSE: If the window is open or referenced by any job, the procedure will fail. If the FORCE attribute is TRUE: The procedure will succeed in disabling the window. If that window is open at the time the DISABLE procedure is called, it will not be affected. Jobs that reference the window will not be disabled.
+Window group ->> If the FORCE attribute is FALSE: If any member windows are open or if any member windows are referenced by a job object, the DISABLE procedure will fail. If the FORCE attribute is TRUE: The window group will be disabled. Any open window that is a member of the group will continue to its end. Jobs that reference the window group as their schedule will not be disabled.
+
+If an object has no dependencies, using the DISABLE procedure will disable any valid Scheduler object regardless of the value of the FORCE parameter.
+For example, use the following command to disable one specific object:
+SQL> begin
+2 dbms_scheduler.disable(‘BACKUP_JOB’);
+3 end;
+4 /
+
+To disable multiple objects, a comma-separated list can be passed in. Note that the entire list is enclosed in single quotes. Therefore, the list is submitted as a single parameter. In this example, the FORCE option is also set to TRUE:
+
+SQL> begin
+2 dbms_scheduler.disable(
+3 ‘BACKUP_PROGRAM, BACKUP_JOB, STATS_JOB’,TRUE);
+4 end;
+5 /
+
+Setting Attributes
+The SET_ATTRIBUTE procedure sets an attribute for any type of Scheduler object. The SET_ATTRIBUTE_NULL procedure, on the other hand, sets any attribute to NULL for any type of Scheduler object. This is useful for “unsetting” an attribute. When the attributes on an object are changed, Oracle will attempt to disable the object before making the changes. When the attribute has been successfully altered, Oracle will re-enable the object automatically. If the SET_ATTRIBUTE procedure fails, the object will remain disabled (and an error message is returned). Using the SET_ATTRIBUTE procedure does not affect instances of the object that are currently executing. Changes made will affect only future instantiations of the object.
+The SET_ATTRIBUTE procedure accepts three parameters:
+NAME The name of the Scheduler object.
+ATTRIBUTE The name of the attribute to be changed.
+VALUE The new value for the attribute. The procedure is overloaded to accept a value of any applicable datatype, so no conversion is necessary when setting values for different datatypes.
+The SET_ATTRIBUTE_NULL procedure accepts only two parameters:
+NAME The name of the Scheduler object.
+ATTRIBUTE The name of the attribute, which should be set to NULL.
+
+In the preceding section, you learned that an object was considered enabled when the ENABLED attribute was set to a value of TRUE. Therefore, you can enable or disable an object by using the SET_ATTRIBUTE procedure, as shown here:
+SQL> begin
+2 dbms_scheduler.set_attribute (
+3 name => ‘TEST_JOB’,
+4 attribute => ‘ENABLED’,
+5 value => TRUE);
+6 end;
+7 /
+
+To remove the end date from a schedule, the SET_ATTRIBUTE_NULL procedure can be used to set the attribute to NULL, as shown here:
+SQL> begin
+2 dbms_scheduler.set_attribute_null (
+3 name => ‘TEST_SCHEDULE’,
+4 attribute => ‘END_DATE’);
+5 end;
+6 /
+
+A Scheduler job defines a specific program to be executed, the arguments (or parameters) to be passed to the program, and the schedule defining when the program should be executed.It also specifies other characteristics, such as logging options, job priority, and so on.
+Many of these characteristics are explicitly set at job-creation time through the CREATE_JOB procedure. However, others are inherited from the job class to which the job is assigned. If a job is not explicitly assigned to a job class, these characteristics will be inherited from a job class named DEFAULT_JOB_CLASS.
+
+Creating Jobs
+Scheduler jobs can be created by using the DBMS_SCHEDULER.CREATE_JOB procedure. As you will recall, a job combines a program and a schedule for execution of that program. Therefore, these are the elements that you must define when creating a new job.
+
+Job Attributes
+Scheduler jobs have a specific set of attributes that you can set to define the characteristics of the job. These attributes can be set at job-creation time through the following CREATE_JOB procedure parameters:
+JOB_NAME : The JOB_NAME parameter specifies the name assigned to the new job. Because jobs are stored like any other database object, standard Oracle naming requirements are enforced for jobs. This means that the job name must not only be a valid Oracle object name; it must also be unique within the schema.
+JOB_TYPE : The JOB_TYPE parameter specifies the type of job that will be created. This is a required parameter and cannot be excluded. It can be any one of the following:
+PLSQL_BLOCK : The job will execute an anonymous PL/SQL block. Anonymous PL/SQL block jobs do not accept job or program arguments, so the number of arguments must be set to 0.
+STORED_PROCEDURE : The job will execute a PL/SQL stored procedure. When you use PL/SQL’s External Procedure feature, the PL/SQL procedure could be a wrapper to call
+a Java stored procedure or an external C routine.
+EXECUTABLE : The job will execute a program that is external to the database. An external job is any program that can be executed from the operating system’s command line.
+ANYDATA arguments are not supported with a job or program type of executable.
+
+JOB_ACTION The JOB_ACTION attribute specifies the code to be executed for this job. For a PL/SQL block, the Scheduler will automatically wrap the JOB_ACTION code in its own PL/SQL block prior to execution. Therefore, JOB_ACTION can be a complete PL/SQL block or one or more lines of valid PL/SQL code. Therefore, both of the following examples are valid:
+‘BEGIN update employee set salary = salary*2
+where employee_name like ‘EVANS’; commit; END;’
+
+‘update employee set salary = salary*2
+where employee_name like ‘EVANS’; commit;’
+
+For a stored procedure, the value should be the name of the stored procedure, as in this example:
+‘DBMS_SESSION.SET_ROLE(‘’PAYROLL_USER’’);’
+
+For an executable, the value is the name of the executable, including the full path name and applicable command-line arguments. If environment variables are required, we suggest that the executable be wrapped in a shell script that defines the environment before executing the program.
+For example, specifying‘/prod/bin/big_load.sh full’would execute the big_load.sh
+script and pass in one argument with the value of full.
+
+NUMBER_OF_ARGUMENTS : The NUMBER_OF_ARGUMENTS parameter specifies the number of arguments that the job accepts. The range is 0 (default) to 255.
+PROGRAM_NAME : The PROGRAM_NAME parameter specifies the name of the program associated with this job. The program name must be the name of an existing program object.
+START_DATE : The START_DATE parameter specifies the first date that the job should be run. If both the START_DATE and REPEAT_INTERVAL parameters are NULL, the job will be run as soon as it is enabled.
+
+REPEAT_INTERVAL : The REPEAT_INTERVAL parameter specifies how often the job should be repeated. This parameter can be specified using either a calendaring or a PL/SQL expression. If this parameter is NULL, the job will run only once (at the scheduled start time).
+SCHEDULE_NAME : The SCHEDULE_NAME parameter specifies the name of the schedule associated with this job. It can optionally specify a window or window group associated with the job.
+END_DATE : The END_DATE parameter specifies the date when the job will expire. After the date specified, the job will no longer be executed; the STATE of the job will be set to COMPLETED, and the ENABLED flag will be set to FALSE.
+ENABLED : The ENABLED parameter specifies whether the job is created in an enabled state. A value of TRUE means the job will be enabled. By default, all jobs are created disabled, so the default value for this parameter is FALSE. A disabled job will exist as an object in the database, but it will never be processed by the job coordinator.
+AUTO_DROP : The AUTO_DROP parameter specifies whether the job will be automatically dropped once it has been executed (for nonrepeating jobs) or when its status is changed
+to COMPLETED (for repeating jobs).
+
+Identifying the CREATE_JOB Procedure Options
+Jobs are created by using the DBMS_SCHEDULER.CREATE_JOB procedure. The CREATE_JOB procedure is an overloaded procedure.
+
+The following example creates a job that will run once every year to enact cost-of-living adjustments for all employees:
+SQL> begin
+2 dbms_scheduler.create_job (
+3 job_name => ‘LNE_job’,
+4 job_type => ‘PLSQL_BLOCK’,
+5 job_action => ‘update employee set salary = salary*1.05;’,
+6 start_date => ‘10-OCT-2008 06:00:00 AM’,
+7 repeat_interval => ‘FREQ=YEARLY’,
+8 comments => ‘Cost of living adjustment’);
+9 end;
+10 /
+
+SQL> select job_name, enabled, run_count from user_scheduler_jobs;
+
+JOB_NAME ENABLED RUN_COUNT
+------------------------- ----------
+LNE_JOB FALSE 0
+
+By default, jobs are created disabled. You must explicitly enable a job before it will become active and scheduled.
+
+Copying Jobs
+Jobs can be copied by using the DBMS_SCHEDULER.COPY_JOB procedure. This procedure accepts only two parameters: OLD_JOB and NEW_JOB. These parameters represent the name of the source and destination job names, respectively. A copied job will be identical to the original job, with the following exceptions:
+The new job will have a different name.
+The new job will be created in a disabled state.
+
+Running Jobs
+The Scheduler allows scheduled jobs to be run outside of their normal schedule through the DBMS_SCHEDULER.RUN_JOB procedure. This procedure is useful for testing a newly created job or for re-executing a job that failed previously. It doesn’t affect the existing schedule of the job, nor does it require the creation of a separate, one-time-only job.
+
+The RUN_JOB procedure accepts the JOB_NAME and USE_CURRENT_SESSION parameters. The USE_CURRENT_SESSION parameter is a Boolean (TRUE or FALSE) value that determines the
+method in which the job will be run. If this parameter is set to FALSE (the default value), the job will be submitted to the job Scheduler for normal asynchronous execution. If the parameter is set to TRUE, the job will be executed synchronously using the current user session. This means that as soon as the procedure is executed, the job will run. Therefore, control will not be returned to your user session until the job execution is complete, as you can see here:
+SQL> begin
+2 dbms_scheduler.run_job(‘DAILY_ETL’,TRUE);
+3 end;
+4 /
+
+Stopping Jobs
+A running job can be stopped by using the DBMS_SCHEDULER.STOP_JOB procedure. When a job is stopped in this manner, the Scheduler attempts to stop the job in a graceful manner by means of an interrupt mechanism. When that’s successful, control is returned to the slave process running the job, which will set the status of the job to STOPPED. Optionally, a user with the MANAGE_SCHEDULER privilege can set the FORCE parameter to TRUE. This causes Oracle to terminate the process running the job and stops the job much faster, in most cases. The STOP_JOB procedure can be called as follows:
+
+SQL> begin
+2 dbms_scheduler.stop_job(job_name => ‘LNE_JOB’,
+3 force => TRUE);
+4 end;
+5 /
+
+Dropping Jobs
+Jobs can be dropped by using the DBMS_SCHEDULER.DROP_JOB procedure. This procedure removes the job object completely from the database. If an instance of the job is running when you issue the DROP_JOB procedure, an error will result. If you set the FORCE option to TRUE, Oracle will issue an implicit STOP_JOB procedure to kill the current instance and then drop the job.
+
+Using Scheduler Programs
+A program defines the action that will occur when a job runs. It can be a PL/SQL block, a stored procedure, or an operating-system executable. 
+
+Program Attributes
+Scheduler programs have a specific set of attributes that you can set to define their characteristics. These attributes can be set at creation time through the following CREATE_PROGRAM procedure parameters:
+PROGRAM_NAME:
+ The PROGRAM_NAME parameter specifies the name assigned to the new program. Program name must be a valid Oracle object name  and it must also be unique within the schema.
+PROGRAM_TYPE:
+ The PROGRAM_TYPE parameter specifies the type of program that will be created. This is a required parameter and cannot be excluded. It can be any one of the following:
+PLSQL_BLOCK The program is an anonymous PL/SQL block. Anonymous PL/SQL block jobs do not accept job or program arguments, so the NUMBER_OF_ARGUMENTS attribute must be set to 0.
+STORED_PROCEDURE The program is a PL/SQL stored procedure. When you use PL/SQL’s External Procedure feature, the PL/SQL procedure could be a wrapper to call a Java stored procedure or an external C routine.
+
+EXECUTABLE :
+The program is external to the database. An external program is any program that can be executed from the operating system’s command line.
+PROGRAM_ACTION :
+The PROGRAM_ACTION attribute specifies the code to be executed. For a PL/SQL block, the Scheduler automatically wraps the PROGRAM_ACTION code in its own PL/SQL block prior to execution. Therefore, this attribute can be a complete PL/SQL block or one or more lines of valid PL/SQL code.
+NUMBER_OF_ARGUMENTS :
+The NUMBER_OF_ARGUMENTS parameter specifies the number of arguments that the job accepts. The range is 0 (the default) to 255.
+ENABLED :
+The ENABLED parameter specifies whether the job is created in an enabled state. A value of TRUE means the program will be enabled. By default, all programs are created
+disabled, so the default value for this parameter is FALSE.
+COMMENTS :
+The COMMENTS parameter allows the entry of a comment to document the program.
+
+To create a program that executes a stored procedure, this new program object can in turn be called by job objects.See the following example:
+
+SQL> begin
+2 dbms_scheduler.create_program(
+3 program_name => ‘STATS_PROGRAM’,
+4 program_type => ‘STORED_PROCEDURE’,
+5 program_action => ‘DBMS_STATS.GATHER_SCHEMA_STATS’,
+6 number_of_arguments => 1,
+7 comments => ‘Gather stats for a schema’);
+8 end;
+9 /
+
+The program requires one argument, which is the name of the schema. The argument can be defined by using the DEFINE_PROGRAM_ARGUMENT procedure, as shown here:
+SQL> begin
+2 dbms_scheduler.define_program_argument(
+3 program_name => ‘STATS_PROGRAM’,
+4 argument_position => 1,
+5 argument_type => ‘VARCHAR2’);
+6 end;
+SQL> /
+
+You may have noticed that the example of the DEFINE_PROGRAM_ARGUMENT procedure doesn’t specify a name for the argument. The ARGUMENT_NAME parameter is available, but it’s completely optional.
+
+Arguments can be dropped from programs as well. The DBMS_SCHEDULER.DROP_PROGRAM_ARGUMENT procedure allows arguments to be dropped either by name or by the position of the argument. The following examples show how an argument may be dropped by specifying its position:
+SQL> begin
+2 dbms_scheduler.drop_program_argument(
+3 program_name => ‘STATS_PROGRAM’,
+4 argument_position => 1);
+5 end;
+SQL> /
+
+This example shows how an argument may be dropped by specifying its name:
+SQL> begin
+2 dbms_scheduler.drop_program_argument(
+3 program_name => ‘STATS_PROGRAM’,
+4 argument_name => ‘SCHEMA_NAME’);
+5 end;
+SQL> /
+
+The following example drops the STATS_PROGRAM program and disables any referencing jobs:
+SQL> begin
+2 dbms_scheduler.drop_program (
+3 program_name => ‘STATS_PROGRAM’,
+4 force => TRUE);
+5 end;
+SQL> /
+
+Using Schedules
+Schedules define when jobs run as well as when windows are. Schedules define not only when a job will start, but also how often the job will be repeated. This is known as the repeat interval. Oracle’s Scheduler offers two ways to define the interval: using PL/SQL expressions or using the powerful new calendaring syntax introduced in Oracle 10g. The Scheduler can schedule job execution based on the following methods:
+Time-based
+Event-based
+Dependency
+
+In time-based scheduling, you define the time and date that you would like a job to run and repeat. Event-based scheduling allows you to start a job based on some event that signals the Scheduler. In dependency scheduling, the Scheduler runs jobs based on the results of previous jobs in a defined chain.
+
+
+Schedule Attributes
+Schedule objects have a specific set of attributes that you can set to define the characteristics of the schedule. These attributes can be set at creation time through the following CREATE_SCHEDULE procedure parameters:
+SCHEDULE_NAME :
+The SCHEDULE_NAME parameter specifies the name of the schedule. Schedule name must be a valid Oracle object name  and it must also be unique within the schema.
+START_DATE:
+ The START_DATE parameter specifies the first date that the schedule is valid. The START_DATE parameter is used as a reference date when the REPEAT_INTERVAL parameter uses a calendaring expression. In this situation, the job runs on the first date that matches the calendaring expression and is on or after the date specified in the START_DATE parameter.
+END_DATE:
+ The END_DATE parameter specifies the date when the schedule will expire. After the date specified, the job will no longer be executed; the STATE of the job will be set to COMPLETED, and the ENABLED flag will be set to FALSE. If this parameter is set to NULL, the job will repeat forever. However, if the MAX_RUNS or MAX_FAILURES parameter is set, the job will stop if either of these thresholds is met.
+REPEAT_INTERVAL:
+ The REPEAT_INTERVAL parameter specifies how often the schedule should be repeated. This parameter can be specified using either a calendaring or a PL/SQL expression. If this parameter is NULL, the job will run only once (at the scheduled start time).
+COMMENTS:
+ The COMMENTS parameter allows the entry of a comment to document the schedule.
+
+ The following example creates a schedule that repeats every night at 8:00 p.m.:
+SQL> begin
+2 dbms_scheduler.create_schedule(
+3 schedule_name => ‘NIGHTLY_8_SCHEDULE’,
+4 start_date => SYSTIMESTAMP,
+5 repeat_interval => ‘FREQ=DAILY; BYHOUR=20’,
+6 comments => ‘Runs nightly at 8:00 PM’);
+7 end;
+SQL> /
+
+Setting Repeat Intervals
+Oracle’s calendaring syntax offers tremendous flexibility when it comes to defining repeat intervals. The syntax includes a set of elements that offer different methods of specifying repeating dates. By mixing and matching these elements, you can generate fairly complex repeat intervals.
+
+Calendaring Syntax Element Descriptions
+FREQ :
+The FREQ parameter defines the frequency type. This parameter is required. The following values are valid: YEARLY, MONTHLY, WEEKLY, DAILY, HOURLY, MINUTELY, and SECONDLY.
+INTERVAL :
+The INTERVAL element specifies how often the recurrence repeats. For example, if FREQ is set to DAILY, then an INTERVAL value of 1 (the default value) means that the job will execute every day. A value of 2 means that the job would execute every other day, and so on. The maximum value is 999.
+BYMONTH :
+The BYMONTH element specifies the month or months in which you want the job to execute. The months can be represented numerically (1–12) or using three-letter abbreviations (JAN–DEC). Multiple months should be separated by commas.
+BYWEEKNO :
+The BYWEEKNO element specifies the week of the year as a number. It follows the ISO-8601 standard, which defines the week as starting with Monday and ending with Sunday. It also defines the first week of a year as the first week in which most days fall within the Gregorian year.
+BYYEARDAY :
+The BYYEARDAY element specifies the day of the year as a number. Positive numbers that are greater than 59 will be affected by leap day. For example, 60 would evaluate to March 1 on non-leap years but would evaluate to February 29 on leap years. Instead, negative numbers can be used. For example, –7 will always evaluate to December 25.
+BYMONTHDAY :
+The BYMONTHDAY element specifies the day of the month as a number. Negative numbers can be used to count backward. For example, –1 will always evaluate to the last day of the month.
+BYDAY :
+The BYDAY element specifies the day of the week using a three-letter abbreviation (MON, TUE, and so on). Monday is always the first day of the week. You can also prepend the BYDAY element with a number representing the occurrence of the specified day. For example, if FREQ is set to MONTHLY, you can specify the last Friday of the month by using –1FRI.
+BYHOUR :
+The BYHOUR element specifies the hour on which the job is to run. Valid values are 0–23.
+BYMINUTE :
+The BYMINUTE element specifies the minute on which the job is to run.Valid values are 0–59.
+BYSECOND :
+The BYSECOND element specifies the second on which the job is to run. Valid values are 0–59.
+
+Examples
+Every Monday -> FREQ=WEEKLY; BYDAY=MON;
+Every other Monday -> FREQ=WEEKLY; BYDAY=MON; INTERVAL=2;
+Last day of each month ->FREQ=MONTHLY; BYMONTHDAY=-1;
+Every January 7 -> FREQ=YEARLY; BYMONTH=JAN; BYMONTHDAY=7;
+Second Wednesday of each month -> FREQ=MONTHLY; BYDAY=2WED;
+Every hour -> FREQ=HOURLY;
+Every 4 hours -> FREQ=HOURLY; INTERVAL=4;
+Hourly on the first day of each month-> FREQ=HOURLY; BYMONTHDAY=1;
+15th day of every other month ->FREQ=MONTHLY; BYMONTHDAY=15; INTERVAL=2
+
+Testing Repeat Intervals
+One issue inherent in defining schedule repeat intervals is testing. How do you make sure you didn’t make a mistake in your logic? To address that issue, Oracle offers the DBMS_SCHEDULER.EVALUATE_CALENDAR_STRING procedure. This procedure allows you to pass in a calendaring syntax expression and a start date, and it will return the time and date that the job will execute next. Optionally, you can also instruct the procedure to show the next execution time after a certain date, thereby allowing you to see execution dates in the future. 
+
+To use the EVALUATE_CALENDAR_STRING procedure, you will need to use PL/SQL that
+accepts a return value of type TIMESTAMP, as shown here:
+SQL>DECLARE
+2 start_date TIMESTAMP;
+3 return_date_after TIMESTAMP;
+4 next_run_date TIMESTAMP;
+5 BEGIN
+6 start_date := to_timestamp_tz(
+7 ‘10-OCT-2008 10:00:00’,’DD-MON-YYYY HH24:MI:SS’);
+8 return_date_after := start_date;
+9 FOR i IN 1..10 LOOP
+10 DBMS_SCHEDULER.EVALUATE_CALENDAR_STRING(
+11 ‘FREQ=MONTHLY; INTERVAL=2; BYMONTHDAY=15’,
+12 start_date, return_date_after, next_run_date);
+13 DBMS_OUTPUT.PUT_LINE(
+14 ‘next_run_date: ‘ || next_run_date);
+15 return_date_after := next_run_date;
+16 END LOOP;
+17 END;
+SQL> /
+next_run_date: 15-OCT-08 10.00.00.000000 AM
+next_run_date: 15-DEC-08 10.00.00.000000 AM
+next_run_date: 15-FEB-09 10.00.00.000000 AM
+next_run_date: 15-APR-09 10.00.00.000000 AM
+next_run_date: 15-JUN-09 10.00.00.000000 AM
+next_run_date: 15-AUG-09 10.00.00.000000 AM
+next_run_date: 15-OCT-09 10.00.00.000000 AM
+next_run_date: 15-DEC-09 10.00.00.000000 AM
+next_run_date: 15-FEB-10 10.00.00.000000 AM
+next_run_date: 15-APR-10 10.00.00.000000 AM
+PL/SQL procedure successfully completed.
+
+Creating Lightweight Jobs
+New to Oracle 11g, a lightweight job is defined by indicating LIGHTWEIGHT as the value for job_style when creating the job. Lightweight jobs have the following characteristics:
+ They are not schema objects
+ Because they are not schema objects, they have lower overhead and better create and drop time when compared to regular jobs.
+ They store less metadata and job runtime data than regular jobs.
+ They must reference an enabled ‘PLSQL_BLOCK’ or ‘STORED_PROCEDURE’ program to specify a job action.
+ Lightweight jobs inherit their privileges from the program; you cannot grant privileges to lightweight jobs. Consider using a lightweight job when you have a high-frequency short-duration job. Here’s an example of a PL/SQL block that creates a lightweight job.
+ 
+BEGIN
+DBMS_SCHEDULER.CREATE_JOB (
+job_name => ‘example_lightweight_job’,
+program_name => ‘lne_prog’,
+repeat_interval => ‘FREQ=SECONDLY;INTERVAL=30’,
+job_style => ‘LIGHTWEIGHT’,
+comments => ‘Heartbeat monitor job’);
+END;
+/
+
+Creating and Executing a Lightweight Job
+
+create or replace procedure LNE_TEST_PROC
+as
+begin
+insert into LNE_TEST select sysdate from dual;
+end;
+/
+
+begin
+dbms_scheduler.create_program(
+program_name => ‘LNE_PROGRAM’,
+program_type => ‘STORED_PROCEDURE’,
+program_action => ‘LNE_TEST_PROC’,
+number_of_arguments => 0,
+comments => ‘Insert SYSDATE into LNE_TEST table’);
+end;
+
+exec dbms_scheduler.enable(‘LNE_PROGRAM’);
+
+Create a lightweight job using dbms_scheduler.create_job to execute the stored procedure every 30 seconds.
+begin
+dbms_scheduler.create_job (
+job_name => ‘LNE_LIGHTWEIGHT_JOB’,
+program_name => ‘LNE_PROGRAM’,
+repeat_interval => ‘FREQ=SECONDLY;INTERVAL=30’,
+job_style => ‘LIGHTWEIGHT’,
+comments => ‘Lightweight job exercise’);
+end;
+/
+
+Now run the job using dbms_scheduler.run_job.
+begin
+dbms_scheduler.run_job(‘LNE_LIGHTWEIGHT_JOB’,TRUE);
+end;
+/
+
+begin
+dbms_scheduler.stop_job(job_name => ‘LNE_LIGHTWEIGHT_JOB’,
+force => TRUE);
+end;
+/
+
+Using Job Chains
+Chains are used to implement dependency scheduling. A chain consists of two or more Scheduler programs that are linked together to meet an objective. Here’s an example:
+Run program A.
+If program A completes successfully, run program B.
+If both programs A and B complete successfully, run program C.
+If program A or B does not succeed, run program F.
+Run program ZZ.
+
+Chains are useful for complex business transactions that require multiple dependent programs to complete successfully or take predefined steps when a step in the process fails. A chain job is a type of scheduler job that references a job chain as the job action, can reference a chain instead of a program to start the process. Each step in the chain can be one of the following:
+ A program
+ Another chain
+ An inline event or event schedule
+
+ Create a chain by using the CREATE_CHAIN procedure, as follows:
+BEGIN
+DBMS_SCHEDULER.CREATE_CHAIN (
+chain_name => ‘lne_chain’,
+rule_set_name => NULL,
+evaluation_interval => NULL,
+comments => ‘Never break the chain’);
+END;
+/
+
+Once you’ve created the chain, you’ll define the steps and rules.
+
+Here’s an example
+that adds three steps, each of which points to a specific program:
+BEGIN
+DBMS_SCHEDULER.DEFINE_CHAIN_STEP (
+chain_name => ‘lne_chain’,
+step_name => ‘lne_step1’,
+program_name => ‘start_lne’);
+DBMS_SCHEDULER.DEFINE_CHAIN_STEP (
+chain_name => ‘lne_chain’,
+step_name => ‘lne_step2’,
+program_name => ‘lne_run_stage1’);
+DBMS_SCHEDULER.DEFINE_CHAIN_STEP (
+chain_name => ‘lne_chain’,
+step_name => ‘lne_step3’,
+program_name => ‘lne_run_stage2’);
+END;
+/
+
+It is not mandatory that the program exist when you define the chain step, but it must exist and be enabled before you execute the chain. If the program is an external executable, you must use the ALTER_CHAIN procedure to set the credentials for the step.
+
+Use the DEFINE_CHAIN_EVENT_STEP procedure to define a step that waits for an event. In this example, we add a chain step to the previously defined lne_chain chain that will wait for a specific event to occur:
+BEGIN
+DBMS_SCHEDULER.DEFINE_CHAIN_EVENT_STEP (
+chain_name => ‘lne_chain’,
+step_name => ‘lne_step4’,
+event_schedule_name => ‘lne_event_schedule’);
+END;
+/
+
+Adding Rules to a Chain
+Chain rules define dependencies between steps and determine when steps run. A rule has a condition and an action. When a condition is evaluated true, the associated action is taken. The condition can contain a valid SQL WHERE clause or Scheduler chain condition syntax.
+The Scheduler chain condition syntax takes one of the following two forms:
+stepname [NOT] {SUCCEEDED|FAILED|STOPPED|COMPLETED}
+stepname ERROR_CODE {comparision_operator|[NOT] IN} {integer|list_of_integers}
+
+Conditions
+Here are some examples of the chain condition syntax:
+Credentials_confirm_step COMPLETED
+Credentials_confirm_step SUCCEEDED
+Credentials_confirm_step FAILED and
+credentials_confirm_step ERROR_CODE != 21000
+In the first example, the step completed, with one of the following conditions: STOPPED, FAILED, or SUCCEEDED. In the second example, the step must have succeeded for the condition to be met. In the third example, the step must have failed and the returned error code must not be equal to 21000.
+
+Defining Rules
+In the following example, the rule starts the chain at step 1 and on completion starts step 2:
+
+BEGIN
+DBMS_SCHEDULER.DEFINE_CHAIN_RULE (
+chain_name => ‘lne_chain’,
+condition => ‘TRUE’,
+action => ‘START lne step1’,
+rule_name => ‘lne_rule1’,
+comments => ‘start the chain’);
+DBMS_SCHEDULER.DEFINE_CHAIN_RULE (
+chain_name => ‘lne_chain’,
+condition => ‘lne step1 completed’,
+action => ‘START lne step2’,
+rule_name => ‘lne_rule2’);
+END;
+/
+
+Starting and Ending the Chain
+To start the chain, at least one rule must always evaluate to TRUE. The easiest way to do this is to simply set the condition to ‘1=1’ if you’re using SQL syntax or ‘TRUE’ if you using Scheduler chain condition syntax.
+For the chain to end, at least one chain rule must have an action of ‘END’ when a condition evaluates to TRUE. If a chain has no more running steps and no END action has been determined to be TRUE, then the chain job will go into the CHAIN_STALLED state.
+
+Enabling a Chain
+Enabling a chain is straightforward:
+BEGIN
+DBMS_SCHEDULER.ENABLE (‘lne_chain’);
+END;
+/
+The chain must be enabled before a job can run it.
+
+Creating Jobs for Chains
+There are two ways you can run a chain: either by using the RUN_CHAIN procedure or, as in this example, by creating and scheduling a job of type CHAIN:
+
+BEGIN
+DBMS_SCHEDULER.CREATE_JOB (
+job_name => ‘lne_chain_job1’,
+job_type => ‘CHAIN’,
+job_action => ‘lne_chain’,
+repeat_interval => ‘freq=daily;byhour=7;byminute=30;bysecond=0’,
+enabled => TRUE);
+END;
+/
+
+BEGIN
+DBMS_SCHEDULER.RUN_CHAIN (
+chain_name => ‘LNE_CHAIN’,
+job_name => ‘impromptu_job_chain’,
+start_steps => ‘LNE_STEP1’);
+END;
+/
+
+BEGIN
+DBMS_SCHEDULER.DROP_CHAIN (
+chain_name => ‘LNE_CHAIN’,
+force => TRUE);
+END;
+/
+
+Creating Windows
+Windows can be created by using the DBMS_SCHEDULER.CREATE_WINDOW procedure. When creating a window, you have the choice of either using an existing schedule or defining an inline schedule. However, an existing schedule may not be used if the schedule has a repeat interval based on a PL/SQL expression.
+
+The parameters for the CREATE_WINDOW procedure are described here:
+WINDOW_NAME : The WINDOW_NAME parameter uniquely identifies the window in the SYS schema. The name has to be unique in the SYS schema.
+RESOURCE_PLAN : The RESOURCE_PLAN parameter specifies the name of the resource plan that will govern the timeframe of the window. When the window opens, the system switches to the specified resource plan. When the window closes, the system either switches back to the prior resource plan or, if another window is opening, to the resource plan of the new window.
+START_DATE : The START_DATE parameter specifies the first date that the window is scheduled to open. If START_DATE is NULL or references a date in the past, the window will open as soon as it is created. The START_DATE parameter is used as a reference date when the REPEAT_INTERVAL parameter uses a calendaring expression. In this situation, the window will open on the first date that matches the calendaring expression and is on or after the date specified in the START_DATE parameter.
+DURATION : The DURATION attribute specifies how long the window will remain open. There is no default value, so a value must be provided. The value should be specified as an INTERVAL DAY TO SECOND datatype (for example, interval ‘10’ hour or interval ‘20’ minute).
+SCHEDULE_NAME :The SCHEDULE_NAME parameter specifies the name of the schedule associated with the window.
+REPEAT_INTERVAL :The REPEAT_INTERVAL parameter specifies how often the window should repeat. It is defined using the calendaring syntax only; PL/SQL expressions cannot be used in conjunction with a window. If the REPEAT_INTERVAL parameter is NULL, the window will open only once at the specified start date.
+END_DATE : The END_DATE parameter specifies the date when the window will be disabled. If the END_DATE parameter is NULL, a repeating window will repeat forever.
+WINDOW_PRIORITY : The WINDOW_PRIORITY parameter is relevant only when two windows overlap each other. Because only one window can be in effect at a time, the window priority determines which window will be opened. The valid values are LOW (the default) and HIGH. A high-priority window has precedence.
+COMMENTS : The COMMENTS parameter specifies an optional comment about the window.
+
+The following example creates a window that activates the DAY_PLAN resource plan and uses a schedule named WORK_HOURS_SCHEDULE:
+
+SQL> begin
+2 dbms_scheduler.create_window (
+3 window_name => ‘WORK_HOURS_WINDOW’,
+4 resource_plan => ‘DAY_PLAN’,
+5 schedule_name => ‘WORK_HOURS_SCHEDULE’,
+6 duration => INTERVAL ‘10’ HOUR,
+7 window_priority => ‘HIGH’);
+8 end;
+SQL> /
+
+This newly created window will be started based on a schedule named WORK_HOURS_SCHEDULE and will remain in effect for 10 hours. During those 10 hours, the DAY_PLAN resource plan will be in effect. Also, because the priority for this window is set to HIGH, it will take precedence over any overlapping window that has a priority setting of LOW.
+
+There are two distinct ways that a window can be opened. The first is based on the window’s schedule. The second is by opening it manually by using the DBMS_SCHEDULER.OPEN_WINDOW procedure.
+The OPEN_WINDOW procedure opens a window independent of its schedule. The associated resource plan is enabled immediately, and currently executing jobs are subjected to the change in resource plan, just as if the window had opened based on its schedule. When opening a window manually, you can specify a new duration for the window to remain open; otherwise it will remain open for the duration defined when the window was created.
+
+If the FORCE parameter is set to TRUE in the OPEN_WINDOW procedure, the Scheduler will automatically close any currently open window, even if it has a higher priority. Also, it will not allow any other windows to be opened during the time the manually opened window is open.
+
+The OPEN_WINDOW procedure accepts only three parameters: WINDOW_NAME, DURATION, and FORCE. Here is an example of its usage:
+
+SQL> begin
+2 dbms_scheduler.open_window (
+3 window_name => ‘WORK_HOURS_WINDOW’,
+4 duration => INTERVAL ‘20’ MINUTE,
+5 force => TRUE);
+6 end;
+SQL> /
+
+In a similar manner, windows can be manually closed by using the DBMS_SCHEDULER.CLOSE_WINDOW procedure. 
+
+SQL> begin
+2 dbms_scheduler.close_window (
+3 window_name => ‘WORK_HOURS_WINDOW’);
+4 end;
+SQL> /
+
+Window Logging
+The Oracle Scheduler maintains window logs of all window activities. The DBA_SCHEDULER_WINDOW_LOG view can be used to view log entries for all of the following window activities: Creating a new window,Dropping a window,Opening a window,Closing a window,Overlapping windows,Disabling a window,Enabling a window
+
+SQL> select log_id, trunc(log_date) log_date, window_name, operation from dba_scheduler_window_log;
+
+For each CLOSE operation logged in the DBA_SCHEDULER_WINDOW_LOG view, there will be an associated record in the DBA_SCHEDULER_WINDOW_DETAILS view, as shown here:
+SQL> select log_id, trunc(log_date) log_date, window_name, actual_duration from dba_scheduler_window_details;
+
+Scheduler job logs and window logs will be automatically purged based on the setting of the LOG_HISTORY attribute of the Scheduler itself. The value of this parameter determines the number of days that log data should be retained, after which it will be purged. To set this value, use the SET_SCHEDULER_ATTRIBUTE procedure, as in the following example:
+SQL> begin
+2 DBMS_SCHEDULER.SET_SCHEDULER_ATTRIBUTE(
+3 ‘LOG_HISTORY’,’60’);
+4 end;
+SQL> /
+
+Creating and Using Job Classes
+A job class is a container object for the logical grouping of jobs into a larger unit. Classifying jobs in this manner offers several advantages:
+
+From an administrative perspective, it is easier to manage a small number of job groups than to manage a large number of individual jobs. Certain job characteristics can be
+assigned at the group level and will be inherited by all jobs within the group.
+Job classes can be assigned to a resource consumer group. This allows you to control resource allocation for all jobs within the group.
+Jobs can be prioritized within the job class. This gives you more control over which jobs should take precedence in case of a conflict. For example, if a conflict occurs, the JOB_PRIORITY attribute of each job will be evaluated. A job with a value of HIGH takes priority over a job with a value of LOW.
+
+All jobs must belong to exactly one job class. Any job not explicitly assigned to a job class will belong to the DEFAULT_JOB_CLASS class.
+
+
+Job Class Parameters
+Job classes have a specific set of attributes that you can set to define the characteristics of the class. These attributes will be inherited by all jobs assigned to the job class, thereby saving you the work of setting them individually on each job.
+
+JOB_CLASS_NAME :The JOB_CLASS_NAME parameter uniquely identifies the job class in the SYS schema.
+RESOURCE_CONSUMER_GROUP :The RESOURCE_CONSUMER_GROUP parameter associates the job group with a specific consumer group. All jobs assigned to the job group will automatically be governed by this consumer group.
+SERVICE : The SERVICE parameter specifies the service to which the job class belongs. This means that, in a RAC environment, the jobs in this class will have affinity to the particular service specified. Therefore, they will run only on those database instances that are assigned to the specific service. If this attribute is not set, the default service will be used.
+LOGGING_LEVEL : The Oracle Scheduler can optionally maintain job logs of all job activities. Job logging is determined by the setting of the LOGGING_LEVEL attribute of the job class. The LOGGING_LEVEL parameter specifies how much job information is logged. There are
+four valid settings for this attribute:
+	DBMS_SCHEDULER.LOGGING_OFF No logging will be performed for any jobs in this class.
+	DBMS_SCHEDULER.LOGGING_RUNS Detailed information will be written for all runs of each job in the class.
+	DBMS_SCHEDULER.LOGGING_FULL Detailed information will be written for all runs of each job in the class, and every operation performed on any job in the class (create,
+	enable, drop, and so on) will be logged.
+	DBMS_SCHEDULER.LOGGING_FAILED_RUNS Logs only jobs that failed and the reason for failure. If the job class has a higher logging level the higher level takes precedence.
+LOG_HISTORY : The LOG_HISTORY parameter determines the number of days logged information should be retained. The default value is 30 days. Valid values are 1 to 999. When records have exceeded this limit, the Scheduler will automatically purge them.
+COMMENTS : The COMMENTS parameter specifies an optional comment about the job class.
+
+Job classes can be created through the DBMS_SCHEDULER.CREATE_JOB_CLASS procedure, as shown in the following example:
+SQL> begin
+2 dbms_scheduler.create_job_class(
+3 job_class_name => ‘LOW_PRIORITY_CLASS’,
+4 resource_consumer_group => ‘LOW_GROUP’,
+5 logging_level => DBMS_SCHEDULER.LOGGING_FULL,
+6 log_history => 60,
+7 comments => ‘LOW PRIORITY JOB CLASS’);
+8 end;
+SQL> /
+
+Dropping Job Classes
+Job classes can be dropped by using the DBMS_SCHEDULER.DROP_JOB_CLASS procedure. Dropping a job class that has jobs assigned to it will result in an error. However, it is allowed if the FORCE parameter is set to TRUE. In this case, the job class will be dropped and the jobs assigned to the class will be disabled. Dropping the class has no effect on any currently running instances of member jobs. Several job classes can also be dropped at the same time by separating the names of the job classes by a comma, as shown in the following example:
+
+SQL> begin
+2 dbms_scheduler.drop_job_class(
+3 ‘LOW_PRIORITY_CLASS, HIGH_PRIORITY_CLASS’);
+4 end;
+SQL> /
+
+Note that if a list of job classes is used, as in the example in the section “Dropping Job Classes,” there is no rollback available. For instance, if the first job class dropped but the second job class failed to drop, the procedure will return an error, but the first job class will not be restored.
+
+Prioritizing Jobs within a Job Class
+Within a job class, you can assign priority values from 1 to 5 to individual jobs so that if more than one job within the same class starts at the same time, the job with the highest priority will take precedence over the others. If two jobs have the same priority, the one that had the earlier start date gets the higher priority. Priority rules apply only when comparing jobs within the same class. The default priority for a job is 3; 1 is the highest, and 5 is the lowest. To change a job priority, use the SET_ATTRIBUTE procedure. For example, here’s how to raise the priority of the LNE_JOB1 job to priority 1:
+
+BEGIN
+DBMS_SCHEDULER.SET_ATTRIBUTE (
+name => ‘lne_job1’,
+attribute => ‘job_priority’,
+value => 1);
+END;
+/
+
+*_SCHEDULER_PROGRAM_ARGUMENTS : Shows all registered program arguments and the default values if they exist.
+*_SCHEDULER_JOBS : Shows all defined jobs, both enabled and disabled.
+*_SCHEDULER_GLOBAL_ATTRIBUTE : Shows the current values of all Scheduler attributes.
+*_SCHEDULER_JOB_ARGUMENTS : Shows the arguments for all defined jobs.
+*_SCHEDULER_JOB_CLASSES : Shows information on all defined job classes.
+*_SCHEDULER_WINDOWS : Shows information about all defined windows.
+*_SCHEDULER_JOB_RUN_DETAILS : Shows information about all completed (failed or successful) job runs.
+*_SCHEDULER_WINDOW_GROUPS : Shows information about all window groups.
+*_SCHEDULER_WINGROUP_MEMBERS : Shows the members of all window groups.
+*_SCHEDULER_RUNNING_JOBS : Shows the state information on all jobs that are currently being run.
+
+
+------------------------
+------------------------
+
+Creating and Scheduling Event-based Jobs
+Event-based jobs still use the START_DATE parameter; however, the job’s initiationalso depends on an event specified by the EVENT_CONDITION and QUEUE_SPEC parameters, as in this example:
+begin
+dbms_scheduler.create_job (
+job_name => proc_ar_job,
+program_name => ar_prog,
+start_date => systimestamp,
+event_condition => 'tab.user_data.event_name = ''AR_FILE_
+ARRIVAL''',
+queue_spec => 'ar_event_q',
+enabled => TRUE,
+comments => 'AR job after monthly receipts received'
+end;
+
+The EVENT_CONDITION parameter uses syntax from Advanced Queueing (AQ) that checks periodically for an event name AR_FILE_ARRIVAL. The QUEUE_SPEC parameter contains the name of the queue whose events will trigger the eventbased job.
+
+Rather than defining each job as a self-contained entity, you create programs and schedules, each of which can be used by many jobs.
+
+Keep your JOB_ACTIONs and PROGRAM_ACTIONs as short as possible, preferably using just one statement. Do all the work in a procedure invoked by that statement. This will be far easier to maintain than having a large amount of SQL or PL/SQL in your job and program definitions.
+
+Programs share the same namespace as jobs; you cannot have a program with the same name as a job. The same is true for schedules and windows.
+
+1. Create the chain using the CREATE_CHAIN procedure.
+2. Create one or more chain steps using DEFINE_CHAIN_STEP or DEFINE_CHAIN_EVENT_STEP.
+3. Define chain rules using DEFINE_CHAIN_RULE.
+4. Enable the chain using the ENABLE procedure.
+5. Create a job using CREATE_JOB with a JOB_TYPE of CHAIN.
+
+Windows extend the concept of schedules by giving Oracle more freedom on deciding when to run a job.
+
+If a job is scheduled to run in both the THURSDAY_WINDOW and the SUNDAY_WINDOW and if it fails to complete before the window closes, the job will stop and restart when the window reopens next time.
+
+
+'freq=minutely;byminute=30' -- whats wrong ?  to run every 30 minutes

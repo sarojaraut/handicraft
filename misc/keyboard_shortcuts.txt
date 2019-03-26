@@ -1,0 +1,3 @@
+Keyboard Short Cuts : Ubuntu
+
+Ctrl+Shift+N : Create new folder

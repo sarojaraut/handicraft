@@ -1,0 +1,207 @@
+Useful Links
+
+Request/Response Format
+https://developer.amazon.com/docs/custom-skills/request-types-reference.html#intentrequest
+
+Dialog directives is a response type 
+
+https://developer.amazon.com/docs/custom-skills/dialog-interface-reference.html#directives
+
+https://developer.amazon.com/docs/custom-skills/define-the-dialog-to-collect-and-confirm-required-information.html
+
+https://developer.amazon.com/docs/custom-skills/create-the-interaction-model-for-your-skill.html
+
+Steps of a Multi-turn Dialog or Conversation
+The questions Alexa asks during the conversation fall into three categories:
+
+Slot elicitation: Ask the user for a slot value. The user answers with a slot value or a full utterance including the slot value. Examples of slot elicitation questions:
+Alexa: What city are you leaving from? (Eliciting the value for a fromCity slot.)
+Slot confirmation: Ask the user to confirm that a single slot value previously provided (or set programmatically) is correct. The user answers with "yes" or "no". Examples of slot confirmation questions:
+Alexa: You said you're leaving from Seattle, right? (Confirming the fromCity value.)
+Intent confirmation: Ask the user to verify that all the information gathered for the intent is correct before fulfilling the intent. As with slot confirmation, the user answers with "yes" or "no". Examples of intent confirmation questions:
+Alexa: I'm saving your trip from Seattle to Portland on April 21st. Is that OK? (Confirming the entire PlanMyTrip intent.)
+
+<prosody rate="x-slow">Great</prosody> job, you are correct.
+
+<emphasis level="strong">Great</emphasis> job, you are correct.
+
+That compound is <say-as interpret-as="characters">CaCO3</say-as>
+
+That compound is <sub alias="calcium carbonate">CaCO3</sub>.
+
+Dialing <say-as interpret-as="telephone">18001234567</say-as>
+
+ORA-29902: error in executing ODCIIndexStart() routine
+ORA-20000: Oracle Text error:
+DRG-51030: wildcard query expansion resulted in too many terms
+
+ORA-06512: at "ORDERACTIVE.OMS_RETURNS", line 256
+
+DROP INDEX oms_psp_notification_i2
+/
+EOF
+
+ALTER TABLE oms_psp_notification
+MODIFY  ordernumber NUMBER GENERATED ALWAYS AS
+(REGEXP_SUBSTR(merchantreference,'[^-]+',1,1))
+VIRTUAL
+/
+
+ALTER TABLE oms_psp_notification
+MODIFY  ordernumber NUMBER GENERATED ALWAYS AS
+(DECODE(
+       REGEXP_INSTR(merchantreference,'[^0-9\-]'),
+	   0,
+	   REGEXP_SUBSTR(merchantreference,'[^-]+',1,1),
+	   NULL)
+)
+VIRTUAL
+/
+
+ALTER TABLE oms_psp_notification
+ADD  ordernumber NUMBER GENERATED ALWAYS AS
+(DECODE(
+       REGEXP_INSTR(merchantreference,'[^0-9\-]'),
+	   0,
+	   REGEXP_SUBSTR(merchantreference,'[^-]+',1,1),
+	   NULL)
+)
+VIRTUAL
+/
+
+CREATE INDEX oms_psp_notification_i2
+ON oms_psp_notification(ordernumber)
+TABLESPACE orderactive_indx
+/
+
+ORA-29273: HTTP request failed
+ORA-06512: at "SYS.UTL_HTTP", line 1130
+ORA-12535: TNS:operation timed out
+
+ORA-06512: at "SYS.UTL_HTTP", line 1130
+ORA-06512: at "APEX_050100.WWV_FLOW_WEB_SERVICES", line 636
+ORA-06512: at "APEX_050100.WWV_FLOW_WEB_SERVICES", line 760
+ORA-06512: at "APEX_050100.WWV_FLOW_WEBSERVICES_API", line 236
+ORA-06512: at "ORDERACTIVE.OMS_WEB_ORDER_EVENT", line 743
+
+http://order-notifications-prod.transit.ri-tech.io/
+
+http://order-notifications-dev.dev.transit.ri-tech.io/
+
+http://order-notifications-prod.prod.transit.ri-tech.io/
+
+http://order-notifications-prod.prod.transit.ri-tech.io/
+
+select
+utl_http.request('http://order-notifications-prod.prod.transit.ri-tech.io/','','file:/apps/software/oracle/11.2.0.4/owm/wallets/oracle','')
+from dual;
+
+*** Parameters ***
+
+** Process Start time: 13-JUL-2018 15:20:08:898321000 +01:00
+oAuth token status: 200
+Event(s) to process: 767
+Event(s) processed: 767
+Event(s) failed: 0
+** Total elapsed time: 100
+** Process End time: 13-JUL-2018 15:21:49:139866000 +01:00
+
+Thanks Rachel,
+
+That's a big relief that my documents have been traced. This is unfortunate that documents have been received on 5th July but processing has just started.
+
+can you please let me know when can I expect a decision on this?
+
+Best Regards,
+Saroj Raut
+
+** Process Start time: 13-JUL-2018 15:20:08:898321000 +01:00
+oAuth token status: 200
+Event(s) to process: 767
+Event(s) processed: 767
+Event(s) failed: 0
+** Total elapsed time: 100
+** Process End time: 13-JUL-2018 15:21:49:139866000 +01:00
+
+Al the 767 events has been posted between Start time: 13-JUL-2018 15:20:08:898321000 +01:00 and End time: 13-JUL-2018 15:21:49:139866000 +01:00 and no failures
+
+https://www.amazon.co.uk/b/ref=amb_link_1?ie=UTF8&node=14619428031&pf_rd_m=A3P5ROKL5A1OLE&pf_rd_s=merchandised-search-2&pf_rd_r=M2GYHEKCHYTATY06AC6G&pf_rd_r=M2GYHEKCHYTATY06AC6G&pf_rd_t=101&pf_rd_p=483e8967-89c9-4695-8f0f-bc503dc8e575&pf_rd_p=483e8967-89c9-4695-8f0f-bc503dc8e575&pf_rd_i=14618695031
+
+On the "Pay" page during checkout, enter "PD2018" into the field "Gift Cards + Promotional Codes". The discount will only be applied at checkout, reducing the Amazon.co.uk selling price of the Promotional Items by 25% (the "Offer").
+
+Agenda : Sharing my experiments
+
+• Why Voice Assistants?
+• Voice Assistants
+• Why Alexa?
+• Alexa Devices
+• Alexa Skill
+
+Why Voice Assistants?
+
+• Conversation is the most natural way to interact with devices
+• Bridging human and technology
+• Personalization
+• Enhanced productivity
+• Enable people to use technology in a more simple way
+
+Other Voice Assistants
+Amazon Alexa
+	Multiple Devices & Third party devices
+	Many Skills : Most skills at the moment
+	Open SDK / REST API
+	Business integration : No other options gives this facility
+Google Assistant : Only google devices, intermediate skills
+Apple SiriKit
+MS Cortana
+
+Why Alexa 
+• Integrated with multiple smart speakers and apps
+• Large platform & user base
+• Many custom skills (25000 in Dec 2017)
+• Open SDK (e.g. Node.js, Java)
+• REST API
+• Simple to integrate
+• Business integration (Deployment / Custom skills)
+
+Alexa Devices
+• Amazon Echo Family (e.g. Echo, Echo Dot, etc…)
+• Amazon Fire Family (e.g. Fire TV, Fire Tablets, etc…)
+• Third party devices (e.g. Sonos, HP, many more…)
+• Features:
+	• Always on, always connected, hands free device
+	• Continually learns and adapts to your speech patterns
+	• Echo has 7 microphones & Can hear you across a room
+	• Just say wake up word: “Alexa”
+
+How Alexa skills work 
+
+Wake Word : What Alexa "listens to" before taking an action. In most cases it will be Alexa 
+Skill : “App” for Alexa, Complete list of Alexa Skills can be found on the “Alexa Skills Store”
+Invocation Name : Trigger word for skill
+Utterance : What follows an invocation to determine intent
+Intent : What user is requesting / function to perform based on the utterance
+Slot : Slots are like “parameters” or “variables”
+
+
+Create an invocation name. This is the word or phrase that users will speak to activate the skill.
+
+Now we will add a Custom Slot Type.
+Alexa is Amazon’s voice service 
+skills that simplify everyday tasks
+Think of all the different ways that a user could request to make a specific intent happen.
+one-shot utterance s
+
+synonyms
+Skill name : What we will see in the console/catalogue
+Invocation name is what the user have to say to trigger the skill, start the skill or use the skill
+Intent : Intention of the end user, what the user trying to achieve. get me order count, create test order, get me order status. By default three built-in intents has added, stop, help and cancel. Standard across all skills. Consistent across all skills.
+Slot : variable, argument
+Slot Types 
+Utterance : Phrase user will says to trigger the intent, ways to express intents
+
+7+ utterances , amif for 30+
+
+build model : actual starts the machine learning process
+
+Don't judge me just spend few hours to build this.

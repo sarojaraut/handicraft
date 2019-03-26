@@ -1,0 +1,93 @@
+The capture process (Extract)
+Oracle GoldenGate's capture process, known as Extract, obtains the necessary data from the databases' transaction logs. For Oracle, these are the online redo logs that contain all the data changes made in the database.
+
+The Extract process can have one the following statuses:
+• STOPPED
+• STARTING
+• RUNNING
+• ABENDED
+
+SELECT SUPPLEMENTAL_LOG_DATA_MIN FROM V$DATABASE;
+
+ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+
+Trail files
+To replicate transactional data efficiently from one database to another, Oracle GoldenGate converts the captured data into a Canonical Format which is written to trail files, both on the source and the target system.
+
+It is possible to configure GoldenGate not to use trail files on the source system and write data directly from the database's redo logs to the target server data collector. In this case, the Extract process sends data in large blocks across a TCP/IP network to the target system. However, this configuration is not recommended due to the possibility of data loss occurring during unplanned system or network outages. Best practice states, the use of local trail files would provide a history of transactions.
+
+Data Pump
+When using trail files on the source system, known as a local trail, GoldenGate requires an additional Extract process called Data Pump that sends data in large blocks across a TCP/IP network to the target system.
+
+Server Collector
+The Server Collector process runs on the target system and accepts data from the source (Extract/Data Pump). Its job is to reassemble the data and write it to a GoldenGate trail file, known as a remote trail.
+
+The Apply process (Replicat)
+The Apply process, known in GoldenGate as Replicat, is the final step in the data delivery. It reads the trail file and applies it to the target database in the form of DML (deletes, updates and inserts) or DDL*. (database structural changes).
+
+The Manager process
+The Manager process runs on both source and target systems. Its job is to control activities such as starting, monitoring, and restarting processes; allocating data storage; and reporting errors and events. The Manager process must exist in any GoldenGate implementation.
+
+GGSCI
+In addition to the processes previously described, Oracle GoldenGate 10.4 ships with its own command line interface known as GoldenGate Software Command Interface (GGSCI). This tool provides the administrator with a comprehensive set of commands to create, configure, and monitor all GoldenGate processes.
+
+A conflict is likely to occur in a bi-directional environment, where the same row or field is being updated at both sites. When the change is replicated, a conflict occurs. This needs to be resolved by GoldenGate based on the business rules, that is, should data from Site B overwrite Site A, or should both transactions fail?
+
+Statistics
+In terms of performance monitoring, the GGSCI tool provides real-time statistics as well as comprehensive reports for each process configured in the GoldenGate topology.
+
+The INFO ALL command provides a comprehensive overview of process status and lag, whereas the STATS option gives more detail on the number of operations. Both commands offer real-time reporting.
+
+To address the functional requirements you need to know:
+• The overall system architecture and all of its components and interfaces. Ask yourself the question "what data do we need to replicate and to where?"
+For the non-functional requirements, you need to know:
+• The maximum latency that is acceptable. Again, ask yourself the question "how far behind the source can the target system(s) be?"
+
+These are all important factors when considering a design. In the earlier section "Oracle GoldenGate Topology" in this chapter, we mentioned the use of parallel Extract and Replicate processes to increase data throughput. The number of parallel trails is largely dependent on the hardware footprint. How many CPU cores do I have? How much memory is available? Etc.
+
+If you have a slow network, you will not be able to replicate high volumes of data in real-time. Furthermore, should your network be unreliable, you need to consider the cost of retransmission or transmitting a backlog of trail files. Redundant networks are very important too and can help to alleviate this problem.
+
+Object mapping and data selection
+The power of GoldenGate comes into its own when you select what data you wish
+to replicate, by using its inbuilt tools and functions. You may even wish to transform
+the data before it hits the target.
+
+expert golden gate
+
+Disk Space Requirements
+
+• Allocate at least 50–150 MB of disk space for the Oracle GoldenGate software binaries.
+• Allocate 40 MB of disk space per instance of Goldengate for working directories and files per server. 
+• Allocate sufficient disk space to temporary files to accommodate GoldenGate operations. By default, Goldengate stores temporary files in the dirtmp directory
+under the default installation directory. A good rule of thumb to use for temp file space is around 10 GB of disk space.
+• Plan on at least 10 MB per trail file. As a rule of thumb, we recommend that you start with at least 1 GB of disk space allocated per system for trail files.
+Alternatively, use the following formula that Oracle provides to determine the amount of disk space to set aside:
+[log volume in one hour] x [number of hours downtime] x 0.4 = trail disk space.
+One way to calculate the total amount required for trail file space is by querying
+the V$ARCHIVED_LOG view from within the source Oracle database. The
+following query shows you how to do so:
+select trunc(COMPLETION_TIME),count(*)*100 size_in_MB
+from v$archived_log
+group by trunc(COMPLETION_TIME);
+TRUNC(COM SIZE_IN_MB
+--------- ----------
+15-MAY-11 500
+
+Run tests after installing Goldengate to measure your specific transaction mix and load, and to gauge the total disk space required for trail files.
+
+Network Requirements
+Since Oracle Goldengate software operates between source and target systems over networks, you must configure TCP/IP networking to accommodate all hosts within DNS to include host names that will be included in the Oracle Goldengate infrastructure deployed. In the event of firewalls, hosts must be allowed to send and receive data for open ports that the manager, Extract, and Replicat processes require access to in order to send and receive data.
+
+Also allocate ports for Goldengate manager, Extract, and Replicat processes. By default, manager uses port 7840. We recommend that you keep this port available. In addition, keep a record of ports allocated to Goldengate processes to avoid port conflicts.
+
+Operating System Requirements
+• Grant read and write privileges for the operating system (OS) account used to install the Oracle Goldengate software.
+• Place the Oracle Goldengate software on a shared disk in a clustered environment, or on a shared clustered filesystem that all cluster nodes have access to.
+• Install from an operating and database system account that has read/write access to Oracle database software, as well as to the Oracle online redo log files.
+
+GoldenGate and Oracle RAC Considerations
+Oracle RAC is certified by Oracle to support Goldengate software. However, you will need to keep the following things in mind when performing installation for Oracle Goldengate with RAC environments:
+• All GoldenGate software binary and executable files, trail files, and log files should be on shared storage accessible by all cluster nodes.
+• System clocks must be synchronized for all RAC nodes using the Goldengate software. You can set up the network time protocol (NTP) to ensure that cluster nodes are kept in sync. In addition you can use the Goldengate IOLATENCY option with the THREADOPTIONS parameter for Extract and Replicat parameter files.
+
+page 40

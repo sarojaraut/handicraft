@@ -1,0 +1,60 @@
+sr160816-01.ctl
+
+s_validate_control_file.sh sr160816-02.ctl
+s_promote.sh sr160816-02.ctl
+s_check_promotion.sh sr160816-02.ctl
+
+When you work with Form Builder, you work with four types of modules, combining them to create a complete application.
+
+    Form modules
+    Menu modules
+    Object library modules
+    PL/SQL library modules 
+
+For purposes of this Quick Tour, we ll focus our attention exclusively on form modules.
+
+When you create a form module, you work with various objects specific to form modules, including:
+
+    Windows
+    Canvases : A canvas is a “surface” where visual objects, such as graphics and items, are arranged. A form module can have several canvases (like the pages of a paper form). A canvas can display items from one or more blocks. To see a canvas and its items, you must display the canvas in a window. By default, all canvases in a form appear in the same window (which could mean you see only one canvas at a time), but you can assign separate windows for each canvas so that several canvases can be viewed at once.
+    Blocks : A block is the logical owner of items, and each item in a form belongs to a block. Items in one block are logically related; for example, they may correspond to columns in the same database table or may need to be part of the same navigation cycle. Blocks therefore provide a mechanism for grouping related items into a functional unit for storing, displaying, and manipulating records.
+    Items : These are interface objects that present data values to the user or enable the user to interact with the form. Items are logically grouped into blocks and visibly arranged on canvases.
+
+    A canvas is like a picture portrait, and a window is like a picture frame. Just as you need a picture frame to display a picture portrait, you need a window to display a canvas and its contents.
+    
+Blocks provide a mechanism for grouping related items into a functional unit.
+
+There are two types of blocks:
+
+    Data blocks
+    Control blocks 
+
+When you create a data block, you link table or view columns with Form Builder interface objects.
+
+Building a simple Form Builder application is a four step process:
+
+    Create a new form module.
+    Create a data block based on a database table.
+    Layout the items of the data block in frames on a canvas.
+    Compile, run, and test the application. 
+
+Implement triggers to:
+– Enhance functionality
+– Communicate with users
+– Supplement validation
+– Control navigation
+– Modify default transaction processing
+– Control user interaction
+
+Modes of Operation
+Forms Builder has two main modes of operation: Enter-Query mode and Normal mode. The third mode of operation, Query mode, occurs while Forms is processing a query; the user cannot interact with the form while processing is taking place.
+
+Working in the Forms Developer Environment
+
+F11 > PLSQL Editor
+
+In Forms Builder there are two main types of blocks: data blocks and control blocks.
+
+
+
+

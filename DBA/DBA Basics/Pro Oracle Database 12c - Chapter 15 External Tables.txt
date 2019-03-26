@@ -1,0 +1,76 @@
+Pro Oracle Database 12c - Chapter 15 External Tables
+
+The Oracle external table feature enables you to perform two distinct operations:
+• Transparently select information from OS comma-separated-value (CSV) files via SQL, which allows you to do tasks such as loading these files into the database.
+• Create platform-independent dump files that can be used to transfer data. You can also create these files as compressed and encrypt them for efficient and secure data transportation.
+
+All that is required to enable external tables is to first create a database directory object that specifies the location of the OS file. Then, you use the CREATE TABLE...ORGANIZATION EXTERNAL statement to make the database aware of OS files that can be used as sources or targets of data.
+
+External tables have the following advantages:
+• Loading data with external tables is more straightforward and requires fewer steps.
+• The interface for creating and loading from external tables is SQL*Plus. Many DBAs/developers find SQL*Plus more intuitive and powerful than SQL*Loader’s parameter file
+interface.
+• You can view data (via SQL) in an external table before they’re loaded into a database table.
+• You can load, transform, and aggregate the data without an intermediate staging table. For large amounts of data, this can be a huge space savings.
+
+create table exadata_et(
+exa_id NUMBER
+,machine_count NUMBER
+,hide_flag NUMBER
+,oracle NUMBER
+,ship_date DATE
+,rack_type VARCHAR2(32)
+)
+organization external (
+type oracle_loader
+default directory exa_dir
+access parameters
+(
+records delimited by newline
+fields terminated by '|'
+missing field values are null
+(exa_id
+,machine_count
+,hide_flag
+,oracle
+,ship_date char date_format date mask "mm/dd/yyyy"
+,rack_type)
+)
+location ('ex.csv')
+)
+reject limit unlimited;
+
+Generating SQL to Create an External Table
+If you’re currently working with SQL*Loader and want to convert to using external tables, you can use SQL*Loader to generate the SQL required to create the external table, using the EXTERNAL_TABLE option.
+
+sqlldr dk/f00 control=books.ctl log=books.log external_table=generate_only
+
+The prior line of code doesn’t load any data. Rather it creates a file, named books.log, that contains the SQL required to create an external table.
+
+Unloading and Loading Data Using an External Table
+External tables may also be used to select data from a regular database table and create a binary dump file. This is known as unloading data. The advantage of this technique is that the dump file is platform independent and can be used to move large amounts of data between servers of different platforms.
+
+CREATE TABLE inv_et
+ORGANIZATION EXTERNAL (
+TYPE ORACLE_DATAPUMP
+DEFAULT DIRECTORY dp
+LOCATION ('inv.dmp')
+)
+AS SELECT * FROM inv;
+The previous command creates two things:
+• An external table named INV_ET, based on the structure and data within the INV table
+• A platform-independent dump file named inv.dmp
+
+Now, you can copy the inv.dmp file to a separate database server and base an external table on this dump file. The remote server (to which you copy the dump file) can be a platform different from the server on which you created the file. For example, you can create a dump file on a Windows box, copy to a Unix/Linus server, and select from the dump file via an external table. In this example the external table is named INV_DW:
+
+CREATE TABLE inv_dw
+(inv_id number
+,inv_desc varchar2(30))
+ORGANIZATION EXTERNAL (
+TYPE ORACLE_DATAPUMP
+DEFAULT DIRECTORY dp
+LOCATION ('inv.dmp')
+);
+
+After it’s created, you can access the external table data from SQL*Plus:
+SQL> select * from inv_dw;

@@ -1,0 +1,666 @@
+User-Managed Backup and Recovery 
+
+You can use two very different Oracle approaches for backup and recovery (B&R):
+
+The user-managed approach
+The Oracle Recovery Manager (RMAN) approach
+
+User-managed backups are called that because you manually perform all steps associated with the backup and/or recovery. There are two types of user-managed backups: cold backups and hot backups. Cold backups are sometimes called offline backups because the database is shut down during the backup process. Hot backups are also referred to as online backups because the database is available during the backup procedure.
+
+RMAN is Oracle's flagship B&R tool. It automates and manages most aspects of B&R. For Oracle B&R, you should use RMAN. So, why have a chapter about user-managed backups when this approach has been gathering dust for over a decade? Consider the following reasons for understanding user-managed B&R:
+
+You still find shops using user-managed B&R techniques. Therefore, you're required to be knowledgeable about this technology.
+Manually executing a user-managed backup, restore, and recovery solidifies your knowledge of the Oracle B&R architecture. This helps immensely when you're troubleshooting issues with any B&R tool and lays the foundation of core knowledge for key Oracle tools such as RMAN and Data Guard.
+You'll more fully appreciate RMAN and the value of its features.
+Nightmarish database-recovery stories recounted by the old DBAs will now make sense.
+
+Implementing a Cold-Backup Strategy for a Noarchivelog-Mode Database
+You perform a user-managed cold backup by copying files after the database has been shut down. This type of backup is also known as an offline backup. Your database can be in either noarchivelog mode or archivelog mode when you make a cold backup.
+
+For some reason, DBAs tend to think of a cold backup as being synonymous with a backup of a database in noarchivelog mode. That isn't correct.
+
+Making a Cold Backup of a Noarchivelog-Mode Database
+One main reason to make a cold backup of a database in noarchivelog mode is to give you a way to restore a database back to a point in time in the past. You should use this type of backup only if you don't need to recover transactions that occurred after the backup. This type of B&R strategy is acceptable only if your business requirements allow for the loss of data and downtime. Rarely would you ever implement this type of B&R solution for a production business database.
+
+Having said that, there are some good reasons to implement this type of backup. One common use is to make a cold backup of a development/test/training database and periodically reset the database back to the baseline. This gives you a way to restart a performance test or a training session with the same point-in-time snapshot of the database.
+
+ Tip  Consider using the Flashback Database feature to set your database back to a point in time in the past.
+ 
+The example in this section shows you how to make a backup of every critical file in your database: all control files, datafiles, temporary datafiles, and online-redo log files. With this type of backup, you can easily restore your database back to the point in time when the backup was made. The main advantages of this approach are that it's conceptually simple and easy to implement. Here are the steps required for a cold backup of a database in noarchivelog mode:
+
+Step 1: Determine Where to Copy the Backup Files and How Much Space Is Required
+Ideally, the backup location should be on a separate set of disks from your live datafiles location. For this example, the backup location is the directory /oradump/cbackup/O11R2. To get a rough idea of how much space you need to store one copy of the backups, you can run this query:
+
+select sum(sum_bytes)/1024/1024 m_bytes
+from(
+select sum(bytes) sum_bytes from v$datafile
+union
+select sum(bytes) sum_bytes from v$tempfile
+union
+select (sum(bytes) * members) sum_bytes from v$log
+group by members);
+
+Step 2: Determine the Locations and Names of the Files to Copy
+Run this query to list the names (and paths) of files that are included in a cold backup of a noarchivelog-mode database:
+
+select name from v$datafile
+union
+select name from v$controlfile
+union
+select name from v$tempfile
+union
+select member from v$logfile;
+
+Do you need to back up the online-redo logs? No; you never need to back up the online-redo logs as part of any type of backup. Then why do DBAs back up the online-redo logs as part of a cold backup? One reason is that it makes the restore process for the noarchivelog mode scenario slightly easier.
+
+Step 3: Shut Down the Database
+Connect to your database as the SYS (or as a SYSDBA privileged user), and shut down your database using IMMEDIATE, TRANSACTIONAL, or NORMAL In almost every situation, using IMMEDIATE is the preferred method. This mode disconnects users, rolls back uncompleted transactions, and shuts down the database:
+
+Step 4: Create Backup Copies of the Files
+For every file identified in step 2, use an OS utility to copy the files to a backup directory (identified in step 1). In this simple example, all the datafiles, control files, temporary database files, and online-redo logs are in the same directory. In production environments, you'll most likely have files spread out in several different directories. This example uses the Linux/Unix cp command to copy the database files from /ora01/dbfile/O11R2 to the /oradump/cbackup/O11R2 directory:
+
+$ cp /ora01/dbfile/O11R2/*.* /oradump/cbackup/O11R2
+
+Step 5: Restart Your Database
+After all the files are copied, you can start up your database:
+
+Restoring a Cold Backup in Noarchivelog Mode with Online-Redo Logs
+
+Step 1: Shut Down the Instance
+Shut down the instance, if it's running. In this scenario, it doesn't matter how you shut down the database, because you're restoring back to a point in time. Any files in the live database directory locations are overwritten when the backup files are copied back. If your instance is running, you can abruptly abort it. As a SYSDBA privileged user, do the following:
+
+$ sqlplus / as sysdba
+SQL> shutdown abort;
+
+Step 2: Copy the Files Back from the Backup
+This step does the reverse of the backup: you're copying files from the backup location to the live database file locations. In this example, all the backup files are located in the /oradump/cbackup/O11R2 directory and all files are being copied to the /ora01/dbfile/O11R2 directory:
+
+$ cp /oradump/cbackup/O11R2/*.* /ora01/dbfile/O11R2
+
+Step 3: Start Up the database
+Connect to your database as SYS (or a user that has SYSDBA privileges), and start up your database:
+
+$ sqlplus / as sysdba
+SQL> startup;
+
+Restoring a Cold Backup in Noarchivelog Mode Without Online-Redo Logs
+As mentioned earlier, you don't ever need the online-redo logs when restoring from a cold backup. If you made a cold backup of your database in noarchivelog mode and didn't include the online-redo logs as part of the backup, the steps to restore are nearly identical to the steps in the previous section. The main difference is that the last step requires you to open your database using the OPEN RESETLOGS clause. Here are the steps:
+
+Shut down the instance.
+Copy the control files and datafiles back from the backup.
+Start up the database in mount mode.
+$ sqlplus / as sysdba
+SQL> startup mount
+
+Open the database with the OPEN RESETLOGS clause.
+
+SQL> alter database open resetlogs;
+If you see the "Database altered" message, the command was successful. However, you may see this error:
+ORA-01139: RESETLOGS option only valid after an incomplete database recovery
+
+In this case, issue the following:
+SQL> recover database until cancel;
+You should see this message:
+
+Media recovery complete.
+
+Now, attempt to open your database with the OPEN RESETLOGS clause:
+SQL> alter database open resetlogs;
+
+This statement instructs Oracle to re-create the online-redo logs. Oracle uses information in the control file for the placement, name, and size of the redo logs. If there are old online-redo log files in those locations, they're overwritten
+
+Scripting a Cold Backup and Restore
+The basic idea is to dynamically query the data dictionary to determine the locations and names of the files to be backed up. This is preferable to hard-coding the directory locations and file names in a script.
+
+
+#!/bin/bash
+ORACLE_SID=O11R2
+ORACLE_HOME=/oracle/app/oracle/product/11.2.0/db_1
+PATH=$PATH:$ORACLE_HOME/bin
+#
+sqlplus -s <<EOF
+/ as sysdba
+set head off pages0 lines 132 verify off feed off trimsp on
+define cbdir=/oradump/cbackup/O11R2
+spo coldback.sql
+select 'shutdown immediate;' from dual;
+select '!cp ' || name || ' ' || '&&cbdir' from v\$datafile;
+select '!cp ' || name || ' ' || '&&cbdir' from v\$tempfile;
+select '!cp ' || member || ' ' || '&&cbdir' from v\$logfile;
+select '!cp ' || name || ' ' || '&&cbdir' from v\$controlfile;
+select 'startup;' from dual;
+spo off;
+@@coldback.sql
+EOF
+exit 
+
+This file generates commands that are to be executed from a SQL*Plus script to make a cold backup of a database. You place an exclamation mark (!) in front of the Unix cp command to instruct SQL*Plus to host out to the OS to run the copy command. You also place a backward slash (\) in front of each dollar sign ($) when referencing v$ data-dictionary views; this is required in a Linux/Unix shell script. The \ escapes the $ and tells the shell script not to treat the $ character as a special character (the $ normally signifies a shell variable).
+
+After you run this script, here's a sample of the copy commands written to the coldback.sql script:
+
+shutdown immediate;
+!cp /ora01/dbfile/O11R2/system01.dbf /oradump/cbackup/O11R2
+!cp /ora01/dbfile/O11R2/sysaux01.dbf /oradump/cbackup/O11R2
+!cp /ora02/dbfile/O11R2/undotbs01.dbf /oradump/cbackup/O11R2
+!cp /ora02/dbfile/O11R2/users01.dbf /oradump/cbackup/O11R2
+...
+!cp /ora01/oraredo/O11R2/redo02a.rdo /oradump/cbackup/O11R2
+!cp /ora02/oraredo/O11R2/redo02b.rdo /oradump/cbackup/O11R2
+!cp /ora01/dbfile/O11R2/control01.ctl /oradump/cbackup/O11R2
+startup;
+
+-- back up script from sqlplus
+
+select 'shutdown immediate;' from dual
+union all
+select '!cp ' || name || ' ' || '&&cbdir' from v$datafile
+union all
+select '!cp ' || name || ' ' || '&&cbdir' from v$tempfile
+union all
+select '!cp ' || member || ' ' || '&&cbdir' from v$logfile
+union all
+select '!cp ' || name || ' ' || '&&cbdir' from v$controlfile
+union all
+select 'startup;' from dual;
+
+EPCOR Script
+
+shutdown immediate;
+!cp /u11/oradata/SBP11/system_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/undotbs_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/sysaux_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/users_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/siebel_sb_if_ix_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/siebel_sb_if_tb_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/siebel_sb_nr_ix_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/siebel_sb_nr_tb_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/siebel_data_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/siebel_idx_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/tools_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/siebel_idx_SBP11_02.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/siebel_idx_SBP11_03.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/siebel_idx_SBP11_04.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/siebel_idx_SBP11_05.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/siebel_idx_SBP11_06.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/siebel_data_SBP11_02.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/siebel_data_SBP11_03.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/siebel_data_SBP11_04.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/siebel_data_SBP11_05.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/siebel_data_SBP11_06.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/siebel_idx_SBP11_07.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/siebel_data_SBP11_07.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/siebel_data_SBP11_08.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/siebel_idx_SBP11_08.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/temp_SBP11_02.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/temp_SBP11_03.dbf /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/temp_SBP11_01.dbf /oradump/cbackup/O11R2
+!cp /R1/oradata/SBP11/log_SBP11_03a.dbf /oradump/cbackup/O11R2
+!cp /R2/oradata/SBP11/log_SBP11_03b.dbf /oradump/cbackup/O11R2
+!cp /R1/oradata/SBP11/log_SBP11_02a.dbf /oradump/cbackup/O11R2
+!cp /R2/oradata/SBP11/log_SBP11_02b.dbf /oradump/cbackup/O11R2
+!cp /R1/oradata/SBP11/log_SBP11_01a.dbf /oradump/cbackup/O11R2
+!cp /R2/oradata/SBP11/log_SBP11_01b.dbf /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/cntrl_SBP11_01.ctl /oradump/cbackup/O11R2
+!cp /u12/oradata/SBP11/cntrl_SBP11_02.ctl /oradump/cbackup/O11R2
+!cp /u11/oradata/SBP11/cntrl_SBP11_03.ctl /oradump/cbackup/O11R2
+startup;
+
+
+#!/bin/bash
+ORACLE_SID=O11R2
+ORACLE_HOME=/oracle/app/oracle/product/11.2.0/db_1
+PATH=$PATH:$ORACLE_HOME/bin
+#
+sqlplus -s <<EOF
+/ as sysdba
+set head off pages0 lines 132 verify off feed off trimsp on
+define cbdir=/oradump/cbackup/O11R2
+define dbname=$ORACLE_SID
+spo coldrest.sql
+select 'shutdown abort;' from dual;
+select '!cp ' || '&&cbdir/' || substr(name, instr(name,'/',-1,1)+1) ||
+' ' || name from v\$datafile;
+select '!cp ' || '&&cbdir/' || substr(name, instr(name,'/',-1,1)+1) ||
+' ' || name from v\$tempfile;
+select '!cp ' || '&&cbdir/' || substr(member, instr(member,'/',-1,1)+1) ||
+' ' || member from v\$logfile;
+select '!cp ' || '&&cbdir/' || substr(name, instr(name,'/',-1,1)+1) ||
+' ' || name from v\$controlfile;
+select 'startup;' from dual;
+spo off;
+EOF
+exit 0
+
+
+Another version of restore script
+----
+select 'shutdown abort;' from dual
+union all
+select '!cp ' || '&&cbdir\' || substr(name, instr(name,'\',-1,1)+1) ||' ' || name from v$datafile
+union all
+select '!cp ' || '&&cbdir\' || substr(name, instr(name,'\',-1,1)+1) ||' ' || name from v$tempfile
+union all
+select '!cp ' || '&&cbdir\' || substr(member, instr(member,'\',-1,1)+1) ||' ' || member from v$logfile
+union all
+select '!cp ' || '&&cbdir\' || substr(name, instr(name,'\',-1,1)+1) ||' ' || name from v$controlfile
+union all
+select 'startup;' from dual;
+--
+This script creates a script named coldrest.sql that generates the copy commands to restore your datafiles, tempfiles, logfiles, and control files back to their original locations. After you run this shell script, here's a partial snippet of the code in the coldrest.sql file:
+
+
+shutdown abort;
+!cp /oradump/cbackup/O11R2/system01.dbf /ora01/dbfile/O11R2/system01.dbf
+!cp /oradump/cbackup/O11R2/sysaux01.dbf /ora01/dbfile/O11R2/sysaux01.dbf
+!cp /oradump/cbackup/O11R2/undotbs01.dbf /ora02/dbfile/O11R2/undotbs01.dbf
+!cp /oradump/cbackup/O11R2/users01.dbf /ora02/dbfile/O11R2/users01.dbf
+...
+!cp /oradump/cbackup/O11R2/redo02a.rdo /ora01/oraredo/O11R2/redo02a.rdo
+!cp /oradump/cbackup/O11R2/redo02b.rdo /ora02/oraredo/O11R2/redo02b.rdo
+!cp /oradump/cbackup/O11R2/control01.ctl /ora01/dbfile/O11R2/control01.ctl
+startup;
+
+
+If you need to restore from a cold backup using this script, log on to SQL*Plus as SYS and execute the script:
+
+$ sqlplus / as sysdba
+SQL> @coldrest.sql
+
+Implementing Archivelog Mode
+
+Archivelog mode is a prerequisite for the following technologies: user-managed hot backups, the Flashback Database feature, and RMAN online backups. If you don't have archiving enabled, and you attempt to make a user-managed hot backup, you receive this error when altering a database or tablespace into backup mode:
+ORA-01123: cannot start online backup; media recovery not enabled
+
+Making Architectural Decisions
+When you implement archivelog mode, you also need a strategy for managing these files. The archive-redo logs consume disk space. If left unattended, these files will eventually consume all the space allocated for them. If this happens, the archiver can't write a new archive redo log file to disk, and your database will stop processing transactions. At this point you have a hung database. You need to manually intervene by creating space for the archiver to resume work. For these reasons, there are several architectural decisions you must carefully consider before you turn on archiving:
+
+Where to place the archive-redo logs, and whether to use the fast-recovery area (formerly known as the flash-recovery area) to store the archive-redo logs
+How to name the archive-redo logs
+How much space should be allocated to the archive-redo log location
+How often to back up the archive-redo logs
+When it's okay to permanently remove archive-redo logs from disk
+Whether multiple archive-redo log locations should be enabled
+If this is a production database, when to schedule the small amount of downtime that's required
+
+Minimally, you should have enough space in your primary archive-redo location to hold at least a day's worth of archive-redo logs. This lets you back them up on a daily basis and then remove them from disk after they've been backed up.
+
+If you decide to use a fast-recovery area (FRA) for your archive-redo log location, you must ensure that it contains sufficient space to hold the number of archive-redo logs generated between backups. Keep in mind that the FRA typically contains other types of files, such as RMAN backup files, flashback logs, and so on. If you use an FRA, be aware that the generation of other types of files can potentially impact the space required by the archive-redo log files.
+
+You need a strategy to automate the backup and removal of archive-redo log files. For user-managed backups, this can be implemented with a shell script that periodically copies the archive-redo logs to a backup location and then removes them from the primary location. As you see in later chapters, RMAN automates the backup and removal of archive-redo log files.
+
+Setting the Archive-Redo File Location
+Before you set your database mode to archiving, you should specifically instruct Oracle where you want the archive-redo logs to be placed. You can set the archive-redo log-file destination with the following techniques:
+
+Set the LOG_ARCHIVE_DEST_N database initialization parameter.
+Implement an FRA.
+
+If you don't specifically set the archive-redo log location via an initialization parameter or by enabling the FRA, then the archive-redo logs are written to a default location.
+
+Setting the Archive Location to a User-Defined Disk Location (non-FRA)
+If you're using an init.ora file
+log_archive_dest_1='location=/ora02/oraarch/O11R2'
+log_archive_format='%t_%s_%r.arc'
+
+If you're using an spfile,
+
+SQL> alter system set log_archive_dest_1='location=/ora02/oraarch/O11R2' scope=both;
+SQL> alter system set log_archive_format='%t_%s_%r.arc' scope=spfile;
+
+You can dynamically change the LOG_ARCHIVE_DEST_n parameters while your database is open. However, you have to stop and start your database for the LOG_ARCHIVE_FORMAT parameter to take effect. Take care not to set the LOG_ARCHIVE_FORMAT to an invalid value, because then you can't start your database:
+
+SQL> startup nomount;
+ORA-19905: log_archive_format must contain %s, %t and %r
+
+In this situation, if you're using an spfile, you can't start your instance. You have to rename the spfile, create a pfile from the spfile (SQL> create pfile from spfile;), modify the parameter to a valid value, start the database with the pfile, and re-create the spfile from the pfile
+%s -  Log-sequence number. %S -  Log-sequence number padded to the left with zeros. %t - Thread number. %T -  Thread number padded to the left with zeros. %a -  Activation ID. %d - Database ID. %r -  Resetlogs ID required to ensure uniqueness across multiple incarnations of the database.
+
+If you don't specify a value for LOG_ARCHIVE_FORMAT, Oracle uses a default such as %t_%s_%r.dbf.  One aspect of the default format that I don't like is that it ends with the extension .dbf, which is widely used for datafiles. This can cause confusion about whether a particular file can be safely removed because it's an old archive-redo log file or whether the file shouldn't be touched because it's a live datafile.
+ 
+Using the FRA for Archive Log Files
+To enable the use of an FRA, you must set two initialization parameters:
+
+DB_RECOVERY_FILE_DEST_SIZE specifies the maximum space to be used for all files that are stored the FRA.
+DB_RECOVERY_FILE_DEST specifies the base directory for the FRA.
+
+When you create an FRA, you're not really creating anything—you're telling Oracle which directory to use when storing files that go in the FRA. For example, say 200GB of space are reserved on a mount point, and you want the base directory for the FRA to be /ora02/fra.
+
+alter system set db_recovery_file_dest_size=200g;
+alter system set db_recovery_file_dest='/ora02/fra';
+
+After you enable an FRA, by default, Oracle writes archive-redo logs to subdirectories in the FRA.
+
+If you've set the LOG_ARCHIVE_DEST_N parameter to be a location on disk, archive-redo logs aren't written to the FRA.
+
+You can verify that the archive location is using an FRA:
+
+sql>archive log list;
+
+If archive files are being written to the FRA, you should see output like this:
+
+Database log mode              Archive Mode
+Automatic archival             Enabled
+Archive destination            USE_DB_RECOVERY_FILE_DEST
+
+You can display the directory associated with the FRA like this:
+show parameter db_recovery_file_dest
+
+When you first implement an FRA, there are no subdirectories beneath the base FRA directory (specified with DB_RECOVERY_FILE_DEST). The first time Oracle needs to write a file to the FRA, it creates any required directories beneath the base directory. For example, after you implement an FRA, if archiving for your database is enabled, then the first time a online-redo log switch occurs, Oracle creates the following directories beneath the base FRA directory:
+
+<SID>/archivelog/<YYYY_MM_DD>
+/ora02/fra/O11R2/archivelog/2013_05_27
+
+When you enable an FRA, if you don't set the initialization parameter LOG_ARCHIVE_DEST_N, then by default, the archive-redo logs are written to the FRA. It's the same with RMAN backups: if you don't specifically configure an RMAN channel disk location, then by default, the RMAN backup files are written to the FRA.
+
+With regard to the RMAN backups, if the FRA fills up, the RMAN backups abort. An RMAN backup failure isn't catastrophic, because usually you can quickly resolve space issues and manually run another backup. In most situations, this doesn't compromise your database availability; in the event of a backup failure, you still have a previous RMAN backup that you can use to restore and recover your database.
+
+However, in the event that the archive-redo log destination fills up, and the archiver can't write to the file system, your database will hang. In many 24x7 mission-critical environments, this type of downtime is unacceptable.
+
+One advantage feature of FRA is that archivelog files that are already beyond the retention policy (set via RMAN) are automatically deleted when space is needed in the FRA. The technical editor has raised a valid concern here, and you should be aware of it.
+
+Enabling Archivelog Mode
+SQL> shutdown immediate;
+SQL> startup mount;
+SQL> alter database archivelog;
+SQL> alter database open;
+
+select log_mode from v$database;
+
+Reacting to a Lack of Disk Space in Your Archive Log Destination
+
+The archiver background process writes archive-redo logs to a location that you specify. If for any reason the archiver process can't write to the archive location, your database hangs. Any users attempting to connect receive this error:
+
+ORA-00257: archiver error. Connect internal only, until freed.
+
+In this situation, your database is as good as down and completely unavailable. To fix the issue, you have to do something quickly:
+
+Move files to a different location.
+Compress old files in the archive-redo log location.
+Permanently remove old files.
+Switch the archive-redo log destination to a different location.
+
+Be careful not to move an archive-redo log that is currently being written to. If an archived redo log file appears in V$ARCHIVED_LOG, that means it has been completely archived.
+
+If another location on your server has plenty of space, you can consider changing the location to which the archive-redo logs are being written. For example:
+alter system set log_archive_dest_1='location=/oraarch02';
+
+
+Making a Cold Backup of an Archivelog-Mode Database
+The purpose of a backup of an archivelog-mode database is to restore the database and roll forward and apply transactions to fully recover the database.
+
+This has significant implications for the backups. Recall that for a noarchivelog-mode database, DBAs sometimes include the online-redo logs as part of the backup. For a backup of an archivelog-mode database, you should never include the online-redo logs in the backup. The online-redo logs contain the most currently generated redo transaction information for the database. Any redos in the current online-redo logs that hasn't been archived are required for a complete recovery. In the event of a failure, you don't want to overwrite the online-redo logs with copies of online-redo logs taken from a point in time in the past; this would result in the inability to perform a complete recovery.
+
+The high-level steps for a cold backup of a database in archivelog mode are identical for the noarchivelog-mode database:
+
+Determine where to copy the backup files and how much space is required.
+Determine the locations and names of the database files to copy.
+Shut down the database with IMMEDIATE, TRANSACTIONAL, or NORMAL.
+Copy the files (identified in step 2) to the backup location (determined in step 1).
+Restart your database.
+
+The main difference between the cold-backup archivelog-mode backup and the noarchivelog-mode backup is that in step 2,
+select name from v$datafile
+union
+select name from v$controlfile;
+
+Also, you don't need to back up the datafiles associated with the TEMP tablespace. As of Oracle Database 10g, Oracle automatically attempts to create missing datafiles associated with the TEMP tablespace (for locally managed temp tablespaces) when the database is started.
+
+
+Making a Hot Backup
+Here are the steps required for a hot backup:
+
+Ensure that the database is in archivelog mode.
+Determine where to copy the backup files.
+Determine which files need to be backed up.
+Note the maximum sequence number of the online-redo logs.
+Alter the database/tablespace into backup mode.
+Copy the datafiles with an OS utility.
+Alter the database/tablespace out of backup mode.
+Archive the current online-redo log, and note the maximum sequence number of the online-redo logs.
+Back up the control file.
+Back up any archive-redo logs generated during the backup.
+
+In Detail
+
+Step 1: Ensure That the Database Is in Archivelog Mode
+
+archive log list;
+
+Database log mode             Archive Mode
+Automatic archival            Enabled
+Archive destination           /ora02/oraarch/O11R2
+
+Step 2: Determine Where to Copy the Backup Files
+Now, determine the backup location. For this example, the backup location is the directory /oradump/hbackup/O11R2. To get a rough idea of how much space you need, you can run this query:
+
+SQL> select sum(bytes) from dba_data_files;
+
+Step 3: Determine Which Files Need to Be Backed Up
+
+SQL> select name from v$datafile;
+
+When you get to step 5, you may want to consider altering tablespaces one at a time into backup mode. If you take that approach, you need to know which datafiles are associated with which tablespace:
+
+select
+ tablespace_name
+,file_name
+from dba_data_files
+order by 1,2;
+
+Step 4: Note the Maximum Sequence Number of the Online-Redo Logs
+To recover successfully using a hot backup, you require at minimum all the archive-redo logs that were generated during the backup. For this reason, you need to note the archivelog sequence before starting the hot backup:
+
+select
+ thread#
+,max(sequence#)
+from v$log
+group by thread#
+order by thread#;
+
+Step 5: Alter the Database/Tablespaces into Backup Mode
+
+SQL> alter database begin backup;
+
+If it's an active OLTP database, doing this can greatly degrade performance. This is because when a tablespace is in backup mode, Oracle copies a full image of any block (when it's first modified) to the redo stream.
+
+The alternative is to alter only one tablespace at a time into backup mode. After the tablespace has been altered into backup mode, you can copy the associated datafiles (step 6) and then alter the tablespace out of backup mode (step 7). You have to do this for each tablespace:
+
+SQL> alter tablespace <tablespace_name> begin backup;
+
+ Step 6: Copy the Datafiles with an OS Utility
+
+$ cp /ora01/dbfile/O11R2/*.dbf /oradump/hbackup/O11R2
+
+Step 7: Alter the Database/Tablespaces Out of Backup Mode
+
+SQL> alter database end backup;
+
+If you're altering your tablespaces into backup mode one at a time, you need to alter each tablespace out of backup mode after its datafiles have been copied:
+
+SQL> alter tablespace <tablespace_name> end backup;
+
+If you don't take the tablespaces out of backup mode, you can seriously degrade performance and compromise the ability to recover your database.
+
+Step 8: Archive the Current Online-Redo Log and Note the Maximum Sequence Number of the Online-Redo Logs
+The following statement instructs Oracle to archive any unarchived online-redo logs and also to initiate a log switch. This ensures that an end-of-backup marker is written to the archive-redo logs
+
+SQL> alter system archive log current;
+
+Also note the maximum online-redo log sequence number. If a failure occurs immediately after the hot backup, you need any archive-redo logs generated during the hot backup to fully recover your database:
+
+
+select
+ thread#
+,max(sequence#)
+from v$log
+group by thread#
+order by thread#;
+
+Step 9: Back Up the Control File
+For a hot backup, you can't use an OS copy command to make a backup of control file. Oracle's hot-backup procedure specifies that you must use the ALTER DATABASE BACKUP CONTROLFILE statement. This example makes a backup of the control file and places it in the same location as the database backup files:
+
+SQL> alter database backup controlfile to '/oradump/hbackup/O11R2/controlbk.ctl' reuse;
+
+The REUSE clause instructs Oracle to overwrite the file if it already exists in the backup location.
+
+Step 10: Back Up Any Archive-Redo Logs Generated During the Backup
+Back up the archive-redo logs that were generated during the hot backup. You can back up the archive-redo logs with an OS copy command:
+
+$ cp <archive redo logs generated during backup> <backup directory>
+
+This guarantees that you have the logs in the event of a failure that occurs soon after the hot backup finishes. Be sure you don't back up an archive-redo log that is currently being written to by the archiver process—doing so results in an incomplete copy of that file. Sometimes, DBAs script this process by checking the maximum SEQUENCE# with the maximum RESETLOGS_ID in the V$ARCHIVED_LOG view. Oracle updates that view when it's finished copying the archive-redo log to disk. Therefore, any archive-redo log file that appears in the V$ARCHIVED_LOG view should be safe to copy.
+
+
+Scripting Hot Backups
+The script in this section covers the minimal tasks associated with a hot backup. For a production environment, a hot backup script can be quite complex. The script listed here provides you with a baseline of what you should include in a hot-backup script.
+
+You need to modify these variables in the script for it to work in your environment:
+
+hbdir - points to the base directory for the hot backups
+dbname - to be set to the Oracle system identifier (SID) of your database
+
+
+#!/bin/bash
+# Either hardcode or source the OS variables via a script,
+# see chapter 2 for more details on the oraset script.
+· /var/opt/oracle/oraset $1
+#
+sqlplus -s <<EOF
+/ as sysdba
+set head off pages0 lines 132 verify off feed off trimsp on
+define hbdir=/oradump/hbackup
+define dbname=O11R2
+spo hotback.sql
+select 'spo &&hbdir/&&dbname/hotlog.txt' from dual;
+select 'select max(sequence#) from v\$log;' from dual;
+select 'alter database begin backup;' from dual;
+select '!cp ' || name || ' ' || '&&hbdir/&&dbname' from v\$datafile;
+select 'alter database end backup;' from dual;
+select 'alter database backup controlfile to ' || '''' || '&&hbdir' || '/'
+       || '&&dbname' || '/controlbk.ctl' || '''' || ' reuse;' from dual;
+select 'alter system archive log current;' from dual;
+select 'select max(sequence#) from v\$log;' from dual;
+select 'select member from v\$logfile;' from dual;
+select 'spo off;' from dual;
+spo off;
+@@hotback.sql
+EOF
+exit 0
+
+The above script generates a hotback.sql script like below. 
+
+spo /oradump/hbackup/O11R2/hotlog.txt
+select max(sequence#) from v$log;
+alter database begin backup;
+!cp /ora01/dbfile/O11R2/system01.dbf /oradump/hbackup/O11R2
+!cp /ora01/dbfile/O11R2/sysaux01.dbf /oradump/hbackup/O11R2
+!cp /ora02/dbfile/O11R2/undotbs01.dbf /oradump/hbackup/O11R2
+
+!cp /ora02/dbfile/O11R2/users01.dbf /oradump/hbackup/O11R2
+!cp /ora01/dbfile/O11R2/appdata.dbf /oradump/hbackup/O11R2
+!cp /ora01/dbfile/O11R2/inv_mgmt_data01.dbf /oradump/hbackup/O11R2
+!cp /ora01/dbfile/O11R2/inv_mgmt_index01.dbf /oradump/hbackup/O11R2
+!cp /ora01/dbfile/O11R2/mvdata01.dbf /oradump/hbackup/O11R2
+!cp /ora01/dbfile/O11R2/mvindex01.dbf /oradump/hbackup/O11R2
+alter database end backup;
+alter database backup controlfile to '/oradump/hbackup/O11R2/controlbk.ctl' reuse;
+alter system archive log current;
+select max(sequence#) from v$log;
+select member from v$logfile;
+spo off;
+
+Tip  Don't use user-managed hot-backup technology for online backups. Use RMAN for backups. RMAN doesn't need to place tablespaces in backup mode and automates nearly everything related to B&R.
+ 
+To perform a hot backup, one critical step is to alter a tablespace into backup mode before you copy any of the datafiles associated with the tablespace using an OS utility. To understand why you have to alter a tablespace into backup mode, you must be familiar with what is sometimes called the split (or fractured) block issue.
+
+Understanding the Split-Block Issue
+
+Recall that a database block is often a different size than the OS block. For example, a database block may be sized at 8KB, whereas the OS block size is 4KB. As part of the hot backup, you use an OS utility to copy the live datafiles. While the OS utility is copying the datafile, the possibility exists that database writers are writing to a block at the same time the OS utility is copying the block. Because the Oracle block and the OS block are different sizes, the following may happen:
+
+The OS utility copies part of the Oracle block.
+A moment later, a database writer updates the entire block.
+A split second later, the OS utility copies the latter half of the Oracle block.
+
+This can result in the OS copy of the block being inconsistent with what Oracle wrote to the OS.
+
+Performing a Complete Recovery of an Archivelog-Mode Database
+
+Complete recovery means you can recover all transactions that were committed before a failure occurred. Complete recovery doesn't mean you completely restore and recover the entire database. For example, if only one datafile has experienced media failure, you only need to restore and recover the damaged datafile to perform a complete recovery.
+
+As long as the database was in archivelog mode during the backup. For a complete recovery, you need
+
+To be able to restore the datafiles that have experienced media failure
+Access to all archive-redo logs generated since the last backup was started
+Have intact online-redo logs.
+
+The next several sections demonstrate some common complete restore and recovery scenarios. You should be able to apply these basic scenarios to diagnose and recover from any complex situation you find yourself in.
+
+Restoring and Recovering with the Database Offline
+
+create a table and insert some data. This table and data are selected from at the end of the complete recovery process to demonstrate a successful recovery:
+
+create table foo(foo number) tablespace users;
+insert into foo values(1);
+commit;
+
+Now, switch the online logs several times. Doing so ensures that you have to apply archive-redo logs as part of the recovery:
+
+Next, simulate a media failure by renaming the datafile associated with the USERS tablespace. You can identify the name of the datafile associated with the USERS tablespace with this query:
+
+
+
+
+
+
+----------
+RMAN automatically backs up the control file and SPFILE whenever the entire database or the SYSTEM tablespace are backed up.
+
+The two basic types of RMAN commands are standalone commands and job commands. 
+Standalone commands are executed only at the RMAN> prompt and are self-contained. Examples of standalone commands are CHANGE, CONNECT, CREATE SCRIPT, and CREATE CATALOG.
+
+In contrast, job commands are usually grouped and run inside of a command block using the RUN command. Within a command block, the failure of any command within the block terminates execution of the block. An example of an RMAN command that can be used only as a job command is ALLOCATE CHANNEL: the channel allocation is valid only for the duration of the command block. (You would use CONFIGURE CHANNEL, a standalone command, to create a default channel.) An RMAN channel is one stream of data from the database to a device and corresponds to one database server session.
+
+Here is an example of some commands run within a command block to back up the database, force the archiving of the current online redo log file, and remove obsolete backups:
+
+RMAN> run
+{
+    backup as compressed backupset database;
+    sql 'alter system archive log current';
+    delete noprompt obsolete;
+}
+Note that RMAN uses a default channel when you don’t explicitly allocate a channel; in this case it’s the flash recovery area.
+
+RMAN Command :  Description
+@ :  Runs an RMAN command script at the pathname specified after the @. If no path is specified, the path is assumed to be the directory from which RMAN was invoked.
+ADVISE FAILURE :  Displays repair options for the failure found.
+ALLOCATE CHANNEL :  Creates a connection between RMAN and a database instance, initiating a database server session that performs the work of backing up, restoring, or recovering an RMAN backup.
+BACKUP :  Performs an RMAN backup, with or without archived redo logs. Backs up datafiles and datafile copies, or performs an incremental level 0 or level 1 backup. Backs up an entire database or a single tablespace or datafile. Validates the blocks to be backed up with the VALIDATE clause.
+CREATE SCRIPT :  Creates a stored script in the recovery catalog.
+CATALOG :  Adds information about file copies and user-managed backups to the repository.
+CHANGE :  Changes the status of a backup in the RMAN repository. Useful for explicitly excluding a backup from a restore or recovery operation, or to notify RMAN that a backup file was inadvertently or deliberately removed by an operating system command outside of RMAN.
+CONFIGURE :  Configures the persistent parameters for RMAN. The parameters configured are available during every subsequent RMAN session unless they are explicitly cleared or modified.
+CONVERT :  Converts datafile formats for transporting tablespaces or entire databases across platforms.
+CREATE CATALOG :  Creates the repository catalog containing RMAN metadata for one or more target databases. It is strongly recommended that this catalog not be stored in one of the target databases.
+CROSSCHECK :  Checks the record of backups in the RMAN repository against the actual files on disk or tape. Objects are flagged as EXPIRED, AVAILABLE, UNAVAILABLE, or OBSOLETE. If the object is not available to RMAN, it is marked UNAVAILABLE.
+DELETE :  Deletes backup files or copies and marks them as DELETED in the target database control file. If a repository is used, the record of the backup file is removed.
+DROP DATABASE :  Deletes the target database from disk and unregisters it. The target database must be mounted in EXCLUSIVE mode. All datafiles, online redo logs, and control files are deleted. All metadata stored in the recovery catalog is removed.
+DUPLICATE :  Uses backups of the target database (or use the live database) to create a duplicate database.
+FLASHBACK DATABASE :  Performs a Flashback Database operation, new to Oracle 10g. The database is restored to a point in the past by System Change Number (SCN) or log sequence number using Flashback logs to undo changes before the SCN or log sequence number, and then archived redo logs are applied to bring the database forward to a consistent state.
+LIST :  Displays information about backupsets and image copies recorded in the target database’s RMAN repository (the catalog). See REPORT for identifying complex relationships between backupsets.
+RECOVER :  Performs a complete or incomplete recovery on a datafile, a tablespace, or the entire database. Can also apply incremental backups to a datafile image copy to roll it forward in time.
+REGISTER DATABASE : Registers a target database in the RMAN repository.
+REPAIR FAILURE :  Repairs one or more failures recorded in the automated diagnostic repository (ADR).
+REPORT : Performs a detailed analysis of the RMAN repository. For example, this command can identify which files need a backup to meet the retention policy or which backup files can be deleted.
+RESTORE :  Restores files from image copies or backupsets to disk, typically after a media failure. Can be used to validate a restore operation without actually performing the restore by specifying the PREVIEW option.
+RUN :  Runs a sequence of RMAN statements as a group when those commands are typed out between braces: {run this stuff}. The braces form a group of commands, allowing you to override default RMAN parameters for the duration of the execution of the group.
+SET :  Sets RMAN configuration settings for the duration of the RMAN session, such as allocated disk or tape channels. Persistent settings are assigned with CONFIGURE.
+SHOW :  Shows all or individual RMAN configured settings.
+SHUTDOWN  :  Shuts down the target database from within RMAN. Identical to the SHUTDOWN command within SQL*Plus.
+STARTUP :  Starts up the target database. Has the same options and function as the SQL*PlusSTARTUP command.
+SQL :  Runs SQL commands that cannot be accomplished directly or indirectly using standard RMAN commands; for example, it can run SQL 'ALTER TABLESPACE USERS OFFLINE IMMEDIATE'; within RMAN before restoring and recovering the USERS tablespace.
+TRANSPORT TABLESPACE :  Creates transportable tablespace sets from backup for one or more tablespaces.
+VALIDATE :  Examines a backup set and reports whether its data is intact and consistent.
+ 
+
+If you enable archiving but do not specify any archiving locations, the archived log files reside in a default, platform-dependent location; on Unix and Linux platforms the default location is $ORACLE_HOME/dbs.
+
+

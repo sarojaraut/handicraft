@@ -1,0 +1,94 @@
+Expert Oracle DBA - Chapter 1 - DBA Responsibility
+
+The main responsibility of a DBA is to make corporate data available to the end users and the decision makers of an organization. All other DBA tasks are subordinate to that single goal, and almost everything DBAs do on a day-to-day basis is aimed at meeting that single target.
+
+Toward the end of the chapter, you'll find a list of resources and organizations that will help you in your quest to become a top-notch DBA.
+
+You can put the tasks you'll perform as an Oracle DBA in the following three categories:
+Security
+System management
+Database design
+
+The DBA's Security Role
+Some organizations don't have a general security policy in place. This is particularly true of smaller companies. In that case, it's usually up to the DBA to come up with the security policy and then enforce it within the database. 
+
+Creating and Managing Users
+A DBA is expected to guide the users' use of the database and ensure the database's security by using proper authorization schemes, roles, and privileges. It's also the responsibility of the DBA to monitor the resource usage by individual users and to flag the heavy resource users.
+
+The DBA's System Management Role
+Performance Tuning
+Performance tuning is an omnipresent issue. It's a part of the design stage, the implementation stage, the testing stage, and the production stage of a database. In fact, performance tuning is an ongoing task that constantly requires the attention of a good Oracle DBA. Depending on the organizational setup, the DBA may need to perform database tuning, or application tuning, or both. 
+
+Monitoring the System
+Once a database is actually in production, the DBA is expected to monitor the system to ensure uninterrupted service. The tasks involved in monitoring the system include the following:
+Monitoring space in the database to ensure it is sufficient for the system
+Checking to ensure that batch jobs are finishing as expected
+Monitoring log files on a daily basis for evidence of unauthorized attempts to log in (something DBAs want to keep close tabs on)
+
+Minimizing Downtime
+Providing uninterrupted service by eliminating (or at least minimizing) downtime is an important criterion by which you can judge a DBA's performance. Of course, if the downtime is the result of a faulty disk, the company's service-level agreements (SLAs), if any, will determine how quickly the disk is replaced. DBAs are expected to be proactive and prevent avoidable downtime (such as downtime due to a process running out of space).
+
+Estimating Requirements
+Only the DBA can estimate the operating system, disk, and memory requirements for a new project. The DBA is also responsible for coming up with growth estimates for the databases he or she is managing and the consequent increase in resource requirements. Although some of the decisions regarding physical equipment, such as the number of CPUs per machine and the type of UNIX server, may be made independently by system administrators and managers, the DBA can help during the process by providing good estimates of the database requirements.
+
+In addition to estimating initial requirements, the DBA is responsible for planning for future growth and potential changes in the applications. This is known as capacity planning, and the DBA's estimates will be the basis for funding requests by department managers.
+
+Developing Backup and Recovery Strategies
+Adequate backups can prevent the catastrophic loss of an organization's vital business data. The Oracle DBA needs to come up with a proper backup strategy and test the backups for corruption. The DBA also needs to have recovery plans in place, and the best way to do this is to simulate several types of data loss. Proper testing of backup and recovery plans is sorely neglected in many companies, in spite of its critical importance for the company.
+
+When disasters or technical malfunctions keep the database from functioning, the DBA can fall back on backed-up copies of the database to resume functioning at peak efficiency. The DBA is responsible for the formulation, implementation, and testing of fail-safe backup and restoration policies for the organization.
+
+During those times when disaster strikes, the seasoned DBA is the one who is confident that he or she has the necessary technical skills and can remain calm in an emergency. This calmness is really the outcome of years of painstaking study and testing of the theoretical principles and the operational commands necessary to perform sensitive tasks, such as the restoration and recovery of damaged databases.
+
+Overseeing Change Management
+Every application goes through changes over time to improve features and fix bugs in the software. There is a constant cycle of development, testing, and implementation, and the DBA plays an important role in that cycle. Change management is the process of properly migrating new code, and the Oracle DBA needs to understand the process that's in place in his or her organization.
+
+The DBA's Database Design Role
+Many Oracle DBAs spend at least part of their time helping design new databases. The DBA's role may include helping create entity-relationship diagrams and suggesting dependencies and candidates for primary keys. In fact, having the DBA actively involved in designing new databases will improve the performance of the databases down the road. It's a well-known fact that an improperly designed database thwarts all attempts to tune its performance.
+
+A talented DBA can keep the design team from making poor choices during the design process.
+
+Installing and Upgrading Software
+The Oracle DBA plays an important role in evaluating the features of alternative products. The DBA is the person who installs the Oracle database server software in most organizations; the UNIX system administrator may also handle part of the installation process. Prior to actual installation, the DBA is responsible for listing all the memory and disk requirements so that the Oracle software and databases, as well as the system itself, can perform adequately
+
+Creating Databases
+The DBA is responsible for the creation of databases. Initially he or she may create a test database and later, after satisfactory testing, move the database to a production version. The DBA plans the logical design of the database structures, such as tablespaces, and implements the design by creating the structures after the database is created. As the DBA plays a part in creating the new database, he or she needs to work with the application team closely to come up with proper estimates of the database objects, such as tables and indexes.
+
+Creating Database Objects
+An empty database doesn't do anyone a whole lot of good, so the DBA needs to create the various objects of the database, such as tables, indexes, and so on. Here, the developers and the DBA work together closely, with the developers providing the tables and indexes to be created and the DBA making sure that the objects are designed soundly. The DBA may also make suggestions and modifications to the objects to improve their performance. Through proper evaluation, the DBA can come up with alternative access methods for selecting data, which can improve performance.
+
+In a small firm, a single DBA might be the UNIX or Windows administrator and the network administrator as well as the Oracle DBA, with all job functions rolled into one. A large company might have a dozen or more Oracle DBAs, each in charge of a certain database or a certain set of tasks.
+
+DBA Job Classifications
+Sometimes you'll hear the terms "production DBA" and "development" (or "logical") DBA. Production DBA refers to database administrators in charge of production databases. Because a production database is already in production (meaning it is already serving the business functions), such DBAs aren't required to have design or other such developmental skills. DBAs who are involved in the preproduction design and development of databases are usually called development or logical DBAs. Ideally, you should strive to acquire the relevant skill sets for both development and production administration.
+
+Although all of the preceding is true, both development and production DBAs are well advised to cross-train and learn aspects of the "other" side of Oracle database administration. Too often, people who characterize themselves as production DBAs do not do much beyond performing backups and restores and implementing the physical layout of databases. Similarly, development DBAs, due to their preference for the programming and design aspects of the job, may not be fully cognizant of the operational aspects of database management, such as storage and memory requirements.
+
+Types of Databases
+Databases perform a variety of functions, but you can group all of those functions into two broad categories: online transaction processing (OLTP) and decision-support systems (DSSs; sometimes also called online analytical processing, or OLAP). Let's take a quick look at some of the basic classifications of Oracle databases.
+
+Online Transaction Processing and Decision-Support System Databases
+
+Online transaction processing databases are the bread and butter of most consumer-and supplier-oriented databases. This category includes order entry, billing, customer, supplier, and supply-chain databases. These databases are characterized by heavy transaction volume and a need to be online continuously, which today (given the use of the Internet to access such systems) means 24/7/365 availability, short maintenance intervals, and low tolerance for breakdowns in the system.
+
+Decision-support systems range from small databases to large data warehouses. These are typically not 24/7 operations, and they can easily manage with regularly scheduled downtime and maintenance windows. The extremely large size of some of these data warehouses necessitates the use of special techniques both to load and to use the data.
+
+There isn't a whole lot of difference between the administration of a DSS-oriented data ware-house and a transaction-oriented OLTP system from the DBA's perspective. The backup and recovery methodology is essentially the same, and database security and other related issues are also very similar. The big difference between the two types of databases occurs at the design and implementation stages. DSS systems usually involve a different optimization strategy for queries and different physical storage strategies. Oracle Database 11g provides you with the choice of implementing an OLTP database or a DSS database using the same database server software.
+
+Performance design considerations that may work well with one type of database may be entirely inappropriate for another type of database. For example, a large number of indexes can help you query a typical data warehouse efficiently while you are getting some reports out of that database. If you have the same number of indexes on a live OLTP system with a large number of concurrent users, you may see a substantial slowing down of the database, because the many updates, inserts, and deletes on the OLTP system require more work on the part of the database.
+
+Development, Test, and Production Databases
+
+Applications are developed, tested, and then put into production. A firm usually has development, test, and production versions of the same database in use at any given time, although for smaller companies the test and development versions of the database may be integrated in one database.
+Development databases are usually owned by the development team, which has full privileges to access and modify data and objects in those databases. The test databases are designed to simulate actual production databases and are used to test the functionality of code after it comes out of the development databases. No new code is usually implemented in the "real" production databases of the company unless it has been successfully tested in the test databases.
+
+The Daily Routine of a Typical Oracle DBA
+This can mean running monitoring scripts or using the Oracle built-in tools, such as Enterprise Manager, to keep track of what's actually happening with the database.
+A good example of something you'll want to monitor closely is space in the database.
+You'll normally check the reports generated by your monitoring scripts on a daily basis to make sure no problems are developing with regard to disk space, memory allocation, or disk input and output. Enterprise Manager is a handy tool for getting a quick, visual idea about various issues, such as memory allocation and other resource usage.
+It's also worthwhile to study the alert log (the log that Oracle databases maintain to capture significant information about database activity) on a regular basis to see if it's trapping any errors reported by Oracle. You may do this alert log monitoring directly, by perusing the log itself, or you could put a script in place that monitors and reports any errors soon after their occurrence in the alert log.
+
+As you progress in your journey as an Oracle DBA, you'll have many satisfying experiences as well as some very frustrating and nerve-racking moments.
+
+
+

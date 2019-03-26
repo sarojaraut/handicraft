@@ -1,0 +1,731 @@
+﻿Managing Database Storage Structures
+
+Data is stored logically in segments and physically in datafiles. The tablespace entity abstracts the two, one tablespace can contain many segments and be made up of many datafiles.
+
+The segment entity represents any database object that stores data and therefore requires space in a tablespace. Your typical segment is a table, but there are other
+segment types, notably index segments and undo segments.
+
+An extent is a set of consecutively numbered Oracle blocks within one datafile. Every segment will consist of one or more extents, consecutively numbered. These extents may be in any and all of the datafiles that make up the tablespace.
+
+A datafile is, physically, made up of a number of operating system blocks. 
+
+An operating system block is the unit of I/O for your file system. A process might want to read only one byte from disk, but the I/O system will have to read an
+operating system block.
+
+The operating system block size is configurable for some file systems (for example, when formatting an NTFS file system you can choose from 512 B to 64 KB), but typically system administrators leave it on default (512 B for NTFS, 1 KB for ext3).
+
+There is no reason not to match the operating system block size to the Oracle block size if your file system lets you do this. The configuration that should always be avoided would be where the operating system blocks were bigger than the Oracle blocks.
+
+ALTER TABLE tablename ALLOCATE EXTENT;
+
+allocates extents to an segment. 
+If the tablespace does consist of multiple datafiles, you can override Oracle’s choice with this syntax:
+ALTER TABLE tablename ALLOCATE EXTENT STORAGE (DATAFILE 'filename');
+
+Each block will have a header area and a data area. The header is of variable size and grows downward from the top of the block. Among other things, it contains a row directory (that lists where in the block each row begins) and row locking information. The data area fills from the bottom up. Between the two there may (or may not) be an area of free space. Events that will cause a block’s header to grow include inserting and locking rows. The data area will initially be empty and will fill as rows are inserted (or index keys are inserted, in the case of a block of an index segment). The free space does get fragmented as rows are inserted, deleted, and updated (which may cause a row’s size to change), but that is of no significance because all this happens in memory, after the block has been copied into a buffer in the database buffer cache. The free space is coalesced into a contiguous area when necessary, and always before the DBWn writes the block back to its datafile.
+
+Automatic Storage Management (ASM)
+
+Datafiles can exist on four types of device: local file systems, clustered file systems, ASM disk groups, and raw devices:
+
+File on a file local system - These are the simplest datafiles; they exist as normal operating system files in a directory structure on disks directly attached to the computer running the instance. On a PC running Windows or Linux, these could be internal IDE or SATA drives. On more sophisticated hardware, they would usually be SCSI disks, or external drives.
+
+Files on a clustered file system A clustered file system is external disks, mounted concurrently on more than one computer. The clustered file system mediates access to the disks from processes running on all the computers in the cluster. Clustered file systems can be bought from operating system vendors, or Oracle Corporation’s OCFS (Oracle Clustered File System) is an excellent alternative.
+
+Files on raw devices It is possible to create datafiles on disks with no file system at all. This is still supported but is really only a historical anomaly.
+
+Files on ASM devices ASM is a facility introduced with database release 10g. This is an alternative to file system–based datafile storage. ASM is a logical volume manager provided by Oracle and bundled with the database. The general idea is that you take a bunch of raw disks, give them to Oracle, and let Oracle get on with it. Your system administrators need not worry about creating file systems at all. 
+
+Striping data across multiple physical volumes gives huge performance gains. In principle, if a file is distributed across two disks, it should be possible to read it in half the time it would take if it were all on one disk. The performance will improve geometrically, in proportion to the number of disks assigned to the logical volume. Mirroring gives safety. If a logical volume consists of two or more physical volumes, then every operating system block written to one volume can be written simultaneously to the other volume. If one copy is damaged, the logical volume manager will read the other. If there are more than two physical volumes, a higher degree of mirroring becomes possible.
+
+1 CREATE SMALLFILE TABLESPACE "NEWTS"
+2 DATAFILE 'D:\APP\ORACLE\ORADATA\ORCL11G\newts01.dbf'
+3 SIZE 100M AUTOEXTEND ON NEXT 10M MAXSIZE 200M
+4 LOGGING
+5 EXTENT MANAGEMENT LOCAL
+6 SEGMENT SPACE MANAGEMENT AUTO
+7 DEFAULT NOCOMPRESS;
+
+Line 1 The tablespace is a SMALLFILE tablespace. This means that it can consist of many datafiles. The alternative is BIGFILE, in which case it would be impossible to add a second datafile later (though the first file could be resized.) The Use Bigfile Tablespace check box in Figure 7-5 controls this.
+Line 2 The datafile name and location.
+Line 3 The datafile will be created as 100 MB but when full can automatically extend in 10 MB increments to a maximum of 200 MB. By default, automatic extension is not enabled.
+Line 4 All operations on segments in the tablespace will generate redo; this is the default. It is possible to disable redo generation for a very few operations (such as index generation).
+Line 5 The tablespace will use bitmaps for allocating extents; this is the default.
+Line 6 Segments in the tablespace will use bitmaps for tracking block usage; this is the default.
+Line 7 Segments in the tablespace will not be compressed; this is the default.
+
+It is important to note that temporary tablespaces use tempfiles, not datafiles. Tempfiles are listed in the views V$TEMPFILE and DBA_TEMP_FILES, whereas datafiles are listed in V$DATAFILE and DBA_DATA_FILES. Also note that the V$ views and the DBA views give different information. As the query shows, you can query V$TABLESPACE to find if a tablespace is a bigfile table and V$TEMPFILE (or V$DATAFILE) to find how big a file was at creation time. This information is not shown in the DBA views.
+However, the DBA views give the detail of extent management and segment space management. The different information available in the views is because some information is stored only in the controlfile (and therefore visible only in V$ views) and some is stored only in the data dictionary (and therefore visible only in DBA views).
+
+Rename a Tablespace and Its Datafiles
+The syntax is: ALTER TABLESPACE tablespaceoldname RENAME TO tablespacenewname;
+
+A tablespace can be renamed while it is in use, but to rename a datafile, the datafiles must be offline. This is because the file must be renamed at the operating system level, as well as within the Oracle environment, and this can’t be done if the file is open: all the file handles would become invalid.
+
+alter tablespace a1 rename to b1;
+
+alter tablespace b1 offline;
+
+host rename d:\oradata\a1.dbf to b1.dbf
+
+alter database rename datafile 'd:\oradata\a1.dbf' to 'd:\oradata\b1.dbf'
+
+alter tablespace b1 online;
+
+It is possible for a tablespace to be online but one or more of its datafiles to be offline. This is a situation that can produce interesting results and should generally be avoided. The syntax for taking a tablespace offline is
+ALTER TABLESPACE tablespacename OFFLINE [NORMAL | IMMEDIATE | TEMPORARY];
+
+A NORMAL offline (which is the default) will force a checkpoint for all the tablespace’s datafiles. Every dirty buffer in the database buffer cache that contains a block from the tablespace will be written to its datafile, and then the tablespace and the datafiles are taken offline.
+
+At the other extreme is IMMEDIATE. This offlines the tablespace and the datafiles immediately, without flushing any dirty buffers. Following this, the datafiles will be corrupted (they may be missing committed changes) and will have to be recovered by applying change vectors from the redo log before the tablespace can be brought back online. Clearly, this is a drastic operation. It would normally be done only if a file has become damaged so that the checkpoint cannot be completed.
+
+A TEMPORARY offline will checkpoint all the files that can be checkpointed, and then take them and the tablespace offline in an orderly fashion. Any damaged file(s) will be offlined immediately. If just one of the tablespaces datafiles has been damaged, this will limit the number of files that will need to be recovered.
+
+Mark a Tablespace as Read Only
+To see the effect of making a tablespace read only, The syntax is completely self-explanatory:
+ALTER TABLESPACE tablespacename [READ ONLY | READ WRITE];
+
+
+Following making a tablespace read only, none of the objects within it can be changed with DML statements, But they can be dropped. This is a little disconcerting but makes perfect sense when you think it through. Dropping a table doesn’t actually affect the table. It is a transaction against the data dictionary, that deletes the rows that describe the table and its columns; the data dictionary is in the SYSTEM tablespace, and that is not read only.
+
+Resizing a Tablespace
+A tablespace can be resized either by adding datafiles to it or by adjusting the size of the existing datafiles. The datafiles can be resized upward automatically as  necessary if the AUTOEXTEND syntax was used at file creation time. Otherwise, you have to do it manually with an alter database command:
+
+ALTER DATABASE DATAFILE filename RESIZE n[M|G|T];
+
+alter tablespace gl_large_tabs
+add datafile 'D:\ORADATA\GL_LARGE_TABS_03.DBF' size 2g;
+
+alter database datafile 'D:\ORADATA\GL_LARGE_TABS_03.DBF'
+autoextend on next 100m maxsize 4g;
+
+Dropping Tablespaces
+To drop a tablespace, use the DROP TABLESPACE command. The syntax is DROP TABLESPACE tablespacename [INCLUDING CONTENTS [AND DATAFILES] ] ;
+If the INCLUDING CONTENTS keywords are not specified, the drop will fail if there are any objects in the tablespace. If the AND DATAFILES keywords are not specified, the tablespace and its contents will be dropped but the datafiles will continue to exist on disk. Oracle will know nothing about them anymore, and they will have to be deleted with operating system commands.
+
+On Windows systems, you may find the datafiles are still there after using the INCLUDING CONTENTS AND DATAFILES clause. This is because of the way Windows flags files as “locked.” It may be necessary to stop the Windows Oracle service (called something like OracleServiceORCL) before you can delete the files manually.
+
+Oracle-Managed Files (OMF)
+Use of OMF is intended to remove the necessity for the DBA to have any knowledge of the file systems. The creation of database files can be fully automated. To enable OMF, set some or all of these instance parameters:
+
+The Oracle Managed File (OMF) feature automates many aspects of tablespace management, such as file placement, naming, and sizing. You control OMF by setting the following initialization parameters:
+
+DB_CREATE_FILE_DEST
+DB_CREATE_ONLINE_LOG_DEST_1
+DB_CREATE_ONLINE_LOG_DEST_2
+DB_CREATE_ONLINE_LOG_DEST_3
+DB_CREATE_ONLINE_LOG_DEST_4
+DB_CREATE_ONLINE_LOG_DEST_5
+DB_RECOVERY_FILE_DEST
+
+The DB_CREATE_FILE_DEST parameter specifies a default location for all datafiles. The DB_CREATE_ONLINE_LOG_DEST_n parameters specify a default location for online redo log files. DB_RECOVERY_FILE_DEST sets up a default location for archive redo log files and backup files. As well as setting default file locations, OMF will generate filenames and (by default) set the file sizes. Setting these parameters can greatly simplify file-related operations. Having enabled OMF, it can always be overridden by specifying a datafile name on the CREATE TABLESPACE command.
+
+Enable OMF for datafile creation:
+alter system set db_create_file_dest='/home/db11g/oradata';
+
+Create a tablespace, using the minimum syntax now possible:
+create tablespace omftbs;
+
+select file_name,bytes,autoextensible,maxbytes,increment_by
+from dba_data_files where tablespace_name='OMFTBS';
+
+Note the file is initially 100MB, autoextensible, with no upper limit.
+
+1. Connect to the database as user SYSTEM.
+2. Create a tablespace in a suitable directory—any directory on which the Oracle owner has write permission will do:
+
+create tablespace newtbs
+datafile 'C:\tmp\TempOraData\newtbs_01.dbf' size 10m
+extent management local autoallocate
+segment space management auto;
+
+This command specifies the options that are the default. Nonetheless, it may be considered good practice to do this, to make the statement self documenting.
+
+3. Create a table in the new tablespace, and determine the size of the first extent:
+create table newtab(c1 date) tablespace newtbs;
+select extent_id,bytes from dba_extents
+where owner='SYSTEM' and segment_na me='NEWTAB';
+4. Add extents manually, and observe the size of each new extent by repeatedly executing this command,
+alter table newtab allocate extent;
+followed by the query from Step 3. Note the point at which the extent size increases.
+5. Take the tablespace offline, observe the effect, and bring it back online.
+
+alter tablespace newtbs offline;
+
+insert into newtab values(sysdate);
+
+ORA-00376: file 5 cannot be read at this time
+ORA-01110: data file 5: 'C:\TMP\TEMPORADATA\NEWTBS_01.DBF'
+
+alter tablespace newtbs online;
+
+insert into newtab values(sysdate);
+
+alter tablespace newtbs read only;
+
+insert into newtab values(sysdate);
+
+drop table newtab;
+
+7. Enable OMF for datafile creation:
+
+create tablespace omftbs;
+ORA-02199: missing DATAFILE/TEMPFILE clause
+
+alter system set db_create_file_dest='C:\tmp\TempOraData';
+
+8. Create a tablespace, using the minimum syntax now possible:
+
+create tablespace omftbs;
+
+9. Determine the characteristics of the OMF file:
+
+select file_name,bytes,autoextensible,maxbytes,increment_by
+from dba_data_files where tablespace_name='OMFTBS';
+
+Note the file is initially 100MB, autoextensible, with no upper limit.
+10. Adjust the OMF file to have more sensible characteristics. Use whatever
+system-generated filename was returned by Step 9:
+
+alter database datafile '/oradata/ORCL11G/datafile/o1_mf_omftbs_3olpn462_.dbf' resize 50m;
+
+alter database datafile '/home/db11g/oradata/ORCL11G/datafile/o1_mf_omftbs_3olpn462_.dbf' autoextend on next 10m maxsize 2g;
+
+11. Drop the tablespace, and use an operating system command to confirm that
+the file has indeed gone:
+
+drop tablespace omftbs including contents and datafiles;
+
+Manage Space in Tablespaces
+
+Extent Management
+The extent management method is set per tablespace and applies to all segments in the tablespace. There are two techniques for managing extent usage: dictionary management or local management. The difference is clear: local management should always be used; dictionary management should never be used.
+
+Dictionary extent management uses two tables in the data dictionary. SYS.UET$ has rows describing used extents, and SYS.FET$ has rows describing free extents. Every time the database needs to allocate an extent to a segment, it must search FET$ to find an appropriate bit of free space, and then carry out DML operations against FET$ and UET$ to allocate it to the segment. This mechanism causes bad problems with performance, because all space management operations in the database (many of which could be initiated concurrently) must serialize on the code that constructs the transactions.
+
+Local extent management was introduced with release 8i and became default with release 9i. This mechanism is far more efficient than the transaction-based mechanism of dictionary management.
+
+The storage parameters NEXT, PCTINCREASE, MINEXTENTS, MAXEXTENTS, and DEFAULT aren’t valid for extent options in locally managed tablespaces.
+
+When creating a locally managed tablespace, an important option is uniform size. If uniform is specified, then every extent ever allocated in the tablespace will be that
+size. This can make the space management highly efficient, because the block ranges covered by each bit can be larger: only one bit per extent.
+
+create tablespace large_tabs datafile 'large_tabs_01.dbf' size 10g
+extent management local uniform size 160m;
+Every extent allocated in this tablespace will be 160 MB, so there will be about 64 of them. The bitmap needs only 64 bits, and 160 MB of space can be allocated by updating just one bit. This is going to be very efficient—provided that the segments in the tablespace are large. If a segment were created that only needed space for a
+few rows (such as the HR.REGIONS table), it would still get an extent of 160 MB. Small objects need their own tablespace:
+
+create tablespace small_tabs datafile 'small_tabs_01.dbf' size 1g extent management local uniform size 160k;
+
+The alternative (and default) syntax would be
+
+create tablespace any_tabs datafile 'any_tabs_01.dbf' size 10g extent management local autoallocate;
+
+When segments are created in this tablespace, Oracle will allocate a 64 KB extent. As a segment grows and requires more extents, Oracle will allocate extents of 64 KB up to 16 extents, from which it will allocate progressively larger extents. Thus fast 	growing segments will tend to be given space in ever-increasing chunks.
+
+Oracle Corporation recommends AUTOALLOCATE, but if you know how big segments are likely to be and can place them accordingly, UNIFORM SIZE may well be the best option. Many applications are designed in this manner.
+
+It is possible that if a database has been upgraded from previous versions, it will include dictionary-managed tablespaces. Check this with this query:
+select tablespace_name, extent_management from dba_tablespaces;
+Any dictionary-managed tablespaces should be converted to local management with this PL/SQL procedure call:
+execute dbms_space_admin.tablespace_migragte_to_local('tablespacename');
+
+Segment Space Management
+The segment space management method is set per tablespace and applies to all segments in the tablespace. There are two techniques for managing segment space usage: manual or automatic. The difference is clear: automatic management should always be used; manual management should never be used. Manual segment space management is still supported but never recommended. It is a holdover from previous releases.
+
+The SEGMENT SPACE MANAGEMENT AUTO clause instructs Oracle to manage the space within the block. When you use this clause, there is no need to specify parameters, such as PCTUSED, FREELISTS, and FREELIST GROUPS.
+
+Every segment created in an automatic management tablespace has a set of bitmaps that describe how full each block is. There are five bitmaps for each segment, and each block will appear on exactly one bitmap. The bitmaps track the space used in bands: 
+there is a bitmap for full blocks; 
+and there are bitmaps for blocks that are 75 percent to 100 percent used,
+50 percent to 75 percent used, 
+25 percent to 50 percent used, 
+and 0 percent to 25 percent used.
+
+When searching for a block into which to insert a row, the session server process will look at the size of the row to determine which bitmap to search. For instance, if the block size is 8 KB and the row to be inserted is 1500 bytes, an appropriate block will be found by searching the 25 percent to 50 percent bitmap. Every block on this
+bitmap is guaranteed to have at least 2 KB of free space. As rows are inserted, are deleted, or change size through updates, the bitmaps get updated accordingly.
+
+The old manual space management method used a simple list, known as the free list, which stated which blocks were available for insert but without any information on how full they were. This method could cause excessive activity, as blocks had to be tested for space at insert time, and often resulted in a large proportion of wasted space.
+
+select tablespace_name,segment_space_management from dba_tablespaces;
+
+It is not possible to convert tablespace from manual to automatic segment space management. The only solution is to create a new tablespace using automatic segment space management, move the segments into it (at which point the bitmap will be generated), and drop the old tablespaces.
+
+Displaying Tablespace Size
+SET PAGESIZE 100 LINES 132 ECHO OFF VERIFY OFF FEEDB OFF SPACE 1 TRIMSP ON
+COMPUTE SUM OF a_byt t_byt f_byt ON REPORT
+BREAK ON REPORT ON tablespace_name ON pf
+COL tablespace_name FOR A17 TRU HEAD 'Tablespace|Name'
+COL file_name FOR A40 TRU HEAD 'Filename'
+COL a_byt FOR 9,990.999 HEAD 'Allocated|GB'
+COL t_byt FOR 9,990.999 HEAD 'Current|Used GB'
+COL f_byt FOR 9,990.999 HEAD 'Current|Free GB'
+COL pct_free FOR 990.0 HEAD 'File %|Free'
+COL pf FOR 990.0 HEAD 'Tbsp %|Free'
+COL seq NOPRINT
+DEFINE b_div=1073741824
+--
+SELECT 1 seq, b.tablespace_name, nvl(x.fs,0)/y.ap*100 pf, b.file_name file_name,
+b.bytes/&&b_div a_byt, NVL((b.bytes-SUM(f.bytes))/&&b_div,b.bytes/&&b_div) t_byt,
+NVL(SUM(f.bytes)/&&b_div,0) f_byt, NVL(SUM(f.bytes)/b.bytes*100,0) pct_free
+FROM dba_free_space f, dba_data_files b
+,(SELECT y.tablespace_name, SUM(y.bytes) fs
+FROM dba_free_space y GROUP BY y.tablespace_name) x
+,(SELECT x.tablespace_name, SUM(x.bytes) ap
+FROM dba_data_files x GROUP BY x.tablespace_name) y
+WHERE f.file_id(+) = b.file_id
+AND x.tablespace_name(+) = y.tablespace_name
+and y.tablespace_name = b.tablespace_name
+AND f.tablespace_name(+) = b.tablespace_name
+GROUP BY b.tablespace_name, nvl(x.fs,0)/y.ap*100, b.file_name, b.bytes
+UNION
+SELECT 2 seq, tablespace_name,
+j.bf/k.bb*100 pf, b.name file_name, b.bytes/&&b_div a_byt,
+a.bytes_used/&&b_div t_byt, a.bytes_free/&&b_div f_byt,
+a.bytes_free/b.bytes*100 pct_free
+FROM v$temp_space_header a, v$tempfile b
+,(SELECT SUM(bytes_free) bf FROM v$temp_space_header) j
+,(SELECT SUM(bytes) bb FROM v$tempfile) k
+WHERE a.file_id = b.file#
+ORDER BY 1,2,4,3;
+
+You can use the oerr utility to quickly display the cause of an error and simple instructions on what actions to take; for example,
+$ oerr ora 01653
+Here is the output for this example:
+01653, 00000, "unable to extend table %s.%s by %s in tablespace %s"
+// *Cause: Failed to allocate an extent of the required number of blocks for
+// a table segment in the tablespace indicated.
+// *Action: Use ALTER TABLESPACE ADD DATAFILE statement to add one or more
+// files to the tablespace indicated.
+The oerr utility’s output gives you a fast and easy way to triage problems. If the information provided isn’t enough, then Google is a good second option.
+
+Altering Tablespace Size
+When you’ve determined which data file you want to resize, first make sure you have enough disk space to increase the size of the data file on the mount point on which the data file exists:
+$ df -h | sort
+
+SQL> alter database datafile '/u01/dbfile/o12c/users01.dbf' resize 1g;
+If you don’t have space on an existing mount point to increase the size of a data file, then you must add a data file. To add a data file to an existing tablespace, use the ALTER TABLESPACE . . . ADD DATAFILE statement:
+SQL> alter tablespace users add datafile '/u02/dbfile/o12c/users02.dbf' size 100m;
+
+To add space to a temporary tablespace, first query the V$TEMPFILE view to verify the current size and location of temporary data files:
+SQL> select name, bytes from v$tempfile;
+Then, use the TEMPFILE option of the ALTER DATABASE statement:
+SQL> alter database tempfile '/u01/dbfile/o12c/temp01.dbf' resize 500m;
+You can also add a file to a temporary tablespace via the ALTER TABLESPACE statement:
+SQL> alter tablespace temp add tempfile '/u01/dbfile/o12c/temp02.dbf' size 5000m;
+
+Toggling Data Files Offline and Online
+Sometimes, when you’re performing maintenance operations (such as renaming data files), you may need to first take a data file offline. You can use either the ALTER TABLESPACE or the ALTER DATABASE DATAFILE statement to toggle data files offline and online.
+
+As of Oracle Database 12c, you can move and rename data files while they are online and open for use.
+SQL> alter tablespace users offline;
+
+Database has to be open to take one tablespace offline, you can't do in mount mode.
+When in mount mode, you must use the ALTER DATABASE DATAFILE statement to take a data file offline.
+
+You can specify ALTER TABLESPACE . . . OFFLINE IMMEDIATE when taking a tablespace offline. Your database must be in archivelog mode in this situation, or the following error is thrown:
+ORA-01145: offline immediate disallowed unless media recovery enabled
+
+You can’t take the SYSTEM or UNDO tablespace offline while the database is open.
+
+You can also use the ALTER DATABASE DATAFILE statement to take a data file offline. If your database is open for use, then it must be in archivelog mode in order for you to take a data file offline with the ALTER DATABASE DATAFILE statement. If you attempt to take a data file offline using the ALTER DATABASE DATAFILE statement, and your database isn’t in archivelog mode, the ORA-01145 error is thrown.
+
+While the database is in mount mode (and not open), you can use the ALTER DATABASE DATAFILE command to take any data file offline, including SYSTEM and UNDO.
+
+Renaming or Relocating a Data File
+
+New in Oracle Database 12c is the ALTER DATABASE MOVE DATAFILE command. This command allows you to rename or move data files without any downtime. This vastly simplifies the task of moving or renaming a data file, as there is no need to manually place data files offline/online and use OS commands to physically move the files. This once manually intensive (and error-prone) operation has now been simplified to a single SQL command.
+A data file must be online for the online move or rename to work. Here is an example of renaming an online data file:
+SQL> alter database move datafile '/u01/dbfile/o12c/users01.dbf' to '/u01/dbfile/o12c/users_dev01.dbf';
+
+You can also specify the data file number when renaming or moving a data file; for example,
+SQL> alter database move datafile 2 to '/u02/dbfile/o12c/sysuax01.dbf';
+
+If you are using Oracle Database 11g or lower, before you rename or move a data file, you must take the data file offline. There are two somewhat different approaches to moving and renaming offline data files:
+• Use a combination of SQL commands and OS commands.
+• Use a combination of re-creating the control file and OS commands.
+
+Using SQL and OS Commands : Here are the steps for renaming a data file using SQL commands and OS commands:
+Use the following query to determine the names of existing data files:
+SQL> select name from v$datafile;
+
+Take the data file offline, using either the ALTER TABLESPACE or ALTER DATABASE DATAFILE. You can also shut down your database and then start it in mount mode;
+SQL> alter tablespace users offline;
+
+Physically move the data file to the new location, using either an OS command (like mv or cp) or the COPY_FILE procedure of the DBMS_FILE_TRANSFER built-in PL/SQL package.
+mv /u01/dbfile/o12c/users01.dbf /u02/dbfile/o12c/users01.dbf
+
+Use either the ALTER TABLESPACE . . . RENAME DATAFILE . . . TO statement or the ALTER DATABASE RENAME FILE . . . TO statement to update the control file with the new data
+file name.
+alter tablespace users rename datafile '/u01/dbfile/o12c/users01.dbf' to '/u02/dbfile/o12c/users01.dbf';
+
+Alter the data file online.
+
+If you need to rename data files associated with the SYSTEM or UNDO tablespace, you must shut down your database and start it in mount mode. When your database is in mount mode, you can rename these data files via the ALTER DATABASE RENAME FILE statement.
+
+If you want to rename data files from multiple tablespaces in one operation, you can use the ALTER DATABASE RENAME FILE statement.
+SQL> conn / as sysdba
+SQL> shutdown immediate;
+SQL> startup mount;
+Because the database is in mount mode, the data files aren’t open for use, and thus there is no need to take the data files offline. Next, physically move the files via the Linux/Unix mv command:
+$ mv /u01/dbfile/o12c/system01.dbf /u02/dbfile/o12c/system01.dbf
+$ mv /u01/dbfile/o12c/sysaux01.dbf /u02/dbfile/o12c/sysaux01.dbf
+$ mv /u01/dbfile/o12c/undotbs01.dbf /u02/dbfile/o12c/undotbs01.dbf
+
+Now, you can update the control file to be aware of the new file name:
+alter database rename file
+'/u01/dbfile/o12c/system01.dbf',
+'/u01/dbfile/o12c/sysaux01.dbf',
+'/u01/dbfile/o12c/undotbs01.dbf'
+to
+'/u02/dbfile/o12c/system01.dbf',
+'/u02/dbfile/o12c/sysaux01.dbf',
+'/u02/dbfile/o12c/undotbs01.dbf';
+
+Re-Creating the Control File and OS Commands
+Another way you can relocate all data files in a database is to use a combination of a re-created control file and OS commands. The steps for this operation are as follows:
+1. Create a trace file that contains a CREATE CONTROLFILE statement.
+SQL> alter database backup controlfile to trace as '/tmp/mv.sql' noresetlogs;
+2. Modify the trace file to display the new location of the data files.
+Next, edit the /tmp/mv.sql file, and change the names of the directory paths to the new locations.
+3. Shut down the database.
+SQL> shutdown immediate;
+4. Physically move the data files, using an OS command.
+$ mv /u02/dbfile/o12c/system01.dbf /u01/dbfile/o12c/system01.dbf
+$ mv /u02/dbfile/o12c/sysaux01.dbf /u01/dbfile/o12c/sysaux01.dbf
+$ mv /u02/dbfile/o12c/undotbs01.dbf /u01/dbfile/o12c/undotbs01.dbf
+$ mv /u02/dbfile/o12c/users01.dbf /u01/dbfile/o12c/users01.dbf
+5. Start the database in nomount mode.
+SQL> startup nomount;
+6. Run the CREATE CONTROLFILE command.
+SQL> @/tmp/mv.sql
+
+SQL> alter database open;
+
+
+When you re-create a control file, be aware that anyrMan information that was contained in the file will be lost. if you’re not using a recovery catalog, you can repopulate the control file with rMan backup information, using the RMAN CATALOG command.
+
+------------
+Best Practices for Creating and Managing Tablespaces
+Best Practice : Reasoning
+Create separate tablespaces for different applications using the same database. : If a tablespace needs to be taken offline, it affects only one application.
+For an application, separate table data from index data in different tablespaces. : Table and index data may have different storage requirements.
+Don’t use the AUTOEXTEND feature for data files. If you do use AUTOEXTEND, specify a maximum size. : Specifying a maximum size prevents a runaway SQL statement from filling up a storage device.
+Create tablespaces as locally managed. You shouldn’t create a tablespace as dictionary managed. : This provides better performance and manageability.
+For a tablespace’s data file naming convention, use a name that contains the tablespace name followed by a two-digit number that’s unique within data files for that tablespace. : Doing this makes it easy to identify which data files are associated with which tablespaces.
+Try to minimize the number of data files associated with a tablespace. : You have fewer data files to manage.
+In tablespace CREATE scripts, use ampersand variables to define aspects such as storage characteristics. : This makes scripts more reusable among various environments.
+
+If you evere need the script of create tablespace for an existing tablespace.
+select dbms_metadata.get_ddl('TABLESPACE',tablespace_name) from dba_tablespaces;
+
+Be aware that in Oracle Database 11g and above, you can modify individual tables to be read-only. This allows you to control the read-only at a much more granular level (than at the tablespace level); for example,
+
+SQL> alter table my_tab read only;
+
+Making individual tables read/write can be advantageous when you’re doing maintenance (such as a data migration) and you want to ensure that users don’t update the data.
+
+SQL> alter table my_tab read write;
+
+SQL> drop tablespace inv_data including contents and datafiles;
+
+You can drop a tablespace whether it’s online or offline. The exception to this is the SYSTEM tablespace, which can’t be dropped.
+
+SQL> drop tablespace inv_data including contents and data files cascade constraints;
+This statement drops any referential integrity constraints from tables outside the tablespace being dropped that reference tables within the dropped tablespace.
+---------------
+Managing Control Files, Online Redo Logs, and Archiving
+
+A control file is a small binary file that stores the following types of information:
+• Database name
+• Names and locations of data files
+• Names and locations of online redo log files
+• Current online redo log sequence number
+• Checkpoint information
+• Names and locations of RMAN backup files (if using)
+
+You can view database-related information stored in the control file via the V$DATABASE view:
+SQL> select name, open_mode, created, current_scn from v$database;
+
+If a database is using only one control file, the basic procedure for adding a control file is as follows:
+1. Alter the initialization file CONTROL_FILES parameter to include the new location and name of the control file.
+2. Shut down your database.
+3. Use an OS command to copy an existing control file to the new location and name.
+4. Restart your database.
+Depending on whether you use an spfile or an init.ora file, the previous steps vary slightly. The next two sections detail these different scenarios.
+
+to know whether you use spfile or pfile
+
+show parameter spfile
+if it shows file name in value field then you use spfile if value is null then pfile.
+to change the control file in sp file use :
+SQL> alter system set control_files='/u01/dbfile/o12c/control01.ctl', '/u01/dbfile/o12c/control02.ctl' scope=spfile;
+
+in pfile you have to manually edit the init.ora file.
+Managing Online Redo Logs
+
+Online redo logs store a record of transactions that have occurred in your database. These logs serve the following purposes:
+• Provide a mechanism for recording changes to the database so that in the event of a media failure, you have a method of recovering transactions.
+• Ensure that in the event of total instance failure, committed transactions can be recovered (crash recovery) even if committed data changes have not yet been written to the data files.
+• Allow administrators to inspect historical database transactions through the Oracle LogMiner utility.
+• They are read by Oracle tools such as GoldenGate or Streams to replicate data.
+
+You’re required to have at least two online redo log groups in your database. Each online redo log group must contain at least one online redo log member
+
+Log writer flushes the contents of the redo log buffer when any of the following are true:
+• A COMMIT is issued.
+• A log switch occurs.
+• Three seconds go by.
+• The redo log buffer is one-third full.
+• The redo log buffer fills to one megabyte.
+The online redo log group that the log writer is actively writing to is the current online redo log group. The database ceases operating if the log writer can’t write successfully to at least one member of the current group.
+
+The online redo log files aren’t intended to be backed up. These files contain only the most recent redo transaction information generated by the database. When you enable archiving, the archived redo log files are the mechanism for protecting your database transaction history.
+
+The contents of the current online redo log files aren’t archived until a log switch occurs. This means that if you lose all members of the current online redo log file, you lose transactions. Listed next are several mechanisms you can implement to minimize the chance of failure with the online redo log files:
+• Multiplex the groups.
+• If possible, never allow two members of the same group to share the same controller.
+• If possible, never put two members of the same group on the same physical disk.
+• Ensure that OS file permissions are set appropriately (restrictive, that only the owner of the Oracle binaries has permissions to write and read).
+• Use physical storage devices that are redundant (i.e., RAID [redundant array of inexpensive disks]).
+• Appropriately size the log files, so that they switch and are archived at regular intervals.
+• Consider setting the ARCHIVE_LAG_TARGET initialization parameter to ensure that the online redo logs are switched at regular intervals.
+
+The online redo log files are never backed up by an RMAN backup or by a user-managed hot backup. If you did back up the online redo log files, it would be meaningless to restore them. The online redo log files contain the latest redo generated by the database. You wouldn’t want to overwrite them from a backup with old redo information. For a database in archivelog mode the online redo log files contain the most recently generated transactions that are required to perform a complete recovery.
+
+V$LOG Displays the online redo log group information stored in the control file
+V$LOGFILE Displays online redo log file member information
+Status for Online Redo Log Groups in the V$LOG View
+Status :Meaning
+CURRENT : The log group is currently being written to by the log writer.
+ACTIVE : The log group is required for crash recovery and may or may not have been archived.
+CLEARING : The log group is being cleared out by an ALTER DATABASE CLEAR LOGFILE command.
+CLEARING_CURRENT : The current log group is being cleared of a closed thread.
+INACTIVE : The log group isn’t required for crash recovery and may or may not have been archived.
+UNUSED : The log group has never been written to; it was recently created.
+
+Status for Online Redo Log File Members in the V$LOGFILE View
+Status : Meaning
+INVALID : The log file member is inaccessible or has been recently created.
+DELETED : The log file member is no longer in use.
+STALE : The log file member’s contents aren’t complete.
+NULL : The log file member is being used by the database.
+
+The STATUS column in V$LOG reflects the status of the log group. The STATUS column in V$LOGFILE reports the status of the physical online redo log file member.
+
+Determining the Optimal Size of Online Redo Log Groups
+Try to size the online redo logs so that they switch anywhere from two to six times per hour. The V$LOG_HISTORY contains a history of how frequently the online redo logs have switched.
+
+select count(*)
+,to_char(first_time,'YYYY:MM:DD:HH24')
+from v$log_history
+group by to_char(first_time,'YYYY:MM:DD:HH24')
+order by 2;
+
+
+COUNT(*) TO_CHAR(FIRST
+---------- -------------
+1 2012:10:23:23
+3 2012:10:24:03
+28 2012:10:24:04
+23 2012:10:24:05
+68 2012:10:24:06
+84 2012:10:24:07
+15 2012:10:24:08
+
+From the previous output, you can see that a great deal of log switch activity occurred from approximately 4:00 am to 7:00 am. This could be due to a nightly batch job or users’ in different time zones updating data. For this database the size of the online redo logs should be increased. You should try to size the online redo logs to accommodate peak transaction loads on the database.
+
+The V$LOG_HISTORY derives its data from the control file. Each time there is a log switch, an entry is recorded in this view that details information such as the time of the switch and the system change number (SCN).
+
+You don’t want them switching too often because there is overhead with the log switch. Oracle initiates a checkpoint as part of a log switch. During a checkpoint the database writer background process writes modified (also called dirty) blocks to disk, which is resource intensive. Then again, you don’t want online redo log files never to switch, because the current online redo log contains transactions that you may need in the event of a recovery. If a disaster causes a media failure in your current online redo log, you can lose those transactions that haven’t been archived.
+
+You can also query the OPTIMAL_LOGFILE_SIZE column from the V$INSTANCE_RECOVERY view to determine if your online redo log files have been sized correctly:
+SQL> select optimal_logfile_size from v$instance_recovery;
+Here is some sample output:
+OPTIMAL_LOGFILE_SIZE
+--------------------
+349
+This column reports the redo log file size (in megabytes) that is considered optimal, based on the initialization parameter setting of FAST_START_MTTR_TARGET. Oracle recommends that you configure all online redo logs to be at least the value of OPTIMAL_LOGFILE_SIZE. However, when sizing your online redo logs, you must take into consideration information about your environment (such as the frequency of the switches).
+
+Determining the Optimal Number of Redo Log Groups
+Every time a log switch occurs, it initiates a checkpoint. As part of a checkpoint the database writer writes all modified (dirty) blocks from the SGA to the data files on disk. Also recall that the online redo logs are written to in a round-robin fashion and that eventually the information in a given log is overwritten. Before the log writer can begin to overwrite information in an online redo log, all modified blocks in the SGA associated with the redo log must first be written to a data file. If not all modified blocks have been written to the data files, you see this message in the alert.log file:
+
+Thread 1 cannot allocate new log, sequence <sequence number>
+Checkpoint not complete
+
+There are a few ways to resolve this issue:
+
+• Add more redo log groups.
+• Lower the value of FAST_START_MTTR_TARGET. Doing so causes the database writer process to write older modified blocks to disk in a shorter time frame.
+• Tune the database-writer process (modify DB_WRITER_PROCESSES).
+
+If you notice that the Checkpoint not complete message is occurring often (say, several times a day), I recommend that you add one or more log groups to resolve the issue. Adding an extra redo log gives the database writer more time to write modified blocks in the database buffer cache to the data files before the associated redo with a block is overwritten. There is little downside to adding more redo log groups. The main concern is that you could bump up against the MAXLOGFILES value that was used when you created the database. If you need to add more groups and have exceeded the value of MAXLOGFILES, then you must re-create your control file and specify a high value for this parameter.
+
+If adding more redo log groups doesn’t resolve the issue, you should carefully consider lowering the value of FAST_START_MTTR_TARGET. When you lower this value, you can potentially see more I/O because the database writer process is more actively writing modified blocks to data files. You can modify this parameter while your instance is up; this means you can quickly modify it back to its original setting if there are unforeseen side effects.
+Finally, consider increasing the value of the DB_WRITER_PROCESSES parameter. Carefully analyze the impact of modifying this parameter in a test environment before you apply it to production. This value requires that you stop and start your database; therefore, if there are adverse effects, downtime is required to change this value back to the original setting.
+
+alter database add logfile group 3
+('/u01/oraredo/o12c/redo03a.rdo',
+'/u02/oraredo/o12c/redo03b.rdo') SIZE 50M;
+
+In this scenario I highly recommend that the log group you add be the same size and have the same number of members as the existing online redo logs. If the newly added group doesn’t have the same physical characteristics as the existing groups, it’s harder to accurately determine performance issues.
+
+If the redologfile size is too high then this is very likely to produce the Checkpoint not complete issue described in the previous section. This is because flushing all
+modified blocks from the SGA that are protected by the redo in a large log file can potentially take much longer time.
+
+To resize an online redo log, you have to first add online redo log groups that are the size you want, and then drop the online redo logs that are the old size.
+
+alter database add logfile group 4
+('/u01/oraredo/o12c/redo04a.rdo',
+'/u02/oraredo/o12c/redo04b.rdo') SIZE 200M;
+
+A log group must have an INACTIVE status before you can drop it. You can check the status of the log group, as shown here:
+SQL> select group#, status, archived, thread#, sequence# from v$log;
+You can drop an inactive log group.
+SQL> alter database drop logfile group <group #>;
+
+If you attempt to drop the current online log group, Oracle returns an ORA-01623 error, stating that you can’t drop the current group. Use the ALTER SYSTEM SWITCH LOGFILE statement to switch the logs and make the next group the current group:
+
+SQL> alter system switch logfile;
+
+After a log switch the log group that was previously the current group retains an active status as long as it contains redo that Oracle requires to perform crash recovery. If you attempt to drop a log group with an active status, Oracle throws an ORA-01624 error, indicating that the log group is required for crash recovery. Issue an ALTER SYSTEM CHECKPOINT command to make the log group inactive:
+
+SQL> alter system checkpoint;
+
+Additionally, you can’t drop an online redo log group if doing so leaves your database with only one log group.
+
+Dropping an online redo log group doesn’t remove the log files from the OS. You have to use an OS command to do this (such as the rm Linux/Unix command). Before you remove a file from the OS, ensure that it isn’t in use and that you don’t remove a live online redo log file. For every database on the server, issue this query to view which online redo log files are in use:
+
+SQL> select member from v$logfile;
+
+Before you physically remove a log file, first switch the online redo logs enough times that all online redo log groups have recently been switched; doing so causes the OS to write to the file and thus give it a new timestamp. For example, if you have three groups, make sure you perform at least three log switches:
+SQL> alter system switch logfile;
+SQL> /
+SQL> /
+Now, verify at the OS prompt that the log file you intend to remove doesn’t have a new timestamp. First, go to the directory containing the online redo log files:
+
+$ cd /u01/oraredo/o12c
+Then, list the files to view the latest modification date:
+$ ls -altr
+
+Adding Online Redo Log Files to a Group
+
+SQL> alter database add logfile member '/u02/oraredo/o12c/redo01b.rdo' to group 1;
+Make certain you follow standards with regard to the location and names of any newly added redo log files.
+
+Removing Online Redo Log Files from a Groups
+Make sure the log file you want to drop isn’t in the current group:
+
+SELECT a.group#, a.member, b.status, b.archived, SUM(b.bytes)/1024/1024 mbytes
+FROM v$logfile a, v$log b
+WHERE a.group# = b.group#
+GROUP BY a.group#, a.member, b.status, b.archived
+ORDER BY 1, 2;
+
+SQL> alter database drop logfile member '/u01/oraredo/o12c/redo04a.rdo';
+
+Moving or Renaming Redo Log Files
+Sometimes, you need to move or rename online redo log files. For example, you may have added some new mount points to the system, and you want to move the online redo logs to the new storage. You can use two methods to accomplish this task:
+• Add the new log files in the new location, and drop the old log files.
+• Physically rename the files from the OS.
+
+If you can’t afford any downtime, consider adding new log files in the new location and then dropping the old log files.
+
+Alternatively, you can physically move the files from the OS. You can do this with the database open or closed. If your database is open, ensure that the files you move aren’t part of the current online redo log group (because those are actively written to by the log writer background process). It’s dangerous to try to do this task while your database is open because on an active system, the online redo logs may be switching at a rapid rate, which creates the possibility of attempting to move a file while it’s being switched to be the current online redo log. Therefore, I recommend that you only try to do this while your database is closed.
+
+SQL> shutdown immediate;
+$ mv /u02/oraredo/o12c/redo02b.rdo /u01/oraredo/o12c/redo02b.rdo
+SQL> startup mount;
+alter database rename file '/u02/oraredo/o12c/redo02b.rdo' to '/u01/oraredo/o12c/redo02b.rdo';
+alter database open;
+
+There are several architectural decisions you must carefully consider before you enable archiving:
+• Where to place the archive redo logs and whether to use the fast recovery area to store them
+• How to name the archive redo logs
+• How much space to allocate to the archive redo log location
+• How often to back up the archive redo logs
+• When it’s okay to permanently remove archive redo logs from disk
+• How to remove archive redo logs (e.g., have RMAN remove the logs, based on a retention policy)
+• Whether multiple archive redo log locations should be enabled
+• When to schedule the small amount of downtime that’s required (if a production database)
+
+Before you set your database mode to archiving, you should specifically instruct Oracle where you want the archive redo logs to be placed. You can set the archive redo log file destination with the following techniques:
+• Set the LOG_ARCHIVE_DEST_N database initialization parameter.
+• Implement a FRA.
+
+If you don’t specifically set the archive redo log location via an initialization parameter or by enabling the FRA, then the archive redo logs are written to a default location. For Linux/Unix the default location is ORACLE_HOME/dbs. For Windows the default location is ORACLE_HOME\database. For active production database systems, the default archive redo log location is rarely appropriate.
+
+SQL> alter system set log_archive_dest_1='location=/u01/oraarch/o12c' scope=both;
+SQL> alter system set log_archive_format='o12c_%t_%s_%r.arc' scope=spfile;
+
+If you don’t specify a value for LOG_ARCHIVE_FORMAT, Oracle uses a default, such as %t_%s_%r.dbf. One aspect of the default format that I don’t like is that it ends with the extension .dbf, which is widely used for data files. This can cause confusion about whether a particular file can be safely removed because it’s an old archive redo log file or shouldn’t be touched because it’s a live data file. 
+
+Take care not to set the LOG_ARCHIVE_FORMAT to an invalid value; for example, SQL> alter system set log_archive_format='%r_%y_%dk.arc' scope=spfile;
+If you do so, when you attempt to stop and start your database, you won’t even get to the nomount phase (because the spfile contains an invalid parameter):
+SQL> startup nomount;
+ORA-19905: log_archive_format must contain %s, %t and %r
+
+In this situation, if you’re using an spfile, you can’t start your instance. You have a couple of options here.
+If you’re using RMAN and are backing up the spfile, then restore the spfile from a backup.
+The alternative is to create an init.ora file manually from the contents of the spfile. First, rename the spfile that contains a bad value:
+
+Valid Variables for the Log Archive Format String
+%s Log sequence number
+%S Log sequence number padded to the left with zeros
+%t Thread number
+%T Thread number padded to the left with zeros
+%a Activation ID
+%d Database ID
+%r Resetlogs ID required to ensure uniqueness across multiple incarnations of the database
+
+The FRA is an area on disk—specified via database initialization parameters—that can be used to store files, such as archive redo logs, RMAN backup files, flashback logs, and multiplexed control files and online redo logs. To enable the use of a FRA, you must set two initialization parameters (in this order):
+• DB_RECOVERY_FILE_DEST_SIZE specifies the maximum space to be used for all files that are stored in the FRA for a database.
+• DB_RECOVERY_FILE_DEST specifies the base directory for the FRA.
+
+Note - If you’ve set the LOG_ARCHIVE_DEST_N parameter to be a location on disk, archive redo logs aren’t written to the FRA.
+
+You can verify that the archive location is using a FRA:
+
+SQL> archive log list;
+If archive files are being written to the FRA, you should see output like this:
+Database log mode Archive Mode
+Automatic archival Enabled
+Archive destination USE_DB_RECOVERY_FILE_DEST
+
+When you first implement a FRA, there are no subdirectories beneath the base FRA directory (specified with DB_RECOVERY_FILE_DEST). The first time Oracle needs to write a file to the FRA, it creates any required directories beneath the base directory. For example, after you implement a FRA, if archiving for your database is enabled, then the first time a log switch occurs, Oracle creates the following directories beneath the base FRA directory:
+<SID>/archivelog/<YYYY_MM_DD>
+
+When you enable a FRA, if you don’t set the initialization parameter LOG_ARCHIVE_DEST_N, then, by default, the archive redo logs are written to the FRA.
+
+Benefit of storing the archivelog files in the FRA: some aspects of database administration are automated. For example, once the FRA is enabled, RMAN backups and archive redo logs are automatically placed in a FRA within directory structures identifiable by database and date.
+
+Another feature he likes is that archivelog files that are already beyond the retention policy (set via RMAN) are automatically deleted when space is needed in the FRA.
+
+Reacting to a Lack of Disk Space in Your Archive Log Destination
+The archiver background process writes archive redo logs to a location that you specify. If, for any reason, the archiver process can’t write to the archive location, your database hangs. Any users attempting to connect receive this error: ORA-00257: archiver error. Connect internal only, until freed.
+As a production-support DBA, you never want to let your database get into that state. Sometimes, unpredictable events happen, and you have to deal with unforeseen issues.
+
+In this situation your database is as good as down and completely unavailable. To fix the issue, you have to act quickly:
+• Move files to a different location. (Be careful not to move an archive redo log that is currently being written to.)
+• Compress old files in the archive redo log location. (Be careful not to compress an archive redo log that is currently being written to.)
+• Permanently remove old files.
+• Switch the archive redo log destination to a different location (this can be changed dynamically, while the database is up and running).
+
+Moving files is usually the quickest and safest way to resolve the archiver error. You can use an OS utility such as mv to move old archive redo logs to a different location. If they’re needed for a subsequent restore and recovery, you can let the recovery process know about the new location. Be careful not to move an archive redo log that is currently being written to. If an archived redo log file appears in V$ARCHIVED_LOG, that means it has been completely archived.
+
+Another option is to use an OS utility such as rm to remove archive redo logs from disk permanently. This approach is dangerous because you may need those archive redo logs for a subsequent recovery. If you do remove archive redo log files, and you don’t have a backup of them, you should make a full backup of your database as soon as possible. Again, this approach is risky and should only be done as a last resort;
+
+If another location on your server has plenty of space, you can consider changing the location to which the archive redo logs are being written. You can perform this operation while the database is up and running; for example,
+SQL> alter system set log_archive_dest_1='location=/u02/oraarch/o12c';
+
+Note - When a log switch occurs, the archiver determines where to write the archive redo logs, based on the current FRA setting or a LOG_ARCHIVE_DEST_N parameter. It doesn’t matter to the archiver if the destination has recently changed.
+--------------
+Redundant array of inexpensive disks. RAID is essentially about different
+ways of storing data twice, or more than twice, on different disks. I’m oversimplifying
+just a bit, but a core goal of RAID is to let you survive losing a disk without also losing
+any of the data that was on that disk.
+
+You can use RAID to increase your I/O throughput by taking advantage of striping your data across several disks at once.
+
+
+

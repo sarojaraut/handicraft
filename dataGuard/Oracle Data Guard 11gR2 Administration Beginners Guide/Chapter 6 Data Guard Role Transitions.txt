@@ -1,0 +1,258 @@
+Chapter 6 Data Guard Role Transitions
+
+A switchover is a planned role transition between the primary database and one of its standby databases. Switchover can be considered to reduce downtime during scheduled maintenance on the primary system(e.g OS or hardware upgrades) or to test stability for future role transitions. Switchover guarantees no data loss. Once the maintenance on the primary server has been performed, you can switch the databases back to their original roles.
+
+In the case of primary database failure, you need to perform failover to transit from the standby database role to the primary role. After a failover, the original primary database cannot participate in the Data Guard configuration without the use of flashback. So if the original primary database is still accessible, you should always consider a switchover first. Failover may or may not result in data loss depending on the Data Guard protection mode in effect at the time of the failover.
+
+Data Guard switchover is also a good way to move databases to new hardware. The following steps can be performed to move
+a database to new servers using Data Guard:
+1. Implement Data Guard and create a standby database on the new hardware.
+2. Test the new hardware using the standby database read-only (Active Data Guard) or the standby database read-write (snapshot standby) option.
+3. Perform switchover in a planned maintenance window.
+4. Decommission the old primary server hardware.
+
+Whenever we initiate switchover, redo generation will be stopped immediately and no other operations will be allowed to be performed and the current log sequence will be archived, which is also known as End of Redo (EOR). You can monitor the EOR status from v$archived_log. After switchover, we can see when and during which log sequence the switchover has been performed as seen in the following code:
+SQL> select thread#,sequence#,END_OF_REDO,END_OF_REDO_TYPE from v$archived_log;
+
+THREAD# SEQUENCE# END END_OF_RED
+---------- ---------- --- ----------
+1 337 NO
+1 337 NO
+1 338 YES SWITCHOVER
+
+While the process of switchover is going on, restarting of primary and standby databases is expected behavior. Once switchover completes and it is properly configured, redo will automatically be transferred from the new primary database to the new standby database.
+
+One last note about the change in switchover procedures of RAC databases in 11gR2:
+ In versions before 11gR2, if the primary and standby were RAC databases, you had to shut down all of the primary instances except one and also shut down all of the standby instances except one. Once you perform switchover successfully, you can bring back the remaining cluster instances for both primary and standby databases.
+ In the 11gR2 version, you still have to shut down all primary instances except one. However, it's not mandatory to close standby instances. We can perform switchover while all standby instances are in mount state.
+
+Performing switchover with a physical standby database using SQL*Plus
+preliminary tests before performing switchover
+
+Standby redo logfiles should have been created on the primary database; this is so that after performing switchover, the new standby database can receive redo using standby redo logfiles. This will help us save time in the post-configuration steps.
+
+SQL> select group#,member,type from v$logfile where type='STANDBY';
+
+Verify the log archive destination on the standby database, which will be active after the switchover and will be used to transfer redo to the new standby database as follows:
+
+SQL> show parameter log_archive_dest_2
+
+Verify if the temporary files of the temporary tablespaces are created on the standby database. Compare the result of the following query from the primary and standby databases.
+SQL> select file_name,bytes/1024/1024 "Size MB",maxbytes/1024/1024 "MaxSize MB",autoextensible from dba_temp_files;
+
+If temporary files don't exist on the standby database or the number and size of temporary files don't match in the primary and standby databases, create or modify the temporary files on the standby database properly.
+
+Check if any offline datafiles exist on primary as well as standby. If they do exist, bring them online using the following code:
+SQL> select name from v$datafile where status='OFFLINE';
+
+Verify the status of the redo transport and apply services against any gap and synchronization issues as follows:
+SQL> select db_unique_name, status, protection_mode, synchronization_status, synchronized from v$archive_dest_status where dest_id=2;
+
+In the previous output, you can ignore the synchronization status CHECK CONFIGURATION if the database is in Maximum Performance mode. If the configuration is either Maximum Protection or Availability, the status OK will be returned when there are no synchronization issues. Check the maximum archived log sequences on the primary and standby databases.
+
+From primary – to obtain the maximum number of archived log sequences for each instance, the following code can be used:
+SQL> select thread#,max(sequence#) from v$archived_log group by thread#;
+
+From standby – to obtain the maximum number of archived log sequences for each instance, the following code can be used:
+SQL> select thread#,max(sequence#) from v$archived_log where applied='YES' group by thread#;
+
+max(sequence#) should match.
+
+Ensure that no backup jobs are running. Disable the RMAN and EXP/EXPDP backup jobs from CRONTAB if they exist.
+
+Set the JOB_QUEUE_PROCESSES parameter value to 0 so that no more jobs will be started. After the completion of switchover, reset it with the previous value.
+SQL> alter system set JOB_QUEUE_PROCESSES=0 scope=both sid='*';
+
+If the primary database is RAC, ensure all the remaining primary instances except one are shut down. If Active Data Guard is in use, disable it and ensure that all standby instances are in the mount state.
+
+Switchover with a physical standby using SQL*Plus
+
+1. We have to check whether the primary database is ready for switchover to standby or not. Check the switchover status from the primary database by issuing the following command and verify that the status is either TO STANDBY or SESSIONS
+ACTIVE:
+SQL> select switchover_status from v$database;
+SWITCHOVER_STATUS
+--------------------
+TO STANDBY
+The previous output shows that the primary database is ready to switch to the standby database role. The SESSIONS ACTIVE status indicates that some user sessions are still connected to the database. Such a case does not pose an obstacle for switchover. When output is SESSIONS ACTIVE, you have to perform switchover using the keyword WITH SESSION SHUTDOWN. This is so that those sessions will be terminated during the switchover.
+
+2. Perform the switchover command from the primary database.
+SQL> alter database commit to switchover to physical standby with session shutdown;
+
+4. Perform switchover from the standby database. By default the switchover status of the standby database will be NOT ALLOWED. After processing switchover from the primary database, during recovery the status will be changed to SWITCHOVER PENDING. Once End-of-Redo is applied on standby, the database will be ready to become primary as shown in the following code:
+SQL> SELECT SWITCHOVER_STATUS FROM V$DATABASE;
+SWITCHOVER_STATUS
+--------------------
+TO PRIMARY
+
+5. Run the SWITCHOVER command on the standby database as shown in the following code:
+SQL> ALTER DATABASE COMMIT TO SWITCHOVER TO PRIMARY WITH SESSION SHUTDOWN;
+
+6. Now, from the new primary database (INDIA), you can check at what SCN the standby database role been changed, as shown in the following code:
+SQL> select CURRENT_SCN,STANDBY_BECAME_PRIMARY_SCN from v$database;
+
+7. Change the open mode of the new primary to READ-WRITE. After successful switchover from standby to the primary database, the instance status will be MOUNTED as shown in the following code:
+SQL> select db_unique_name,database_role,open_mode from v$database;
+DB_UNIQUE_NAME DATABASE_ROLE OPEN_MODE
+-------------------- ---------------- --------------------
+INDIA_UN PRIMARY MOUNTED
+Open the database with the following statement:
+SQL> alter database open;
+Database altered.
+
+8. Restart the new standby database and start Redo Apply. After switchover, the new standby instance will be in the NOMOUNT status.
+
+SQL> select status from v$instance;
+
+Now perform a clean shutdown with SHUTDOWN IMMEDIATE and then start up the new standby database in the READ ONLY mode if Active Data Guard will be used. Then start Redo Apply on the standby database (TURKEY)
+SQL> alter database recover managed standby database using current logfile disconnect from session;
+
+Switchover with a physical standby using broker
+
+Managing switchover with the broker is very simple. In SQL*Plus, we have to manage commands from both the primary and standby databases. When using the broker, the SWITCHOVER command is executed from either the primary or the standby database.
+
+1. If the primary database is RAC and you perform switchover with the broker, it will shut down all the remaining instances except one; and if there are any issues in terminating the instances, the switchover will exit without success. So ensure that all the primary instances are down except the one.
+
+2. Even though the broker will verify the state of the both the primary and standby databases, it's recommended to check the database state manually as follows:
+DGMGRL> show configuration;
+
+3. Now connect to the DGMGRL and issue the command as below
+
+DGMGRL> switchover to india_un
+
+When performing a switchover, connect the database to the DGMGRL using a complete password such as connect sys/******, because DGMGRL doesn't support OS authentication.
+
+4. After performing the switchover, the broker configuration file is updated regarding the role transition.
+
+2012-10-11 13:08:31.463 02001000 1799321493 DMON: Switchover -
+updated Seq.MIV to 1.0 (2.1.1799321493), writing metadata to "/
+u01/home/oracle/product/11.2.0/db_1/dbs/dr2INDIA_UN.dat"
+2012-10-11 13:08:31.477 02001000 1799321493 DMON: posting primary
+instances for SWITCHOVER phase 3
+
+5. After updating the configuration file, the broker configuration restarts the new primary database in read-write mode and the new standby database will be terminated and restarted with the previous configuration; that is, the Read Only With Apply mode.
+
+6. Now, after performing the switchover, check the configuration status using DGMGRL as follows:
+DGMGRL> show configuration;
+
+Switchover with a logical standby database using SQL*Plus
+
+1. Check the switchover status of the primary database. Ensure that the status is either TO STANDBY or SESSIONS ACTIVE; if so, you are safe to perform a switchover as shown in the following code:
+SQL> select switchover_status from v$database;
+
+2. Prepare the primary database for switchover. Execute the following command from the primary database so that the current primary database will be accepted to perform a switchover to a logical standby database:
+
+SQL> alter database prepare to switchover to logical standby;
+Database altered.
+
+3. After issuing the previous command, the switchover status will be PREPARING SWITCHOVER.
+
+4. Prepare the logical standby database for switchover. After issuing the switchover initiation command from the primary database, you can execute the following code from the standby database:
+SQL> alter database prepare to switchover to primary;
+
+5. Perform the switchover from the primary database. After performing step 4, the switchover status in the current primary database will change from PREPARING SWITCHOVER to TO LOGICAL STANDBY. In this stage, both the databases wait for acknowledgment from each other. Now check the switchover status on the primary database as shown in the following lines:
+SQL> select switchover_status from v$database;
+SWITCHOVER_STATUS
+--------------------
+TO LOGICAL STANDBY
+
+6. You must ensure that there are no active transactions during switchover. Therefore, clean up the transactions and proceed to switchover over. Otherwise the SWITCHOVER command waits until the completion of the transaction. 
+SQL> select addr,status,flag from v$transaction;
+
+SQL> select username,status from v$session where username is not null and username not in ('SYS','PUBLIC');
+
+7. SQL> alter database commit to switchover to logical standby;
+
+9. We have completed the required steps on the primary database. Now check the status on the current logical standby database (INDIA) and issue the following switchover command:
+SQL> select switchover_status from v$database;
+SWITCHOVER_STATUS
+--------------------
+TO PRIMARY
+SQL> alter database commit to switchover to primary;
+
+10. During switchover, there will be zero data loss and the session will still be in the ACTIVE mode. The following output shows that the session is still in the ACTIVE mode on the former primary database:
+SQL> select sysdate from dual;
+SYSDATE
+--------------------
+12-OCT-2012 15:10:10
+SQL> show user
+USER is "PACKT"
+SQL> select username,logon_time from v$session where username is not null and username not in ('SYS','PUBLIC');
+
+11. Check the status of new primary database using the following code:
+SQL> select db_unique_name,database_role,open_mode from v$database;
+
+Performing switchover with a logical standby database using broker
+
+1. Check the configuration of Data Guard. In the broker's configuration, we have one primary database and one logical standby database already configured. Ensure that the status is SUCCESS before performing a switchover as shown in the following code:
+DGMGRL> show configuration;
+
+2. Perform a switchover using the DGMGRL command. Before performing switchover, connect to the DGMGRL utility using the complete username and password of the SYS user instead of connecting with / as shown in the following code:
+DGMGRL> connect sys/*******
+Connected.
+
+Once authenticated, initiate the switchover with the following command as shown in the screenshot:
+
+DGMGRL> switchover to 'turkey_un';
+
+Failover
+Failover is initiated when a serious problem exists on the primary database, making it inaccessible. Performing a Data Guard failover operation for production purposes is a serious consideration and needs a lot of caution. The following considerations are important in this context:
+
+ Failover decision must be taken with regard to the service Recovery Time Objective (RTO) value.
+ The standby database hardware must be powerful enough to sustain production load.
+ Multiple standby databases are recommended; this is so that data protection continues after a failover operation.
+ If the flashback database is not enabled on the primary database, after a failover it's not possible to include the old primary database into the Data Guard configuration again. This means we'll have to restore the database on the primary side. If flashback is enabled, it's possible to reinstate the failed primary database without a full restore operation.
+
+Before performing failover, ensure that all the available redo is being applied on the standby database for minimum data loss. Remember that it's also possible to guarantee a zero data loss failover by using the Maximum Protection mode. Also note that once the failover process is finished, the new primary database will be started in Maximum Performance mode even though your previous Data Guard protection mode is either Maximum Protection or Maximum Availability.
+
+Failover can be performed manually with SQL*Plus, the Data Guard broker, Cloud Control, or automatically using the Fast Start failover with an observer. In automatic failover, the observer will monitor the state of the primary database and all the standby databases of the Data Guard configuration. Whenever the primary database is not accessible, the observer will wait according to the predefined parameter FastStartFailoverThreshold and then perform the failover to the standby database.
+
+Performing failover with a physical standby database
+Just as with the switchover operation, the failover operation can be performed on both the physical and logical standby databases.
+
+Failover with a physical standby database using SQL*Plus
+
+1. If you're able to mount a primary database, perform the following command to flush the redo from the primary online redo logfiles:
+SQL> alter system flush redo to INDIA_UN;
+
+2. Check the status of both the primary and standby databases. With the primary database in the MOUNT state, check the maximum archive log sequence that has been generated as shown in the following code:
+SQL> select max(sequence#) from v$archived_log;
+
+3. If the primary database is inaccessible, refer to the alert logfile for the latest log switch sequence or go to the archive log location and check the maximum sequence number as shown in the following command:
+
+Fri Oct 12 22:20:30 2012
+Thread 1 advanced to log sequence 462 (LGWR switch)
+Current log# 1 seq# 462 mem# 0: /u01/app/oracle/oradata/orcl/redo01.log
+
+4. Now check the maximum sequence applied on the standby database using the following code:.
+SQL> select max(sequence#) from v$archived_log where applied='YES';
+MAX(SEQUENCE#)
+--------------
+449
+
+There are 13 archive logs that are not applied on the standby database. If they're not shipped from primary, you should transfer those archived logfiles and register and apply them to the standby database. If shipped but not applied, you must start Redo Apply on the standby database.
+If the primary server is completely unavailable, you have to perform recovery on the standby database until the maximum transported archive log sequence.
+
+5. Initiate failover by stopping Redo Apply and running the recover command with the finish force option on the standby database as shown in the
+following command:
+SQL> alter database recover managed standby database cancel;
+Database altered.
+SQL> alter database recover managed standby database finish force;
+Database altered.
+
+The FINISH keyword is used for failover and recovers the current standby redo logfiles. The FORCE keyword is used to terminate RFS processes immediately so that failover will not wait for them to exit.
+
+If the recovery command raises an error because of a possible gap, try to resolve it. If this is not possible, continue failover with the following command and proceed to step 5.
+SQL> alter database activate physical standby
+database;
+If the recover command completes successfully, continue with the next step.
+
+6. Complete failover to the physical standby database by converting it from the standby role to primary as follows:
+SQL> alter database commit to switchover to primary with session shutdown;
+
+7. After performing failover, the new primary database will be in the MOUNT state. Shut down and start up the new primary database as shown in the following code:
+SQL> SHUTDOWN IMMEDIATE;
+SQL> STARTUP;
+
+During failover to a physical or logical standby database using broker, you can use the IMMEDIATE option to perform failover without waiting for applying any redo. You can use the following command:
+DGMGRL> FAILOVER TO <DB_UNIQUE_NAME> IMMEDIATE
+

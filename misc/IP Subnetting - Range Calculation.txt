@@ -1,0 +1,108 @@
+
+A subnet allows the flow of network traffic between hosts to be segregated based on a network configuration. By organizing hosts into logical groups, subnetting can improve network security and performance.
+
+Perhaps the most recognizable aspect of subnetting is the subnet mask. Like IP addresses, a subnet mask contains four bytes (32 bits) and is often written using the same "dotted-decimal" notation.
+Subnet Mask : 11111111 11111111 11111111 00000000 = 255.255.255.0
+
+For a subnet mask to be valid, its leftmost bits must be set to '1' and the rightmost bits in a valid subnet mask must be set to '0', not '1'.
+
+00000000 00000000 00000000 00000000 : is an invalid subnet mask because the leftmost bit is set to '0'.
+
+11111111 11111111 11111111 11111111 : is invalid.
+
+All valid subnet masks contain two parts: the left side with all mask bits set to '1' (the extended network portion) and the right side with all bits set to '0' (the host portion).
+
+11111111 = 255
+11111110 = 254
+11111100 = 252
+11111000 = 248
+11110000 = 240
+11100000 = 224
+11000000 = 192
+10000000 = 128
+
+1 seven zeros = 2**7 = 128
+128 + 1 six zeros = 128 + 64 = 192
+192 + 1 and five zero = 192 + 32 = 224 
+192 + 1 and four zero = 224 + 16 = 240
+240 + 1 and three zero = 240 + 8 = 248
+248 + 1 and two zero = 248 + 4 = 252
+252 + 1 and one zero = 252 + 2 = 254
+
+Network: 10.0.0.0/8
+Address:   10.0.0.0              00001010 .00000000.00000000.00000000
+Netmask:   255.0.0.0 = 8         11111111 .00000000.00000000.00000000
+Wildcard:  0.255.255.255         00000000 .11111111.11111111.11111111
+
+Network:   10.0.0.0/8            00001010 .00000000.00000000.00000000 (Class A)
+Broadcast: 10.255.255.255        00001010 .11111111.11111111.11111111
+HostMin:   10.0.0.1              00001010 .00000000.00000000.00000001
+HostMax:   10.255.255.254        00001010 .11111111.11111111.11111110
+Hosts/Net: 16777214              (Private Internet)
+> 256*256*256 -2 (as 10.0.0.0 and 10.255.255.255 are not valid IP addresses)
+
+Network: 10.0.0.0/11
+Address:   10.0.0.0              00001010 .00000000.00000000.00000000
+Netmask:   255.224.0.0 = 11      11111111 .11100000.00000000.00000000
+Wildcard:  0.31.255.255          00000000 .00011111.11111111.11111111
+
+Network:   10.0.0.0/11           00001010.000 00000.00000000.00000000 (Class A)
+Broadcast: 10.31.255.255         00001010.000 11111.11111111.11111111
+HostMin:   10.0.0.1              00001010.000 00000.00000000.00000001
+HostMax:   10.31.255.254         00001010.000 11111.11111111.11111110
+Hosts/Net: 2097150               (Private Internet)
+> 32*256*256 -2 (as 10.0.0.0 and 10.31.255.255 are not valid IP addresses)
+
+
+Consider the following real-world example. A small business plans to use the 192.168.1.0 network for its internal (intranet) hosts. The human resources department wants their computers to be on a restricted part of this network because they store payroll information and other sensitive employee data. But because this is a Class C network, the default subnet mask of 255.255.255.0(*.*.*.*/24 network) allows all computers on the network to be peers (to send messages directly to each other) by default.
+
+The first four bits of 192.168.1.0 - 1100
+
+place this network in the Class C range and also fix the length of the network address at 24 bits. To subnet this network, more than 24 bits must be set to '1' on the left side of the subnet mask. For instance, the 25-bit mask 255.255.255.128 creates a two-subnet network as shown in Table 1.
+
+Network: 192.168.1.0/25 >>
+Broadcast: 192.168.1.128
+HostMin:   192.168.1.0
+HostMax:   192.168.1.127
+
+
+Network: 192.168.1.129/25
+Broadcast: 192.168.1.255
+HostMin:   192.168.1.129
+HostMax:   192.168.1.254
+
+Sample Table
+
+ CIDR block  	  IP range (network - broadcast)  	  Subnet Mask  	  IP Quantity  
+  10.0.0.0/32  	  10.0.0.0 - 10.0.0.0  	  255.255.255.255  	  1  
+  10.0.0.0/31  	  10.0.0.0 - 10.0.0.1  	  255.255.255.254  	  2  
+  10.0.0.0/30  	  10.0.0.0 - 10.0.0.3  	  255.255.255.252  	  4  
+  10.0.0.0/29  	  10.0.0.0 - 10.0.0.7  	  255.255.255.248  	  8  
+  10.0.0.0/28  	  10.0.0.0 - 10.0.0.15  	  255.255.255.240  	  16  
+  10.0.0.0/27  	  10.0.0.0 - 10.0.0.31  	  255.255.255.224  	  32  
+  10.0.0.0/26  	  10.0.0.0 - 10.0.0.63  	  255.255.255.192  	  64  
+  10.0.0.0/25  	  10.0.0.0 - 10.0.0.127  	  255.255.255.128  	  128  
+  10.0.0.0/24  	  10.0.0.0 - 10.0.0.255  	  255.255.255.0  	  256  
+  10.0.0.0/23  	  10.0.0.0 - 10.0.1.255  	  255.255.254.0  	  512  
+  10.0.0.0/22  	  10.0.0.0 - 10.0.3.255  	  255.255.252.0  	  1024  
+  10.0.0.0/21  	  10.0.0.0 - 10.0.7.255  	  255.255.248.0  	  2048  
+  10.0.0.0/20  	  10.0.0.0 - 10.0.15.255  	  255.255.240.0  	  4096  
+  10.0.0.0/19  	  10.0.0.0 - 10.0.31.255  	  255.255.224.0  	  8192  
+  10.0.0.0/18  	  10.0.0.0 - 10.0.63.255  	  255.255.192.0  	  16384  
+  10.0.0.0/17  	  10.0.0.0 - 10.0.127.255  	  255.255.128.0  	  32768  
+  10.0.0.0/16  	  10.0.0.0 - 10.0.255.255  	  255.255.0.0  	  65536  
+  10.0.0.0/15  	  10.0.0.0 - 10.1.255.255  	  255.254.0.0  	  131072  
+  10.0.0.0/14  	  10.0.0.0 - 10.3.255.255  	  255.252.0.0  	  262144  
+  10.0.0.0/13  	  10.0.0.0 - 10.7.255.255  	  255.248.0.0  	  524288  
+  10.0.0.0/12  	  10.0.0.0 - 10.15.255.255  	  255.240.0.0  	  1048576  
+  10.0.0.0/11  	  10.0.0.0 - 10.31.255.255  	  255.224.0.0  	  2097152  
+  10.0.0.0/10  	  10.0.0.0 - 10.63.255.255  	  255.192.0.0  	  4194304  
+  10.0.0.0/9  	  10.0.0.0 - 10.127.255.255  	  255.128.0.0  	  8388608  
+  10.0.0.0/8  	  10.0.0.0 - 10.255.255.255  	  255.0.0.0  	  16777216  
+  10.0.0.0/7  	  10.0.0.0 - 11.255.255.255  	  254.0.0.0  	  33554432  
+  8.0.0.0/6  	  8.0.0.0 - 11.255.255.255  	  252.0.0.0  	  67108864  
+  8.0.0.0/5  	  8.0.0.0 - 15.255.255.255  	  248.0.0.0  	  134217728  
+  0.0.0.0/4  	  0.0.0.0 - 15.255.255.255  	  240.0.0.0  	  268435456  
+  0.0.0.0/3  	  0.0.0.0 - 31.255.255.255  	  224.0.0.0  	  536870912  
+  0.0.0.0/2  	  0.0.0.0 - 63.255.255.255  	  192.0.0.0  	  1073741824  
+  0.0.0.0/1  	  0.0.0.0 - 127.255.255.255  	  128.0.0.0  	  2147483648

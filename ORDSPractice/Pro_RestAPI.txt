@@ -1,0 +1,399 @@
+Resource : Conceptual target of a hypertext reference, e.g.,customer/order
+Resource Identifier : A uniform resource locator (URL) or uniform resource name (URN) identifying a specific resource, e.g., http://myrest.com/customer/3435
+Resource Metadata : Information describing the resource, e.g., tag, author, source link, alternate location, alias names
+Representation : The resource content—JSON Message, HTML Document, JPEG Image
+Representation Metadata : Information describing how to process the representation, e.g., media type, last-modified time 
+Control Data : Information describing how to optimize responseprocessing, e.g., if-modified-since, cache-control-expiry
+
+Let’s look at some examples.
+Resources
+First, a REST resource to GET a list of podcasts: http://prorest/podcasts
+Next, a REST resource to GET details of podcast id 1 : http://prorest/podcasts/1
+
+
+Representations
+Here is an XML respresentation of a response—GET customer for an id.
+<Customer>
+<id>123</id>
+<name>John</name>
+</Customer>
+Next, a JSON respresentation of a response—GET customer for an id: {"Customer":{"id":"123","name":"John"}}
+
+API Design and Modeling
+
+There are four strategies for API design:
+Bolt-on strategy: This is when you have an existing application and add an API after the fact. This takes advantage of existing code and systems.
+
+Greenfield strategy: This is the other extreme. This is a strategy behind “API-first” or “Mobile first,” and is the easiest scenario to develop an API. Since you’re starting from scratch, you can make use of technologies and concepts that may not have been available before.
+
+Agile design strategy: Agility is based on the premise that you can start without a full set of specs. You can always adapt and change the specs later, as you go and learn more. Through multiple iterations, architectural design can converge to the right solution. Agile approach should only be applied until API is published.
+
+Finally, you have the facade strategy, which is the middle ground between Greenfield and bolt-on. In this case, you can take advantage of existing business systems, yet shape them to what you prefer and need. This gives them the ability to keep working systems in place while making the underlying architecture better.
+
+Activities participant takes on consumer view: What would the API that the
+consumer wants to use look like?
+
+What would the API that the consumer wants to use look like? 
+What apps does the consumer want to build? 
+What data or domain objects does the consumer want to use in his app?
+
+The next step is to identify possible transitions between resource states. Transitions between states provide an indicator of the HTTP method that needs to be supported.
+
+State    Operation          Domain     Objet Description
+CREATE   POST               PODCASTS   Creates podcast
+CREATE   POST               PLAYLISTS  Creates empty playlists
+READ     GET/{podcast_id}   PODCAST    Reads podcast
+UPDATE   PUT/{playlist_id}  PLAYLIST   Adds podcast to playlist
+
+Detail design description:
+• Resources
+• Representations
+• Content types
+• Parameters
+• HTTP methods
+• HTTP status codes
+• Consistent naming
+
+As part of the design verfication, the demo app can be further extended here with design decisions. Issues to be verfied are that:
+• the API is still easy to use;
+• the API is simple and supports use cases; and,
+• the API follows architectural style.
+
+Publish
+Publishing of the API does not require a lot of work, but this is a big milestone for the API. From an organizational perspective, the responsibility of the API is transferred from development to the operational unit. After publishing, there is no agility in the
+development process. Any change requires traditional change management process. As part of the verfication, there is analysis on successful vs. failed API calls and documentation gaps which are supported by the maintenance team.
+
+API Modelling and API specification
+
+Best Practices
+REST is an architectural style and not a strict standard; it allows for a lot of flexibly. Because of that flexibility and freedom of structure, there is also a big appetite for design best practices.
+
+Keep your base URL simple and intuitive
+
+A door handle’s design should communicate whether you pull or push. For Web API design, there should be only two base URLs per resource. Let’s model an API around a simple object or resource (a customer) and create a Web API for it. The first URL is for a
+collection; the second is for a specific element in the collection:
+• /customers - Collection
+• /customers/1 - Specific element
+
+Boiling it down to this level will also force the verbs out of your base URLs. Keep verbs out of your URLs as shown in table below:
+
+Resource        POST Create     GET Read          PUT Update                      DELETE Delete
+/customers      New customer    List customers    Bulk update                     Delete all
+/customers/12   -               Show customer 12  If exists update(If not error)  Delete customer 12
+
+In summary:
+• Use two base URLs per resource. Keep verbs out of your base URLs. Use HTTP verbs to operate on the collections and elements.
+• The level of abstraction depends on your scenario. You also want to expose a manageable number of resources. 
+• Aim for concrete naming and to keep the number of resources between 12 and 24.
+• An intuitive API uses plural rather than singular nouns, and concrete rather than abstract nouns.
+• Resources almost always have relationships to other resources. What’s a simple way to express these relationships in a Web API? Let’s look again at the API we modeled in nouns are good, verbs are bad—the API that interacts with our podcasts resource. Remember, we had two base URLs: /podcasts and /podcasts/1234. We’re using HTTP verbs to operate on the resources and collections. Our podcasts belong to customers. To get all the podcasts belonging to a specific customer, or to create a new podcast for that customer, do a GET or a POST: 
+• GET /customers/5678/podcasts
+• POST /customers/5678/podcasts
+
+• Sweep complexity under the “?”. Make it simple for developers to use the base URL by putting optional states and attributes behind the HTTP question mark. To get all customers in sfo city of ca state of usa country:
+• GET /customers?country=usa&state=ca&city=sfo
+
+well-designed errors at the critical times when they are troubleshooting and resolving issues after the applications
+
+Error Handling
+Many software developers, including myself, don’t always like to think about exceptions and error handling, but it is a very important piece of the puzzle for any software developer, and especially for API designers. Why is good error design especially important for API designers? From the perspective of the developer consuming your Web API, everything at the other side of that interface is a black box. Errors therefore become a key tool providing context and visibility into how to use an API.
+
+Handling errors: Let’s take a look at how three top APIs approach:
+• Facebook
+HTTP Status Code: 200 {"type" : "OauthException", "message":"(#803) Some of the aliases you requested do not exist: foo.bar"}
+• Twilio
+HTTP Status Code: 401 {"status" : "401", "message":"Authenticate","code": 20003, "more info": "http://www.twilio.com/docs/errors/20003"}
+• Another example of error messaging from SimpleGeo
+HTTP Status Code: 401 {"code" : 401, "message": "Authentication Required"}
+
+When you boil it down, there are really only 3 outcomes in the interaction between an app and an API:
+• Everything worked—success.
+• The application did something wrong—client error.
+• The API did something wrong—server error.
+
+Error Code
+Start by using the following 3 codes which should map to the 3 outcomes above. If you need more, add them. But you shouldn’t need to go beyond:
+• 200 - OK
+• 400 - Bad Request
+• 500 - Internal Server Error
+If you’re not comfortable reducing all your error conditions to these 3, try picking among these additional 5:
+• 201 - Created
+• 304 - Not Modified
+• 404 - Not Found
+• 401 - Unauthorized
+• 403 - Forbidden
+
+Versioning
+Never release an API without a version.
+• Make the version mandatory.
+• Specify the version with a “v” prefix. Move it all the way to the left in the URL so that it has the highest scope (e.g., /v1/dogs).
+• Use a simple ordinal number. Don’t use the dot notation like v1.2, because it implies a granularity of versioning that doesn’t work well with APIs—it’s an interface, not an implementation. Stick with v1, v2, and so on.
+• How many versions should you maintain? Maintain at least one version back.
+
+JSON Syntax
+In this section we will discuss what JSON’s basic data types are and syntax.
+Strings : Strings are enclosed in double quotes, and can contain the usual assortment of escaped characters.
+Numbers : Numbers have the usual C/C++/Java syntax, including exponential (E) notation. All numbers are decimal—no octal or hexadecimal.
+Objects : An object is an unordered set of a name/value pair. The pairs are enclosed within braces ({ }). Example:{ "name": "html", "years": 5 }. Pairs are separated by commas. There is a colon between the name and the value.
+Arrays : An array is an ordered collection of values. The values are enclosed within brackets.
+Booleans : It can have either true or false values.
+Null : The value is that it’s empty.
+
+Pros and Cons of JSON
+The following are pros and cons of JSON:
+Pros:
+• Easy to read/write/parse
+• Reasonably succinct (compared with XML, for instance)
+• Common “standard” with many libraries available
+Cons:
+• Not as light as binary formats
+• Can’t use comments
+• It’s “encapsulated,” meaning that you can’t readily stream/append data, but have to break it up into individual objects. XML has the same problem, whereas CSV does not.
+• Difficult to describe the data you’re presenting (easier with XML)
+• Unable to enforce, or validate against, a structure/schema
+
+BOOK NAME: RESTful Web Services Cookbook
+
+Idempotency guarantees clients that repeating a request has the same effect as making a request just once. Idempotency matters most in the case of network or software failures. Clients can repeat such requests and expect the same outcome. For example, consider the case of a client updating the price of a product.
+
+On receiving a POST request, create a new resource, and return status code 202 (Accepted)
+
+When the client submits a GET request to the task resource, do one of the following depending on the current status of the request:
+Still processing : Return response code 200 (OK) and a representation of the task resource with the current status.
+On successful completion : Return response code 303 (See Other) and a Location header containing a URI of a resource that shows the outcome of the task.
+On task failure : Return response code 200 (OK) with a representation of the task resource informing that the resource creation has failed. Clients will need to read the body of the representation to find the reason for failure.
+
+The purpose of GET is to get a representation of a resource, PUT is to create or update a resource, DELETE is to delete a resource, and POST is either to create new resources or to make various other changes to resources. 
+
+You can use either HTTP POST or HTTP PUT to create new resources. This recipe discusses when to use PUT to create new resources. Use PUT to create new resources only when clients can decide URIs of resources. Otherwise, use POST.
+
+HTTP 1.1 defines two classes of error codes, one in the range of 400 to 417 and the other in the range of 500 to 505. One common mistake that some web services make is to return a status code that reflects success (status codes from 200 to 206 and from 300 to 307)
+
+400 (Bad Request) : You can return this error when your server cannot decipher client requests becasue of syntactical errors. HTTP 1.1 defines only one condition under which you can return this error. That is when the request does not include a Host header.
+401 (Unauthorized) : Return this when the client is not authorized to access the resource but may be able to gain access after authentication. If your server will not let the client access the resource even after authentication, then return 403 (Forbidden) instead. When returning this error code, include a WWW-Authenticate header field with the authentication method to use. Commonly used methods are Basic and Digest, as discussed in Chapter 12.
+403 (Forbidden) : Use this when your server will not let the client gain access to the resource and authentication will not help. For instance, you can return this when the user is already authenticated but is not allowed to request a resource.
+404 (Not Found) : Return this when the resource is not found. If possible, specify a reason in the message body.
+405 (Not Allowed) : Return this when an HTTP method is not allowed for this resource. Return an Allow header with methods that are valid for this resource (see Recipe 14.2).
+406 (Not Acceptable)
+409 (Conflict) : Return this when the request conflicts with the current state of the resource. Include a body explaining the reason.
+410 (Gone) : Return this when the resource used to exist, but it does not anymore. You may not be able to return this code unless you have some bookkeeping data about deleted resources. If you do not keep track of deleted resources on the server side, return a 404 (Not Found) instead.
+412 (Precondition Failed)
+413 (Request Entity Too Large) : Return this when the body of a POST of PUT request is too large. If possible, specify what is allowed in the body, and provide alternatives.
+415 (Unsupported Media Type) : Return this error when a client sends the message body in a format that the server does not understand.
+
+Errors due to server errors: 5xx : The following list shows error codes that you may generate when the request fails because of some error on the server:
+500 (Internal Server Error) : This is the best code to return when your code on the server side failed due to some implementation bug.
+503 (Service Unavailable) : Return this when the server cannot fulfill the request either for some specific interval or for an undetermined amount of time. Two common conditions that prompt this error are failures with backend servers (such as a database connection failure) or when the client exceeded some rate limit set by the server. If possible, include a Retry-After response header with either a date or a number of seconds as a hint.
+Message body for errors Include a body in the error response for all errors except when the HTTP method is
+HEAD. In the body, include some or all of the following:
+• A brief message describing the error condition
+• A longer description with information on how to fix the error condition, if applicable
+• An identifier for the error
+• A link to learn more about the error condition, with tips on how to resolve it Here is an example. This is an error that occurred when the client sent a request for an account transfer:
+
+How to Design URIs
+Partitioning the server’s URIs across domains, subdomains, and paths gives you operational flexibility for load distribution, monitoring, routing, and security.
+
+• Use domains and subdomains to logically group or partition resources for localization, distribution, or to enforce various monitoring or security policies.
+• Use the forward-slash separator (/) in the path portion of the URI to indicate a hierarchical relationship between resources.
+• Use the comma (,) and semicolon (;) to indicate nonhierarchical elements in the path portion of the URI.
+• Use the hyphen (-) (not underscore (_)) characters to improve the readability of names in long path segments.
+• Use the ampersand (&) to separate parameters in the query portion of the URI.
+• Avoid including file extensions (such as .php, .aspx, and .jsp) in URIs.
+
+Rule: GET and POST must not be used to tunnel other request methods
+Tunneling refers to any abuse of HTTP that masks or misrepresents a message’s intent and undermines the protocol’s transparency. A REST API must not compromise its design by misusing HTTP’s request methods in an effort to accommodate clients with limited HTTP vocabulary. Always make proper use of the HTTP methods as specified by the rules in this section.
+
+Rule: PUT must be used to both insert and update a stored resource PUT must be used to add a new resource to a store, with a URI specified by the client. PUT must also be used to update or replace an already stored resource.
+
+Rule: PUT must be used to update mutable resources Clients must use the PUT request method to make changes to resources. The PUT request message may include a body that reflects the desired changes.
+
+Rule: POST must be used to create a new resource in a collection Clients use POST when attempting to create a new resource within a collection. The POST request’s body contains the suggested state representation of the new resource to be added to the server-owned collection.
+
+Rule: POST must be used to execute controllers : Clients use the POST method to invoke the function-oriented controller resources. A POST request message may include both headers and a body as inputs to a controller resource’s function. HTTP designates POST as semantically open-ended. It allows the method to take any action, regardless of its repeatability or side effects. This makes POST the clear choice to be paired with the equally unrestricted controller resources.
+
+Response Status Codes
+REST APIs use the Status-Line part of an HTTP response message to inform clients of
+their request’s overarching result. RFC 2616 defines the Status-Line syntax as shown
+below:
+
+1xx: Informational Communicates transfer protocol-level information.
+2xx: Success Indicates that the client’s request was accepted successfully.
+3xx: Redirection Indicates that the client must take some additional action in order to complete their request.
+4xx: Client Error This category of error status codes points the finger at clients.
+5xx: Server Error The server takes responsibility for these error status codes.
+This section concisely describes how and when to use the subset of codes that apply to
+the design of a REST API.
+
+Rule: 200 (“OK”) should be used to indicate nonspecific success
+In most cases, 200 is the code the client hopes to see. It indicates that the REST API
+successfully carried out whatever action the client requested, and that no more specific
+code in the 2xx series is appropriate. Unlike the 204 status code, a 200 response should
+include a response body.
+
+Rule: 201 (“Created”) must be used to indicate successful resource creation
+A REST API responds with the 201 status code whenever a collection creates, or a store
+adds, a new resource at the client’s request. There may also be times when a new
+resource is created as a result of some controller action, in which case 201 would also
+be an appropriate response.
+
+Rule: 202 (“Accepted”) must be used to indicate successful start of an
+asynchronous action
+A 202 response indicates that the client’s request will be handled asynchronously. This
+response status code tells the client that the request appears valid, but it still may have
+problems once it’s finally processed. A 202 response is typically used for actions that
+take a long while to process.
+
+Rule: 204 (“No Content”) should be used when the response body is
+intentionally empty
+The 204 status code is usually sent out in response to a PUT, POST, or DELETE request,
+when the REST API declines to send back any status message or representation in the
+response message’s body. An API may also send 204 in conjunction with a GET request
+to indicate that the requested resource exists, but has no state representation to include
+in the body.
+
+Rule: 400 (“Bad Request”) may be used to indicate nonspecific failure
+400 is the generic client-side error status, used when no other 4xx error code is
+appropriate.
+
+Rule: 406 (“Not Acceptable”) must be used when the requested media type
+cannot be served
+The 406 error response indicates that the API is not able to generate any of the client’s
+preferred media types, as indicated by the Accept request header. For example, a client
+request for data formatted as application/xml will receive a 406 response if the API is
+only willing to format data as application/json.
+
+Rule: 500 (“Internal Server Error”) should be used to indicate API
+malfunction
+500 is the generic REST API error response. Most web frameworks automatically respond
+with this response status code whenever they execute some request handler code
+that raises an exception.
+A 500 error is never the client’s fault and therefore it is reasonable for the client to retry
+the exact same request that triggered this response, and hope to get a different response.
+
+CHAPTER 5 : Representation Design
+
+Error Representation
+As mentioned in Chapter 3, HTTP’s 4xx and 5xx error status codes should be augmented
+with client-readable information in the response message’s entity body. This section’s
+rules present consistent forms pertaining to errors and error responses.
+
+When formatted with JSON, an Error has the following consistent form:
+{
+"id" : Text,
+"description" : Text
+}
+The unique ID/code of the error type. Clients should use this ID to understand what
+sort of error has occurred and act/message accordingly.
+A optional plain text description of the error.
+
+POST http://<host>/ords/cmsprd/cms/api/v1
+POST http://<host>/rest/default/V1/customers
+
+https://<host>:<port>/ords/<schema>/<module>/<template>
+
+BEGIN
+  ords.enable_schema(
+		p_enabled             => TRUE,
+		p_schema              => 'CMS',
+		p_url_mapping_type    => 'BASE_PATH',
+		p_url_mapping_pattern => 'api',
+		p_auto_rest_auth      => FALSE);
+  COMMIT;
+END;
+
+BEGIN          
+  ords.define_module(
+		p_module_name    => 'ordermanagement.v1',
+		p_base_path      => 'ordermanagement/v1/',
+		p_items_per_page => 10,
+		p_status         => 'PUBLISHED',
+		p_comments       => 'Module for accepting ORDERs in JSON format and process it asynchronously');             
+  COMMIT;
+END;
+
+BEGIN
+	ords.define_template(
+		p_module_name => 'ordermanagement.v1',
+		p_pattern     => 'orders',
+		p_comments    => 'orders Resource');
+	COMMIT;
+END;
+
+BEGIN
+	ords.define_handler(
+		p_module_name    => 'ordermanagement.v1',
+		p_pattern        => 'orders',
+		p_method         => 'POST',
+		p_source_type    => ords.source_type_plsql,
+		p_source         => q'[begin NULL; end;]',
+		p_items_per_page => 5,
+		p_comments       => 'List departments');
+	COMMIT;
+END;
+
+BEGIN
+	NULL;
+	:pn_status := 200;
+	:pv_result := 'Department Added';
+EXCEPTION
+	WHEN OTHERS THEN
+		:pn_status := 400;
+		:pv_result := q'[]'
+END;
+
+BEGIN
+	ords.define_parameter(
+		p_module_name        => 'ordermanagement.v1',
+		p_pattern            => 'orders',
+		p_method             => 'POST',
+		p_name               => 'X-APEX-STATUS-CODE',
+		p_bind_variable_name => 'pn_status',
+		p_source_type        => 'HEADER',
+		p_param_type         => 'INT',
+		p_access_method      => 'OUT',
+		p_comments           => 'Response status');
+						
+	ords.define_parameter(
+		p_module_name        => 'ordermanagement.v1',
+		p_pattern            => 'orders',
+		p_method             => 'POST',
+		p_name               => 'result_message',
+		p_bind_variable_name => 'pv_result',
+		p_source_type        => 'RESPONSE',
+		p_param_type         => 'STRING',
+		p_access_method      => 'OUT',
+		p_comments           => 'Result message');
+  COMMIT;
+END;
+
+Define Parameters
+When including parameters within in a handler they must be defined. Each parameter has an external name, which is used when calling the Web Service and an internal bind variable name used by the source SQL.
+
+The source type identifies if the parameter originates in the URI template or the HTTP Header, and can be URI, RESPONSE or HEADER. 
+
+All of the IN parameters for the department Web Services are passed in via the HTTP header, while the IN parameter for the employees Web Service is passed in via the URI.
+
+http://localhost:8081/ords/api/hr/v1/employees?department_number=10
+
+http://localhost:8081/ords/api/hr/v1/employees?department_number=10
+
+The Parameter type can be STRING, INT, DOUBLE, BOOLEAN, LONG or TIMESTAMP.
+
+package name :s_order_management_util
+
+p_parse_json
+p_load_all_details
+p_load_header
+p_load_item
+p_load_tender
+p_load_address
+p_load_contact
+p_load_promo
+
+Dont you want to get into a situaton
+
+There are some unknwons very difficult to predict at the time of development and we need to code defensively. In fact the same approach is already there. We validate the order in CMS and run the validations again inside OMS before loading the data.
+
+
+

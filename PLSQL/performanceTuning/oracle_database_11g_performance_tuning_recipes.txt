@@ -1,0 +1,1097 @@
+Optimizing Table Performance
+Specifically, when creating the database, you want to do the following
+
+Enforce that every tablespace ever created in the database must be locally managed.
+Ensure users are automatically assigned a default permanent tablespace.
+Ensure users are automatically assigned a default temporary tablespace.
+
+CREATE DATABASE O11R2
+MAXLOGFILES 16
+MAXLOGMEMBERS 4
+MAXDATAFILES 1024
+MAXINSTANCES 1
+MAXLOGHISTORY 680
+CHARACTER SET AL32UTF8
+DATAFILE
+'/ora01/dbfile/O11R2/system01.dbf'
+SIZE 500M REUSE
+EXTENT MANAGEMENT LOCAL
+UNDO TABLESPACE undotbs1 DATAFILE
+'/ora02/dbfile/O11R2/undotbs01.dbf'
+SIZE 800M
+SYSAUX DATAFILE
+'/ora03/dbfile/O11R2/sysaux01.dbf'
+SIZE 500M
+DEFAULT TEMPORARY TABLESPACE TEMP TEMPFILE
+'/ora02/dbfile/O11R2/temp01.dbf'
+SIZE 500M
+DEFAULT TABLESPACE USERS DATAFILE
+'/ora01/dbfile/O11R2/users01.dbf'
+SIZE 50M
+LOGFILE GROUP 1
+('/ora01/oraredo/O11R2/redo01a.rdo',
+'/ora02/oraredo/O11R2/redo01b.rdo') SIZE 200M,
+GROUP 2
+('/ora01/oraredo/O11R2/redo02a.rdo',
+'/ora02/oraredo/O11R2/redo02b.rdo') SIZE 200M,
+GROUP 3
+('/ora01/oraredo/O11R2/redo03a.rdo',
+'/ora02/oraredo/O11R2/redo03b.rdo') SIZE 200M
+USER sys IDENTIFIED BY topfoo
+USER system IDENTIFIED BY topsecrectfoo;
+
+Defines a default tablespace named USERS for any user created without an explicitly defined default tablespace; Defines a default temporary tablespace named TEMP for all users; this helps prevent users from being assigned the SYSTEM tablespace as the default temporary
+tablespace.
+
+
+1-2. Creating Tablespaces to Maximize Performance
+
+When you have the choice, tablespaces should always be created with the following two features enabled:
+• Locally managed
+• Automatic segment space management (ASSM)
+
+Here’s an example of creating a tablespace that enables the prior two features:
+create tablespace tools
+datafile '/ora01/dbfile/INVREP/tools01.dbf'
+size 100m -- Fixed datafile size
+extent management local -- Locally managed
+uniform size 128k -- Uniform extent size 
+segment space management auto -- ASSM
+
+Locally managed tablespaces are more efficient than dictionary-managed tablespaces.
+Using ASSM relieves you of these manual tweaking activities. Furthermore, some of Oracle’s space management features (such as shrinking a table and SecureFile LOBs) are allowed only when using ASSM tablespaces
+
+select
+tablespace_name
+,extent_management
+,segment_space_management
+from dba_tablespaces;
+
+1-5. Avoiding Extent Allocation Delays When Creating Tables
+With 11g R2 and higher by default the physical allocation of the extent for a table (and associated indexes) is deferred until a record is first inserted into the table. 
+
+With older releases we can use SEGMENT CREATION DEFERRED
+
+create table f_regs(
+reg_id number
+,reg_name varchar2(2000))
+segment creation deferred;
+
+1-6. Maximizing Data Loading Speeds
+
+• Set the table’s logging attribute to NOLOGGING; this minimizes the generation redo for direct path operations (this feature has no effect on regular DML operations).
+• Use a direct path loading feature, such as the following:
+	• INSERT /*+ APPEND */ on queries that use a subquery for determining which records are inserted
+	• INSERT /*+ APPEND_VALUES */ on queries that use a VALUES clause
+	• CREATE TABLE…AS SELECT
+
+Direct path inserts have two performance advantages over regular insert statements:
+• If NOLOGGING is specified, then a minimal amount of redo is generated.
+• The buffer cache is bypassed and data is loaded directly into the datafiles. This can significantly improve the loading performance.
+
+One downside to reducing redo generation is that you can’t recover the data created via NOLOGGING in the event a failure occurs after the data is loaded (and before you back up the table). If your data is critical, then don’t use NOLOGGING. If your data can be easily re-created, then NOLOGGING is desirable when you’re trying to improve performance of large data loads.
+
+What happens if you have a media failure after you’ve populated a table in NOLOGGING mode (and before you’ve made a backup of the table)? After a restore and recovery operation, when executing a query that scans every block in the table, an error is thrown.
+SQL> select * from f_regs;
+This indicates that there is logical corruption in the datafile:
+ORA-01578: ORACLE data block corrupted (file # 10, block # 198)
+ORA-01110: data file 10: '/ora01/dbfile/O11R2/users201.dbf'
+ORA-26040: Data block was loaded using the NOLOGGING option
+
+As the prior output indicates, the data in the table is unrecoverable. Use NOLOGGING only in situations where the data isn’t critical or in scenarios where you can back up the data soon after it was created.
+
+1-7. Efficiently Removing Table Data
+
+You can use either the TRUNCATE statement or the DELETE statement to remove records from a table. When truncating a table, by default all space is de-allocated for the table except the space defined by the MINEXTENTS table-storage parameter. If you don’t want the TRUNCATE statement to de-allocate the currently allocated extents, then use the REUSE STORAGE clause:
+
+1-8. Displaying Automated Segment Advisor Advice
+Tables with large amounts of unused space can cause full table scan queries to perform poorly. This is because Oracle is scanning every block beneath the high-water mark, regardless of whether the blocks contain data.
+
+SELECT
+'Segment Advice --------------------------'|| chr(10) ||
+'TABLESPACE_NAME : ' || tablespace_name || chr(10) ||
+'SEGMENT_OWNER : ' || segment_owner || chr(10) ||
+'SEGMENT_NAME : ' || segment_name || chr(10) ||
+'ALLOCATED_SPACE : ' || allocated_space || chr(10) ||
+'RECLAIMABLE_SPACE: ' || reclaimable_space || chr(10) ||
+'RECOMMENDATIONS : ' || recommendations || chr(10) ||
+'SOLUTION 1 : ' || c1 || chr(10) ||
+'SOLUTION 2 : ' || c2 || chr(10) ||
+'SOLUTION 3 : ' || c3 Advice
+FROM
+TABLE(dbms_space.asa_recommendations('FALSE', 'FALSE', 'FALSE'));
+
+Tables with higher percentage of reclaimable space out of allocated space are ideal candidate for shrink.
+alter table inv enable row movement;
+alter table inv shrink space;
+You can also shrink the space associated with any index segments via the CASCADE clause:
+SQL> alter table inv shrink space cascade;
+
+1-11. Rebuilding Rows Spanning Multiple Blocks
+
+create table tohold the chained rows.
+
+@?/rdbms/admin/utlchain.sql
+
+analyze table emp list chained rows;
+
+create table temp_emp
+as select *
+from emp
+where rowid in
+(select head_rowid from chained_rows where table_name = 'EMP');
+
+delete from emp
+where rowid in
+(select head_rowid from chained_rows where table_name = 'EMP');
+
+insert into emp select * from temp_emp;
+
+alternate option is alter table emp move; and rebuild all the indexes.
+
+
+1-16. Monitoring Table Usage
+
+SQL> alter system set audit_trail=db scope=spfile;
+If you are using an init.ora file, open it with a text editor and set the AUDIT_TRAIL value to DB. After you’ve set the AUDIT_TRAIL parameter, you’ll need to stop and restart your database for it to take effect.
+
+SQL> audit select, insert, update, delete on inv_mgmt.emp;
+
+select
+username
+,obj_name
+,to_char(timestamp,'dd-mon-yy hh24:mi') event_time
+,substr(ses_actions,4,1) del -- character of S represents success, F represents failure, and B represents both success and failure.
+,substr(ses_actions,7,1) ins -- character of S represents success, F represents failure, and B represents both success and failure.
+,substr(ses_actions,10,1) sel -- character of S represents success, F represents failure, and B represents both success and failure.
+,substr(ses_actions,11,1) upd -- character of S represents success, F represents failure, and B represents both success and failure.
+from dba_audit_object;
+
+noaudit select, insert, update, delete on inv_mgmt.emp;
+
+If you simply need to know whether a table is being inserted, updated, or deleted from, you can use the DBA/ALL/USER_TAB_MODIFICATIONS view to report on that type of activity.
+
+select table_name, inserts, updates, deletes, truncated from user_tab_modifications;
+
+In normal conditions, this view is not instantly updated by Oracle. If you need to immediately view table modifications, then use the DBMS_STATS.FLUSH_DATABASE_MONITORING_INFO procedure to update the view:
+
+SQL> exec DBMS_STATS.FLUSH_DATABASE_MONITORING_INFO();
+
+Choosing and Optimizing Indexes
+
+ESTIMATING THE SPACE AN INDEX WILL REQUIRE
+
+SQL> set serverout on
+SQL> exec dbms_stats.gather_table_stats(user,'CUST');
+SQL> variable used_bytes number
+SQL> variable alloc_bytes number
+SQL> exec dbms_space.create_index_cost( 'create index cust_idx2 on cust(first_name)', -
+:used_bytes, :alloc_bytes );
+SQL> print :used_bytes
+SQL> print :alloc_bytes
+
+If you found that a new index is going to be very large and you are not sure this index will be used by the optimizer then create the index with no segment option and check if optimizer would use this index. If from explain plan it's evident that this index would be used then drop the index and create this without no segment option.
+
+SQL> create index cust_idx1 on cust(first_name) nosegment;
+
+SQL> alter session set "_use_nosegment_indexes"=true;
+SQL> set autotrace trace explain;
+SQL> select first_name from cust where first_name = 'JIM';
+
+-----------------------------------------------------------------------------
+Id | Operation | Name | Rows | Bytes | Cost (%CPU)| Time |
+-----------------------------------------------------------------------------
+0 | SELECT STATEMENT | | 1 | 17 | 1 (0)| 00:00:01 |
+* 1 | INDEX RANGE SCAN| CUST_IDX1 | 1 | 17 | 1 (0)| 00:00:01 |
+-----------------------------------------------------------------------------
+
+2-7. Reducing Index Size Through Compression
+
+Index compression is useful for indexes that contain multiple columns where the leading index column value is often repeated. Compressed indexes have the following advantages:
+• Reduced storage
+• More rows stored in leaf blocks, which can result in less I/O when accessing a compressed index
+
+Use the COMPRESS N clause to create a compressed index:
+SQL> create index cust_cidx1 on cust(last_name, first_name) compress 2;
+
+Create a compressed index on two columns (LAST_NAME and FIRST_NAME). For this example, if we determined that there was a high degree of duplication only in the first column, we could instruct the COMPRESS N clause to compress only the first column (LAST_NAME) by specifying an integer of 1:
+
+SQL> create index cust_cidx1 on cust(last_name, first_name) compress 1;
+
+You can verify the degree of compression and the number of leaf blocks used by running the following two queries before and after creating an index with compression enabled:
+
+SQL> select sum(bytes) from user_extents where segment_name='&&ind_name';
+
+SQL> select index_name, leaf_blocks from user_indexes where index_name='&&ind_name';
+
+You can verify the index compression is in use and the corresponding prefix length as follows:
+select index_name, compression, prefix_length from user_indexes where index_name = 'CUST_CIDX1';
+
+SQL> alter index cust_cidx1 rebuild compress 1;
+
+SQL> alter index cust_cidx1 rebuild nocompress;
+
+2-9. Indexing a Virtual Column
+
+SELECT first_name
+FROM cust
+WHERE UPPER(first_name) = 'DAVE';
+
+Normally, the optimizer will ignore any indexes on the column FIRST_NAME because of the SQL function applied to the column. There are two ways to improve performance in this situation:
+• Create a function-based index (see Recipe 2-8 for details).
+• Use a virtual column in combination with an index.
+
+SQL> create index cust_fidx1 on cust(UPPER(first_name));
+
+SQL> alter table cust add(up_name generated always as (UPPER(first_name)) virtual);
+Next an index is created on the virtual column:
+SQL> create index cust_vidx1 on cust(up_name);
+
+“Which performs better, a function-based index or an indexed virtual column?” In our testing, we were able to create several scenarios where the virtual column performed better than the function-based index. Results may vary depending on your data.
+
+You can define a virtual column only on a regular heap-organized table. You can’t define a virtual column on an index-organized table, an external table, a temporary table, object tables, or cluster tables.
+
+2-10. Avoiding Concentrated I/O for Index
+
+You use a sequence to populate the primary key of a table and realize that this can cause contention on the leading edge of the index because the index values are nearly similar. This leads to multiple inserts into the same block, which causes contention. You want to spread out the inserts into the index so that the inserts more evenly distribute values across the index structure.
+
+Use the REVERSE clause to create a reverse-key index:
+SQL> create index inv_idx1 on inv(inv_id) reverse;
+
+You can verify that an index is reverse-key by running the following query:
+SQL> select index_name, index_type from user_indexes; -- index_type would be shown as NORMAL/REV.
+
+The downside to this type of index is that it can’t be used for index range scans, which therefore limits its usefulness.
+
+SQL> alter index f_regs_idx1 rebuild reverse;
+SQL> alter index f_regs_idx1 rebuild noreverse;
+
+2-11. Adding an Index Without Impacting Existing Applications
+
+Often, third-party vendors don’t support customers adding their own indexes to an application. However, there may be a scenario in which you’re certain you can increase a query’s performance without impacting other queries in the application. You can create the index as invisible and then explicitly instruct a query to use the index via a hint—for example:
+
+SQL> create index inv_idx1 on inv(inv_id) invisible;
+
+SQL> alter system set optimizer_use_invisible_indexes=true;
+
+Now, use a hint to tell the optimizer that the index exists:
+SQL> select /*+ index (inv INV_IDX1) */ inv_id from inv where inv_id=1;
+
+SQL> alter index inv_idx1 visible;
+
+2-12. Creating a Bitmap Index in Support of a Star Schema
+
+You have a data warehouse that contains a star schema. The star schema consists of a large fact table and several dimension (lookup) tables. The primary key columns of the dimension tables map to foreign key columns in the fact table. You would like to create bitmap indexes on all of the foreign key columns in the fact table.
+
+SQL> create bitmap index f_sales_cust_fk1 on f_sales(cust_id);
+The type of index is verified with the following query:
+SQL> select index_name, index_type from user_indexes where index_name='F_SALES_CUST_FK1';
+
+Bitmap indexes are ideal for low-cardinality columns (few distinct values) and where the application is not frequently updating the table.
+
+You shouldn’t use bitmap indexes on OLTP databases with high INSERT/UPDATE/DELETE activities, due to locking issues. Locking issues arise because the structure of the bitmap index results in potentially many rows being locked during DML operations, which results in locking problems for high transaction OLTP systems.
+
+Bitmap indexes and bitmap join indexes are available only with the Oracle Enterprise Edition of the database.
+
+2-13. Creating a Bitmap Join Index
+
+You have a fairly large dimension table that is often joined to an extremely large fact table. You wonder if there’s a way to create a bitmap index in such a way that it can eliminate the need for the optimizer to access the dimension table blocks to satisfy the results of a query.
+
+Here’s the basic syntax for creating a bitmap join index:
+create bitmap index <index_name>
+on <fact_table> (<dimension_table.dimension_column>)
+from <fact_table>, <dimension_table>
+where <fact_table>.<foreign_key_column> = <dimension_table>.<primary_key_column>;
+
+For example, suppose you typically retrieve the CUST_NAME from the D_CUSTOMERS table while joining to a large F_SHIPMENTS fact table. This example creates a bitmap join index between the F_SHIPMENTS and D_CUSTOMERS tables:
+
+select
+d.cust_name
+from f_shipments f, d_customers d
+where f.d_cust_id = d.d_cust_id
+and d.cust_name = 'Sun';
+
+create bitmap index f_shipments_bm_idx1
+on f_shipments(d_customers.cust_name)
+from f_shipments, d_customers
+where f_shipments.d_cust_id = d_customers.d_cust_id;
+
+Bitmap join indexes store the results of a join between two tables in an index. Bitmap indexes are beneficial because they avoid joining tables to retrieve results. The syntax for a bitmap join index differs from a regular bitmap index in that it contains FROM and WHERE clauses.
+
+
+2-15. Monitoring Index Usage
+
+You maintain a large database that contains thousands of indexes. As part of your proactive maintenance, you want to determine if any indexes are not being used. You realize that unused indexes have a detrimental impact on performance, because every time a row is inserted, updated, and deleted,
+the corresponding index has to be maintained. This consumes CPU resources and disk space. If an index isn’t being used, it should be dropped.
+
+SQL> alter index f_regs_idx1 monitoring usage;
+SQL> select index_name, table_name, monitoring, used from v$object_usage;
+
+2-16. Maximizing Index Creation Speed
+
+• Turning off redo generation - NOLOGGING
+• Increasing the degree of parallelism - PARALLEL
+
+C H A P T E R 3 - Optimizing Instance Memory
+
+3-1. Automating Memory Management
+steps to implement automatic memory management in your database,
+SQL> alter system set memory_max_target=2G scope=spfile;
+You must specify the SCOPE parameter in the alter system command, because MEMORY_MAX_TARGET isn’t a dynamic parameter, which means you can’t change it on the fly while the instance is running.
+restart the db
+Turn off the SGA_TARGET and the PGA_AGGREGATE_TARGET parameters by issuing
+the following ALTER SYSTEM commands:
+SQL> alter system set sga_target = 0;
+SQL> alter system set pga_aggregate_target = 0;
+Turn on automatic memory management by setting the MEMORY_TARGET parameter:
+SQL> alter system set memory_target = 1000M;
+
+
+3-2. Managing Multiple Buffer Pools
+
+You can use multiple buffer pools instead of Oracle’s single default buffer pool, to ensure that frequently used segments stay cached in the buffer pool without being recycled out of the buffer pool. In order to implement multiple buffer pools in your database, you need to do two things: create two separate buffer pools—the KEEP buffer pool and the RECYCLE buffer pool. Once you do this, you must specify the BUFFER_POOL keyword in the STORAGE clause when you create a segment.
+
+In the SPFILE or the init.ora file, specify the two parameters and the sizes you want to assign to each of the pools:
+db_keep_cache_size=1000m
+db_recycle_cache_size=100m
+
+Here’s how you specify the default buffer pool for a segment:
+SQL> alter table employees storage (buffer_pool=keep);
+
+3-4. Monitoring Memory Resizing Operations
+
+SQL> select * from v$memory_target_advice order by memory_size;
+
+MEMORY_SIZE MEMORY_SIZE_FACTOR ESTD_DB_TIME ESTD_DB_TIME_FACTOR VERSION
+----------- ------------------ ------------ ------------------- ----------
+468 .75 43598 1.0061 0
+624 1 43334 1 0
+780 1.25 43334 1 0
+936 1.5 43330 .9999 0
+1092 1.75 43330 .9999 0
+1248 2 43330 .9999 0
+6 rows selected.
+
+Your current memory allocation is shown by the row with the MEMORY_SIZE_FACTOR value of 1 (624MB in our case). The MEMORY_SIZE_FACTOR column shows alternate sizes of the MEMORY_TARGET parameter as a multiple of the current MEMORY_TARGET parameter value. The ESTD_DB_TIME column shows the time Oracle estimates it will need to complete the current workload with a specific MEMORY_TARGET value. Thus, the query results show you how much faster the database can process its work by varying the value of the MEMORY_TARGET parameter.
+
+SQL> select component,oper_type,oper_mode,parameter, final_size,target_sizefrom v$memory_resize_ops
+
+COMPONENT OPER_TYPE OPER_MODE PARAMETER FINAL_SIZE TARGET_SIZE
+--------------------- ----------- --------- --------------- ------------ ------------
+DEFAULT buffer cache GROW DEFERRED db_cache_size 180355072 180355072
+shared pool GROW DEFERRED shared_pool_size 264241152 264241152
+…
+20 rows selected.
+SQL>
+
+
+3-5. Optimizing Memory Usage
+
+
+
+
+You want to view execution statistics for SQL statements that are currently running.
+
+SELECT sid, buffer_gets, disk_reads, round(cpu_time/1000000,1) cpu_seconds
+FROM v$sql_monitor
+WHERE SID=100
+AND status = 'EXECUTING';
+
+
+If you wanted to see the top five most CPU-consuming queries in your database, you could
+issue the following query:
+SELECT * FROM (
+SELECT sid, buffer_gets, disk_reads, round(cpu_time/1000000,1) cpu_seconds
+FROM v$sql_monitor
+ORDER BY cpu_time desc)
+WHERE rownum <= 5;
+
+Statistics in V$SQL_MONITOR are updated near real-time, that is, every second. Any currently executing SQL statement that is being monitored can be found in V$SQL_MONITOR. Completed queries can be found there for at least one minute after execution ends, and can exist there longer, depending on the space requirements needed for newly executed queries. One key advantage of the V$SQL_MONITOR view is it has detailed statistics for each and every execution of a given query, unlike V$SQL, where results are cumulative for several executions of a SQL statement.
+
+If we wanted to see all executions for a given query (based on the SQL_ID column), we can get that information by querying on the three necessary columns to drill to a given execution of a SQL query:
+
+SELECT * FROM (
+SELECT sql_id, to_char(sql_exec_start,'yyyy-mm-dd:hh24:mi:ss') sql_exec_start,
+sql_exec_id, sum(buffer_gets) buffer_gets,
+sum(disk_reads) disk_reads, round(sum(cpu_time/1000000),1) cpu_secs
+FROM v$sql_monitor
+WHERE sql_id = 'fcg00hyh7qbpz'
+GROUP BY sql_id, sql_exec_start, sql_exec_id
+ORDER BY 6 desc)
+WHERE rownum <= 5;
+
+Keep in mind that if a statement is running in parallel, one row will appear for each parallel thread for the query, including one for the query coordinator. However, they will share the same SQL_ID, SQL_EXEC_START, and SQL_EXEC_ID values. In this case, you could perform an aggregation on a  particular statistic, if desired.
+
+9-9. Identifying Resource-Consuming SQL Statements That Have Executed in the Past
+
+SELECT * FROM (
+SELECT sql_id, sum(disk_reads_delta) disk_reads_delta,
+sum(disk_reads_total) disk_reads_total,
+sum(executions_delta) execs_delta,
+sum(executions_total) execs_total
+FROM dba_hist_sqlstat
+GROUP BY sql_id
+ORDER BY 2 desc)
+
+SELECT sql_text FROM dba_hist_sqltext
+WHERE sql_id = '36bdwxutr5n75';
+
+Tracing SQL Execution
+
+alter session set timed_statistics=true
+
+select name,value from v$diag_info where name='Diag Trace'
+
+Starting with Oracle Database 11g, the database stores all diagnostic files under a dedicated diagnostic directory that you specify through the diagnostic_dest initialization parameter.
+
+Although the new database diagnosability infrastructure in Oracle Database 11g ignores the user_dump_dest initialization parameter, the parameter still exists, and points to the same directory as the $ADR_BASE\diag\rdbms\<database>\<instance>\trace directory.
+
+Normal users can use the DBMS_SESSION package to trace their sessions, as shown in this example:
+execute dbms_session.session_trace_enable(waits=>true, binds=> false);
+alter session set tracefile_identifier='MyTune1';
+select value from v$diag_info where name = 'Default Trace File';
+c:\app\ora\diag\rdbms\orcl1\orcl1\trace\orcl1_ora_11248_My_Tune1.trc
+To find all trace files for the current instance, issue the following query:
+select value from v$diag_info where name = 'Diag Trace'
+execute dbms_session.session_trace_disable();
+
+
+In an Oracle 11.1or higher release, you can use the enhanced SQL tracing interface to trace one or more SQL statements. Here are the steps to tracing a set of SQL statements.
+
+alter session set events 'sql_trace level 12';
+
+select count(*) from sales;
+
+alter session set events 'sql_trace off';
+
+alter session set events 'sql_trace [sql:fb2yu0p1kgvhr] level 12';
+
+alter session set events 'sql_trace[sql:fb2yu0p1kgvhr] off';
+
+You can trace multiple SQL statements by separating the SQL IDs with the pipe (|) character, as shown here:
+
+alter session set events ‘sql_trace [sql: fb2yu0p1kgvhr|4v433su9vvzsw]‘;
+
+Examining a Raw SQL Trace File
+
+PARSING IN CURSOR #3 len=490 dep=1 uid=85 oct=3 lid=85 tim=269523043683 hv=672110367
+ad='7ff18986250' sqlid='bqasjasn0z5sz'
+PARSE #3:c=0,e=647,p=0,cr=0,cu=0,mis=1,r=0,dep=1,og=1,plh=0,tim=269523043680
+EXEC #3:c=0,e=1749,p=0,cr=0,cu=0,mis=1,r=0,dep=1,og=1,plh=3969568374,tim=269523045613
+WAIT #3: nam='Disk file operations I/O' ela= 15833 FileOperation=2 fileno=4 filetype=2 obj#=-1
+tim=269523061555
+FETCH #3:c=0,e=19196,p=0,cr=46,cu=0,mis=0,r=1,dep=1,og=1,plh=3969568374,tim=269523064866
+STAT #3 id=3 cnt=12 pid=2 pos=1 obj=0 op='HASH GROUP BY (cr=46 pr=0 pw=0 time=11 us cost=4
+size=5317 card=409)'
+STAT #3 id=4 cnt=3424 pid=3 pos=1 obj=89079 op='TABLE ACCESS FULL DEPT (cr=16 pr=0 pw=0
+time=246 us cost=3 size=4251 card=327)'
+
+If you suspect that a query was waiting on a lock, digging deep into a raw trace file shows you exactly where and why a query was waiting. In the WAIT line, the elapsed time (ela) shows the amount of time waited (in microseconds). Inour example, elapsed wait time for “Disk file operations I/O” is 15,833 microseconds. Since 1 second=1,000,000 microseconds, this is not a significant wait time. The raw trace file clearly shows if an I/O wait event, as is true in this case, or another type of wait event held up the query. If the query was waiting on a lock, you’ll see something similar to the following: WAIT #2: nam='enqueue ela-300….
+
+$ tkprof user_sql_001.trc user1.prf explain=hr/hr table=hr.temp_plan_table_a sys=no
+sort=exeela,prsela,fchela
+In the example shown here, the tkprof command takes the user_sql_001.trc trace file as input and generates an output file named user1.prf. The “How it Works” section of this recipe explains key optional arguments of the TKPROF utility.
+
+Execution Statistics
+call count cpu elapsed disk query current rows
+------- ------ -------- ---------- ---------- ---------- ---------- ----------
+Parse 1 0.01 0.03 0 64 0 0
+Execute 1 0.00 0.00 0 0 0 0
+Fetch 5461 0.29 0.40 0 1299 0 81901
+------- ------ -------- ---------- ---------- ---------- ---------- ----------
+total 5463 0.31 0.43 0 1363 0 81901
+
+count: The number of times the database parsed, executed, or fetched this statement
+cpu: The CPU time used for the parse/execute/fetch phases
+elapsed: Total elapsed time (in seconds) for the parse/execute/fetch phases
+disk: Number of physical block reads for the parse/execute/fetch phases
+query: Number of data blocks read with logical reads from the buffer cache in consistent mode for
+the parse/fetch/execute phases (for a select statement)
+current: Number of data blocks read and retrieved with logical reads from the buffer cache in
+current mode (for insert, update, delete, and merge statements)
+rows: Number of fetched rows for a select statement or the number of rows inserted, deleted, or
+updated, respectively, for an insert, delete, update, or merge statement
+
+Row Source Operations
+
+Misses in library cache during parse: 1
+Optimizer mode: ALL_ROWS
+Parsing user id: 85 (HR)
+Rows Row Source Operation
+------- ---------------------------------------------------
+81901 HASH JOIN (cr=1299 pr=0 pw=0 time=3682295 us cost=22 size=41029632 card=217088)
+1728 TABLE ACCESS FULL DEPT (cr=16 pr=0 pw=0 time=246 us cost=6 size=96768 card=1728)
+1291 TABLE ACCESS FULL EMP (cr=1283 pr=0 pw=0 time=51213 us cost=14 size=455392 card=3424)
+
+cr: Blocks retrieved through a logical read in the consistent mode
+pr: Number of blocks read through a physical disk read
+pw: Number of blocks written with a physical write to a disk
+time: Total time (in milliseconds) spent processing the operation
+cost: Estimated cost of the operation
+size: Estimated amount of data (bytes) returned by the operation
+card: Estimated number of rows returned by the operation
+
+Wait Events
+You’ll see the wait events section only if you’ve specified waits=>true in your trace command. The wait events table summarizes waits during the trace period:
+Elapsed times include waiting on following events:
+Event waited on Times Max. Wait Total Waited
+---------------------------------------- Waited ---------- ------------
+SQL*Net message from client 5461 112.95 462.81
+db file sequential read 1 0.05 0.05
+********************************************************************************
+
+
+Use TRCA instead of TKPROF for analyzing your trace files—it provides you a wealth of diagnostic information, besides giving you a TKPROF output file as part of the bargain.
+
+Here are the major sections of a TRCA report,
+
+Summary: Provides a breakdown of elapsed time, response time broken down into CPU and non idle wait time, and other response time-related information
+
+Non-Recursive Time and Totals: Provides a breakdown of response time and elapsed time during the parse, execute, and fetch steps;
+
+Top SQL: Provides detailed information about SQL statements that account for the most response time, elapsed time, and CPU time,
+
+Individual SQL: This is a highly useful section, as it lists all SQL statements and shows their elapsed time, response time, and CPU time. It provides the hash values and SQL IDs of each statement.
+
+Tables and Indexes: Shows the number of rows, partitioning status, the sample size, and the last time the object was analyzed; for indexes, it additionally shows the clustering factor and the number of keys.
+
+Hot I/O Blocks: Shows the list of blocks with the largest wait time or times waited
+
+Non-default Initialization Parameters: Lists all non-default initialization parameters
+
+You can get an event 10046 trace for a parallel query in the same way as you would for any other query. The only difference is that the 10046 event will generate as many trace files as the number of parallel query servers.
+
+You want to turn on SQL tracing for a session to diagnose a performance problem.
+
+execute dbms_monitor.session_trace_enable(session_id=>138,serial_num=>242,waits=>true,binds=>false);
+
+execute dbms_monitor.session_trace_disable();
+
+If a session immediately begins executing a query after it logs in, it doesn’t give you enough time to get the session information and start tracing the session. In cases like this, you can create a logon trigger that automatically starts tracing the session once the session starts. Here is one way to create a logon trigger to set up a trace for sessions created by a specific user:
+
+SQL> create or replace trigger trace_my_user
+2 after logon on database
+3 begin
+4 if user='SH' then
+5 dbms_monitor.session_trace_enable(null,null,true,true);
+6 end if;
+8* end;
+SQL> /
+
+Automated SQL Tuning
+
+This chapter focuses on the following automated SQL tuning tools:
+• Automatic SQL Tuning
+• SQL tuning sets (STS)
+• SQL Tuning Advisor
+• Automatic Database Diagnostic Monitor (ADDM)
+
+Enabling Automatic Statistics Gathering
+select client_name,status from dba_autotask_client;
+SQL> begin dbms_auto_task_admin.enable(
+2 client_name=>'auto optimizer stats collection',
+3 operation=>NULL,
+4 window_name=>NULL);
+5 end;
+6 /
+
+SQL> SELECT client_name,status from dba_autotask_client;
+
+CLIENT_NAME STATUS
+---------------------------------------------------------------- --------
+auto optimizer stats collection ENABLED
+auto space advisor ENABLED
+sql tuning advisor ENABLED
+
+
+You can disable the statistics collection task by using the dbms_auto_task_admin.disable procedure:
+SQL> begin
+2 dbms_auto_task_admin.disable(
+3 client_name=> 'auto optimizer stats collection',
+4 operation=> NULL,
+5 window_name=> NULL);
+6 end;
+7 /
+
+If you don’t specify a maintenance window, the database uses the default maintenance window, which opens every night from 10 p.m. to 6 a.m. and all day on weekends.
+
+SQL> select operation,target,start_time,end_time from dba_optstat_operations where operation='gather_database_stats(auto)';
+
+Setting Preferences for Statistics Collection
+
+CASCADE
+This specifies whether the database should collect index statistics along with the table statistics. By default, the database automatically collects statistics (cascade=true) for all of a table’s indexes.
+
+DEGREE
+This specifies the degree of parallelism the database must use when gathering statistics. Oracle recommends using the default setting of the constant DBMS_STATS.AUTO_DEGREE. Oracle chooses the correct degree of parallelism based on the object and the parallelism-related initialization parameters.
+
+ESTIMATE_PERCENT
+This specifies the percentage of rows the database must use to estimate the statistics. For large tables, estimation is the only way to complete the statistics collection process within a reasonable time—statistics collection is not a trivial process—it’s resource
+
+A rule of thumb here is that the more uniform a table’s data, the smaller the sample size can be. On the other hand, if a table’s data is highly skewed, you should use a higher sample size to capture the variations in the data distribution. Of course, setting this parameter to 100 means that the database isn’t doing an estimation—it will collect statistics for each row in a table.
+
+The best practice is to start with the DBMS_STATS.AUTO_SAMPLE_SIZE and set your own sample size only if you have to.
+
+METHOD_OPT
+You can specify two things with the METHOD_OPT parameter: the columns for which the database will collect statistics, and the columns on which the database will create histograms. You can also specify the number of the buckets in the histograms. You can specify one of the following options for this parameter:
+FOR ALL [INDEXED | HIDDEN] COLUMNS [size_clause]
+FOR COLUMNS [size_clause] column [size_clause] [,COLUMN [size_clause]…]
+
+The FOR ALL option lets you specify that the database must collect statistics for all columns, or only for the indexed columns.
+
+The FOR COLUMNS option lets you specify one or more columns on which the database must gather statistics, instead of on all columns in a table, which is the default behavior.
+
+The key clause for both the FOR ALL and the FOR COLUMNS options is the size_clause. The size_clause determines whether the database should collect histograms for a column, and under what conditions.
+
+SQL> exec dbms_stats.gather_table_stats('HR','EMPLOYEES',method_opt=> 'for columns size 254 job_id')
+
+A value of 1 for the integer clause (for example, 'FOR ALL COLUMNS SIZE 1') won’t really create any histograms on the columns, because all the data is placed into a single bucket. Also, if there’s already a histogram(s) on a table, setting the value 1 for the integer clause will remove the histogram(s).
+
+Another option for the size_clause is to specify one of the following three values:
+
+REPEAT: Specifies that the database must collect histograms on only those columns that already have histograms collected for them; setting the value repeat instead of the integer 1 value ensures that you retain any useful histograms.
+
+AUTO: Lets the database determine for which columns it should collect histograms, based on each column’s data distribution (whether it’s uniform or skewed) and the actual column usage statistics.
+
+SKEWONLY: Lets the database determine for which columns it should collect histograms, based on each column’s data distribution
+
+SQL> exec dbms_stats.gather_table_stats('HR','EMPLOYEES',method_opt=> 'for all columns size skewonly')
+
+The default value for the METHOD_OPT parameter is FOR ALL COLUMNS SIZE AUTO. That is, the database will collect statistics for all columns in a table, and it automatically selects the columns for which it should create histograms.
+
+PUBLISH
+By default, the database publishes all statistics right after it completes the statistics gathering process. You can specify that the database keep newly collected statistics as pending statistics by setting the PUBLISH parameter to FALSE.
+
+Manually Generating Statistics
+
+If your database contains volatile tables that experience numerous deletes (or even truncates) throughout the day, then an automatic stats collection job that runs during the nightly maintenance window isn’t adequate. There are a couple of strategies you can use in this type of situation, where a table’s data keeps fluctuating throughout the day:
+
+Collect the statistics when the table has the number of rows that represent its “typical” state. Once you do this, lock the statistics to prevent the automatic statistics collection job from collecting fresh statistics for this table during the nightly maintenance window.
+The other option is to make the statistics of the table null. like below
+
+SQL> execute dbms_stats.delete_table_stats('OE','ORDERS');
+PL/SQL procedure successfully completed.
+SQL> execute dbms_stats.lock_table_stats('OE','ORDERS');
+PL/SQL procedure successfully completed.
+
+execute dbms_stats.lock_table_stats(ownname=>'SH',tabname=>'SALES');
+execute dbms_stats.unlock_table_stats(ownname=>'SH',tabname=>'SALES');
+
+Gathering System Statistics
+You know the optimizer uses I/O and CPU characteristics of a system during the selection of an execution plan. You’d like to ensure that the optimizer is using accurate system statistics.
+
+noworkload statistics
+SQL> execute dbms_stats.gather_system_stats()
+
+You can also gather system statistics while the database is processing a typical workload.
+execute dbms_stats.gather_system_stats('start')
+Once the workload window ends, stop the system statistics gathering by executing the following command:
+execute dbms_stats.gather_system_stats('stop')
+
+you can check the values captured for the various system statistics in the sys.aux_stats$ view
+
+You think that the presence of a histogram on a particular column is leading to sub-optimal execution plans. You’d like the database not to use any histograms on that column.
+
+1. Drop the histogram by executing the DELETE_COLUMN_STATS procedure:
+SQL> begin
+2 dbms_stats.delete_column_stats(ownname=>'SH',tabname=>'SALES',
+3 colname=>'PROD_ID',col_stat_type=>'HISTOGRAM');
+4 end;
+5 /
+
+2. Once you drop the histogram, tell Oracle not to create a histogram on the PROD_ID column by executing the following SET_TABLE_PREFS procedure:
+SQL> begin
+2 dbms_stats.set_table_prefs('SH','SALES','METHOD_OPT','FOR ALL COLUMNS SIZE AUTO, FOR COLUMNS SIZE 1 PROD_ID');
+3 end;
+4 /
+
+FOR ALL COLUMNS SIZE AUTO option tells the database to create histograms on any column that Oracle deems skewed. However, the FOR COLUMNS SIZE 1 PROD_ID tells the database not to create a histogram for the column PROD_ID in the SH.SALES table.
+
+Creating Statistics for Related Columns
+
+You’re aware that certain columns from a table that are part of a join condition are correlated. You want to make the optimizer aware of this relationship.
+In order to generate statistics for two or more related columns, you must first create a column group and then collect fresh statistics for the table so the optimizer can use the newly generated “extended statistics.” Use the DBMS_STATS.CREATE_EXTENDED_STATS function to define a column group that consists of two or more columns from a table.
+
+SQL> select dbms_stats.create_extended_stats(null,'CUSTOMERS', '(country_id,cust_state_province)') from dual;
+
+Once you create the column group, gather fresh statistics for the CUSTOMERS table to generatestatistics for the new column group.
+
+SQL> exec dbms_stats.gather_table_stats(null,'customers');
+
+As with the example using the ORDERED hint, you have the same control to specify the join order of the query. The difference with the LEADING hint is that you specify the join order from within the hint itself, while with the ORDERED hint, it is specified in the FROM clause of the query.
+
+SELECT /*+ ordered */ ename, deptno FROM emp JOIN dept USING(deptno);
+
+SELECT /*+ leading(dept, emp) */ ename, deptno FROM emp JOIN dept USING(deptno);
+
+Executing SQL in Parallel
+
+Parallelism can help improve performance on particular operations simply by assigning multiple resources to a task. Parallelism is best used on systems with multiple CPUs, as the multiple processes used (that is, the parallel processes) will use those extra CPU resources to more quickly complete a given task.
+
+In order to use parallelism properly, there are several important factors to understand:
+• The number of CPUs on your system
+• Proper configuration of the related initialization parameters
+• The key SQL statements that you want to tune for parallelization
+• The degree of parallelism (DOP) configured on your database
+• The actual performance vs. expected performance of targeted SQL operations
+
+Enabling Parallelism for a Specific Query
+
+There are two distinct types of hints to place in your SQL to try to speed up your query by using multiple processes, or parallelism. One type of hint is for data retrieval itself, and the other is to help speed the process of reading the indexes on a table.
+
+SELECT/*+ parallel(e,4) */ empno, ename FROM emp e;
+SELECT/*+ parallel(e) */ empno, ename FROM emp e;
+
+SELECT /*+ parallel_index(emp, emp_i4 ,4) */ empno, ename
+FROM emp
+WHERE deptno = 10;
+
+Enabling Parallelism at Object Creation
+
+For a new table, if you are expecting to have consistent queries that can take advantage of multiple processes, it may be easier to set a fixed DOP on your object, rather than having to place hints in your SQL, or let Oracle set the DOP for you.
+
+CREATE TABLE EMP
+(
+EMPNO NUMBER(4) CONSTRAINT PK_EMP PRIMARY KEY,
+ENAME VARCHAR2(10),
+JOB VARCHAR2(9),
+MGR NUMBER(4),HIREDATE DATE,
+SAL NUMBER(7,2),
+COMM NUMBER(7,2),
+DEPTNO NUMBER(2) CONSTRAINT FK_DEPTNO REFERENCES DEPT
+)
+PARALLEL(DEGREE 4);
+
+CREATE INDEX EMP_I1
+ON EMP (HIREDATE)
+LOCAL
+PARALLEL(DEGREE 4);
+
+ALTER TABLE EMP
+PARALLEL(DEGREE 4);
+
+If, after a time, you wish to reset the DOP on your table, you can also do that with the ALTER statement. See the following two examples on how to reset the DOP for a table:
+ALTER TABLE EMP PARALLEL(DEGREE 1);
+ALTER TABLE EMP NOPARALLEL;
+
+Implementing Parallel DML
+
+Parallel DML is disabled by default on a database, and must be explicitly enabled with the following statement:
+ALTER SESSION ENABLE PARALLEL DML;
+
+Parallel DML operations will occur only under certain conditions:
+• Hints are specified in a DML statement.
+• Tables with a parallel attribute are part of a DML statement.
+• The DML operations meet the appropriate rules for a statement to run in parallel.
+
+You may desire, in certain circumstances, to force parallel behavior, regardless of the parallel degree you have placed on an object, or regardless of any hints you’ve placed in your DML. So, alternatively, you can force parallel DML with the following statement:
+ALTER SESSION FORCE PARALLEL DML;
+
+INSERT /*+ PARALLEL(DEPT,4) */ INTO DEPT
+SELECT /*+ PARALLEL(DEPT_COPY,4) */ * FROM DEPT_COPY;
+
+A very important thing to remember is that even if parallelism is in effect for your DML statement, it does not directly impact any parallelism on a related query within the same statement. For instance, the following statement’s DML operation can run in parallel, but the corresponding SELECT statement will run in serial mode, as no parallelism is specified on the query itself.
+ALTER SESSION ENABLE PARALLEL DML;
+INSERT /*+ PARALLEL(DEPT,4) */ INTO DEPT
+SELECT * FROM DEPT_COPY;
+
+Let’s say your company was generous and decided to give everyone in the accounting department a 1% raise:
+UPDATE /*+ PARALLEL(EMP,4) */ EMP
+SET SAL = SAL*1.01
+WHERE DEPTNO=10;
+Then, after a period of months, your company decides to lay off those employees they gave raises to in accounting:
+DELETE /*+ PARALLEL(EMP,4) */ FROM EMP
+WHERE DEPTNO=10;
+
+Creating Tables in Parallel
+CREATE TABLE EMP_COPY
+PARALLEL(DEGREE 4)
+AS
+SELECT * FROM EMP;
+
+Since DDL operations cannot be rolled back, undo is not generated for these operations, and it is simply a more efficient operation.
+
+delete /*+ parallel(emp,4) */ from emp
+where empno > 1000000
+SQL> /
+234568 rows deleted.
+Elapsed: 00:00:09.94
+
+create table emp_ctas_new2
+parallel(degree 4)
+nologging
+as select /*+ parallel(a,4) */ * from emp_ctas
+where empno <= 1000000
+SQL> /
+Elapsed: 00:00:01.70
+
+One potential drawback of creating tables in parallel is that the space allocations for these operations may leave the table more fragmented than if you created the table serially. This is a trade-off that should be considered when creating tables in parallel. The DOP that is specified in the operation spawns that number of parallel threads, and one extent is allocated for each thread.
+
+Creating Indexes in Parallel
+
+CREATE INDEX EMP_COPY_I1
+ON EMP_COPY (HIREDATE)
+PARALLEL(DEGREE 4);
+
+Then, after the index has been created, we can choose to reset the DOP to a different value for use by queries, using either of the following examples:
+ALTER INDEX EMP_COPY_I1 NOPARALLEL;
+ALTER INDEX EMP_COPY_I1 PARALLEL(DEGREE 1);
+
+ALTER INDEX EMP_COPY_I1
+REBUILD
+PARALLEL(DEGREE 4);
+
+ALTER TABLE EMP
+MOVE PARTITION P2
+TABLESPACE EMP_S
+PARALLEL(DEGREE 4);
+
+---------------
+Analyzing Operating System Performance
+
+Detecting Disk Space Issues
+You log on to the database server, attempt to connect to SQL*Plus, and receive this error:
+
+ORA-09817: Write to audit file failed.
+Linux Error: 28: No space left on device
+Additional information: 12
+
+You want to quickly determine if a mount point is full and where the largest files are within this mount point.
+
+df –h
+Here is some sample output:
+Filesystem Size Used Avail Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00
+29G 28G 0 100% /
+/dev/sda1 99M 19M 75M 20% /boot
+
+The prior output indicates that the root (/) file system is full on this server.
+Then use the find command to locate the largest files contained in a directory structure.
+
+$ cd $ORACLE_HOME
+$ find . -ls | sort -nrk7 | head -10
+
+When working with production database servers, it’s highly desirable to proactively monitor disk space so that you’re warned about a mount point becoming full. Listed next is a simple shell script that monitors disk space for a given set of mount points:
+#!/bin/bash
+mntlist="/orahome /oraredo1 /oraarch1 /ora01 /oradump01 /"
+for ml in $mntlist
+do
+echo $ml
+usedSpc=$(df -h $ml | awk '{print $5}' | grep -v capacity | cut -d "%" -f1 -)
+BOX=$(uname -a | awk '{print $2}')
+#
+case $usedSpc in
+[0-9])
+arcStat="relax, lots of disk space: $usedSpc"
+;;
+[1-7][0-9])
+arcStat="disk space okay: $usedSpc"
+189
+;;
+[8][0-9])
+arcStat="space getting low: $usedSpc"
+;;
+[9][0-9])
+arcStat="warning, running out of space: $usedSpc"
+echo $arcStat $ml | mailx -s "space on: $BOX" dkuhn@oracle.com
+;;
+[1][0][0])
+arcStat="update resume, no space left: $usedSpc"
+echo $arcStat $ml | mailx -s "space on: $BOX" dkuhn@oracle.com
+;;
+*)
+arcStat="huh?: $usedSpc"
+esac
+#
+BOX=$(uname -a | awk '{print $2}')
+echo $arcStat
+#
+done
+#
+exit 0
+
+Identifying System Bottlenecks (vmstat)
+
+The following command reports on system resource usage every five seconds on a Linux system:
+$ vmstat 5
+
+procs -----------memory---------- ---swap-- -----io---- --system-- -----cpu------
+r b swpd free buff cache si so bi bo in cs us sy id wa st
+2 0 228816 2036164 78604 3163452 0 0 1 16 0 0 29 0 70 0 0
+2 0 228816 2035792 78612 3163456 0 0 0 59 398 528 50 1 49 0 0
+2 0 228816 2035172 78620 3163448 0 0 0 39 437 561 50 1 49 0 0
+
+For example, this instructs vmstat to run every six seconds for a total of ten reports:
+$ vmstat 6 10
+
+Here are some general heuristics you can use when interpreting the output of vmstat:
+• If the wa (time waiting for I/O) column is high, this is usually an indication that the storage subsystem is overloaded. 
+• If b (processes sleeping) is consistently greater than 0, then you may not  enough CPU processing power. 
+• If so (memory swapped out to disk) and si (memory swapped in from disk) are consistently greater than 0, you may have a memory bottleneck. 
+
+Descriptions of vmstat Output Columns
+Column Description
+r Number of processes waiting for run time
+b Number of processes in uninterruptible sleep
+swpd Amount of virtual memory
+free Amount of idle memory
+buff Amount of buffer memory
+cache Amount of cache memory
+inact Amount of inactive memory (-a option)
+active Amount of active memory (-a option)
+si Amount of memory swapped from disk/second
+so Amount of memory swapped to disk/second
+bi Blocks read/second from disk
+bo Blocks written/second to disk
+in Number of interrupts/seconds
+cs Number of context switches/second
+us CPU time running non-kernel code
+sy CPU time running kernel code
+Id CPU time idle
+wa CPU time waiting for I/O
+st CPU time taken from virtual machine
+
+Identifying System Bottlenecks (Solaris)
+
+If you’re working on a Solaris server, the top utility is oftentimes not installed. In these environments, the prstat command can be used to determine top resource-consuming processes on the system
+
+prstat 5
+Here is some sample output:
+PID USERNAME SIZE RSS STATE PRI NICE TIME CPU PROCESS/NLWP
+16609 oracle 2364M 1443M cpu2 60 0 3:14:45 20% oracle/11
+27565 oracle 2367M 1590M cpu3 21 0 0:11:28 16% oracle/14
+23632 oracle 2284M 1506M run 46 2 0:16:18 6.1% oracle/11
+4066 oracle 2270M 1492M sleep 59 0 0:02:52 1.7% oracle/35
+15630 oracle 2274M 1482M sleep 48 0 19:40:41 1.2% oracle/11
+
+Type q or press Ctrl+C to exit prstat.
+
+This example reports on process information associated with the PID of 16609:
+$ ps -ef | grep 16609
+oracle 16609 3021 18 Mar 09 ? 196:29 ora_dw00_ENGDEV
+In this example, the name of the process is ora_dw00_ENGDEV and the associated database is ENGDEV
+
+Identifying Top Server-Consuming Resources (top)
+top - 04:40:05 up 353 days, 15:16, 3 users, load average: 2.84, 2.34, 2.45
+Tasks: 454 total, 4 running, 450 sleeping, 0 stopped, 0 zombie
+Cpu(s): 64.3%us, 3.4%sy, 0.0%ni, 20.6%id, 11.8%wa, 0.0%hi, 0.0%si, 0.0%st
+Mem: 7645184k total, 6382956k used, 1262228k free, 176480k buffers
+Swap: 4128760k total, 184k used, 4128576k free, 3953512k cached
+PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND
+19888 oracle 25 0 148m 13m 11m R 100.1 0.2 313371:45 oracle
+19853 oracle 25 0 148m 13m 11m R 99.8 0.2 313375:41 oracle
+9722 oracle 18 0 1095m 287m 150m R 58.6 3.8 0:41.89 oracle
+445 root 11 -5 0 0 0 S 0.3 0.0 8:32.67 kjournald
+9667 oracle 15 0 954m 55m 50m S 0.3 0.7 0:01.03 oracle
+2 root RT -5 0 0 0 S 0.0 0.0 2:17.99 migration/0
+Type q or press Ctrl+C to exit top. In the prior output, the first section of the output displays general system information such as how long the server has been running, number of users, CPU information, and so on. The second section shows which processes are consuming the most CPU resources (listed top to bottom). In the prior output, the process ID of 19888 is consuming a large amount of CPU. To determine which database this process is associated with, use the ps command:
+
+
+Identifying CPU and Memory Bottlenecks (ps)
+
+This command displays the top ten CPU-consuming resources on the box:
+
+$ ps -e -o pcpu,pid,user,tty,args | sort -n -k 1 -r | head
+
+Similarly, you can also display the top memory-consuming processes:
+
+$ ps -e -o pmem,pid,user,tty,args | sort -n -k 1 -r | head
+
+Identifying I/O Bottlenecks
+
+$ iostat –xd 10
+You need a fairly wide screen to view this output; here’s a partial listing:
+Device: rrqm/s wrqm/s r/s w/s rsec/s wsec/s rkB/s wkB/s avgrq-sz
+avgqu-sz await svctm %util
+sda 0.01 3.31 0.11 0.31 5.32 28.97 2.66 14.49 83.13
+0.06 138.44 1.89 0.08
+
+here are some general guidelines when examining the iostat output:
+• Look for devices with abnormally high blocks read or written per second.
+• If any device is near 100% utilization, that’s a strong indicator I/O is a bottleneck.
+
+Identifying Network-Intensive Processes
+
+$ netstat -ptc
+Press Ctrl+C to exit the previous command. Here’s a partial listing of the output:
+(Not all processes could be identified, non-owned process info
+will not be shown, you would have to be root to see it all.)
+Active Internet connections (w/o servers)
+Proto Recv-Q Send-Q Local Address Foreign Address State PID/Program name
+tcp 0 0 rmug.com:62386 rmug.com:1521 ESTABLISHED 22864/ora_pmon_RMDB
+tcp 0 0 rmug.com:53930 rmug.com:1521 ESTABLISHED 6091/sqlplus
+tcp 0 0 rmug.com:1521 rmug.com:53930 ESTABLISHED 6093/oracleRMDB1
+tcp 0 0 rmug.com:1521 rmug.com:62386 ESTABLISHED 10718/tnslsnr
+
+If the Send-Q (bytes not acknowledged by remote host) column has an unusually high value for a process, this may indicate an overloaded network. The useful aspect about the previous output is that you can determine the operating system process ID (PID) associated with a network connection.
+
+Troubleshooting Database Network Connectivity
+
+1. Use the operating system ping utility to determine whether the remote box is accessible—for example:
+$ ping dwdb
+dwdb is alive
+If ping doesn’t work, work with your system or network administrator to ensure you have server-to-server connectivity in place.
+
+2. Use telnet to see if you can connect to the remote server and port (that the
+listener is listening on)—for example:
+$ telnet ora03 1521
+Trying 127.0.0.1...
+Connected to ora03.
+Escape character is '^]'.
+
+The prior output indicates that connectivity to a server and port is okay. If the prior command hangs, then contact your SA or network administrator for further assistance.
+
+3. Use tnsping to determine whether Oracle Net is working. This utility will  that an Oracle Net connection can be made to a database via the network—for example:
+$ tnsping dwrep
+..........
+Used TNSNAMES adapter to resolve the alias
+Attempting to contact (DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)
+(HOST = dwdb1.us.farm.com)(PORT = 1521))
+(CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = DWREP)))
+OK (500 msec)
+
+If tnsping can’t contact the remote database, verify that the remote listener and database are both up and running. On the remote box, use the lsnrctl status command to verify that the listener is up. Verify that the remote database is available by establishing a local connection as a non-SYS account (SYS can often connect to a troubled database when other schemas will not work).
+
+4. Verify that the TNS information is correct. If the remote listener and database are working, then ensure that the mechanism for determining TNS information (like the tnsnames.ora file) contains the correct information. Sometimes the client machine will have multiple TNS_ADMIN locations and
+tnsnames.ora files. One way to verify whether a particular tnsnames.ora file is being used is to rename it and see whether you get a different error when attempting to connect to the remote database.
+
+Mapping a Resource-Intensive Process to a Database Process
+
+SELECT
+'USERNAME : ' || s.username || CHR(10) ||
+'SCHEMA : ' || s.schemaname || CHR(10) ||
+'OSUSER : ' || s.osuser || CHR(10) ||
+'PROGRAM : ' || s.program || CHR(10) ||
+'SPID : ' || p.spid || CHR(10) ||
+'SID : ' || s.sid || CHR(10) ||
+'SERIAL# : ' || s.serial# || CHR(10) ||
+'KILL STRING: ' || '''' || s.sid || ',' || s.serial# || '''' || CHR(10) ||
+'MACHINE : ' || s.machine || CHR(10) ||
+'TYPE : ' || s.type || CHR(10) ||
+'TERMINAL : ' || s.terminal || CHR(10) ||
+'SQL ID : ' || q.sql_id || CHR(10) ||
+'SQL TEXT : ' || q.sql_text
+FROM v$session s
+,v$process p
+,v$sql q
+WHERE s.paddr = p.addr
+AND p.spid = '&&PID_FROM_OS'
+AND s.sql_id = q.sql_id(+);
+
+SELECT * FROM table(DBMS_XPLAN.DISPLAY_CURSOR(('&&sql_id')));
+
+Terminating a Resource-Intensive Process
+alter system kill session 'integer1, integer2 [,integer3]' [immediate];
+In the prior syntax statement, integer1 is the value of the SID column and integer2 is the value from the SERIAL# column (of V$SESSION). In a RAC environment, you can optionally specify the value of the instance ID for integer3. The instance ID can be retrieved from the GV$SESSION view.
+
+Troubleshooting the Database
+
+
+Resolving the “Unable to Extend Temp Segment” Error
+
+ORA-01652: unable to extend temp segment by 1024 in tablespace INDX_01
+your first inclination may be to think that there’s no free space in the temporary tablespace. In this case, the offending tablespace is INDX_01, and not the TEMP tablespace. Obviously, an index creation process failed because there was insufficient space in the INDX_01 tablespace. You can fix the problem by adding a datafile to the INDX_01 tablespace,
+
+When you create an index, as in this case, you provide the name of the permanent tablespace in which the database must create the new index. Oracle
+starts the creation of the new index by putting the new index structure into a temporary segment in the tablespace you specify (INDX_01 in our example) for the index. The reason is that if your index creation process fails, Oracle (to be more specific, the SMON process) will remove the temporary segment from the tablespace you specified for creating the new index. Once the index is successfully created (or rebuilt), Oracle converts the temporary segment into a permanent segment within the INDX_01 tablespace. However, as long as Oracle is still creating the index, the database deems it a temporary segment and thus when an index creation fails,
+

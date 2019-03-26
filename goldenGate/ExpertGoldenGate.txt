@@ -1,0 +1,726 @@
+What are the software releases for the database and operating system? 
+Are the servers stand-alone or clustered? 
+How is the data storage configured? 
+What are the character sets for the source and target databases?
+
+How quickly and how often does the data need to be updated?
+Can any lag in the data replication be tolerated? 
+If no lag can be tolerated and there is a high volume of changes, you may need to devote more time in the project to designing and tuning the replication to avoid any lag.
+
+How much data needs to be replicated? How often is it updated?
+You may be able to examine the existing database-transaction log files to determine the amount of data change that is occurring in the source database. The data-change volume will impact the network bandwidth requirements between the source and target and the amount of disk space required for trail files.
+
+You should understand any unique or special data requirements so they can be handled properly in GoldenGate.(Triggers, Sequences, BFILE) Be sure to check the GoldenGate product documentation for a list of data types supported.
+
+How much security is required for the replication? For example, is it necessary to encrypt the data that GoldenGate is replicating?
+
+Describe the network between the source and the target? Are there any firewalls that need to be opened for the replication? What is the distance between the source and target? How much bandwidth is required to handle the data volume, and how much is available?
+
+SQL> ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+
+SQL> SELECT SUPPLEMENTAL_LOG_DATA_MIN FROM V$DATABASE;
+
+GGSCI (sourceserver) 1> dblogin userid gger password userpw 
+Successfully logged into database.
+
+ADD SCHEMATRANDATA finance
+Enable table-level supplemental logging on the source system in the following cases : when not using schema-level logging, To prevent the logging of the primary key for any given table., To log non-key column values at the table level to support specific Oracle GoldenGate features such as filtering.
+
+ADD TRANDATA [container.]schema.table [, COLS (columns)] [, NOKEY] [, ALLCOLS | NOSCHEDULINGCOLS]
+
+To enable Oracle GoldenGate, set the following database initialization parameter. All instances in Oracle RAC must have the same setting.
+
+ENABLE_GOLDENGATE_REPLICATION=true
+
+GGSCI (sourceserver) 2> add trandata hr.employees
+Logging of supplemental redo data enabled for table HR.EMPLOYEES.
+
+spool &&SCHEMA..add_trandata.obey
+select 'add trandata &SCHEMA..'||table_name
+from dba_tables where owner = '&SCHEMA' ;
+spool off
+
+GGSCI (sourceserver) 1> dblogin userid gger password userpw
+Successfully logged into database.
+GGSCI (sourceserver) 2> obey diroby/HR.add_trandata.obey
+
+It’s good practice that when the ADD TRANDATA commands complete, you should verify in SQLPLUS that the supplemental logging has been successfully enabled.
+
+SQL> select owner, log_group_name, table_name
+from dba_log_groups where owner = 'HR';
+
+
+Disabling Triggers and Cascade-Delete Constraints
+
+Starting with GoldenGate version 11, a new SUPPRESSTRIGGERS option is available as part of the Replicat DBOPTIONS parameter, to automatically suppress the triggers from firing on the target.
+
+To disable constraints, if you have Oracle 9.2.0.7 database and later, you can use the Replicat parameter DBOPTIONS with the DEFERREFCONST option to delay checking and enforcement of integrity constraints until the Replicat transaction commits.
+
+Many of the GoldenGate commands have abbreviations to save time and keystrokes. For example, instead of the command INFO MANAGER, you can abbreviate it as INFO MGR. The REPLICAT keyword can be abbreviated as REP and EXTRACT can be abbreviated as EXT.
+
+
+LHREMD1. Let’s review how you arrive at that Extract name. The L specifies it’s the Local Extract. HREM specifies that you’re using this Extract group for the human resources employee application in the HR schema. The D signifies that you’re running in the development environment. And finally, the 1 indicates this is the first Extract group for this schema and application.
+
+To connect to SQL Server, you can use the SOURCEDB parameter with the USERID option, as shown in the following example:
+SOURCEDB sqlserver, userid sa, PASSWORD userpw
+
+Tip The order of the Extract parameters listed is important. For example, the EXTRACT parameter must be the first entry in the parameter file, and the EXTTRAIL parameter must precede any associated TABLE statements.
+
+GGSCI (sourceserver) 1> edit params LHREMD1
+GGSCI (sourceserver) > ADD EXTRACT LHREMD1, TRANLOG, BEGIN NOW
+GGSCI (sourceserver) > ADD EXTTRAIL dirdat/l1, EXTRACT LHREMD1, MEGABYTES 100
+
+The first command, ADD EXTRACT, adds the Extract using the configuration parameters defined.
+After the Extract is added, it establishes checkpoints in the source trail file and on the database transaction log to keep track of processing. The TRANLOG parameter of the ADD EXTRACT command tells GoldenGate to use the database transaction log as its source.
+BEGIN NOW tells Extract to begin processing changes from the source database as soon as the Extract is started.
+
+The ADD EXTTRAIL command adds the local Extract trail file, assigns it to Extract LHREMD1, and gives it a size of 100MB. The default size of trail files is 10MB. You should size the trail files sufficiently large enough based on the transaction volume so that GoldenGate isn’t creating new trail files too often and slowing performance.
+
+Tip - You should store your commands such as ADD EXTRACT in an obey file in the diroby directory. You can execute these from the GGSCI command prompt using the obey filename command. This is good practice because the commands are readily available as a future reference or if you need to re-execute the commands at some point.
+
+GGSCI (sourceserver) > START EXTRACT LHREMD1
+
+GGSCI (sourceserver) 2> info extract LHREMD1
+
+EXTRACT LHREMD1 Last Started 2011-01-15 13:53 Status RUNNING
+Checkpoint Lag 00:00:00 (updated 00:00:08 ago)
+Log Read Checkpoint Oracle Redo Logs
+2011-01-17 22:55:08 Seqno 3261, RBA 7135232
+
+
+You can review the GoldenGate error log file named ggserr.log and is located in the GoldenGate software installation directory location.
+
+Checkpoint lag is the time delay between the last checkpoint written to the trail and the time when the record was processed by GoldenGate. If you had a high checkpoint lag, it could indicate a performance problem or perhaps the local Extract just catching up on a large volume of changes. You can also see that Oracle redo logs are the source for the Extract, the last read checkpoint time, the transaction log sequence number, and the relative byte address (RBA) of the record in the transaction log.
+
+You can add the DETAIL option to the INFO command to see even more information about the Extract. You may find the detail display helpful to see where the important files for the Extract are located, such as the parameter and report files. The following example uses the INFO command to display details about the LHREMD1 Local  Extract”
+
+GGSCI (sourceserver) 3> info ext LHREMD1, detail
+
+You can run the stats command on your Extract. This shows whether the Extract has actually processed any DML changes.
+
+GGSCI (sourceserver) 2> stats ext LHREMD1
+
+Sending STATS request to EXTRACT LHREMD1 ...
+Start of Statistics at 2011-01-18 18:50:38.
+Output to /gger/ggs/dirdat/l1:
+Extracting from HR.EMPLOYEES to HR.EMPLOYEES:
+*** Total statistics since 2011-01-15 13:54:52 ***
+Total inserts 4.00
+Total updates 0.00
+Total deletes 2.00
+Total discards 0.00
+Total operations
+
+
+Starting the Data Pump
+The data pump is another type of GoldenGate Extract process.
+
+Tip- You don’t specify a SETENV in the data pump. SETENV for NLS_LANG isn’t needed for the data-pump Extract because it has no effect. It should be specified in the Local Extract and Replicat parameters.
+
+GGSCI (sourceserver) 1> edit params PHREMD1
+Extract PHREMD1
+-------------------------------------------------------------------
+-- Data Pump extract for HR schema
+-------------------------------------------------------------------
+PassThru
+RmtHost targetserver, MgrPort 7840
+RmtTrail dirdat/l2
+Table HR.* ;
+
+PASSTHRU - if you aren’t doing any filtering or column mapping and your source and target data structures are identical.
+
+Adding the Data Pump
+
+GGSCI (sourceserver) > ADD EXTRACT PHREMD1, EXTTRAILSOURCE dirdat/l1
+GGSCI (sourceserver) > ADD RMTTRAIL dirdat/l2, EXTRACT PHREMD1, MEGABYTES 100
+
+GGSCI (targetserver) > VIEW REPORT DHREMD1
+
+In some cases, you may run into errors with duplicate or missing data caused by the ongoing changes made during the initial-load process. For example, if a row was updated and then deleted during the initial load, GoldenGate may try to apply the update to the missing row that was never loaded. You can make GoldenGate try to resolve these errors automatically by adding the HANDLECOLLISIONS parameter to the Replicat.
+
+HANDLECOLLISIONS does the following when processing changes:
+• Updates to rows that are missing are ignored.
+• Deletes to rows that are missing are ignored.
+• Inserts that are duplicated are changed to updates.
+
+You should turn off HANDLECOLLISIONS as soon as possible after GoldenGate has completed processing past the point of the initial data load or past the problem situation. You can do this by 
+removing the HANDLECOLLISIONS parameter and restarting the Replicat. 
+Another way to turn off HANDLECOLLISIONS is to use the SEND command and remove the HANDLECOLLISIONS parameter from parameter file so you don’t inadvertently turn it on again the next time the Replicat is restarted.
+
+GGSCI (targetserver)> send replicat RHREMD1 NOHANDLECOLLISIONS HR.*
+Sending NOHANDLECOLLISIONS request to REPLICAT RHREMD1 ...
+RHREMD1 NOHANDLECOLLISIONS set for 1 tables and 1 wildcard entries
+
+You can see if the Replicat encountered any collisions by using the STATS REPLICAT command. It shows you if there were any collisions and how many for each type of DML statement.
+
+
+INFO command on the Replicat RHREMD1 to check the status:
+GGSCI (targetserver) 2> info replicat RHREMD1
+REPLICAT RHREMD1 Last Started 2011-01-22 22:40 Status RUNNING
+Checkpoint Lag 00:00:00 (updated 00:00:09 ago)
+Log Read Checkpoint File dirdat/l2000003
+2011-01-20 14:04:28.998416 RBA 3695
+
+You can see that trail file l2000003 is the source for your Replicat, the last log-read checkpoint time, and the RBA of the record in the trail file. GoldenGate also refers to the trail-file number as the external sequence number (EXTSEQNO). In this case, EXTSEQNO is 3. You can start the GoldenGate Replicat processing at a specific EXTSEQNO if needed.
+
+GGSCI (targetserver) 2> stats rep RHREMD1
+Sending STATS request to REPLICAT RHREMD1 ...
+Start of Statistics at 2011-01-18 18:50:38.
+Replicating from HR.EMPLOYEES to HR.EMPLOYEES:
+*** Total statistics since 2011-01-15 13:54:52 ***
+Total inserts 4.00
+Total updates 0.00
+Total deletes 2.00
+Total discards 0.00
+Total operations 6.00
+Total insert collisions 2.00
+
+----------C H A P T E R 5 Advanced Features
+
+Enhancing Extract and Replicat Reporting
+
+
+***********************************************************************
+Oracle GoldenGate Delivery for Oracle
+Version 11.1.1.0.0 Build 078
+Linux, x64, 64bit (optimized), Oracle 10 on Jul 28 2010 15:58:11
+Copyright (C) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+Starting at 2011-01-28 23:19:11
+***********************************************************************
+Operating System Version:
+Linux
+Version #1 SMP Tue Jan 23 12:49:51 EST 2007, Release 2.6.9-42.0.8.ELsmp
+Node: targetserver
+Machine: x86_64
+soft limit hard limit
+Address Space Size : unlimited unlimited
+Heap Size : unlimited unlimited
+File Size : unlimited unlimited
+CPU Time : unlimited unlimited
+Process id: 15874
+
+Description:
+***********************************************************************
+** Running with the following parameters **
+***********************************************************************
+Replicat RHREMD1
+-------------------------------------------------------------------
+-- Replicat for HR Schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.AL32UTF8)
+USERID GGER@TargetDB, PASSWORD userpw
+HandleCollisions
+AssumeTargetDefs
+Map HR.*, Target HR.* ;
+CACHEMGR virtual memory values (may have been adjusted)
+CACHEBUFFERSIZE: 64K
+CACHESIZE: 512M
+CACHEBUFFERSIZE (soft max): 4M
+CACHEPAGEOUTSIZE (normal): 4M
+PROCESS VM AVAIL FROM OS (min): 1G
+CACHESIZEMAX (strict force to disk): 881M
+Database Version:
+Oracle Database 10g Enterprise Edition Release 10.2.0.4.0 - 64bi
+PL/SQL Release 10.2.0.4.0 - Production
+CORE 10.2.0.4.0 Production
+TNS for Linux: Version 10.2.0.4.0 - Production
+NLSRTL Version 10.2.0.4.0 - Production
+Database Language and Character Set:
+NLS_LANG = "AMERICAN_AMERICA.AL32UTF8"
+NLS_LANGUAGE = "AMERICAN"
+NLS_TERRITORY = "AMERICA"
+NLS_CHARACTERSET = "AL32UTF8"
+For further information on character set settings, please refer to user manual.
+***********************************************************************
+** Run Time Messages **
+***********************************************************************
+Opened trail file dirdat/l2000006 at 2011-01-28 23:19:11
+
+Switching to next trail file dirdat/l2000007 at 2011-01-28 23:20:02 due
+to EOF, with current RBA 1281
+Opened trail file dirdat/l2000007 at 2011-01-28 23:20:02
+Processed extract process graceful restart record at seq 7, rba 1191.
+Processed extract process graceful restart record at seq 7, rba 1253.
+
+In addition to the standard reports, you can add parameters to instruct the Extract or Replicat to periodically add more information to the reports. As shown in the example, add the following parameters to your Extracts and Replicats to enhance the default reporting:
+
+ReportCount Every 30 Minutes, Rate
+Report at 01:00
+ReportRollover at 01:15
+The following sections look at each of these parameters in more detail.
+
+REPORTCOUNT parameter to have the Extract or Replicat automatically add a count of the records GoldenGate has processed since startup. In the example, you request a record count every 30 minutes. Here is an example of what the reporting output looks like:
+1000 records processed as of 2010-01-28 11:30:40 (rate 154,delta 215)
+
+Since the Extract process started, it has processed 1,000 records as of the time displayed (11:30:40). You also asked for RATE information to be printed in the report. The rate calculations are as follows:
+Rate = # of records processed since startup / total time since startup
+Delta = # of records since last report / time since last report
+
+In the example, the processing rate is 154 and the delta is 215. The delta is higher, which indicates that you’re processing more records in the latest reporting period. You can compare the rate over time to see if it changes. Changes in rate could be due to more or less processing volume or perhaps performance issues with your Extract or Replicat or even the database itself.
+
+C H A P T E R 8 - Monitoring Oracle GoldenGate
+----------------------------------------------
+
+The info all GGSCI prompt command gives you a good indicator of GoldenGate’s overall health. As shown here, Lag should be 0 and the Time Since Chkpt should be less than 10 seconds on normal operations.
+
+
+GGSCI 28> info all
+
+To understand the current status of the Extract, you can add detail to the info GGSIC command as
+follows:
+GGSCI> Info extract extggs1, detail
+EXTRACT EXTGGS1 Last Started 2011-04-09 22:36 Status RUNNING
+Checkpoint Lag 00:00:00 (updated 00:00:02 ago)
+Log Read Checkpoint Oracle Redo Logs
+2011-04-10 00:16:47 Seqno 175, RBA 36263936
+Target Extract Trails:
+Remote Trail Name Seqno RBA Max MB
+C:\ggs\dirdat\C1 9 2964 5
+Extract Source Begin End
+C:\APP\ORADATA\ORCL\REDO01.LOG 2011-04-09 22:02 2011-04-10 00:16
+C:\APP\ORADATA\ORCL\REDO03.LOG 2011-04-09 20:14 2011-04-09 22:02
+C:\APP\ORADATA\ORCL\REDO01.LOG * Initialized * 2011-04-09 20:14
+Current directory C:\ggs
+Report file C:\ggs\dirrpt\EXTGGS1.rpt
+Parameter file C:\ggs\dirprm\EXTGGS1.prm
+Checkpoint file C:\ggs\dirchk\EXTGGS1.cpe
+Process file C:\ggs\dirpcs\EXTGGS1.pce
+Error log C:\ggs\ggserr.log
+
+According to these results, Golden Gate is reading the redo log seqno 175. In RAC, you see the sequence number for each node. Seqno 9 is the remote trail file sequence number. The send command gives you similar information about the source and target seqnos:
+
+GGSCI 32> Send extract extggs1 status
+Sending STATUS request to EXTRACT EXTGGS1 ...
+EXTRACT EXTGGS1 (PID 7220)
+Current status: Recovery complete: At EOF
+Current read position:
+Sequence #: 175
+RBA: 36263936
+Timestamp: 2011-04-10 00:27:47.000000
+Current write position:
+Sequence #: 9
+RBA: 2964
+Timestamp: 2011-04-10 00:27:53.063000
+Extract Trail: C:\ggs\dirdat\C1
+Checking the Current Oracle Online Redo Log
+As we know from previous section that extract EXTGGS1 is reading the sequence# 175, and we would like to know if the sequence# 175 is the most current or not.
+
+SELECT
+A.MEMBER,
+B.SEQUENCE#,
+B.STATUS,
+B.FIRST_CHANGE#,
+B.NEXT_CHANGE#,
+B.ARCHIVED
+FROM V$LOGFILE A, V$LOG B
+WHERE A.GROUP# = B.GROUP#
+
+MEMBER SEQUENCE# STATUS FIRST_CHANGE# NEXT_CHANGE#
+C:\ORCL\REDO03.LOG 174 INACTIVE 6591047 6621440
+C:\ORCL\REDO02.LOG 173 INACTIVE 6560323 6591047
+C:\ORCL\REDO01.LOG 175 URRENT 6621440
+281474976710655
+
+
+first_change# and next_change# are the Oracle SCN numbers. The current redo log sequence# is 175. EXTGGS1 is also on sequence number 175. Both sequence# are 175 and they are in sync.
+
+You can check which archived log it’s reading as follows:
+
+SELECT SEQUENCE#,
+NAME,
+FIRST_CHANGE#,
+NEXT_CHANGE#
+FROM V$ARCHIVED_LOG
+
+Monitoring the GoldenGate Rate and Redo Log Consumption Rate
+By default, the stats command lists all the tables that have transactions. You can limit the display using totalsonly, by table, and reportrate. You can also reset the stats.
+GGSCI 30> stats extggs1
+Sending STATS request to EXTRACT EXTGGS1 ...
+Start of Statistics at 2011-04-10 00:05:46.
+Output to C:\ggs\dirdat\C1:
+Extracting from GGS.SOURCE_TABLE to GGS.SOURCE_TABLE:
+*** Total statistics since 2011-04-09 22:36:18 ***
+Total inserts 0.00
+Total updates 12.00
+Total deletes 0.00
+Total discards 0.00
+Total operations 12.00
+*** Daily statistics since 2011-04-10 00:00:00 ***
+No database operations have been performed.
+*** Hourly statistics since 2011-04-10 00:00:00 ***
+No database operations have been performed.
+
+
+*** Latest statistics since 2011-04-09 22:36:18 ***
+Total inserts 0.00
+Total updates 12.00
+Total deletes 0.00
+Total discards 0.00
+Total operations 12.00
+End of Statistics.
+
+If you execute the following commands, they should give a similar number of operations if there is no special filter in the mappings:
+
+On Source:
+
+GGSCI> stats dpggs1 totalsonly *
+GGSCI> stats extggs1 totalsonly *
+
+On Target
+
+GGSCI> stats repggs1 totalsonly *
+
+If you see different numbers of operations, then there may be data lost or filtered in the process. For example, in one-way replication, all the stats from the Extract and Replicate side should match.
+
+
+Monitoring Lags for Each Group
+There are different ways to find out the lags in the GoldenGate process.
+
+Using getlag
+The first approach uses the getlag command:
+GGSCI> lag extract extggs1
+Or
+GGSCI> send extract extggs1, getlag
+
+You get one of the three statuses:
+• “At EOF, no more records to process”: There is no lag in the Extract, data pump, or Replicat. If the data still isn’t replicating, check the trail file names or the database connection to make sure they’re set up properly.
+
+• “Waiting for data to process”: In the Extract, Extract process is waiting for the redo log. In the data pump, Extract is waiting for the Extract trail files. In the Replicat, Replicate process is waiting for the Data Pump or Extract trail files. The lag may be the network or disk I/O issues.
+
+• “Processing data”: The Extract, data pump, or Replicat is busy grinding the data. One of these processes may be the bottleneck. It’s normal if this status is temporary and goes away after a few seconds.
+
+Using Write Checkpoint
+
+The next approach uses the Write Checkpoint #n command to validate the lag:
+
+GGSCI> info extract extggs1, showch 10
+
+Write Checkpoint #1
+GGS Log Trail
+Current Checkpoint (current write position):
+Sequence #: 7
+RBA: 1411
+Timestamp: 2011-04-11 22:00:53.446000
+Extract Trail: C:\ggs\dirdat\C2
+Write Checkpoint #1
+GGS Log Trail
+Current Checkpoint (current write position):
+Sequence #: 6
+RBA: 4994
+Timestamp: 2011-04-10 22:51:25.477000
+Extract Trail: C:\ggs\dirdat\C2
+
+Execute the above command on the data pump process, and compare the Sequence#, RBA, and timestamp. If we expect the extract process to capture the data, the sequence# and RBA should increase in Extract, Data Pump and Replicat processes. If the sequence# or RBA are stuck or increased slower than other process, then that process may have lag issue.
+
+
+Using the Trail File Generation Rate
+Another approach to monitor the lag is to note the current Sequence# and file size for the Extract, data pump, and Replicat processes. 
+
+The maximum sequence# is the current trail file for the process. For examples, Extract is writing the C1000011 file, but if the Data Pump process is reading anything other than C1000011 file, then we have lag in the Data Pump process. C1000011 is connected between Extract and Data Pump processes. Whereas C200008 is connected between Data Pump and Replicat processes.
+
+
+This chapter uses c1nnnnnn for the data pump and c2nnnnnn for the Replicat (the six ns in c1 and c2 aren’t the same—each has its own sequence number).
+
+Directory of C:\ggs\dirdat
+04/12/2011 06:28 PM 994 C1000010
+04/12/2011 06:28 PM 994 C1000011
+04/12/2011 06:29 PM 1,411 C2000007
+04/12/2011 06:29 PM 1,455 C2000008
+
+The maximum Sequence# for c1 is 11 and for C2 is 8 as shown above. To confirm if the extract is writing to the current trail file without any lag, we can use the following GGSCI command:
+
+GGSCI> info extggs1, detail
+
+EXTRACT EXTGGS1 Last Started 2011-04-12 18:28 Status RUNNING
+Checkpoint Lag 00:00:00 (updated 00:00:05 ago)
+Log Read Checkpoint Oracle Redo Logs
+2011-04-12 19:13:40 Seqno 187, RBA 33210880
+Target Extract Trails:
+Remote Trail Name Seqno RBA Max MB
+C:\ggs\dirdat\C1 11 994 5
+
+The Extract is reading the redo log seqno 187. You can match with the current log sequence number from v$log. 
+
+If the current Oracle redo log seqno is 187, then there is no lag in the Extract. If it’s larger than 187, then the lag is on the source database side and the Extract can’t keep up with the redo log generation. This lag situation may be temporary—for example, during large updates. But if the lag persists, you need to tune the Extract. 
+
+Also note that the extract is writing to seqno 11 for the trail file c1. To confirm if the Data Pump is also reading the seqno 11, do the following GGSCI command:
+
+GGSCI> info dpggs1, detail
+
+EXTRACT DPGGS1 Last Started 2011-04-12 18:29 Status RUNNING
+Checkpoint Lag 00:00:00 (updated 00:00:04 ago)
+Log Read Checkpoint File c:\ggs\dirdat\c1000011
+2011-04-12 18:28:41.860000 RBA 994
+Target Extract Trails:
+Remote Trail Name Seqno RBA Max MB
+C:\ggs\dirdat\C2 8 1455 5
+
+The data pump is also reading c1000011 (seqno 11), so there is no lag. If the data dump is reading a seqno less than 11, then the data pump can’t keep up with the Extract. This may be due to a network issue, in which case you need to tune the Data Pump process. Note that the data pump is writing seqno 8 on remote trail file c2. To check the replicat is in-sync with the data dump, run the following GGSCI command:
+
+GGSCI 22> info repggs1, detail
+
+REPLICAT REPGGS1 Last Started 2011-04-12 18:28 Status RUNNING
+Checkpoint Lag 00:00:00 (updated 00:00:06 ago)
+Log Read Checkpoint File c:\ggs\dirdat\c2000008
+2011-04-12 18:28:41.860000 RBA 1455
+
+In this case, the Replicat is reading and processing seqno 8 on c2. The data pump is also writing seqno 8 on C2, so there is no lag. However, if that Replicat was reading a seqno less than 8, then there might be a database issue on the target database.
+
+Recording the Lag Status in the ggserr.log File
+
+You also can set the lag report frequency in the Manager parameter file:
+LAGINFO[MINUTES|SECONDS|HOURS], example. LAGINFOSECONDS 30
+LAGREPORT[MINUTES|HOURS], example LAGREPORTMINUTES 1
+
+The Manager reports the lag information to the ggserr.log file every 30 seconds, and it checks the lag every minute. Check ggserr for the lag reports.
+
+Viewing Event and Error Logs
+The view reports <group_name> command shows the most recent errors and events occurring to groups:
+
+GGSCI > view report extggs1
+GGSCI > view report mgr
+GGSCI > view report repggs1
+
+The detailed history is in ggserr.log. GoldenGate also logs errors in /var/log/messages and to the Event Log in Windows.
+
+C H A P T E R 7 - Tuning
+-------------------------
+
+Defining the Performance Requirements
+
+The replication lag must be less than 1 minute at least 80 percent of the time. If the replication lag exceeds 1 minute, a warning should be issued and the replication
+should be closely monitored. If the replication lag exceeds 5 minutes, a critical alert should be issued and the problem needs to be addressed immediately.
+
+Creating a Performance Baseline
+
+Implementing Parallel Extracts and Replicats with Table Filtering
+
+Note - When splitting GoldenGate processing groups, remember to keep tables related by SQL referential integrity constraints together in the same GoldenGate process groups.
+
+
+Edit the existing data-pump Extract parameter file PHREMD1 to add the table filtering:
+GGSCI (sourceserver) 1> edit params PHREMD1
+GGSCI (sourceserver) 1> edit params PHREMD2
+Edit the existing Replicat parameter file RHREMD1 to add the table filtering:
+Add the parameter file for the new Replicat, RHREMD2:
+
+Stop the existing data-pump Extract, PHREMD1, and record EXTRBA and EXTSEQ from the info command. You need those values when you add the new datapump Extract so it begins processing at the correct location in the Local Extract trail file. From the info command shown in the following example, you can see that EXTSEQ is equal to the trail file number 18. EXTRBA is 8144:
+
+GGSCI (sourceserver) 1> stop ext PHREMD1
+Sending STOP request to EXTRACT PHREMD1 ...
+Request processed.
+
+GGSCI (sourceserver) 2> info ext PHREMD1
+EXTRACT PHREMD1 Last Started 2011-03-20 13:09 Status STOPPED
+Checkpoint Lag 00:00:00 (updated 00:00:10 ago)
+Log Read Checkpoint File dirdat/l1000018
+2011-03-20 13:19:23.000000 RBA 8144
+
+
+When the Replicat RHREMD1 has processed all the remaining changes from the current data-pump Extract trail and has zero lag showing, stop it:
+
+GGSCI (targetserver) 1> info rep RHREMD1
+REPLICAT RHREMD1 Last Started 2011-03-20 13:18 Status RUNNING
+Checkpoint Lag 00:00:00 (updated 00:00:01 ago)
+Log Read Checkpoint File dirdat/l2000013
+2011-03-20 13:19:23.000107 RBA 2351
+
+GGSCI (targetserver) 2> stop rep RHREMD1
+Sending STOP request to REPLICAT RHREMD1 ...
+Request processed.
+
+Add the new data-pump Extract, PHREMD2, and tell GoldenGate to start processing at the EXTRBA and EXTSEQ in the Local Extract trail l1 that you recorded in step 5. Be aware that if you don’t tell GoldenGate to start at a specific location, you can end up re-extracting changes from the first trail and cause collisions downstream in the Replicat. Run the info command to verify that the Extracts were added properly:
+
+GGSCI (sourceserver) > ADD EXTRACT PHREMD2, EXTTRAILSOURCE dirdat/l1,
+EXTSEQNO 18, EXTRBA 8144
+GGSCI (sourceserver) > ADD RMTTRAIL dirdat/l3, EXTRACT PHREMD2, MEGABYTES 100
+GGSCI (sourceserver) > info ext PHREMD*
+
+EXTRACT PHREMD1 Last Started 2011-03-20 13:09 Status STOPPED
+Checkpoint Lag 00:00:00 (updated 00:55:22 ago)
+Log Read Checkpoint File dirdat/l1000018
+2011-03-20 13:19:23.000000 RBA 8144
+
+EXTRACT PHREMD2 Initialized 2011-03-20 22:12 Status STOPPED
+Checkpoint Lag 00:00:00 (updated 00:00:24 ago)
+Log Read Checkpoint File dirdat/l1000018
+First Record RBA 8144
+
+
+Add the new Replicat, RHREMD2, and tell GoldenGate to use the new l3 trail from data-pump Extract PHREMD2 for processing. Because l3 is a new trail, you can take the default to start processing from the beginning of the first l3 trail. Run an info command to verify the Replicat has been added properly:
+
+GGSCI (targetserver) > ADD REPLICAT RHREMD2, EXTTRAIL dirdat/l3
+GGSCI (targetserver) > info rep *
+REPLICAT RHREMD1 Last Started 2011-03-20 13:18 Status STOPPED
+Checkpoint Lag 00:00:00 (updated 00:52:11 ago)
+Log Read Checkpoint File dirdat/l2000013
+2011-03-20 13:19:23.000107 RBA 2351
+
+REPLICAT RHREMD2 Initialized 2011-03-20 22:41 Status STOPPED
+Checkpoint Lag 00:00:00 (updated 00:00:03 ago)
+Log Read Checkpoint File /gger/ggs/dirdat/l3000000
+First Record RBA 0
+
+Start the data-pump Extracts, and begin sending changes to the target server:
+GGSCI (sourceserver) > start ext PHREMD*
+
+Start both Replicats to begin processing changes from the data pumps:
+GGSCI (targetserver) > start rep RHREMD*
+
+After some changes are applied, you can again check the status of the Replicats to make sure they’re processing properly. You can check the RBA and make sure it’s increasing. You can also do a stats replicat tablename command and a stats extract tablename command to make sure the Extracts and Replicats are processing changes:
+
+Implementing Parallel Extracts and Replicats Using Key Ranges
+
+Another strategy for creating parallel Extracts and Replicats is to use the @RANGE function to split the incoming table rows into equal buckets using a GoldenGate hash algorithm on the key values.
+
+Local Extract LHREMD1 remains unchanged and still extracts all the tables for the HR schema. Using the Local Extract to extract all the data is a common approach.
+
+In this example you also leave the data pump unchanged to pass through the complete trail from the Local Extract. You could split the trails using the data pump, but this section shows another technique and splits processing using the Replicats.
+
+Replicat RHREMD1 is split into three Replicats. The first Replicat, RHREMD1, processes the first range of keys. The second Replicat; RHREMD2, processes the second range of keys, and so on.
+
+1. Edit the existing Replicat parameter file RHREMD1 to add the RANGE filtering:
+GGSCI (targetserver) > edit params RHREMD1
+Replicat RHREMD1
+-------------------------------------------------------------------
+-- Replicat for HR Schema
+-------------------------------------------------------------------
+USERID 'GGER', PASSWORD "AACAAAAAAAAAAADAVHTDKHHCSCPIKAFB", ENCRYPTKEY default
+AssumeTargetDefs
+ReportCount Every 30 Minutes, Rate
+Report at 01:00
+ReportRollover at 01:15
+DiscardFile dirrpt/RHREMD1.dsc, Append
+DiscardRollover at 02:00 ON SUNDAY
+Map HR.EMPLOYEES, Target HR.EMPLOYEES,COLMAP (USEDEFAULTS), FILTER (@RANGE (1,3));
+Map HR.JOBS, Target HR.JOBS,COLMAP (USEDEFAULTS), FILTER (@RANGE (1,3));
+Map HR.JOB_HISTORY, Target HR.JOB_HISTORY,COLMAP (USEDEFAULTS),
+FILTER (@RANGE (1,3));
+Map HR.LOCATIONS, Target HR.LOCATIONS,COLMAP (USEDEFAULTS), FILTER (@RANGE (1,3));
+Map HR.DEPARTMENTS, Target HR.DEPARTMENTS,COLMAP (USEDEFAULTS),
+FILTER (@RANGE (1,3));
+Map HR.COUNTRIES, Target HR.COUNTRIES,COLMAP (USEDEFAULTS), FILTER (@RANGE (1,3));
+Map HR.REGIONS, Target HR.REGIONS,COLMAP (USEDEFAULTS), FILTER (@RANGE (1,3));
+
+2. Add the parameter file for the new Replicat, RHREMD2:
+GGSCI (targetserver) > edit params RHREMD2
+Replicat RHREMD2
+-------------------------------------------------------------------
+-- Replicat for HR Schema
+-------------------------------------------------------------------
+USERID 'GGER', PASSWORD "AACAAAAAAAAAAADAVHTDKHHCSCPIKAFB", ENCRYPTKEY default
+AssumeTargetDefs
+ReportCount Every 30 Minutes, Rate
+Report at 01:00
+ReportRollover at 01:15
+DiscardFile dirrpt/RHREMD2.dsc, Append
+DiscardRollover at 02:00 ON SUNDAY
+Map HR.EMPLOYEES, Target HR.EMPLOYEES,COLMAP (USEDEFAULTS), FILTER (@RANGE (2,3));
+Map HR.JOBS, Target HR.JOBS,COLMAP (USEDEFAULTS), FILTER (@RANGE (2,3));
+Map HR.JOB_HISTORY, Target HR.JOB_HISTORY,COLMAP (USEDEFAULTS),
+FILTER (@RANGE (2,3));
+Map HR.LOCATIONS, Target HR.LOCATIONS,COLMAP (USEDEFAULTS), FILTER (@RANGE (2,3));
+Map HR.DEPARTMENTS, Target HR.DEPARTMENTS,COLMAP (USEDEFAULTS),
+FILTER (@RANGE (2,3));
+Map HR.COUNTRIES, Target HR.COUNTRIES,COLMAP (USEDEFAULTS), FILTER (@RANGE (2,3));
+Map HR.REGIONS, Target HR.REGIONS,COLMAP (USEDEFAULTS), FILTER (@RANGE (2,3));
+
+3. Add the parameter file for the new Replicat, RHREMD3:
+GGSCI (targetserver) > edit params RHREMD3
+Replicat RHREMD2
+-------------------------------------------------------------------
+-- Replicat for HR Schema
+-------------------------------------------------------------------
+USERID 'GGER', PASSWORD "AACAAAAAAAAAAADAVHTDKHHCSCPIKAFB", ENCRYPTKEY default
+AssumeTargetDefs
+ReportCount Every 30 Minutes, Rate
+Report at 01:00
+ReportRollover at 01:15
+DiscardFile dirrpt/RHREMD3.dsc, Append
+DiscardRollover at 02:00 ON SUNDAY
+Map HR.EMPLOYEES, Target HR.EMPLOYEES,COLMAP (USEDEFAULTS), FILTER (@RANGE (3,3));
+Map HR.JOBS, Target HR.JOBS,COLMAP (USEDEFAULTS), FILTER (@RANGE (3,3));
+Map HR.JOB_HISTORY, Target HR.JOB_HISTORY,COLMAP (USEDEFAULTS),
+FILTER (@RANGE (3,3));
+Map HR.LOCATIONS, Target HR.LOCATIONS,COLMAP (USEDEFAULTS), FILTER (@RANGE (3,3));
+Map HR.DEPARTMENTS, Target HR.DEPARTMENTS,COLMAP (USEDEFAULTS),
+FILTER (@RANGE (3,3));
+Map HR.COUNTRIES, Target HR.COUNTRIES,COLMAP (USEDEFAULTS), FILTER (@RANGE (3,3));
+Map HR.REGIONS, Target HR.REGIONS,COLMAP (USEDEFAULTS), FILTER (@RANGE (3,3));
+
+
+Using BATCHSQL
+BATCHSQL is another parameter you can add to your Replicats to improve performance. According to the Oracle GoldenGate documentation, BATCHSQL can improve the performance of Replicats by as much as 300 percent.
+
+
+In normal processing, GoldenGate groups transactions together but preserves transaction order from the source. With BATCHSQL, GoldenGate groups together similar  transactions into a high performance array and processes them at a much faster rate. To implement BATCHSQL using defaults, simply add the following parameter to your Replicat parameter file: 
+BATCHSQL
+
+BATCHSQL also creates a new section in your report file. Here is an example of the new statistics you see in your report file when BATCHSQL is activated.
+
+BATCHSQL statistics:
+Batch operations: 9
+Batches: 3
+Batches executed: 2
+Queues: 2
+Batches in error: 1
+Normal mode operations: 1
+Immediate flush operations: 0
+PK collisions: 0
+UK collisions: 0
+FK collisions: 0
+Thread batch groups: 0
+Commits: 2
+Rollbacks: 1
+Queue flush calls: 2
+Ops per batch: 3
+Ops per batch executed: 4.5
+Ops per queue: 4.5
+Parallel batch rate: N/A
+
+When BATCHSQL encounters processing errors, you see the following type of messages in your GoldenGate logs:
+
+2011-03-22 17:12:14 WARNING OGG-00869 Aborting BATCHSQL transaction.
+Database error 1 (ORA-00001: unique constraint (HR.PK_EMP_ID) violated).
+2011-03-22 17:12:15 WARNING OGG-01137 BATCHSQL suspended, continuing in
+normal mode.
+2011-03-22 17:12:15 WARNING OGG-01003 Repositioning to rba 231493300 in seqno 49.
+
+When these errors occur, GoldenGate automatically rolls back the BATCHSQL processing and attempts to process the transaction in normal mode. This slows down the BATCHSQL, so if you’re seeing a lot of these errors you may find BATCHSQL won’t improve your performance.
+
+Using GROUPTRANSOPS
+You can use GROUPTRANSOPS to tune the number of SQL operations in a GoldenGate transaction. By default, the Replicat includes a minimum of 1,000 SQL operations in a transaction. By setting GROUPTRANSOPS higher, say to 2,000, you may get increased performance. In addition to having a larger transaction, a higher value for GROUPTRANSOPS reduces the number of checkpoints written to the GoldenGate checkpoint table.
+
+Tuning Disk Storage
+• Place GoldenGate files on the fastest available storage and storage controller.
+• Use RAID 0+1 rather than RAID 5. RAID 5 maintains parity information that isn’t needed and slows down writing the trails.
+• Always evaluate the performance of the disks. For example, on Linux use the IOSTAT command to determine if disk devices are a bottleneck.
+• Use the GROUPTRANSOPS parameter as described in the last section to reduce I/O.
+
+Tuning the Network
+You can take several tuning approaches to help alleviate network performance issues. The first approach is to create parallel data pumps, as covered earlier in this chapter. Parallel data pumps alleviate any network bandwidth limitations caused by using a single data-pump process. Second, you can adjust some additional network tuning options on the RMTHOST parameter.
+
+The default GoldenGate TCP socket buffer size is 30,000 bytes. By increasing this buffer size, you can send larger packets of data over the network. The Oracle GoldenGate Windows and UNIX Reference Guide has a sample formula to help calculate the optimum TCP socket buffer size.
+
+For example, on Linux you can check the following settings to determine the maximum TCP transmit and receive buffer sizes:
+
+net.core.rmem_max = 262144
+net.core.wmem_max = 262144
+
+In this example, the transmit and receive buffers are set to 256KB. You can check with your server and network administrator to determine if these sizes can be adjusted higher, such as 4MB, to allow GoldenGate to take advantage of higher TCP buffer sizes. GoldenGate can utilize larger TCP buffer sizes if you add an option to the RMTHOST parameter as shown in the following example: 
+
+RmtHost targetserver, MgrPort 7809, TCPBUFSIZE 100000
+
+Another network tuning option of the RMTHOST parameter is the COMPRESS option, as shown in the following example:
+
+RmtHost targetserver, MgrPort 7809, TCPBUFSIZE 100000, COMPRESS
+
+Keep in mind, the compress and uncompress add some CPU overhead to your servers.
+
+
+C H A P T E R 1 2 Disaster Recovery Replication
+------------------------------------------------
+
+
+Actually I have some personal constraints that is why I moved to bhubaneswar. I'll think over it and discuss with my Supervisor here and let you know by this Sunday for sure.
+

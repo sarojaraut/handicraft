@@ -1,0 +1,52 @@
+Apex Installation
+
+uncompress and cd C:\oracle\apex42\apex>
+
+@apexins.sql tablespace_apex tablespace_files tablespace_temp images
+
+@apexins.sql tablespace_apex tablespace_files tablespace_temp images
+
+@apexins.sql SYSAUX SYSAUX TEMP /i/
+
+When Oracle Application Express installs, it creates three new database accounts:
+■ APEX_040200 - The account that owns the Oracle Application Express schema and metadata.
+■ FLOWS_FILES - The account that owns the Oracle Application Express uploaded files.
+■ APEX_PUBLIC_USER - The minimally privileged account is used for Oracle  Application Express configuration with Oracle Application Express Listener or Oracle HTTP Server and mod_plsql. 
+ If you configured RESTful Web services, then these additional accounts will be created:
+■ APEX_REST_PUBLIC_USER - The account used when invoking RESTful Services definitions stored in Oracle Application Express.
+■ APEX_LISTENER - The account used to query RESTful Services definitions stored in Oracle Application Express.
+
+Change the Password for the ADMIN Account
+
+@apxchpwd.sql
+
+$Babuna00
+
+Unlocking the APEX_PUBLIC_USER Account
+
+ALTER USER APEX_PUBLIC_USER ACCOUNT UNLOCK
+
+Changing the Password for the APEX_PUBLIC_USER Account
+
+ALTER USER APEX_PUBLIC_USER IDENTIFIED BY oracle;
+
+Configure the Embedded PL/SQL Gateway
+
+@apex_epg_config.sql <full path where apex is unziped>
+
+@apex_epg_config.sql C:\oracle\apex42
+
+ALTER USER ANONYMOUS ACCOUNT UNLOCK;
+
+<C:\oracle\apex42\apex contains the actual apex files>
+
+SELECT DBMS_XDB.GETHTTPPORT FROM DUAL;
+--0 means disabled
+
+EXEC DBMS_XDB.SETHTTPPORT(8080);
+
+http://localhost:8080/apex/apex_admin
+
+http://localhost:8080/apex
+
+

@@ -1,0 +1,100 @@
+Chapter 11 Using Database Tuning Advisors
+
+Use the SQL Tuning Advisor
+The SQL Tuning Advisor analyzes one or more SQL statements sequentially, examining statistics, and potentially recommends creating a SQL profile, new indexes, materialized views, or a revised SQL statement. 
+You can run the SQL Tuning Advisor manually; however, it is run automatically during every maintenance window on the most resource-intensive SQL statements identified within the production workload.
+
+--------------------- Sybex 443
+Diagnosing the Database and Managing Performance
+
+The Automatic Diagnostic Repository provides a central location for storing problem incident-related information. The Automatic Diagnostic Repository (ADR) is a hierarchical file-based systemwide and system-managed repository for storing and organizing dump files, trace files, alert logs, health monitor reports, network tracing, and all other error diagnostic data. 
+
+Since the Oracle 11g ADR provides a single repository location for the alert log and all dump files and trace files, there is no longer a need for the BACKGROUND_DUMP_DEST, CORE_DUMP_DEST, and USER_DUMP_DEST initialization parameters. They are deprecated and ignored. Now you use the initialization parameter DIAGNOSTIC_DEST to designate the location of the ADR.
+
+The default value for DIAGNOSTIC_DEST is $ORACLE_BASE. If the ORACLE_BASE environment variable is not set, then $ORACLE_HOME is used for DIAGNOSTIC_DEST.
+
+Within the DIAGNOSTIC_DEST directory, Oracle builds the hierarchy of directories to support the ADR. The ADR home directory is located in this directory structure:
+<diagnostic_dest>/diag/rdbms/<dbname>/<instname> 
+
+C:\oracle\diag\rdbms\orcl\orcl
+These are some important directories that you need to know about:
+Incident: Each incident gets its own subdirectory within the incident directory.
+Alert: The alert log is written to the alert directory.
+Cdump: Core dumps are written to this directory.
+Trace: Trace files are written to the trace directory.
+
+New to Oracle 11g, the Enterprise Manager Support Workbench (Support Workbench) is a central location for the DBA to see reported problems, investigate the problems, report the problem to Oracle support, and follow up through problem resolution.
+
+Start from the Enterprise Manager Database home page, click the Software and Support tab, and then in the Support section, click Support Workbench.
+
+The Support Workbench provides a framework for problem resolution: investigate, report, and resolve a problem. The following are the basic tasks within the Support Workbench:
+View critical error alerts.
+View problem details.
+Gather additional diagnostic information.
+Create a service request.
+Package and upload diagnostic data to Oracle Support.
+Track the service request and implement any repairs.
+Close the incident.
+
+Task 1: View Critical Error Alerts
+In most cases, you’ll discover a critical alert on the Enterprise Manager home page and then work your way to the Support Workbench page.
+
+In Oracle 11g, a problem is a critical error in the database. An incident is a single occurrence of a problem. By default, incidents of a problem that have occurred within the last 24 hours are displayed on the page. To change the date range displayed, click the View drop-down menu and select your preference.
+
+
+Managing Database Performance
+
+SQL Tuning Advisor, the SQL Access Advisor, and Database Replay, Each of these tools can be used by the DBA to analyze and improve database performance. The Advisors operate directly on the database you wish to tune, while the Database Replay feature allows you to test a production workload on a test system to determine ways to improve performance without directly impacting the production system.
+
+The SQL Tuning Advisor is a tool that you can use to analyze the performance of one or more SQL statements. The SQL Tuning Advisor runs in one of two modes, Automatic or Manual. The Automatic Tuning Advisor is scheduled to run during the maintenance window, finds ways to improve high-load SQL statements, and automatically takes action. In 
+Manual mode, the SQL Tuning Advisor is used to analyze a collection of SQL statements called a SQL Tuning Set.
+
+From the database home page in EM, in the Related Links section, choose the Advisor Central link, then SQL Advisors, From the SQL Advisors page, click the Automatic SQL Tuning Results Summary link. The page that appears, will display the results from the most recent Automatic SQL Tuning Advisor job.
+From the results page, you can click the Configure button to configure the Automatic SQL Tuning tasks that will run during each daily maintenance window
+
+The SQL Access Advisor is a tuning tool that assists the DBA by offering recommendations
+for indexes, partitioning, and materialized view logs for a workload.
+
+Using Shrinking Segments
+Fragmentation of free space leads to wasted free space as well as performance issues such as the following:
+
+Cache utilization : Sparsely populated (fragmented) data blocks in memory require more reads to get the same amount of data as densely populated (defragmented) data blocks.
+Table and index scans : A full segment scan of fragmented data blocks requires more physical reads than a scan of defragmented blocks.
+
+There are two methods to defragment a segment online; use either Table Redefinition, also referred to as reorganization, or Segment Shrink. Table Redefinition copies a table to a new location and consolidates the data. This operation requires space for the new copy of the table and its dependent objects. Also worth mentioning is the method to deallocate unused space above the high-water mark by issuing the DEALLOCATE UNUSED command. 
+
+Online Segment Shrink compacts the segment in place and does not require additional space to perform the operation. To be eligible for segment shrink, the segment must have row movement enabled and reside in a tablespace that is locally managed and utilizes Automatic Segment Space Management (ASSM).
+
+SQL> ALTER TABLE HR.EMPLOYEES ENABLE ROW MOVEMENT;
+SQL> ALTER TABLE HR.EMPLOYEES SHRINK SPACE;
+
+There are two optional clauses with the SHRINK SPACE command: COMPACT and CASCADE. The COMPACT clause defragments and compacts but does not reset the high-water mark or return the free space. Execute the SHRINK SPACE command without the COMPACT clause at a later time to complete the task.
+
+SQL> SELECT COUNT(1) from hr.employees_hist;
+COUNT(1)
+----------
+2943
+
+SQL> SELECT SEGMENT_NAME, BLOCKS FROM DBA_SEGMENTS
+WHERE OWNER = ‘HR’ and SEGMENT_NAME LIKE ‘EMPL%‘;
+SEGMENT_NAME BLOCKS
+------------------------- ----------
+EMPLOYEES_HIST 40
+
+SQL> ALTER TABLE HR.EMPLOYEES_HIST SHRINK SPACE COMPACT;
+
+SQL> SELECT SEGMENT_NAME, BLOCKS FROM DBA_SEGMENTS
+WHERE OWNER = ‘HR’ and SEGMENT_NAME LIKE ‘EMPL%‘;
+SEGMENT_NAME BLOCKS
+------------------------- ----------
+EMPLOYEES_HIST 40
+
+SQL> ALTER TABLE HR.EMPLOYEES_HIST SHRINK SPACE;
+
+SQL> SELECT SEGMENT_NAME, BLOCKS FROM DBA_SEGMENTS
+WHERE OWNER = ‘HR’ and SEGMENT_NAME LIKE ‘EMPL%‘;
+SEGMENT_NAME BLOCKS
+------------------------- ----------
+EMPLOYEES_HIST 16
+
+

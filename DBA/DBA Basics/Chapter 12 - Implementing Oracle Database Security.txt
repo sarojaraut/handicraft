@@ -1,0 +1,132 @@
+Chapter 12 - Implementing Oracle Database Security
+
+In security, there is no right or wrong; there is only conformance or non-conformance to agreed procedures. If administrators follow the rules and advise on what those rules should be, then any breach of security is not their fault. But unfortunately, history shows that when something goes wrong in the security arena, there is a great desire to blame individuals. 
+
+The safest principle to follow when determining access to computer systems is that of least privilege: no one should have access to anything beyond the absolute minimum needed to perform their work, and anything not specifically allowed is forbidden. The Oracle database conforms to this, in that by default no one can do anything at all, with the exception of the two users SYS and SYSTEM. No other users can even connect, not even those created by the standard database creation routines.
+
+Any privileges granted to PUBLIC have, in effect, been granted to everyone who can connect to the database; 
+
+create user jon identified externally;
+
+This delegates responsibility for authentication to the server’s operating system. Any person logged on to the server machine as operating system user “jon” will be able to connect to the database without the need for any further authentication. 
+
+If thr user jon does not usally connect to database server machine, then REMOTE_OS_AUTHENT parameter should be set to TRUE to allow connection from any remote machine where user named jon has logged in into.
+
+The OS_AUTHENT_PREFIX instance parameter is related to external authentication, either local or remote. It specifies a prefix that must be applied to the operating system username before it can be mapped onto an Oracle username. The default is “OPS$”. In the preceding example, it is assumed that this parameter has been cleared, with 
+SQL> alter system set os_authent_prefix='' scope=spfile;
+
+The O7_DICTIONARY_ACCESSIBILITY instance parameter controls the effect of granting object privileges with the ANY keyword. It defaults to FALSE. Meaning that the ANY privileges exclude objects owned by SYS, thus protecting the data dictionary; grant select any table to jon; JON can see all the user data, but not objects owned by SYS. If you have users who really do need access to the data dictionary, rather than setting O7_DICTIONARY_ACCESSIBILITY to true, consider granting them the SELECT ANY DICTIONARY privilege.
+
+The remote REMOTE_LOGIN_PASSWORDFILE instance parameter controls whether it is possible to connect to the instance as a user with the SYSDBA or SYSOPER privilege over the network. With this parameter on its default of NONE, the only way to get a SYSDBA connection is to log on to the operating system of the server machine as a member of the operating system group that owns the Oracle software.
+
+The password file is initially created by running the orapwd utility from an operating system prompt.
+To add another user to the file, grant him/her either the SYSDBA or SYSOPER privilege.
+The V$PWFILE_USERS view shows you which users have their passwords entered in the password file, and whether they have the SYSOPER privilege, the SYSDBA privilege, or both.
+
+Note that when connecting as SYSDBA, even though you use a username and password, you end up connected as user SYS; when connecting as SYSOPER, you are in fact connected as the PUBLIC user.
+
+
+--------------- DBA Handbook
+
+SQL> create user sking identified by sking901
+2 account unlock   -- redundant line by default it's unlocked
+3 default tablespace users -- if you don't specify here database wide default will be assigned.
+4 temporary tablespace temp;
+
+SQL> grant create session, create table to sking;
+
+SQL> alter user sking quota 250M on users;
+
+Unless a quota is explicitly assigned or the user is granted the UNLIMITED TABLESPACE privilege, the user cannot create objects in their own schema. we could have granted this quota at the time of user creation.
+
+SQL> drop user queenb cascade;
+
+
+Profiles and Password Control
+Password Parameter : Description
+FAILED_LOGIN_ATTEMPTS : The number of failed login attempts before the account is locked.
+PASSWORD_LIFE_TIME : The number of days the password can be used before it must be changed. If it is not changed within PASSWORD_GRACE_TIME, the password must be changed before logins
+are allowed.
+PASSWORD_REUSE_TIME : The number of days a user must wait before reusing a password; this parameter is used in conjunction with PASSWORD_REUSE_MAX.
+PASSWORD_REUSE_MAX : The number of password changes that have to occur before a password can be reused; this parameter is used in conjunction with PASSWORD_REUSE_TIME.
+PASSWORD_LOCK_TIME : How many days the account is locked after FAILED_LOGIN_ATTEMPTS attempts. After this time period, the account is automatically unlocked.
+PASSWORD_GRACE_TIME : The number of days after which an expired password must be changed. If it is not changed within this time period, the account is expired and the password must be changed before the user can log in successfully.
+PASSWORD_VERIFY_FUNCTION : A PL/SQL script to provide an advanced password verification routine. If NULL is specified (the default), no password verification is performed. sample code is available at $ORACLE_HOME/rdbms/admin/utlpwdmg.sql.
+
+ALTER PROFILE DEFAULT LIMIT
+PASSWORD_LIFE_TIME 180
+PASSWORD_GRACE_TIME 7
+PASSWORD_REUSE_TIME UNLIMITED
+PASSWORD_REUSE_MAX UNLIMITED
+FAILED_LOGIN_ATTEMPTS 10
+PASSWORD_LOCK_TIME 1 
+PASSWORD_VERIFY_FUNCTION verify_function_11G;
+
+Profiles and Resource Control
+
+Resource Parameter : Description
+SESSIONS_PER_USER : The maximum number of sessions a user can simultaneously have
+CPU_PER_SESSION : The maximum CPU time allowed per session, in hundredths of a second
+CPU_PER_CALL : Maximum CPU time for a statement parse, execute, or fetch operation, in hundredths of a second 
+CONNECT_TIME : Maximum total elapsed time, in minutes 
+IDLE_TIME : Maximum continuous inactive time in a session, in minutes, while a query or other operation is not in progress
+LOGICAL_READS_PER_SESSION : Total number of data blocks read per session, either from memory or disk
+LOGICAL_READS_PER_CALL : Maximum number of data blocks read for a statement parse, execute, or fetch operation
+COMPOSITE_LIMIT : Total resource cost, in service units, as a composite weighted sum of CPU_PER_SESSION, CONNECT_TIME, LOGICAL_READS_PER_SESSION, and PRIVATE_SGA
+PRIVATE_SGA : Maximum amount of memory a session can allocate in the shared pool, in bytes, kilobytes, or megabytes
+
+System Privileges : All of them can be found in the data dictionary table SYSTEM_PRIVILEGE_MAP:
+
+SQL> select * from system_privilege_map;
+
+DBA_SYS_PRIVS System privileges assigned to roles and users
+SESSION_PRIVS All system privileges in effect for this user for the session, granted directly or via a role
+ROLE_SYS_PRIVS Current session privileges granted to a user via a role
+
+DBA_TAB_PRIVS : Table privileges granted to roles and users. Includes the user who granted the privilege to the role or user, with or without GRANT OPTION.
+DBA_COL_PRIVS : Column privileges granted to roles or users, containing the column name and the type of privilege on the column.
+ROLE_TAB_PRIVS : For the current session, privileges granted on tables via roles.
+
+grant update (employee_id, first_name, last_name, email,
+2 phone_number, hire_date, job_id, commission_pct,
+3 manager_id, department_id)
+4 on hr.employees to scott;
+
+create or replace procedure process_orders (order_batch_date date)
+authid current_user as
+
+SQL> alter user scott default role all except hr_clerk, dept30;
+User altered.
+When SCOTT connects to the database, he automatically has all privileges granted with all roles except for HR_CLERK and DEPT30. SCOTT may explicitly enable a role in his session by 
+using set role:
+
+SQL> set role dept30;
+Role set.
+When he’s done accessing the tables for department 30, he can disable the role in his session:
+SQL> set role all except dept30;
+Role set.
+
+SQL> create role dept99 identified by d99secretpw;
+SQL> set role dept99 identified by d99secretpw;
+
+DBA_ROLES : All roles and whether they require a password.
+DBA_ROLE_PRIVS : Roles granted to users or other roles.
+ROLE_ROLE_PRIVS : Roles granted to other roles.
+ROLE_SYS_PRIVS : System privileges that have been granted to roles.
+ROLE_TAB_PRIVS : Table and table column privileges that have been granted to roles.
+SESSION_ROLES:  Roles currently in effect for the session. Available to every user session.
+
+SQL> select * from dba_role_privs where grantee = 'SCOTT'; -- roles granted to scott
+SQL> select * from dba_role_privs where grantee = 'ALL_DEPTS'; -- roles granted to role ALL_DEPTS
+
+To find out privileges granted to users on a table or table columns,
+
+select dtp.grantee, dtp.owner, dtp.table_name, dtp.grantor, dtp.privilege, dtp.grantable from dba_tab_privs dtp  where dtp.grantee = 'SCOTT';
+
+To retrieve table privileges granted via roles, we need to join DBA_ROLE_PRIVS and ROLE_TAB_PRIVS.
+
+select drp.grantee, rtp.owner, rtp.table_name, rtp.privilege, rtp.grantable, rtp.role
+from role_tab_privs rtp join dba_role_privs drp on rtp.role = drp.granted_role
+where drp.grantee = 'SCOTT';
+
+Using a VPD to Implement Application Security Policies

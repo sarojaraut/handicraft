@@ -1,0 +1,389 @@
+Chapter 1. Product Overview
+
+The only way to have a centralized view of the information is to consolidate the data—whether it is in a data warehouse, a series of data marts, or by normalizing the data across applications with master data management (MDM) solutions. ETL tools usually come into play when a large volume of data has to be exchanged (as opposed to Service-Oriented Architecture infrastructures for instance, which would be more transaction based).
+ 
+This is where the ODI ELT architecture (Extract-Load-Transform—the inversion in the acronym is not a mistake) comes into play. The concept with ELT is that instead of extracting the data from a source, transforming it with a dedicated platform, and then loading into the target database, you will extract from the source, load into the target, then transform into the target database, leveraging SQL for the transformations.
+
+To some extent, ETL and ELT are marketing acronyms. When you look at ODI for instance, it can perform transformations on the source side as well as on the target side. You can also dedicate some database or schema for the staging and transformation of your data, and can have something more similar to an ETL architecture. Similarly, some ETL tools all have the ability to generate SQL code and to push some transformations at the database level.
+ 
+The key differences then for a true ELT architecture are as follows:
+
+•The ability to dynamically manage a staging area (location, content, automatic management of table alterations)
+•The ability to generate code on source and target systems alike, in the same transformation
+•The ability to generate native SQL for any database on the market—most ETL tools will generate code for their own engines, and then translate that code for the databases—hence limiting their generation capacities to their ability to convert proprietary concepts
+•The ability to generate DML and DDL, and to orchestrate sequences of operations on the heterogeneous systems
+ 
+In a way, the purpose of an ELT tool is to provide the comfort of a graphical interface with all the functionality of traditional ETL tools, to keep the efficiency of SQL coding with set-based processing of data in the database, and limiting the overhead of moving data from place to place.
+
+ODI product architecture
+
+The components of the ODI architecture are as follows:
+
+•Repository: This is where all the information handled by ODI is stored, namely, connectivity details, metadata, transformation rules and scenarios, generated code, execution logs, and statistics.
+•Studio: The Studio is the graphical interface of ODI. It is used by administrators, developers, and operators.
+•Agents: The Agents can be seen as orchestrators for the data movement and transformations. They are very lightweight java components that do not require their own server—we will see in detail where they can be installed.
+•Console: The Console is a web tool that lets users browse the ODI repository, but it is not a tool used to develop new transformations. It can be used by operators though to review code execution, and start or restart processes as needed.
+•The Oracle Enterprise Manager plugin for ODI integrates the monitoring of ODI components directly into OEM so that administrators can consolidate the monitoring of all their Oracle products in one single graphical interface.
+
+At a high level, here is how the different components of the architecture interact with one another. The administrators, developers, and operators typically work with the ODI Studio on their machine (operators also have the ability to use the Console for a more lightweight environment). All Studios typically connect to a shared repository where all the metadata is stored. At run time, the ODI Agent receives execution orders (from the Studio, or any external scheduler, or via a Web Service call). At this point it connects to the repository, retrieves the code to execute, adds last minute parameters where needed (elements like connection strings, schema names where the data resides, and so on), and sends the code to the databases for execution. Once the databases have executed the code, the agent updates the repository with the status of the execution (successful or not, along with any related error message) and the relevant statistics (number of rows, time to process, and so on).
+
+Now let's look into the details of each component.
+ODI repository
+ 
+To store all its information, ODI requires a repository. The repository is by default a pair of schemas (called Master and Work repositories) stored in a database. Unless ODI is running in a near real time fashion, continuously generating SQL code for the databases to execute the code, there is no need to dedicate a database for the ODI repository. Most customers leverage existing database installations, even if they create a dedicated tablespace for ODI.
+ 
+Repository overview
+ 
+The only element you will never find in the repository is the actual data processed by ODI. The data will be in the source and target systems, and will be moved directly from source to target. This is a key element of the ELT architecture. All other elements that are handled through ODI are stored into the repository. The repository is made of two entities which can be separated into two separate database schemas, namely, the Master repository and the Work repository. 
+Repository location
+ 
+Before going into the details of the Master and Work repositories, let's first look into where to install the repository.
+ 
+The repository is usually installed in an existing database, often in a separate tablespace. Even though ODI is an Oracle product, the repository does not have to be stored in an Oracle database (but who would not use the best database in the world?).
+ 
+We will now look into the specifics of Master and Work repositories.
+Master repository
+
+•All the information that pertains to ODI users privileges will be saved here. This information is controlled by administrators through the Security Navigator of the ODI Studio. We will learn more about this navigator when we look into the details of the Studio.
+•All the information that pertains to connectivity to the different systems (sources and targets), and in particular the requisite usernames and passwords, will be stored here. This information will be managed by administrators through the Topology Navigator.
+•In addition, whenever a developer creates several versions of the same object, the subsequent versions of the objects are stored in the Master repository. Versioning is typically accessed from the Designer Navigator.
+
+Work repository
+ 
+Work repositories will store all the data that is required for the developers to design their data transformations. All the information stored in the Work repository is managed through the Designer Navigator and the Operator Navigator. The Work repository contains the following components:
+
+•The Metadata that represents the source and target tables, files, applications, message buses. These will be organized in Models in the Designer Navigator.
+•The transformation rules and data movement rules. These will be organized in Interfaces in the Designer Navigator.
+•The workflows designed to orchestrate the transformations and data movement. These are organized in Packages and Load Plans in the Designer Navigator.
+•The jobs schedules, if the ODI Agent is used as the scheduler for the integration tasks. These can be defined either in the Designer Navigator or in the Operator Navigator.
+•The logs generated by ODI, where the generated code can be reviewed, along with execution statistics and statuses of the different executions (running, done successfully or in error, queued, and so on). The logs are accessed from the Operator Navigator.
+
+Execution repository
+ 
+In a production environment, most customers do not need to expose the source code for the processes that are running. Modifications to the processes that run in production will have to go through a testing cycle anyway, so why store the source code where one would never access it? For that purpose, ODI proposes an execution repository that only stores the operational metadata, namely, generated code, execution results, and statistics. The type of Work repository (execution or development) is selected at installation time. A Work repository cannot be converted from development to execution or execution to development—a new installation will be required if a conversion is needed.
+ 
+Lifecycle management and repositories
+ 
+We now know that there will be different types of repositories. All enterprise application development teams have more than one environment to consider. The code development itself occurs in a development environment, the validation of the quality of the code is typically done in a test environment, and the production environment itself will have to be separate from these two. Some companies will add additional layers in this lifecycle, with code consolidation (if remote developers have to combine code together), user acceptance (making sure that the code conforms to user expectations), and pre-production (making sure that everything works as expected in an environment that perfectly mimics the production environment).
+
+In all cases, each environment will typically have a dedicated Work repository. The Master repository can be a shared resource as long as no network barrier prevents access from Master to Work repository. If the production environment is behind a firewall for instance, then a dedicated Master repository will be required for the production environment.
+
+The exchange of metadata between repositories can be done in one of the following ways:
+
+•Metadata can be exchanged through versioning. All different versions of the objects are uploaded to the Master repository automatically by ODI as they are created. These versions can later be restored to a different Work repository attached to the same Master repository.
+•All objects can be exported as XML files, and XML files can be used to import the exported objects into the new repository. This will be the only option if a firewall prevents connectivity directly to a central Master repository.
+ 
+In the graphical representations shown previously, the leftmost repository is obviously our development repository, and the rightmost repository is the production repository. Why are we using an execution for the test environment? There are two rationales for this. They are as follows:
+
+•There is no point in having the source code in the test repository, the source code can always be retrieved from the versioning mechanisms.
+•Testing should not be limited to the validation of the artifacts concocted by the developers; the process of migrating to production should also be validated. By having the same setup for our test and production environments, we ensure that the process of going from a development repository to an execution repository has been validated as well.
+
+Studio
+ 
+The ODI Studio is the graphical interface provided to all users to interact with ODI. People who need to use the Studio usually install the software on their own machine and connect to a shared repository. The Studio includes four navigators that are typically used by different users who can share the same objects and the same repository. Some users may not have access to some navigators, depending on their security profiles. The navigators are as follows:
+
+•Security Navigator: This navigator is typically used by system administrators, security administrators, and DBAs. Through this interface, they can assign roles and privileges to the different users, making sure that they can only view and modify objects that they are allowed to handle.
+
+•Topology Navigator: This navigator is usually restricted to DBAs and System administrators. Through this interface, they declare the systems where the data resides (sources, targets, references, and so on), along with the credentials that ODI will use to connect to these systems. Developers and operators will leverage the information stored in the repository, but will not necessarily have the right to modify, or even view that information. They will be provided with a name for the connections and this is all they will need. We will see this in more detail when we address logical schemas.
+
+•Designer Navigator: This navigator is used by developers and data custodians alike. Metadata are imported and enriched through this navigator. The metadata is then used to define the transformations in objects called Interfaces. The Interfaces are finally orchestrated in workflows called Packages.
+
+•Operator Navigator: This navigator is used by developers and operators. In a development environment, developers will use the Operator views to check on the code generated by ODI, to debug their transformations, and to validate and understand performance of their developments. In a production environment, operators use this same navigator to view which processes are running, to check whether processes are successful or not, and to check on the performance of the processes that are running.
+
+Agent
+ 
+The ODI Agent is the component that will orchestrate all the operations. If SQL code must be executed by a database (source or target), the agent will connect to that database and will send the code (DDL and DML, as needed) for that database to perform the transformations. If utilities must be used as part of the transformations (or, more likely, as part of the data transfer) then the agent will generate whatever configuration files or parameter files are required for the utility, and will invoke this utility with the appropriate parameters—SQL Loader, BCP, Multiload, and NZload are just a small list of such utilities.
+ 
+There are two types of ODI Agent, namely, the standalone agent (available in all releases of ODI) and the JEE agent (available with ODI 11g and after) that runs on top of WebLogic Server. Each type has its own benefits, and both types of agents can co-exist in the same environment:
+
+•The JEE agent will take advantage of Weblogic in terms of high availability and pooling of the connections.
+•The standalone agents are very lightweight and can easily be installed on any platform. They are small Java applications that do not require a server.
+ 
+A common configuration is to use the JEE agent as a "Master" agent, whose sole purpose it is to distribute execution requests across several child agents. These children can very well be standalone agents. The master agent will know at all times which children are up or down. The master agent will also balance the load across all child agents.
+ 
+In a pure standalone environment, the Agent is often installed on the target server. Agents are also often installed on file servers, where they can leverage database loading utilities to bulk load data into the target systems. Load balancing can also be done with a standalone master agent. Multiple standalone agents can run on the same server, as long as they each have a dedicated port. This port number is defined in the Topology navigator, where the agent is defined.
+ 
+The Agent can receive execution orders from different origins as follows:
+
+•Execution from the Studio: When a user executes a process from the Studio, he/she is prompted for the name of the agent that will be in charge of the execution.
+•Execution from the Console: Similarly to the Studio execution, the person requesting a process execution will have to choose the Agent in charge.
+•Execution from a command line: In this case, ODI will start a dedicated session of the agent, limited to the execution of the process that is passed as a parameter. The script to be used to start a process from a command line is startscen.bat on Windows or startscen.sh on Unix. This script can be found under the /bin directory under the agent installation path.
+•Execution from a web service: ODI 10g offered this feature but required a dedicated setup. ODI 11g offers this feature as part of the agent deployment. All agents support web services to start processes. For a standalone agent, connect to the agent via HTTP to view the associated WSDL. For instance, if the agent is running on server odi_dev on port 20910, the wsdl can be found on this very machine at http://odi_dev:20910/oraclediagent/OdiInvoke?wsdl.
+The application name for a standalone agent will always be oraclediagent. Customers using a JEE agent will use the application name for the ODI Agent.
+
+•ODI Schedules: If ODI processes are scheduled from within ODI (from the Operator navigator or the Designer navigator) then the schedule itself is associated with an agent. Either the schedules will be uploaded to the agent by an administrator, or the agent will refresh its list of schedules when it is restarted.
+
+Console
+ 
+The Console is an HTML interface to the repository. The Console is installed on a WebLogic Server (other application servers will be supported with later releases of the product). The Console can be used to browse the repository, but no new developments can be created through this interface. The Console is useful for viewing lineage and impact analysis without having the full Studio installed on a machine. Operators can also perform most of the tasks they would perform with the Studio, including starting or restarting processes. The exact information that is available in the Operator Navigator of the Studio will be found in the matching view of the Console: generated code, execution statistics, and statuses of executed processes are all available.
+ 
+Oracle Enterprise Manager
+ 
+As part of the consolidation of features across all Oracle product lines, ODI now integrates with WebLogic Enterprise Manager. Administrators can now use one single tool (OEM) to monitor the overall health of their environment, including ODI Agents and ODI processes.
+
+ODI Key concepts
+
+A Model is the description of a set of datastores. Models as well as all their components are based on the relational paradigm (table, attributes, keys, etc.). Models in Data Integrator only contain Metadata, that is the description of the data structures. They do not contain a copy of the actual data. 
+A model is based on a Logical Schema defined in the topology. In a given Context, this Logical Schema is mapped to a Physical Schema. 
+
+Before you begin creating an integration project with Oracle Data Integrator, it is recommended to think about how the project will be organized. Rearranging your project afterwards may be dangerous. You might have to redo all the links and cross-references manually to reflect new locations.
+
+Folders simplify finding objects developed in the project and facilitate the maintenance tasks. To arrange your project folders in the project hierarchy, drag and drop a folder into other folders or on the Project. Note that it is not possible to move a folder from one Project to another Project.
+
+Data Server Name could be in the format : <TECHNOLOGY_NAME>_<SERVER_NAME>
+
+Defining data sources is not mandatory, but allows the Java EE agent to benefit from the data sources and connection pooling features available on the application server. Connection pooling allows reusing connections across several sessions. If a data source is not declared for a given data server in a Java EE agent, this Java EE agent always connects the data server using direct JDBC connection, that is without using any of the application server data sources.
+
+Physical Schema : An Oracle Data Integrator Physical Schema corresponds to a pair of Schemas: Data schema(Source and targets) and Work schema(Temporary data structures). 
+
+Logical Schema : Logical Schema matches to a physical schema based on the context. 
+
+Creating an ODI procedure to create and populate a relational table
+
+ -- Developers Guide
+Mapping Diagram, Mapping Editor tabs, Property Inspector, Component Palette, Structure Panel, Thumbnail Panel
+
+Projector Component : Projectors are components that influence the attributes present in the data that flows through a mapping. Projector components define their own attributes: attributes from preceding components are mapped through expressions to the projector's attributes. ( Data Store, Sort, Distinct 
+
+Selector Components : Selector components reuse attributes from preceding components. Join and Lookup selectors combine attributes from the preceding components. For example, a Filter component following a datastore component reuses all attributes from the datastore component. As a consequence, selector components don't display their own attributes in the diagram and as part of the properties; they are displayed as a round shape. (The Expression component is an exception to this rule.) (Filters, Joins and Lookups, Splits, Expressions)
+
+If a flow is divided unconditionally into multiple flows, no split component is necessary.
+There is a Remainder check box 
+
+A dataset component is a container component that allows you to group multiple data sources and join them through relationship joins. 
+Within a dataset, data sources are related using relationships instead of a flow. This is displayed using an entity relationship diagram. When you switch to the physical tab of the mapping editor, datasets disappear: ODI models the physical flow of data exactly the same as if a flow diagram had been defined in the logical tab of the mapping editor.
+
+A dataset exists only within a mapping or reusable mapping, and cannot be independently designed as a separate object.
+
+A Procedure is a set of commands that can be executed by an agent. These commands concern all technologies accessible by Oracle Data Integrator (OS, JDBC, JMS commands, etc). Procedures should be considered only when what you need to do can't be achieved in a mapping. Procedures require you to develop all your code manually, as opposed to mappings. 
+
+A procedure is composed of command lines, possibly mixing different languages. Every command line may contain two commands that can be executed on a source and on a target. The command lines are executed sequentially. Some command lines may be skipped if they are controlled by an option. 
+
+Task Type in Procedure : Cleanup: Mark a task as cleanup task if you would like it to be executed even when the procedure results in error. For example, use cleanup tasks to remove temporary objects.
+
+Writing Code in Procedures : Commands within a procedure can be written in several languages. These include:
+SQL: DML, DDL, Select statements are allowed.
+Operating System Commands: Useful when you want to run an external program. To write an operating system command, select "Operating System" from the list of technologies of you current step. It is recommended to use for these kind of operations the OdiOSCommand tool as this tool prevents you from calling and setting the OS command interpreter.
+ODI Tools: ODI offers a broad range of built-in tools that you can use in procedures to perform some specific tasks. These tools include functions for file manipulation, email alerts, event handling, etc.
+Scripting Language: You can write a command in any scripting language supported by Oracle Data Integrator. By default, ODI includes support for the following scripting languages that you can access from the technology list box of the current step: Jython, Groovy, NetRexx, and Java BeanShell.
+
+Loading Data from a Remote SQL Database through procedure:
+Source Technology : Oracle
+Source Logical Schema : ORACLE_INVENTORY
+Source Command : select PRD_ID MY_PRODUCT_ID, PRD_NAME PRODUCT_NAME, from <%=odiRef.getObjectName("L","PRODUCT","D")%> 
+Target Technology : Teradata
+Target Logical Schema : TERADATA_DWH
+Target Command : insert into PARTS (PART_ID, PART_ORIGIN, PART_NAME) values (:MY_PRODUCT_ID, 'Oracle Inventory',:PRODUCT_NAME)
+
+Procedure Details for Sending Multiple Emails : 
+Source Technology : Oracle
+Source Logical Schema : ORACLE_DWH_ADMIN
+Source Command : Select FirstName FNAME, EMailaddress EMAIL From <%=odiRef.getObjectName("L","Operators","D")%> Where RequireWarning = 'Yes'
+Target Technology : ODITools
+Target Logical Schema : None
+Target Command : OdiSendMail -MAILHOST=my.smtp.com -FROM=admin@mycompany.com "-TO=#EMAIL" "-SUBJECT=Job Failure"
+Dear #FNAME,
+I'm afraid you'll have to take a look at ODI Operator,
+because session <%=snpRef.getSession("SESS_NO")%> has
+just failed!
+-Admin
+
+Note : that if you use a procedure in a package step, the procedure is not a copy of the procedure you created but a link to it. If this procedure is modified outside of the package, the package using the procedure will be changed, too.
+
+Using Variables : Using Variables is highly recommended to create reusable packages or packages with a complex conditional logic, mappings and procedures. Variables can be used everywhere within ODI.
+When you use the Expression Editor the variables are retrieved directly from the repository. You should only manually prefix variable names with GLOBAL or the PROJECT_CODE, when the Expression Editor is not available. 
+
+Usage
+#MY_VAR: With this syntax, the variable must be in the same project as the object referring to it. To avoid ambiguity, consider using
+fully qualified syntax by prefixing the variable name with the project code: #MY_PROJECT_CODE.MY_VAR:
+#GLOBAL.MY_VAR: This syntax allows you to refer to a global variable.
+
+Using ":" instead of "#": You can use the variable as a SQL bind variable by prefixing it with a colon rather than a hash. However this syntax is subject to restrictions as it only applies to SQL DML statements, not for OS commands or ODI API calls and using the bind variable may result in performance loss. When you reference an ODI Variable prefixed with the ':' character, the name of the Variable is NOT substituted when the RDBMS engine determines the execution plan. The variable is substituted when the RDBMS executes the request. This mechanism is called Binding. If using the binding mechanism, it is not necessary to enclose the variables which store strings between delimiters (such as quotes) because the RDBMS is expecting the same type of data as specified by the definition of the column for which the variable is used. For example, if you use the variable TOWN_NAME = :GLOBAL.VAR_TOWN_NAME the VARCHAR type is expected.
+
+When you reference an ODI variable prefixed with the "#" character, ODI substitutes the name of the variable by the value before the code is executed
+by the technology. The variable reference needs to be enclosed in single quote characters, for example TOWN = '#GLOBAL.VAR_TOWN'. This reference mode of the variable works for OS commands, SQL, and ODI API calls.
+
+Using Variables in Packages
+Variables can be used in packages for different purposes:
+
+The METADATA ADMIN profile provides full access to all models and data stores as well as read-only access to all projects and folders, which explains why we didn't have to drag-and-drop those objects into our Cookbook Developer user. If our user didn't have this profile, we would have needed to add the project and the folder storing the interface and the models and data stores used by the interface to our user.
+
+It is also possible to restrict access to object instances in specific repositories. This can be achieved when granting access to object methods; to do so, simply select the Allow selected methods in selected repositories button instead of the Allow all methods in all repositories button.
+
+Declaring a variable: When a variable is used in a package (or in certain elements of the topology that are used in the package), it is strongly recommended that you insert a Declare Variable step in the package.
+
+Refreshing a variable from its SQL SELECT statement: A Refresh Variable step allows you to re-execute the command or query that computes the variable value.
+
+Assigning the value of a variable: A Set Variable step of type Assign sets the current value of a variable. Different ways of asigning are:
+
+   Retrieving the variable value from a SQL SELECT statement: When creating your variable, define a SQL statement to retrieve its value. For example, you
+   can create a variable NB_OF_OPEN_ORDERS and set its SQL statement to:
+   select COUNT(*) from <%=odiRef.getObjectName("L","ORDERS","D")%> where STATUS = 'OPEN'
+   It assign the first returned value of the result set to the variable.
+   
+   Explicitly setting the value in a package: You can also manually assign a value to your variable for the scope of your package. Simply drag and drop your variable into your package and select the "Set Variable" and "Assign" options in the Properties panel as well as the value you want to set.
+   
+   Incrementing the value: Incrementing only applies to variables defined with a numeric data type. Drag and drop your numeric variable into the package and select the "Set Variable" and "Increment" options in the Properties panel as well as the desired increment. Note that the increment value can be positive or negative.
+   
+   Assigning the value at runtime: When you start a scenario generated from a package containing variables, you can set the values of its variables. You can do that in the StartScenario command by specifying the VARIABLE=VALUE list.
+   
+Evaluating the value for conditional branching: An Evaluate Variable step acts like an IF-ELSE step. It tests the current value of a variable and branches in a package depending on the result of the comparison. For example, you can choose to execute mappings A and B of your package only if variable EXEC_A_AND_B is set to "YES", otherwise you would execute mappings B and C. To do this, you would simply drag and drop the variable in your package diagram, and select the "Evaluate Variable" type in the properties panel.
+
+Using Variables in Mappings : Variables can be used in mappings in two different ways:
+1. As a value for a textual option of a Knowledge Module.
+2. In all Oracle Data Integrator expressions, such as filter conditions and join conditions.
+
+To substitute the value of the variable into the text of an expression, precede its name by the '#' character. The agent or the graphical interface will substitute the value of the variable in the command before executing it. The following example shows the use of a global variable named 'YEAR':
+
+Update CLIENT set LASTDATE = sysdate where DATE_YEAR = '#GLOBAL.YEAR' /* DATE_YEAR is CHAR type */
+Update CLIENT set LASTDATE = sysdate where DATE_YEAR = #GLOBAL.YEAR /* DATE_YEAR is NUMERIC type */
+
+The "bind variable" mechanism of the SQL language can also be used, however, this is less efficient, because the relational database engine does not know the value of the variable when it constructs the execution plan for the query.
+
+update CLIENT set LASTDATE = sysdate where DATE_YEAR =:GLOBAL.YEAR
+
+The "bind variable" mechanism must be used for Date type variables that are used in a filter or join expression. The following example shows a filter:
+SRC.END_DATE > :SYSDATE_VAR
+
+where the variable SYSDATE_VAR is a "Date" type variable with the refresh query select sysdate from dual
+If the substitution method is used for a date variable, you need to convert the string into a date format using the RDBMS specific conversion function.
+
+Using Variables in Object Properties : It is also possible to use variables as substitution variables in graphical module fields such as resource names or schema names in the topology. You must use the fully qualified name of the variable (Example: #GLOBAL.MYTABLENAME) directly in the Oracle Data Integrator graphical module's field.
+
+Using this method, you can parameterize elements for execution, such as: ¦ The physical names of files and tables (Resource field in the datastore) or their location (Physical schema's schema (data) in the topology)
+¦ Physical Schema
+¦ Data Server URL
+
+Using Variables in Procedures
+You can use variables anywhere within your procedures' code.
+
+Insert into #DWH.LOG_TABLE_NAME Values (1, 'Loading Step Started', current_date) -- Add a row to a log table that has a name only known at runtime
+
+f = open('#DWH.LOG_FILE_NAME','w')
+f.write('Inserted a row in table %s' % ('#DWH.LOG_TABLE_NAME') )
+f.close()
+
+Open file defined by LOG_FILE_NAME variable and write the name of the log table into which we have inserted a row.
+
+You should consider using options rather than variables whenever possible in procedures. Options act like input parameters. Therefore, when executing your procedure in a package you would set your option values to the appropriate values.
+
+Using options you would write Step 1's code as follows:
+Insert into <%=snpRef.getOption("LogTableName")%> Values (1, 'Loading Step Started', current_date)
+
+Then, when using your procedure as a package step, you would set the value of option LogTableName to #DWH.LOG_TABLE_NAME.
+
+Note that when using Groovy scripting, you need to enclose the variable name in double quotes ("), for example "#varname" and "#GLOBAL.varname", otherwise the variables are not substituted with the ODI variable value.
+
+Using Variables in the Resource Name of a Datastore : You may face some situations where the names of your source or target datastores are dynamic. A typical example of this is when you need to load flat files into your Data Warehouse with a file name composed of a prefix and a dynamic suffix such as the current date. E.g order file for March 26 would be named ORD2009.03.26.dat.
+
+Create the FILE_SUFFIX variable in your DWH project and set its SQL SELECT statement to select current_date
+Define your ORDERS file datastore in your model and set its resource name to: ORD#DWH.FILE_SUFFIX.dat.
+Use your file datastore normally in your mappings.
+Design a package as follows: 1. Drag and drop the FILE_SUFFIX variable to refresh it. 2. Drag and drop all mappings that use the ORDERS datastore.
+
+Using Variables in a Server URL : 
+There are some cases where using contexts for different locations is less appropriate than using variables in the URL definition of your data servers. For example, when the number of sources is high (> 100), or when the topology is defined externally in a separate table. In these cases, you can refer to a variable in the URL of a server's definition.
+
+Suppose you want to load your warehouse from 250 source applications - hosted in Oracle databases - used within your stores. Of course, one way to do it would be to define one context for every store. However, doing so would lead to a complex topology that would be difficult to maintain. Alternatively, you could define a table that references all the physical information to connect to your stores and use a variable in the URL of your data server's definition.
+
+StoreID : Store Name : Store URL : IsActive
+1  : Denver : 10.21.32.198:1521:ORA1  : YES
+2  : San Francisco : 10.21.34.119:1525:SANF :  NO
+3  : New York  : 10.21.34.11:1521:NY  : YES
+
+2. Create three variables in your EDW project:
+¦ STORE_ID: takes the current store ID as an input parameter
+¦ STORE_URL: refreshes the current URL for the current store ID with SELECT statement: 
+select StoreUrl from StoresLocation where StoreId = #EDW.STORE_ID
+¦ STORE_ACTIVE: refreshes the current activity indicator for the current store ID with SELECT statement: 
+select IsActive from StoresLocation where StoreId = #EDW.STORE_ID
+
+3. Define one physical data server for all your stores and set its JDBC URL to:
+jdbc:oracle:thin:@#EDW.STORE_URL
+
+4. Define your package for loading data from your store.
+The input variable STORE_ID will be used to refresh the values for STORE_URL and STORE_ACTIVE variables from the StoresLocation table. If STORE_ACTIVE is set to "YES", then the next 3 steps will be triggered. The mappings refer to source datastores that the agent will locate according to the value of the STORE_URL variable.
+
+To start such a scenario on Unix for the New York store, you would issue the following operating system command:
+startscen.sh LOAD_STORE 1 PRODUCTION "EDW.STORE_ID=3"
+
+Introduction to Sequences
+A Sequence is a variable that increments itself automatically each time it is used. Between two uses, the value can be stored in the repository or managed within an external RDBMS table.
+
+Oracle Data Integrator supports three types of sequences:
+¦ Standard sequences, whose current values are stored in the Repository.
+¦ Specific sequences, whose current values are stored in an RDBMS table cell. Oracle Data Integrator reads the value, locks the row (for concurrent updates) and updates the row after the last increment.
+¦ Native sequence, that maps a RDBMS-managed sequence.
+
+
+Oracle Data Integrator locks the sequence when it is being used for multi-user management, but does not handle the sequence restart points. In other words, the SQL statement ROLLBACK does not return the sequence to its value at the beginning of the transaction.
+
+Oracle Data Integrator standard and specific sequences were developed to compensate for their absence on some RDBMS. If native sequences exist, they
+should be used. This may prove to be faster because it reduces the dialog between the agent and the database.
+
+The value of standard and specific sequences (#<SEQUENCE_NAME>_NEXTVAL) can be tracked. A side effect that only happens to tracking native sequence is that the native sequence value is incremented once more when it is accessed for tracking purpose.
+
+Working with User Functions
+User functions are implemented in one or more technologies and can be used anywhere in mappings, joins, filters and conditions. The user functions can be used in all Oracle Data Integrator expressions.
+
+Example of a user function translated into code for different technologies is defining the following mapping: substring(GET_MONTH_NAME(CUSTOMER.LAST_ORDER_DATE), 1, 3), Oracle Data Integrator will generate code similar to the following, depending on your execution technology:
+
+Implementation for Oracle : substring(Initcap(to_char(CUSTOMER.LAST_ORDER_DATE, 'MONTH')) , 1, 3)
+Implementation for Teradata : substring(case when extract(month from CUSTOMER.LAST_ORDER_DATE) = 1 then 'January'
+when extract(month from CUSTOMER.LAST_ORDER_DATE) = 2 then 'February'...end, 1, 3)
+Implementation for Microsoft SQL : substring(datename(month, CUSTOMER.LAST_ORDER_DATE) ,1, 3)
+
+Using Scenarios
+A scenario is designed to put a source component (mapping, package, procedure, variable) into production. A scenario results from the generation of code (SQL, shell, etc.) for this component. 
+
+When a component is finished and tested, you can generate the scenario corresponding its actual state. This operation takes place in Designer Navigator. The scenario code (the language generated) is frozen, and all subsequent modifications of the components which contributed to creating it will not change it in any way.
+
+Once generated, the scenario is stored inside the work repository. The scenario can be exported then imported to another repository (remote or not) and used in different contexts. A scenario can only be created from a development work repository, but can be imported into both development and execution work repositories. It is possible to generate scenarios for packages, procedures, mappings, or variables. 
+
+Scenarios can be launched from a command line, from the Oracle Data Integrator Studio and can be scheduled. 
+
+Regenerating a Scenario
+An existing scenario can be regenerated with the same name and version number. For important scenarios, it is better to generate a scenario with a new version number.
+To generate a group of scenarios: Select the Project or Folder containing the group of objects -> Right-click and select Generate All Scenarios.
+
+Generation Mode:
+Replace: Overwrites for each object the last scenario version with a new one with the same ID, name and version. Sessions, scenario reports and schedules are deleted. If no scenario exists for an object, a scenario with version number 001 is created.
+Re-generate: Overwrites for each object the last scenario version with a new one with the same id, name and version. It preserves the schedule, sessions and scenario reports. If no scenario exists for an object, no scenario is created using this mode.
+Creation: Creates for each object a new scenario with the same name as the last scenario version and with an automatically incremented version number.
+If no scenario exists for an object, a scenario named after the object with version number 001 is created.
+
+New scenarios are named after the component according to the Scenario Naming Convention user parameter. You can set this parameter by clicking Preferences from the Tools option on the menu bar; expand the ODI node, and then the System node, and select the Scenarios node.
+
+In the Objects to Generate section, select the types of objects for which you want to generate scenarios.
+In the Marker Filter section, you can filter the components to generate according to a marker from a marker group.
+
+Exporting Scenarios
+The export (and import) procedure allows you to transfer Oracle Data Integrator objects from one repository to another. 
+
+Select the Project or Folder containing the group of scenarios. -> Right-click and select Export All Scenarios. -> 
+specify the export parameters
+Export Directory : Directory in which the export file will be created.
+Child components export : If this option is checked, the objects linked to the object to be exported will be also exported. These objects are those visible under the exported object in the tree. It is recommended to leave this option checked.
+Select the type of objects whose scenarios you want to export. 
+
+Importing Scenarios in Production
+Importing a scenario in a development repository is performed via Designer or Operator Navigator. With a execution repository, only Operator Navigator is available for this purpose.
+
+There are two ways to import a scenario:
+¦ Import : uses the standard object import method. During this import process, it is possible to choose to import the schedules attached to the exported scenario.
+¦ Import Replace : replaces an existing scenario with the content of an export file, preserving references from other objects to this scenario. Sessions, scenario reports and schedules from the original scenario are deleted and replaced with the schedules from the export file.
+
+In Operator Navigator, select the Scenarios panel -> Right-click and select Import > Import Scenario -> Select the Import Type -> Specify the File Import Directory -> Check the Import schedules option, if you want to import the schedules.
+
+In Designer or Operator Navigator, select the scenario you wish to replace -> Right-click the scenario, and select Import Replace -> specify the scenario export file.
+
+Can the physical schema, logical schema and models be exported/imported?
+
+Using Load Plans
+
+https://gba71220:8443/
+
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
+

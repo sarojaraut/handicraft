@@ -1,0 +1,400 @@
+Database Architecture and ASM
+
+ASM is a multiplexing solution that automates the layout of datafiles, control files, and redo log files by distributing them across all available disks. When new disks are
+added to the ASM cluster, the database files are automatically redistributed across all disk volumes for optimal performance.
+
+ASM eliminates the need to purchase a third-party logical volume manager. ASM not only enhances performance by automatically spreading out database objects over multiple devices, but it also increases availability by allowing new disk devices to be added to the database without shutting down the database;
+
+Automatic rebalancing is another key feature of ASM. When an increase in disk space is needed, additional disk devices can be added to a disk group, and ASM moves a proportional number of files from one or more existing disks to the new disks to maintain the overall I/O balance across all disks. This happens in the background while the database objects contained in the disk files are still online and available to users.
+
+ASM requires a special type of Oracle instance to provide the interface between a traditional Oracle instance and the file system; the ASM software components are shipped with the Oracle Database software and are always available as a selection when you’re selecting the storage type for the entire database, when the database is created.
+
+Two Oracle background processes introduced in Oracle Database 10g support ASM instances: the rebalancer (RBAL) and ARBn. RBAL coordinates the disk activity for disk groups, performing rebalancing when a disk is added or removed. ARBn, where n can be a number from 0 to 9, performs the actual extent movement between disks in the disk groups.
+
+For databases that use ASM disks, two new background processes exist as of Oracle Database 10g: ASMB and RBAL. ASMB performs the communication between the database and the ASM instance, whereas RBAL performs the opening and closing of the disks in the disk group on behalf of the database. This is the same process as RBAL in an ASM instance, but performs a different, but related, function. In other words, the process behaves differently depending on the type of instance.
+
+Set the ORACLE_SID environment variable for the RDBMS instance;
+
+export ORACLE_SID=DW
+sqlplus / as sysdba
+SQL> select sid, serial#, process, name, description from v$session join v$bgprocess using(paddr);
+
+Note the processes RBAL and ASMB
+
+Next, check for the ASM background processes by setting the ORACLE_SID environment variable for the ASM instance (+ASM):
+
+export ORACLE_SID=+ASM
+sqlplus / as sysasm
+SQL> select sid, serial#, process, name, description from v$session join v$bgprocess using(paddr);
+
+Note the new processes RBAL and ASMB in the list. The ARBn process starts when a rebalance operation is initiated.
+
+
+Creating an ASM Instance
+
+ASM requires a dedicated Oracle instance to manage the disk groups. An ASM instance generally has a smaller memory footprint than an RDBMS instance, in the range of 60MB to 120MB.
+
+create asm files 
+
+create asm instance
+Creating an ASM Instance with the DBCA.
+
+Creating the ASM Instance Manually
+1. Create directories for the ASM instance.
+2. Create the instance parameter file.
+Note the following Oracle parameters that are specific to ASM instances:
+NN INSTANCE_TYPE: Used only with an ASM instance, this parameter indicated to Oracle that this is an ASM instance. The default value is RDBMS, which indicates the instance is an Oracle database instance. This parameter is not dynamic and is the only mandatory parameter in an ASM instance.
+NN ASM_DISKSTRING: This parameter indicates where Oracle should search for disk devices to be used by ASM.
+NN ASM_POWER_LIMIT: This parameter controls the rate at which ASM can rebalance disks by increasing or decreasing the degree of parallelism used. Lower values will slow rebalancing but will also result in less of an IO impact by those operations. Higher values may speed up rebalancing by parallelizing the rebalance operation. The default is 1, and this is typically sufficient. This parameter can be set dynamically.
+3. Perform any Microsoft Windows–specific configuration.
+oradim -new -asmsid +ASM -syspwd my_password -pfile C:\oracle\product\11.1.0.6\admin\+ASM\pfile\init.ora -spfile -startmode manual -shutmode immediate
+4. Start the ASM instance.
+Set ORACLE_SID=+ASM
+Sqlplus sys/Robert as sysasm
+startup
+5. Create the ASM server parameter file (spfile).
+
+
+
+
+
+----------------------- Additional study
+http://oracle-mssql-dba.blogspot.co.uk/p/oracle-10g11g-create-new-asm-instance.html
+
+oradim -NEW -ASMSID +ASM -SYSPWD oracle -STARTMODE manual
+
+oradim -Delete -ASMSID +ASM
+
+ oradim -DELETE -ASMSRVC OracleService+ASM
+
+OPW-00005: File with same name exists - please delete or rename Instance created.
+ 
+"OPW-00005: File with same name exists " error indicates that you have password file (ex:PWDorcl.ora) file under %ORACLE_HOME%\database. Can you delete that file and retry it. 
+
+
+sc query OracleASMService+ASM
+
+sc delete OracleASMService+ASM
+
+
+*._ASM_ALLOW_ONLY_RAW_DISKS=FALSE
+*.ASM_DISKSTRING='C:\asmdisks
+*.background_dump_dest='C:\oracle\app\product\11.2.0\dbhome_1\admin\+ASM\bdump'
+*.core_dump_dest='C:\oracle\app\product\11.2.0\dbhome_1\admin\+ASM\cdump'
+*.DB_UNIQUE_NAME='+ASM'
+*.instance_type='asm'
+*.large_pool_size=12M
+*.remote_login_passwordfile='SHARED'
+*.user_dump_dest='C:\oracle\app\product\11.2.0\dbhome_1\admin\+ASM\udump'
+
+
+md C:\oracle\app\product\11.2.0\dbhome_1\admin\+ASM\bdump
+md C:\oracle\app\product\11.2.0\dbhome_1\admin\+ASM\udump
+md C:\oracle\app\product\11.2.0\dbhome_1\admin\+ASM\cdump
+md C:\oracle\app\product\11.2.0\dbhome_1\admin\+ASM\pfile
+
+asmtool -create c:\asmdisks\disk1 512
+asmtool -create c:\asmdisks\disk2 512
+
+ 5.Create  OracleCSS Service.
+
+Open Command Prompt.
+
+SET ORACLE_HOME=C:\oracle\app\product\11.2.0\dbhome_1
+
+CD %Oracle_home%/bin
+
+Execute this command
+
+D:\oracle\product\10.2.0\db_1\BIN>localconfig.bat add
+
+asmtool -delete c:\asmdisks\disk1
+
+-------------------------------------------------
+
+Automatic Storage Management (ASM) provides a centralized way to manage Oracle Database disk storage. ASM is designed to simplify Oracle database storage administration.
+
+ASM is somewhat like a logical volume manager, allowing you to reduce the management of Oracle files into ASM disk groups. It also provides redundancy configurations, rebalancing operations, and, when installed on top of clusterware, the ability to share database-related files.
+
+Creating the ASM Instance with the DBCA -> Select Configure Automatic Storage Management and click Next.
+Set ORACLE_SID=+ASM
+Sqlplus sys/Robert as sysasm
+select instance_name from v$instance;
+
+
+
+following Oracle parameters that are specific to ASM instances:
+INSTANCE_TYPE: Used only with an ASM instance, this parameter indicated to Oracle that this is an ASM instance. This parameter is not dynamic and is the only mandatory parameter in an ASM instance.
+ASM_DISKSTRING: This parameter indicates where Oracle should search for disk devices to be used by ASM. 
+ASM_DISKGROUPS: This parameter lists ASM disk groups that ASM should mount when it is started. 
+ASM_POWER_LIMIT: This parameter controls the rate at which ASM can rebalance disks by increasing or decreasing the degree of parallelism used. Lower values will slow rebalancing
+but will also result in less of an IO impact by those operations. Higher values may speed up rebalancing by parallelizing the rebalance operation. The default is 1, and this is typically sufficient.
+
+If you execute a normal or immediate shutdown command on an ASM instance, that shutdown will fail if there is any database using that ASM instance. You can perform a shutdown abort on the ASM instance. This will cause the ASM instance to shut down immediately and all of the associated databases will be shut down in san inconsistent state.
+
+After you start your ASM instance, Additional ASM processes will be started too. These processes include the following:
+
+The ARBn process, used to perform disk group rebalance operations. There may be one or more of these processes running.
+The ASMB process manages ASM storage and provides statistics.
+The GMON process maintains disk membership in ASM disk groups.
+The KATE process performs proxy I/O to ASM metadata files when a disk is offlined.
+The MARK process is responsible for marking ASM allocation units as stale following a missed write to an offline disk.
+The RBAL process runs in both database and ASM instances. RBAL is responsible for performing a global open of ASM disks in normal databases. RBAL coordinates rebalance activity for disk groups in ASM instances.
+
+
+ASM_DISKSTRING : This parameter contains the paths that Oracle will use to try to find the various candidate disks available for ASM’s use. The process of ASM finding disks in the ASM_DISKSTRING path is known as discovery.
+
+ASM_DISKSTRING has a number of different default values depending on the platform you are using. For solaris and HP UX it's Solaris /dev/rdsk/* for linux it's /dev/raw/*
+The ASM_DISKSTRING can be dynamically altered, only new paths can be added safely.
+Once discovery is complete and the ASM instance is open, you can review the disks discovered by looking at the V$ASM_DISK view,
+
+select path, group_number group_#, disk_number disk_#, mount_status, header_status, state, total_mb, free_mb
+from v$asm_disk
+order by group_number;
+
+PATH GROUP_# DISK_# MOUNT_S HEADER_STATU STATE TOTAL_MB FREE_MB
+-------------- ------- ------ ------- ------------ ----- -------- ----------
+/dev/raw/raw4 0 1 CLOSED FOREIGN NORMAL 39 0
+/dev/raw/raw5 0 0 CLOSED FOREIGN NORMAL 39 0
+/dev/raw/raw3 0 2 CLOSED FOREIGN NORMAL 39 0
+/dev/raw/raw6 0 2 CLOSED CANIDATE NORMAL 2048 2048
+ORCL:ASM01_004 1 3 CACHED MEMBER NORMAL 34212 30436
+ORCL:ASM01_005 1 4 CACHED MEMBER NORMAL 34212 30408
+ORCL:ASM01_006 1 5 CACHED MEMBER NORMAL 34212 30420
+ORCL:ASM01_007 1 6 CACHED MEMBER NORMAL 34212 30297
+ORCL:ASM01_008 1 7 CACHED MEMBER NORMAL 34212 30507
+ORCL:ASM01_009 1 8 CACHED MEMBER NORMAL 34212 30404
+ORCL:ASM01_010 1 9 CACHED MEMBER NORMAL 34212 30509
+ORCL:ASM01_011 1 10 CACHED MEMBER NORMAL 34212 30449
+ORCL:ASM01_012 1 11 CACHED MEMBER NORMAL 34212 30340
+ORCL:ASM01_013 1 12 CACHED MEMBER NORMAL 34212 30357
+
+header_status can be member, candidate or foreign
+FOREIGN indicates that these disks contain data already and are owned by some process other than ASM
+Disks having MOUNT_STATUS of CACHED and a HEADER_STATUS of MEMBER. This means that the disk is currently part of an ASM disk group
+
+Redundancy
+When configuring an ASM disk group, you can use one of three different ASM redundancy setting options to protect the data in your disk group:
+NN Normal: Typically employs two-way mirroring by default and thus requires allocation of two failure groups.
+NN High: Typically employs three-way mirroring by default and thus requires allocation of three failure groups.
+NN External: Does not employ any mirroring. This setting is typically used when the disk group is being assigned to an external disk that is attached to some device that already employs some disk redundancy.
+
+Redundancy is supported by one or more failgroups (or failure groups) assigned to the ASM disk group when it is created. If you are using the Normal redundancy setting, then the ASM disk
+group typically will need two failure groups. Each failure group represents a logical allocation
+of one or more disks to the ASM disk group and provides for mirroring within that disk
+group. Thus, when you create an ASM disk group, you might have one disk assigned to failure
+group 1 and one disk assigned to failure group 2. This way your data is protected from failure.
+
+When you’re using ASM mirroring, ASM will allocate an extent on a disk that becomes
+the primary copy (one of the failure groups) and then allocate copies of that extent to the
+mirrored copies (the other failure groups). When you create a disk group, you can indicate
+which disk goes in which failure group or you can let Oracle decide for you.
+
+When you define the redundancy setting for a disk group, you are defining things such
+as what kind of striping occurs and whether the data will be mirrored. These attributes are
+defined based on which template you have assigned to the ASM disk group. By default, when
+you create a disk group, Oracle will assign it the default template setting.
+
+Ta ble 1.2 Default-Template Redundancy Settings
+Template Name Striping : Mirroring : with Normal Redundancy Mirroring: with High Redundancy Mirroring : with Extended Redundancy
+Control file : Fine : Three-way mirroring : Three-way mirroring : No mirroring
+Datafile : Coarse : Two-way mirroring: Three-way mirroring : No mirroring
+Onlinelog : Fine : Two-way mirroring : Three-way mirroring : No mirroring
+Archivelog : Coarse : Two-way mirroring : Three-way mirroring : No mirroring
+Tempfile : Coarse : Two-way mirroring :three-way mirroring No : mirroring
+Backupset : Coarse : Two-way mirroring : Three-way mirroring : No mirroring
+Flashback : : Fine : Two-way mirroring : Three-way mirroring : No mirroring
+
+Rest all template are, Parameterfile, Dataguardconfig , Flashback ,Changetracking , Dumpset, Xtransport, Autobackup 
+: Coarse : Two-way mirroring : Three-way mirroring : No mirroring
+
+Default ASM Template Redundancy Settings
+So, if you create a disk group with normal redundancy using the default template and
+you put datafiles on it, the datafile template would be used by default.
+
+Dealing with ASM Disk Loss
+If you lose an ASM disk, then one of two situations will occur. First, ASM will take the
+lost/damaged disk offline and then automatically drop it. ASM will attempt a rebalance
+operation to maintain redundancy, using the mirror copies as required. The disk group and
+its associated data will remain available during this time.
+If the disk group cannot be rebalanced, then ASM will take the whole disk group offline
+and the data in that disk group will not be available until the damaged disk is restored and
+the disks can be rebalanced.
+
+Striping
+If fine striping is selected, the ASM will use a 128KB stripe size. If coarse is selected, then
+Oracle uses the AU size of the disk group for the stripe size.
+
+Templates
+A template is simply a named collection of attributes. For example,
+if you create a disk group using the default template and then create datafiles in that disk
+group, the datafile template will define the redundancy and striping for that data.
+
+There may be cases where you want to define your own template for a disk group. You
+will need to first create the disk group and then alter it using the add template parameter
+of the alter diskgroup commands, as shown in this example:
+
+CREATE DISKGROUP sp_dgroup2 NORMAL REDUNDANCY
+failgroup diskcontrol1 DISK ‘c:\oracle\asm_disk\_file_disk3’ NAME file_diska1
+failgroup diskcontrol2 DISK ‘c:\oracle\asm_disk\_file_disk4’ NAME file_diskb1;
+ALTER DISKGROUP sp_dgroup2 ADD TEMPLATE new_template ATTRIBUTES (mirror);
+
+After the mirror template has been added, you can create files in that disk group using
+the new template. When you add a template to a disk group, the template cannot be retroactively
+applied to files already in that disk group. As a result, you will need to use RMAN
+to back up and then restore files that already exist in the disk group in order for them to
+take on the attributes of the new template.
+
+You can see the templates associated with a given disk group by querying the V$ASM_TEMPLATE view, as shown in this example:
+SQL> select * from v$asm_template where group_number=2;
+GROUP_NUMBER ENTRY_NUMBER REDUND STRIPE S NAME
+------------ ------------ ------ ------ - --------------------
+2 0 MIRROR COARSE Y PARAMETERFILE
+2 1 MIRROR COARSE Y DUMPSET
+2 2 HIGH FINE Y CONTROLFILE
+.......
+.......
+2 13 MIRROR COARSE N NEW_TEMPLATE
+
+ALTER DISKGROUP sp_dgroup2 DROP TEMPLATE new_template;
+
+And you can alter a user-defined template with the alter template parameter of the
+alter diskgroup command. You cannot drop the default templates, but you can modify them, as shown here:
+
+ALTER DISKGROUP sp_dgroup2
+ALTER TEMPLATE datafile
+ATTRIBUTES (coarse);
+
+ASM Disk Group Attributes
+We have discussed ASM templates that define a set of attributes to the disk group assigned
+to them. Oracle Database 11g also allows you to define specific disk group attributes.
+
+The following attributes can be set on a specific ASM disk group:
+Au_size : disk group allocation unit (AU) size. The value defaults to 1MB and can be set only when the disk group is created. A disk group with the default AU size will be able to grow to 35TB (normal redundancy). Increasing the AU size will significantly increase the maximum size of the disk group. The maximum AU size is 64MB.
+
+Compatible.rdbms : Indicates the database version that the disk group is compatible with at a minimum (default is 10.1). This value should be equal to or greater than the compatibility
+parameter of the database(s) accessing the ASM disk group. This value cannot be rolled back once set.
+
+Compatible.asm : Indicates the ASM instance version that the disk group is compatible with at a minimum (default is 10.1). Compatible.asm must always be set to a value equal to or greater than compatible.rdbms. Once compatible.asm is set for a disk group, it can not be rolled back to an earlier value.
+
+Disk_repair_time : Indicates the length of time that the disk resync process should maintain change tracking before dropping an offline disk. The default for this parameter is 3.6 hours.
+
+Disk group attributes can be viewed using the V$ASM_ATTRIBUTE view. You can see some examples of setting compatibility here:
+
+Create diskgroup robert01 external redundancy
+Disk ’/oracle/asm/ASM_DISKGROUP_robert01.asm’
+Attribute ’ccompatible.asm’=’11.1.0’;
+Alter diskgroup robert01 set attribute ’DISK_REPAIR_TIME’=’1200M’;
+Alter diskgroup robert01 set attribute ’compatible.asm’=’11.1.0’;
+
+ASM Fast Disk Resync
+The redundancy features of ASM make it possible for an ASM disk group to survive the loss
+of a disk associated with that disk group. Disk loss can result from a number of reasons, such
+as loss of controller cards, cable failures, or power-supply errors. In many cases, the disk itself
+is still intact. To allow for sufficient time to recover from disk failures that do not involve the
+actual failure of a disk, ASM provides the ASM fast disk resync feature.
+By default, when a disk in an ASM disk group fails (including any associated infrastructure
+pieces), the disk will be taken offline automatically. The disk will be dropped some 3.6 hours
+later. As a result, you have only 3.6 hours by default to respond to a disk outage. If you correct
+the problem and the physical disk media is not corrupted, then ASM fast disk resync will
+quickly resynchronize the disk when it comes back online, correcting the problem very quickly.
+This type of resynchronization is much faster than rebuilding a newly added disk should the
+disk media be corrupted.
+
+You can change the amount of time that Oracle will wait to automatically drop the disk by setting the disk_repair_time attribute
+
+set the disk_repair_time attribute to 18 hours:
+Alter diskgroup dgroup1 set attribute ‘disk_repair_time’=’18h’;
+
+ASM Preferred Mirror Read
+The ASM preferred mirror read feature allows you to define a primary set of disks that are
+the preferred disks to read from for a given instance. This is most prevalent when using
+RAC databases. The ASM preferred local disk is defined using the optional parameter asm_preferred_
+read_failure_groups.
+
+ASM AU Size and Extents
+ASM files are stored in disk groups. In each disk group, space is allocated in extents, and an
+extent consists of one or more units of space called allocation units (AUs). Allocation units
+default to a size of 10MB and can be configured from 1 to 64MB at the time the disk group is
+created. Once the AU size has been determined for a given disk group, it cannot be changed.
+To enable support for larger ASM datafiles, to reduce the memory overhead of large
+databases, and to improve file open and close operations, ASM uses a variable-extent sizing
+policy. Extents will be initially sized at the size of the AU (for the first 20,000 extents) of the
+ASM disk group in which the extent is created. The extent size will be increased to 8 times
+the AU size for the next 20,000 extents and then will increment to 64 times the AU size for
+subsequent extent allocations.
+
+Adding an ASM Disk Group
+CREATE DISKGROUP dgroup1 NORMAL REDUNDANCY
+failgroup diskcontrol1 DISK ‘/devices/diska1’
+failgroup diskcontrol2 DISK ‘/devices/diskb1’;
+
+In this case, we have created a disk group called dgroup1. It is using normal redundancy and the default template. Two named failure groups are assigned, diskcontrol1 and diskcontrol2.
+If we used high redundancy, we would need to add a third disk to the command, as shown here:
+CREATE DISKGROUP dgroup1 HIGH REDUNDANCY
+failgroup diskcontrol1 DISK ‘/devices/diska1’ NAME diska1
+failgroup diskcontrol2 DISK ‘/devices/diskb1’ NAME diskb1
+failgroup diskcontrol3 DISK ‘/devices/diskc1’ NAME diskc1;
+
+When you create an ASM disk group, Oracle will add that disk group to the ASM_
+DISKGROUPS parameter on the ASM instance only if you are using an spfile. If you are
+not using an spfile, you will need to manually add the disk group to the ASM_DISKGROUPS
+parameter. The ASM_DISKGROUPS parameter tells Oracle which disk groups it should
+mount when the ASM instance is started.
+
+This type of architecture requires that you architect physical database objects to sit
+across these layers using partitioning, creating the more heavily used partitions on
+better-performing disk; the infrequently used partitions can be moved over time to the
+cheaper/slower disks. This might take more time and effort, but in the end the dollar
+savings can be significant! Tiered storage is an idea that is very much taking off!
+
+
+------------------
+Using ASM Storage
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------
+http://oracle-info.com/dbahelper/asm-questions/
+
+In order to use the ASM in a shared mode for the use of RAC database, an ASM instance needs to be created for each node of the RAC database involving the same disk devices as input. 
+To use Automated Storage Management for managing your Oracle database files, you must have both a database instance and an ASM instance running.
+Automated Storage Management is integrated into the Oracle database server and you do not need to install ASM as a separate product ASM and database instance share the same oracle_home.
+ASM automatically distributes database files across all available disks (RAID 10), and whenever the storage configuration changes, the database storage is re-balanced. ASM can also be used to provide redundancy, through the mirroring of database files on different disks.
+ASM is great for Oracle because it eliminates the management overhead involved with the use of a conventional file system, Using ASM, the DBA needs only manage the disk groups for setting up a database. After setup, the DBA need only be concerned with disk groups when monitoring and changing disk allocations within the disk groups. 
+Unneeded data files are automatically deleted with ASM, rather than requiring a manually issued command, as in previous versions.
+
+The main building blocks of ASM are:
+
+ASM disks
+ASM disk groups
+ASM files
+ASM templates
+
+
+ASM disk groups : A disk group is basically one or more ASM disks that are managed as a single logical unit. ASM rebalances the spread of data to ensure an even I/O load to all disks in a disk group when the disk group configuration changes. Any single ASM file is self-contained in a single ASM disk group. However, an ASM disk group can contain files belonging to several databases, and a single database can use storage from multiple ASM disk groups.
+
+For files, such as log files, that require low latency, ASM provides fine-grained (128k) striping to allow larger I/Os to be split and processed in parallel by multiple disks. At file creation time, you can decide whether or not to use fine-grained striping. File type specific templates in the disk group determine the default behavior.
+
+ In any installation, non-ASM managed operating system storage repositories are required, and are used for swap files, execution libraries, and user file systems. The Oracle database and ASM executable files and libraries must reside on the server's operating system file system and cannot reside in an ASM files.
+ 
+ ------

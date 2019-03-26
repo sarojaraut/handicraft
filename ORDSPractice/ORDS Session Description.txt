@@ -1,0 +1,36 @@
+The current setup we will be using here is
+Database : Oracle 11g XE edition ()
+Web Server : Tomcat 8.0
+ORDS 3.0.4
+OS: Windows 7
+CPU : Intel i5 (one core)
+RAM : 4G
+
+Mostly we will be calling the REST GET services from chrome browser, I've REST plugin which displays the JSON data in formatted manner.
+For PUT, POST and delete requests we will be using curl tool.
+
+AutoREST is a quick and easy way to expose database tables as REST resources. You sacrifice some flexibility and customizability to gain ease of effort. AutoRest lets you quickly expose data but (metaphorically) keeps you on a set of guide rails. For example, you cannot customize the output formats or the input formats, or do extra validation.
+
+
+On the other hand, manually created resource modules require you to specify the SQL and PL/SQL to support the REST resources. Using resource modules requires more effort, but offers more flexibility; for example, you can customize what fields are included, do joins across multiple tables, and validate the incoming data using PL/SQL.
+
+
+Note that enabling a schema is not equivalent to enabling all tables and views in the schema. It just means making Oracle REST Data Services aware that the schema exists and that it may have zero or more resources to expose to HTTP. Those resources may be AutoREST resources or resource module resources.
+
+
+ORDS evolved a lot over time. ORDS is now main-stream and proven technology, and being widely adopted. Unless it's a legacy system, I don't really see any reason anymore why you should not use ORDS in your architecture.
+
+It all comes from exchanging data between hybrid systems, and finding a format that can easily be used by the "client" who needs to do something with the data. In the past XML (and SOAP) was used a lot to fill.
+
+One of the success story by client of using ORDS in smart watch application. Smart watch app sends the data in jSON format using ORDS API.
+
+For modern development frameworks REST is the contemporary choice for javascript(jquery), mobile and cloud solutions
+
+Earlier it used to be SQL Developer/APEX screen, but now PLSQL API packages has been provided.
+
+JSON format, schemaless access. No Oracle client, driver to connect to database, REST is available over http and anywhere you can access web you can access RESTFul web services
+JSON is natively supported within database, you can create and parse JSON using sql.plsql
+
+2014 they renamed that to ORDS to emphasize their commitment to RESTFul services. V2.0.6
+
+REST is pretty much universally acceptble from any language. I can't think of a single language which does not support restful call.

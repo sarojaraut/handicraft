@@ -1,0 +1,30 @@
+
+Stateless : A REST constraint that restricts a web server from holding on to any client-specific state information, which helps it support more clients.
+REST API  : A web service interface that conforms to the Web’s architectural style.
+Scalability : The ability to gracefully handle an increasing workload.
+
+
+REST API designers should create URIs that convey a REST API’s resource model to its potential client developers.
+
+Rule: Forward slash separator (/) must be used to indicate a hierarchical relationship. Resource modeling is an exercise that establishes your API’s key concepts. This process is similar to the data modeling for a relational database schema or the classical modeling of an object-oriented system.
+
+http://dev-apex.hq.river-island.com/ords/cmsdev/jda/productmaster
+
+Rule: A trailing forward slash (/) should not be included in URIs
+REST APIs should not expect a trailing slash and should not include them in the links that they provide to clients. ( / adds no semantic value and may cause confusion.)
+
+Rule: Hyphens (-) should be used to improve the readability of URIs, ( Depending on the application’s font, the underscore (_) character can either get partially obscured or completely hidden by this underlining.)
+
+http://dev-apex.hq.river-island.com/ords/cmsdev/jda/product-master
+
+Rule: Lowercase letters should be preferred in URI paths
+Rule: File extensions should not be included in URIs
+
+A REST : API is composed of four distinct resource archetypes: document, collection, store, and controller.
+
+Store
+A store is a client-managed resource repository. A store resource lets an API client put resources in, get them back out, and decide when to delete them. On their own, stores do not create new resources; therefore a store never generates new URIs.
+
+Controller
+A controller resource models a procedural concept. Controller resources are like executable functions, with parameters and return values; inputs and outputs. These are application-specific actions that cannot be logically mapped to one of the standard methods (create, retrieve, update, and delete, also known as CRUD). POST /alerts/245743/resend
+

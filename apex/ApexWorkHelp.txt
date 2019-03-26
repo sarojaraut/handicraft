@@ -1,0 +1,869 @@
+select count(*) from APEX_050000.WWV_FLOWS where id = 4000;
+
+If the count is 0 it is a runtime, if the count is 1, it is a full development environment.
+
+Apex Work Help
+----- Keyboard Shortcuts
+
+Page Designer Alt+F1 Go to Help
+Page Designer Ctrl+F1 Go to Messages
+Page Designer Ctrl+Y Redo
+Page Designer Ctrl+Z Undo
+Page Designer Ctrl+Alt+S Save
+Page Designer Ctrl+Alt+R Save and Run Page
+Page Designer Ctrl+Alt+E Toggle Hide Empty Positions
+Page Designer Property Editor with focus on a group heading Home/End keys
+
+Page Designer Alt+1 Go to Rendering
+Page Designer Alt+2 Go to Dynamic Actions
+Page Designer Alt+3 Go to Processing
+Page Designer Alt+4 Go to Page Shared Components
+Page Designer Alt+5 Go to Grid Layout
+Page Designer Alt+6 Go to Property Editor
+Page Designer Alt+7 Go to Gallery Regions
+Page Designer Alt+8 Go to Gallery Items
+Page Designer Alt+9 Go to Gallery Buttons
+
+-----
+They're five ways to reference variables in APEX:
+ 
+1- :Bind_variables -- can be used in any block of SQL or PL/SQL code inside APEX. also in tabular form column name refeence
+2- &Substitution_strings. -- can be used anywhere in your APEX application such as a HTML region or even a template. You can also use them in inline SQL and PL/SQL code but it is not recommended for security reasons.
+3- V / NV functions -- If you want to reference APEX variables in compiled code, such as views, packages, and procedures, you can't use bind variables. The easiest way to reference the variables is to use the V (for strings) and NV (for numbers) functions.
+4- #Hash#  -- The hash notation of #variable# is used in multiple places. When creating column links in a report you can use the hash notation to represent column values. (example #EMPNO# can be used to reference the EMPNO column in a report)
+5 "Shortcuts". 
+
+----- Apex Views
+
+select * from APEX_WORKSPACE_ACCESS_LOG order by access_date desc 
+select * from APEX_WORKSPACE_ACTIVITY_LOG
+select * from APEX_WORKSPACE_LOG_SUMMARY
+select * from APEX_WORKSPACE_SESSIONS
+
+----- 1
+
+Manually Refreshing Oracle Application Express Components
+Although the Dynamic Action framework provides refresh capability for supported Oracle Application Express components, there may be cases where you wish to manually invoke a refresh from JavaScript code.
+
+apex.event.trigger( "#myRegionStaticID", "apexrefresh" );
+
+apex.event.trigger( "EmployeeIR", "apexrefresh" );
+
+----- 2
+
+Dynamic Actions
+
+Dynamic actions provide a way to define complex client-side behavior declaratively without the need for JavaScript. Using the Dynamic Action Create wizard, you specify
+an action that is performed when a defined set of conditions occur. You can also specify which elements are affected by the action, and when and how they are affected.
+When working with dynamic actions, you should be mindful of the fact that the more dynamic actions you add to a page, the greater your overall page size. This is because the dynamic action framework emits additional code to the client for each dynamic action defined.
+
+Dynamic Action Events
+You can define dynamic actions can to fire based on events that happen on the page. (Browser Events, Framework Events, Component Events)
+Browser Events : all supported events, including the internal JavaScript event name in brackets.
+Change (change) - Fires when a control loses the input focus and its value has been modified since gaining focus.
+Click (click), Double Click (dblclick), Get Focus (focusing), Key Down (keydown), Key Press (keypress), Key Release (keyup), Lose Focus (focusout), Mouse Button Press (mousedown), Mouse Button Release (mouseup), Mouse Enter (mouseenter), Mouse Leave (mouseleave), Orientation Change (orientationchange) - Fires when a devices orientation changes (by turning it horizontally or vertically).Page Load (Desktop User Interface uses ready, jQuery Mobile Smartphone User Interface uses pageint), Resize (resize), Scroll (scroll), Select (select) - Fires when a user selects some text in a text field., 
+Swipe (swipe) - Fires when a horizontal drag of 30px or more (and less than 75px vertically) occurs, within a 1 second duration, Swipe Left (swipeleft), Tap (tap) - Fires after a quick touch event., Tap and Hold (taphold), 
+
+Framework Events : After Refresh (apexafterrefresh), Before Page Submit (apexbeforepagesubmit), Before Refresh (apexbeforerefresh)
+Component Events : 
+
+When, selection type = Select the type of page element or construct to be used to trigger the event. Item(s) (for multiple items give a comma separated list), Button, Region, jQuery Selector, JavaScript Expression
+
+Actions are categorised into following category
+Component(clear, disable, enable, hide, show, expand tree, collapse tree, set value, set focus), 
+execute(jave script, plsql), navigation(cancel dialog, close dialog, submit page), 
+style(add class, remove class, set style), 
+notification(alert, confirm), 
+misclenaious (cancel event)
+
+dynamic action when > item equals to value, value needs to be given without quotes.
+Action hide and show hides the lebels also.
+Add/Remove Classes
+When > Event=loose focus, selection type=items, items = p7_item condition= is null, 
+
+True Action -> action = add class, fire when event result is = true, class= validation_error, affected elements > item = item name 
+False Action -> action = remove class
+
+----- 3
+
+Bind variable :APP_USER
+PL/SQL V('APP_USER')
+Substitution string &APP_USER.
+Examples
+From within an HTML region: – Hello you are logged in as &APP_USER.
+Using PL/SQL: – htp.p('Hello you are logged in as'|| V('APP_USER'));
+As a bind variable: – SELECT * FROM some_table WHERE user_id = :APP_USER
+
+----- 4
+First make sure your dialogs are resizable by adding resizable:true to the page Dialogs Attributes.
+
+How to make the browser remember the size of dialog for a session duration
+
+create a global page if not already > create a dynamic action with below attributes
+
+Right click and choose Create Dynamic Action. Enter these attributes:
+ Name: persist dialog size
+ Event: Custom
+ Custom Event: dialogresizestop dialogdragstop
+ Selector Type: jQuery Selector
+ jQuery Selector: body
+ Change the Show action to Execute JavaScript Code. 
+ Change the Selection Type to - Select -. 
+ Remember to set Fire on Page Load to No. 
+ Enter the following JavaScript
+ 
+ // handle dialog move and resize
+var key, value, store,
+    dialog$ = $(this.browserEvent.target), // the dialog being moved or resized
+    // the dragstop (move) event doesn't include size so get it from the options
+    size = this.data.size || 
+        { width: dialog$.dialog("option", "width"),
+         height: dialog$.dialog("option", "height") },
+    pos = this.data.position;
+
+// Only save the state of apex dialogs.
+// Give your dialogs their own class if you want to target specific dialogs
+if (dialog$.parents(".ui-dialog--apex").length) {
+    // store the dialog state under a key that includes 
+    //   the app id, page id, and dialog page id
+    value = [size.width, size.height, pos.left, pos.top];
+    key = dialog$.find("iframe").attr("src");
+    key = "dlg_" + key.split(":")[1]; // get the page of the dialog being opened
+    // save the dialog state in browser session storage
+    store = apex.storage.getScopedSessionStorage( {
+        prefix: "DialogSize", usePageId: true} );
+    store.setItem(key, value.join(":"));
+}
+
+This dynamic action will save the size and position of any APEX modal dialog page to DOM session storage when it changes. The next step is to restore the size and position when that same dialog is opened again.
+
+Still on the global page, create another Dynamic Action with these attributes:
+ Name: restore dialog size
+ Event: Custom
+ Custom Event: dialogcreate
+ Selector Type: jQuery Selector
+ jQuery Selector: body
+ Change the Show action to Execute JavaScript Code. 
+ Change the Selection Type to - Select -. 
+ Remember to set Fire on Page Load to No. 
+ Enter the following JavaScript:
+ 
+ var key, value, store,
+    dialog$ = $(this.browserEvent.target); // this is the dialog created
+
+// Only restore state for apex dialogs
+if (dialog$.parents(".ui-dialog--apex").length) {
+    // the key includes the dialog page that just opened
+    key = dialog$.find("iframe").attr("src");
+    key = "dlg_" + key.split(":")[1];
+    store = apex.storage.getScopedSessionStorage( {
+        prefix: "DialogSize", usePageId: true} );
+    value = store.getItem(key);
+    if (value) {
+        value = value.split(":");
+        if (value.length === 4) {
+            dialog$.dialog("option", "width", parseInt(value[0], 10));
+            dialog$.dialog("option", "height", parseInt(value[1], 10));
+            dialog$.dialog("option", "position", 
+                           [parseInt(value[2], 10), parseInt(value[3], 10)]);
+        }
+    }
+}
+
+Apex Help Provide the following info :
+
+<li>Full APEX version
+ <li>Full DB/version/edition/host OS
+ <li>Web server architecture (EPG, OHS or APEX listener/host OS)
+ <li>Browser(s) and version(s) used
+ <li>Theme
+ <li>Template(s)
+ <li>Region/item type(s)
+ 
+
+----- 5
+----- 6
+----- 7
+----- 8
+----- 9
+----- 10
+----- Highlight report cell background
+
+I added this to the "Execute when Page Loads" page attribute - it could utilised within a dynamic action, if required.
+
+$("#report_pivot tbody tr td").each(function(){
+   if ($(this).attr('headers') != 'TOT') {
+     if (parseInt($(this).text()) < 1000)
+        $(this).css({"background-color":"SandyBrown"});
+     else if(parseInt($(this).text()) > 2000)
+        $(this).css({"background-color":"lightgreen"});
+   }
+});I wanted to ignore the 'Total' column, so I found the first IF statement satisfies that easier than a CSS exclusion clause.
+This block could be adapted to do all sorts of things - for instance, I've cleared out the cells in other reports where the value equals 100.
+
+I also added this as inline CSS just to border all the report cells.
+
+table.uReportStandard>tbody>tr>td {
+  border: 1px solid #ddd;
+}
+
+-- HTML Tags
+
+<ul> <li></li> <li></li> </ul> - onordered list
+<ol> <li></li> <li></li> </ol> - Ordered list
+<p></p> - Paragraph
+<br> - Defines a single line break
+<b> - Defines bold text
+<li> - Defines a list item
+<table> - Defines a table
+<td> - Defines a cell in a table
+<tr> - Defines a row in a table
+The <span> tag is used to group inline-elements in a document. The <span> tag provides no visual change by itself. The <span> tag provides a way to add a hook to a part of a text or a part of a document.
+
+
+<ul>
+<li><a href="https://docs.oracle.com/cd/E59726_01/doc.50/e39147/toc.htm">      APEX Application Builder Guide </a></li>
+<li><a href="http://asktom.oracle.com/pls/apex/f?p=100:1">      Ask Tom: An Oracle Help Site </a></li>
+<li><a href="f?p=&APP_ID.:2:&APP_SESSION.">      The Region Practice page</a></li>
+</ul>
+
+<div align=center>
+<a href="f?p=&APP_ID.:3:&APP_SESSION."><img src="&APP_IMAGES.employees.jpg"></a>
+<br>Employees</div>
+
+<span style="font-size:150%;font-weight:bold">#ENAME#</span>
+<span style="font-size:150%;font-weight:bold">#ENAME#</span> the #JOB#
+
+Conditional Formatting
+select e.*,      
+   case when e.Sal>2500 then 'red' else 'black' end as SalColor
+from EMP e
+
+<span style="color:#SALCOLOR#">#SAL#</span>
+
+select e.*,     
+   case when e.Sal>2500 then 'red' else 'black' end as SalColor,     
+   case when e.Offsite = 'Y' then 'checkgreen.jpg' else 'checkred.jpg' end as OffsiteImage
+from EMP e
+
+<img src="&APP_IMAGES.#OFFSITEIMAGE#">
+
+<a href="http://www.infoplease.com/year/#HIREYEAR#.html"   target="_blank">#HIREDATE#</a>
+
+HTML code to define a link has two parts: the target URL and the link text. Note that the second argument to the <a> tag is target="_blank". This argument causes the target page to open in a new browser tab.
+
+jQuery Syntax
+Basic syntax is: $(selector).action()
+
+$(this).hide() - hides the current element.
+$("p").hide() - hides all <p> elements.
+$(".test").hide() - hides all elements with class="test".
+$("#test").hide() - hides the element with id="test".
+
+$(document).ready(function(){
+ 
+   // jQuery methods go here...
+
+ });
+ The jQuery team has also created following shorter method for the document ready event:
+ 
+ $(function(){
+ 
+   // jQuery methods go here...
+
+ }); 
+ 
+ 
+ 
+
+Example : When a user clicks on a button, all <p> elements will be hidden:
+ 
+$(document).ready(function(){
+     $("button").click(function(){
+         $("p").hide();
+     });
+ });
+ 
+Example : When a user clicks on a button, the element with id="test" will be hidden:
+
+$(document).ready(function(){
+     $("button").click(function(){
+         $("#test").hide();
+     });
+ });
+ 
+ Example : When a user clicks on a button, the elements with class="test" will be hidden:
+ $(document).ready(function(){
+     $("button").click(function(){
+         $(".test").hide();
+     });
+ });
+ 
+ 
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+    $("tr:even").css("background-color", "yellow");
+});
+</script>
+</head>
+<body>
+
+<h1>Welcome to My Web Page</h1>
+
+<table border="1">
+  <tr>
+    <th>Company</th>
+    <th>Country</th>
+  </tr>
+  <tr>
+    <td>Alfreds Futterkiste</td>
+    <td>Germany</td>
+  </tr>
+  <tr>
+    <td>Berglunds snabbköp</td>
+    <td>Sweden</td>
+  </tr>
+  <tr>
+    <td>Centro comercial Moctezuma</td>
+    <td>Mexico</td>
+  </tr>
+  <tr>
+    <td>Ernst Handel</td>
+    <td>Austria</td>
+  </tr>
+  <tr>
+    <td>Island Trading</td>
+    <td>UK</td>
+  </tr>
+</table>
+
+</body>
+</html>
+
+jQuery Event Methods
+
+The following example says: When a click event fires on a <p> element; hide the current <p> element:
+$("p").click(function(){
+     $(this).hide();
+ });
+ 
+Here are some common DOM events:
+
+Mouse Events : click, dblclick, mouseenter, mouseleave
+Keyboard Events : keypress, keydown, keyup
+Form Events : submit, change, focus, blur
+Document/Window Events : load, resize, scroll, unload
+ 
+Example Stylesheet:
+ .important {
+     font-weight: bold;
+     font-size: xx-large;
+ }
+ 
+.blue {
+     color: blue;
+ }
+
+
+$("input").focus(function(){
+     $(this).css("background-color", "#cccccc");
+ });
+
+ $("button").click(function(){
+     $("#div1").addClass("important blue");
+ });
+ 
+ $("button").click(function(){
+     $("h1, h2, p").removeClass("blue");
+ });
+ 
+----- jQuery - Get Content and Attributes
+
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+    $("button").click(function(){
+        alert("Value: " + $("#test").val());
+    });
+});
+</script>
+</head>
+<body>
+
+<p>Name: <input type="text" id="test" value="Mickey Mouse"></p>
+
+<button>Show Value</button>
+
+</body>
+</html>
+
+Adding the below script in section "Execute when Page Loads" of the page pops up a alert box with the value of an text box element P10_SECTION_CATEGORY upon clicking on breadcrumb element with staic id as id_bc. Pops up the current content of the element(not posted value)
+$(document).ready(function(){
+    $("#id_bc").click(function(){
+        alert("Value: " + $("#P10_SECTION_CATEGORY").val());
+    });
+});
+
+-- Disable a button to avoid duplicate submission
+$(document).ready(function(){
+    $("#id_button").click(function(){
+        $(this).attr("disabled", "disabled");
+    });
+});
+
+.important {
+  font-weight: bold;
+  font-size: xx-large;
+}
+
+.blue {
+  color: blue;
+}
+ 
+$(".t-LinksList-item").click(function(){
+   alert("Value: " + $("#P10_SECTION_CATEGORY").val());
+   $(".t-LinksList-item").removeClass("blue");
+  $(this).addClass("important blue");
+});
+
+
+span[data-number^="1"]{color:red;}
+ 
+ 
+/*
+$(document).ready(function(){
+    $("#id_bc").click(function(){
+        alert("Value: " + $("#P10_SECTION_CATEGORY").val());
+    });
+});
+*/
+ 
+select count(*) from apex_application_files; -- return 0, since we are not running the query inside the APEX environment (that is, our workspace is not defined in SQL*Plus).
+
+select  wwv_flow_api.get_security_group_id from dual;
+
+exec wwv_flow_api.set_security_group_id;
+
+select  wwv_flow_api.get_security_group_id from dual;
+
+select count(*) from apex_application_files;
+
+select dbms_flashback.get_system_change_number from dual;
+
+insert into apex_application_files select * from apex_application_files as of scn 3334372;
+
+apex_dictionary
+
+duplicate submission, highlighting differences in report
+
+
+-- Displaying department name instead of deptno in a report
+To tell APEX to use a list of values when displaying a column, change the column’s type to Plain Text (based on List of Values).
+
+:APP_USER <> 'APEX_PUBLIC_USER'
+
+
+v_vals apex_t_varchar2 := apex_t_varchar2('CLERK', 20); 
+v_result varchar2(1000) := apex_util.get_hash(v_vals); -- variable v_result will contain the hash of the values {'CLERK', 20}.
+
+store the old hash value and before applying the update get the hash values again to check if the record has been updated by another session in the mean time. 
+
+Example SQL Expression = :REQUEST in ('Insert', 'Delete', 'Update')
+
+Dialog Box >
+
+Basic Dialog
+
+create a staic region with content that needs to be  shown in dialog box.
+in the advanced > attribute section add text : style="display:none" title="Basic Dialog"
+this will ensure that this region will not be displayed as a part of normal page rendering.
+Add a button and create a dynamic action to execute java script on click of the button.
+add java script code as apex.jQuery(this.affectedElements).dialog();
+in the affected elements section select selection type = region and region=name of the region
+
+Basic modal dialogue > same as above only java script needs to be changed as 
+
+apex.jQuery(this.affectedElements).dialog({modal: true});
+
+Stylized Modal Dialog > same as above only java script needs to be changed as 
+
+apex.jQuery(this.affectedElements).dialog({
+	closeOnEscape   : true,
+	dialogClass     : 'customStyles',
+	draggable       : false,
+	height          : 'auto',
+	modal           : true,
+	resizable       : false,
+	width           : 'auto',
+	open            : function(event, ui){
+	    // Bind click handler on the overlay, to force dialog closing
+	    apex.jQuery('.ui-widget-overlay').bind('click', function() {
+	        apex.jQuery(this).prev().find('div:nth-child(2)').dialog('close');
+	    });
+	}     
+});
+
+Opening a modal page for adding department
+This can be done in two ways:
+1. By creating separate page and setting the target page's Page Mode= Modal Dialog and creating on button click page redirect to this page. 
+2. By creating separate region in the same page and setting region template to inline dialog and region position to inline dialog - This will stop appearing in normal page.
+Then Button action > redirection to URL, URL= javascript:openModal('addDept'); where addDept is the static id of the region providing functioality of adding department
+Passing row values from a interactive report to modal window : Report attribute> link column=link to custom target, target=javascript:$s('P2_ID','#DEPTNO#');openModal('editDept');
+
+
+If you want to sibmit a page item after it's changed, create a dynamic action of Execute PLSQL Code, set code to NULL; and in the  page item to submitt section choose the page item.
+
+Redirecting interactive report - 
+clear cache = CIR (Clearing report settings)
+clear cache = RIR (Resetting to Developer Defaults)
+clear cache = 18,RIR set these item =IRGT_BUDGET, With these values=5000 (Filtering Report for budgets greater than 5000)
+
+Html form element attributes to adjust width of select list : Advanced > custom attributes = style="width:200px" , 
+mnw160 works for text boxes > advanced > CSS classes  = mnw160
+
+
+
+select  vt.template_id
+       ,vt.template_name
+       ,vt.template_typ_cd || ' ~ ' || vt.template_typ_desc template_typ_desc
+       ,vt.source_file_name
+       ,vt.etl_active_indicator
+       ,vt.updts
+       ,vt.updbyid
+       ,vt.insts
+       ,vt.insbyid
+       ,1 action
+from    vams_template vt
+  
+sys.dbms_lob.getlength(file_blob) download
+
+select  vt.template_id
+       ,vt.template_name
+       ,vt.template_typ_cd || ' ~ ' || vt.template_typ_desc template_typ_desc
+       ,vt.source_file_name
+       ,sys.dbms_lob.getlength(vt.source_file) download
+       ,1 action
+from    vams_template vt
+
+select  vt.template_id
+       ,vt.template_name
+       ,vt.template_typ_cd || ' ~ ' || vt.template_typ_desc template_typ_desc
+       ,vt.source_file_name
+       ,sys.dbms_lob.getlength(vt.source_file) download
+       ,1 action
+from    vams_template vt
+
+
+apex_util.get_blob_file_src(vt.source_file_name,vt.template_id)
+
+Providing doanload link for BLOB files:
+
+Create a new column as : sys.dbms_lob.getlength(vt.source_file) download
+vt.source_file is the name of the column containing the blob data.
+download will be the column header in the report.
+
+Then change this column type as Download Blob and add further details about table name, column name, mime type etc.
+
+Custom Buttons inside report :
+Column Action > type=link, link text=Manage Items, link attributes = class="t-Button t-Button--hot"
+
+For diaplsying icons : Link text = <span class="t-Icon fa fa-copy"></span><span class="visuallyhidden">Copy</span> 
+Link Attributes = class="t-Button t-Button--warning" title="Copy"
+-- will show icon but hiden text "copy", text will be displayed when mouse hovered.
+
+
+target = page number and pass all values
+
+Adjusting the column width in interactive report :
+
+Syntax = #regionStaticId th#colHiredate, #regionStaticId td[headers=colHiredate]{width:100px}
+
+Staic id of column name = IR_COL_TEST
+Staic id of Region = IR_REG_TEST
+Then put the below text in the inline CSS of the page : th#IR_COL_TEST, #IR_REG_TEST td[headers=IR_COL_TEST]{width:300px}
+
+Tips :
+
+Use large buttons in wizard type alert region.
+
+Conditional edit link
+
+select	
+       case when status != 'Closed'
+            then '<a href="'||apex_util.prepare_url('f?p='||:APP_ID||':2:'||:APP_SESSION||':::2:P2_ROWID:'||ROWID) || '"><img src="#IMAGE_PREFIX#menu/pencil2_16x16.gif" alt="edit"></a>' 
+            else '&nbsp;'
+            end edit_link,
+       PROJECT,
+       TASK_NAME,
+       STATUS,
+       ASSIGNED_TO,
+       BUDGET,
+       COST,
+       case when status = 'On-Hold' then 0
+            when status = 'Closed'  then cost
+            else budget
+            end estimated_cost
+from EBA_DEMO_IR_PROJECTS
+
+Drill down report :
+
+Change the column type to link. Provide the link target and pass required columns; link text #columnname#, apply format mask as applicable.
+
+-- If you place any item in the position=master detail(in lay out section) that will be diaplayed as bread crumb back ground
+
+--One handy JavaScript function is setFocus. 
+Using the Page HTML Body Attribute will modify the <body> tag as shown here:
+
+<body onLoad="javascript:setFocus('P4_USERNAME');">
+
+Calling a java script from a buton click > edit button attribute, target as url and write the script invocation code.
+
+ >> Case Insensitive Searching  in Application Express
+execute immediate 'alter session set NLS_COMP=LINGUISTIC';
+execute immediate  'alter session set NLS_SORT=BINARY_CI';
+
+Tuning for case insensitive queries  in Application Express
+
+Depending on the size of the table and type of queries, we may want to build linguistic indexes on the columns to allow case insensitive queries.  
+create index nlsci1_gen_person on   MY_PERSON(NLSSORT(PERSON_LAST_NAME, 'NLS_SORT=BINARY_CI'));
+
+This is a great example of using case insensitive data inside Oracle and creating a case insensitive index to allow queries to made in initcap, upper or lower, all without invalidating the index
+
+
+-- Create page items, write a page process of plsql anonymous block on global page to intialize these items.
+
+e.g
+set globals
+select count(*) into :STORES from oow_demo_stores;
+select count(*) into :PRODUCTS from oow_demo_items;
+
+-- Data upload application
+
+Process train -> template=wizard container, attribute list template= wizard progress
+button position previous and next, button size large.
+
+
+-------------  Deployment
+
+We strongly recommend not storing any files for your application in the virtual directory /i/. It is used for APEX internal files and images. Once you upgrade your APEX version to a new release this will be problematic in two areas.
+
+It is better to create a separate virtual directory to store application-specific files, for example, /apex_custom/.
+
+all environments use the exact same workspace name, workspace id, and application id, as well as the parsing schema.
+
+Disable Logging
+Shared Components > Edit Application Properties > Logging 
+Each time a page is accessed, a log entry is stored. You can reference it from the APEX_WORKSPACE_ACTIVITY_LOG view.
+
+The following query identifies when an error occurs at the page or region level:
+SELECT *
+FROM apex_workspace_activity_log
+WHERE error_message IS NOT NULL
+
+-- Find most accessed pages
+SELECT application_id,
+    application_name,
+    page_id,
+    page_name,
+    SUM (page_id) page_hit_count
+FROM apex_workspace_activity_log
+GROUP BY application_id,
+application_name,
+page_id,
+page_name
+ORDER BY SUM (page_id) DESC
+
+-- Find slowest pages
+-- Note: This depends on how you calculate slow
+SELECT application_id,
+    application_name,
+    page_id,
+    page_name,
+    ROUND (AVG (elapsed_time), 5) avg_elapsed_time,
+    SUM (page_id) page_hit_count,
+    MEDIAN (elapsed_time) median_elapsed_time
+FROM apex_workspace_activity_log
+GROUP BY application_id,
+application_name,
+page_id,
+page_name
+
+The APEX_WORKSPACE_ACCESS_LOG stores all the login attempts to your APEX applications. The access log can be extremely useful when you’re debugging user-authentication issues.
+
+If you create your own authentication process, you should use the APEX_UTIL.SET_AUTHENTICATION_RESULT and APEX_UTIL.SET_CUSTOM_AUTH_STATUS procedures to ensure that you populate the access log with meaningful messages. For more information on these authentication procedures, please read the APEX API documentation.
+
+Managing Workspaces
+
+SELECT * FROM apex_release
+SELECT * FROM v$version
+
+SELECT * FROM apex_developer_activity_log
+apex_dictionary : view is the top-level interface into the dictionary for all the other views and information
+
+Retrieving Page Branches
+select
+page_id as id,
+branch_action
+from
+APEX_APPLICATION_PAGE_BRANCHES
+where
+application_id = 103
+
+Querying the Flow Between Pages
+select
+page_id as page_from,
+regexp_replace(branch_action,'(.*)(\:)([[:digit:]]+)(\:)(.*)', '\3') as page_to,
+branch_point
+from
+APEX_APPLICATION_PAGE_BRANCHES
+where
+application_id = 103
+
+This query allows you to produce a report that details how your pages link to each other, perhaps to help you find outdated or unwanted links between pages.
+
+Retrieving Modification Dates
+
+Another common requirement is to be able to determine when things were last changed in the application. Perhaps you want a list of anything changed in the last week, or perhaps you want to know when each page was last modified.
+
+select
+page_id,
+last_updated_by,
+to_char(last_updated_on,
+'DD/MM/YYYY HH24:MI:SS') as last_updated
+from
+apex_application_pages
+where
+application_id = 103
+order by
+last_updated_on desc
+
+1. Export the application from the test environment.
+2. Import the application into the production environment but give it a new application ID (say application 208).
+3. Test the application in production to make sure it works correctly.
+4. Switch the method you’re using to manage the http://yourserver/buglist/ URL to point to application 208 once you’re sure it works correctly.
+
+Before transmitting any data, the sender encrypts its message, and the receiver must in turn decrypt the message before processing it. The encryption and decryption is accomplished through a method called "public key encryption.
+
+When we say a message was sent using HTTPS, what we are actually saying is that the message was first encrypted using SSL, transmitted and received using normal HTTP protocol, and then decrypted by the receiver, also with SSL.
+
+it's quite CPU-intensive, and it significantly slows down the speed of transmission.  
+
+Additional operation of decryption, encryption, and handshaking would put extra load on the server and can slow down the speed of transmission. 
+
+I don't think we need Certificate Signing Request(CSR) and get SSL generated by Certificate Authority(Verisign) but this means that access to apex pages will show warning message "Certificate is Un-trusted or issued by un-trusted authority." , unless the certificate is added manually to the trusted list.
+
+The cached credentials will continue to allow a user to log on locally
+
+Users and workstations will be fine, except they cannot access any resources on the server that is down. Once they have authenticated, they have a token that grants them permissions and no longer need to communicate with a Domain Controller for most tasks
+When AD is down, workstation will not be logged out, they will be remained logged, but they can't use any shared resources(told by Richard).
+They can login back even on the same system, after rebooting or login off even though AD is down, because of cache credentials(if its not disabled).
+Seamless end user experience and increased productivity.
+
+
+SSO saves users from having to memorize a long list of passwords. How does that make you save on costs? Well according to Gartner, up to 50% of all Help Desk calls are just requests for password resets.
+
+If you are certain that your table with never have more than N rows, use a VARRAY (N) to hold the fetched data.
+If that limit is exceeded, Oracle will raise an error. This is not, however, a very common scenario.
+If you do not know in advance how many rows you might retrieve, you should:
+1. Declare an explicit cursor.
+2. Fetch BULK COLLECT with the LIMIT clause.
+
+CREATE OR REPLACE PROCEDURE bulk_with_limit 
+   (deptno_in IN dept.deptno%TYPE) 
+IS
+   CURSOR emps_in_dept_cur IS 
+      SELECT * FROM emp
+       WHERE deptno = deptno_in;
+
+   TYPE emp_tt IS TABLE OF emps_in_dept_cur%ROWTYPE;
+   emps emp_tt;
+BEGIN   
+   OPEN emps_in_dept_cur;
+   LOOP
+      FETCH emps_in_dept_cur 
+         BULK COLLECT INTO emps LIMIT 1000;
+
+      EXIT WHEN emps.COUNT = 0;
+
+      process_emps (emps);
+   END LOOP;
+END bulk_with_limit;
+
+Definitely the preferred approach in production applications with large or varying datasets.
+Always check the contents of the collection, as opposed to the %NOTFOUND attributes, to determine if you fetched and processed all rows.
+
+Use the FORALL Bulk Bind Statement
+PROCEDURE upd_for_dept (...)  IS
+BEGIN
+   FORALL indx IN low_value .. high_value
+      UPDATE employee 
+         SET salary = newsal_in
+       WHERE employee_id = list_of_emps (indx);
+END;
+
+Instead of executing repetitive, individual DML statements, load up variables into an array and bind that array into a "template" DML statement.
+Only a single DML statement is allowed per FORALL
+Can be used with static and dynamic SQL
+
+Use SQL%BULK_ROWCOUNT to determine the number of rows modified by each statement executed.
+SQL%ROWCOUNT returns total number of rows modified by the entire FORALL.
+Use SAVE_EXCEPTIONS and SQL%BULK_EXCEPTIONS to continue past exceptions in any of the statements.
+Granular error recovery and logging
+Can also use LOG ERRORS in DML statement in place of SAVE EXCEPTIONS
+Use INDICES OF or VALUES OF when bind array is sparse.
+
+Bulk Processing Conclusions
+Most important performance tuning feature in PL/SQL.
+Almost always the fastest way to execute multi-row SQL operations in PL/SQL.
+You trade off increased complexity of code for dramatically faster execution.
+But in Oracle Database 10g and above, the compiler will automatically optimize cursor FOR loops to BULK COLLECT efficiency.
+No need to convert unless the loop contains DML.
+Watch out for the impact on PGA/UGA memory!
+By default, Oracle passes all OUT and IN OUT arguments by value, not reference.
+This means that OUT and IN OUT arguments always involve some copying of data.
+All IN arguments are always passed by reference (no copying).
+With NOCOPY, you turn off the copy process.
+But it comes with a risk: Oracle will not automatically "rollback" or reverse changes made to your variables if the NOCOPY-ed program raises an exception.
+
+Writing software is a privilege, lots of fun, and a great responsibility.
+We're never going to be perfect at it, but there's no reason to stop aiming for perfection.
+SELECT ‘<img src=”&IMAGE_PATH.edit_icon.gif” />’ icon,
+ename,
+job
+FROM emp
+-------
+About Using BRANCH_TO_PAGE_ACCEPT (Is a special Request)
+
+You can use a special request BRANCH_TO_PAGE_ACCEPT for Show processing to automatically submit the page. For example:
+f?p=100:1:&APP_SESSION.:BRANCH_TO_PAGE_ACCEPT|SAVE:::P1_DATA:value
+
+Using BRANCH_TO_PAGE_ACCEPT is the same as navigating to page 1, entering a value into the item P1_DATA, and clicking a button that submits the page with a SAVE request.
+
+-------
+For example, define an application level substitution string IMAGE_PATH, and give it a value of /dev/images/ Then, reference it in a query as follows:
+
+--------------
+http://server/apex/f?p=App:Page:Session:Request:Debug:ClearCache:ItemNames:ItemValues
+http://server/apex/f?p=100:1:23929384838429::YES:::
+http://server/apex/f?p=100:1:23929384838429::LEVEL7:::
+However, it is important to note that the ability to use either of these methods is controlled by an attribute in the application definition.
+
+If you are running an application in development mode debugging will always be available to you. While this may seem a bit odd, this fact will allow developers to interactively debug an application even if the application-level attribute is set to disallow debugging.
+
+-
+
+JQuery
+
+You’re able to start building functional, responsive, and even (sometimes) beautiful web applications with little effort and not much concern for how all the HTML makes it into the page.
+
+Themes and templates allow APEX to separate the application logic from the visual look and feel. This is why you’re able to start building web applications so fast without the need to get bogged down in color, fonts, and layout decisions.
+
+security.synchronizeGroups=true
+

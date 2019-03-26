@@ -1,0 +1,66 @@
+In MySQL, a database is a collection of objects that are used to store and manipulate data such as tables, database views, triggers, stored procedures, etc.
+
+CREATE DATABASE [IF NOT EXISTS] database_name;
+CREATE DATABASE classicmodels;
+SHOW DATABASES;
+USE database_name;
+DROP DATABASE [IF EXISTS] database_name;
+
+MySQL provides various storage engines for its tables as below:
+   MyISAM
+   InnoDB
+   MERGE
+   MEMORY (HEAP)
+   ARCHIVE
+   CSV
+   FEDERATED
+
+MyISAM : MyISAM extends the former ISAM storage engine. The MyISAM tables are optimized for compression an speed. Before MySQL version 5.5, MyISAM is the default storage engine when you create a table without explicitly specify the storage engine. From version 5.5, InnoDB as the default. MyISAM tables are not transaction-safe.
+
+InnoDB : The InnoDB tables fully support ACID-compliant and transactions. They are also very optimal for performance. InnoDB table supports foreign keys, commit, rollback, roll-and forward operations.
+
+MERGE : A MERGE table is a virtual table that combines multiple MyISAM tables,
+
+Memory : The memory tables are stored in memory and used hash indexes so that they are faster than MyISAM tables. The lifetime of the data of the memory tables depends on the up time of the database server. The memory storage engine is formerly known as HEAP.
+
+Archive : The archive storage engine allows you to store a large number of records, which for archiving purpose, into a compressed format to save disk space. The archive storage engine compresses a record when it is inserted and decompress it using zlib library as it is read. The archive tables only allow INSERT and SELECT commands. The archive tables do not support indexes, so reading records requires a full table scanning.
+
+CSV : The CSV storage engine stores data in comma-separated values file format. A CSV table brings a convenient way to migrate data into non-SQL applications such as spreadsheet software. CSV table does not support NULL data type and read operation requires a full table scan.
+
+FEDERATED : The FEDERATED storage engine allows you to manage data from a remote MySQL server without using cluster or replication technology. 
+
+Numeric Data Types
+
+Numeric Types : Description
+TINYINT : A very small integer
+SMALLINT : A small integer
+MEDIUMINT : A medium-sized integer
+INT : A standard integer
+BIGINT : A large integer
+DECIMAL : A fixed-point number
+FLOAT : A single-precision floating-point number
+DOUBLE : A double-precision floating-point number
+BIT : A bit field
+
+String Data Types
+
+String Types : Description
+CHAR : A fixed-length non-binary (character) string
+VARCHAR : A variable-length non-binary string
+BINARY : A fixed-length binary string
+VARBINARY : A variable-length binary string
+TINYBLOB : A very small BLOB (binary large object)
+BLOB : A small BLOB
+MEDIUMBLOB : A medium-sized BLOB
+LONGBLOB : A large BLOB
+TINYTEXT : A very small non-binary string
+TEXT : A small non-binary string
+MEDIUMTEXT : A medium-sized non-binary string
+LONGTEXT : A large non-binary string
+ENUM : An enumeration; each column value may be assigned one enumeration member
+SET : A set; each column value may be assigned zero or more set members
+
+
+
+
+

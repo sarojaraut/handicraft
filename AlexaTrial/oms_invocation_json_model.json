@@ -1,0 +1,100 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "oms",
+            "intents": [
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "orders",
+                    "slots": [
+                        {
+                            "name": "since_last_x_hour",
+                            "type": "AMAZON.NUMBER"
+                        }
+                    ],
+                    "samples": [
+                        "order count",
+                        "count of orders in last {since_last_x_hour} hour",
+                        "number of orders in last {since_last_x_hour} hour",
+                        "orders in last {since_last_x_hour} hour",
+                        "total count of orders",
+                        "total number of orders"
+                    ]
+                },
+                {
+                    "name": "dispatches",
+                    "slots": [
+                        {
+                            "name": "since_last_x_hour",
+                            "type": "AMAZON.NUMBER"
+                        }
+                    ],
+                    "samples": [
+                        "count of dispatch",
+                        "count of dispatches in {since_last_x_hour} hour",
+                        "number of dispatches in {since_last_x_hour} hour",
+                        "number of dispatches",
+                        "dispatches in last {since_last_x_hour} hours"
+                    ]
+                },
+                {
+                    "name": "returns",
+                    "slots": [
+                        {
+                            "name": "since_last_x_hour",
+                            "type": "AMAZON.NUMBER"
+                        }
+                    ],
+                    "samples": [
+                        "count of returns in last {since_last_x_hour} hours",
+                        "number of returns in last {since_last_x_hour} hours",
+                        "count of returns",
+                        "number of returns",
+                        "returns in {since_last_x_hour}"
+                    ]
+                },
+                {
+                    "name": "cancels",
+                    "slots": [
+                        {
+                            "name": "since_last_x_hour",
+                            "type": "AMAZON.NUMBER"
+                        }
+                    ],
+                    "samples": [
+                        "count of cancels in last {since_last_x_hour} hours",
+                        "number of cancels in last {since_last_x_hour} hours",
+                        "count of cancels",
+                        "Number of cancels",
+                        "cancels in {since_last_x_hour}"
+                    ]
+                },
+                {
+                    "name": "create_test_order",
+                    "slots": [
+                        {
+                            "name": "count",
+                            "type": "AMAZON.NUMBER"
+                        }
+                    ],
+                    "samples": [
+                        "create {count} test orders",
+                        "create test orders"
+                    ]
+                }
+            ],
+            "types": []
+        }
+    }
+}

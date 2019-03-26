@@ -1,0 +1,750 @@
+Chapter 5 Recovering Using RMAN Backups
+
+Perform Complete Recovery from a Critical or Noncritical Data File Loss Using RMAN
+Using the RMAN RESTORE and RECOVER Commands
+
+In general, recovering from a database failure is a two-step process: restoring one or more database files from a backup location and applying archived and online redo log files to bring the entire database or individual datafile up to the specified System Change Number (SCN), which is usually the most recent SCN (the last committed transaction).
+
+The RESTORE command is the first step in any recovery process. When you issue a RESTORE command, RMAN retrieves one or more datafiles from disk or tape along with any archived redo log files required during the recovery operation. If your backup files are on tape, you will need to allocate the necessary tape channels as well. 
+
+When you issue the RECOVER command, RMAN applies the committed changes in the archived and online redo log files to the restored datafiles. A disaster recovery scenario is called for when most database datafiles are lost or corrupted.
+
+The recovery process can be as simple as the following example (command output excluded for clarity):
+
+SQL> shutdown immediate;
+SQL> startup mount;
+[oracle@srv04 ~]$ rman target / catalog rman/rman@rcat
+RMAN> restore database;
+RMAN> recover database;
+RMAN> sql 'alter database open';
+
+The recovery process is slightly different, depending on whether you lose a critical or a noncritical datafile. If you lose a critical datafile, you must shut down and start up the database in MOUNT mode before you can recover the database. For a noncritical datafile, you can perform the recovery while users are connected and using other available datafiles.
+
+Performing Complete Recovery of a Noncritical Datafile
+If you lose a datafile that is not a part of the SYSTEM or UNDO tablespace, the datafile is considered noncritical. 
+Example : Restore and Recover the USERS Tablespace
+1. Connect to RMAN and take the USERS tablespace offline:
+RMAN> sql "alter tablespace users offline immediate";
+sql statement: alter tablespace users offline immediate
+RMAN>
+
+2. Restore the USERS tablespace:
+RMAN> restore tablespace users;
+
+3. Recover the USERS tablespace to apply the archived and online redo log files:
+RMAN> recover tablespace users;
+
+4. Bring the USERS tablespace back online:
+RMAN> sql "alter tablespace users online";
+
+Performing Complete Recovery of a Critical Datafile
+If the lost datafile is from the SYSTEM tablespace, the instance will most likely crash or shut down automatically. Here are the steps you use to recover a critical datafile:
+1. Shut down the database with SHUTDOWN ABORT if it is not already shut down.
+2. Reopen the database with STARTUP MOUNT.
+3. Use the RMAN RESTORE command to copy (restore) the datafile(s) for the critical tablespace from the backup location.
+4. Use the RMAN RECOVER command to apply any archived or online redo log files.
+5. Reopen the database for users with ALTER DATABASE OPEN.
+
+Perform Incomplete Recovery Using RMAN
+On occasion, you might need to restore a database to a point of time in the past. For example, applications could have made numerous erroneous changes to the database in the last 24 hours, and you may not be able to reverse errors easily with a table flashback, or perhaps you do not have flashback configured for the database.
+-- sybex
+One time that you might need to perform point-in-time recovery is during a database recovery after a complete loss of the online redo logs of the database. This might include cases where just the online redo logs were lost or cases when the entire database was lost, including the online redo logs.
+
+shutdown abort
+startup mount
+restore database until time ‘09/29/2008:15:00:00’;
+recover database until time ‘09/29/2008:15:00:00’;
+alter database open resetlogs;
+
+You could also have executed this restore using the following commands:
+
+shutown abort
+startup mount
+run {
+set until time ’09/30/2008:18:00:00’;
+restore database;
+recover database;
+}
+sql ’alter database open resetlogs’;
+-- sybex
+
+Using restore points makes it easier to perform point-in-time recovery, whether you’re performing incomplete recovery in RMAN or flashback database.
+
+Creating Restore Points
+You can create two types of restore points—either as of a specific time or with an SCN number in the past. Which type you use depends on your environment and which option is the more convenient. If you do not specify either option, Oracle uses the current SCN and assumes you want the restore time to be the current time.
+To create a restore point for the present time or SCN, use this format of the CREATE RESTORE POINT command:
+SQL> create restore point good_for_now;
+
+To create a restore point for a particular SCN, use the AS OF syntax:
+SQL> select current_scn from v$database;
+SQL> create restore point good_for_now as of scn 34674668;
+
+Oracle keeps restore points for at least as long as the time specified in the CONTROL_FILE_RECORD_KEEP_TIME initialization parameter. If you explicitly want to keep a restore point longer, use the PRESERVE keyword when you create the restore point:
+SQL> create restore point good_for_now preserve;
+
+you can explicitly remove a restore point with the DROP RESTORE POINT command:
+SQL> drop restore point good_for_now;
+
+Performing Server-Managed Incomplete Recovery
+
+In this exercise, you will create a restore point and use it later to recover from the inadvertent deletion of tables and views in the EXAMPLE tablespace.
+
+1. Create a restore point for the current SCN:
+SQL> create restore point before_disaster_strikes;
+2. “Accidentally” drop some tables and views in the EXAMPLE tablespace:
+SQL> drop table hr.job_history;
+SQL> drop view hr.emp_details_view;
+3. Shut down the instance and restart the database in MOUNT mode:
+SQL> shutdown immediate
+SQL> startup mount
+4. At the RMAN prompt, create a RUN block that uses the restore point created earlier to restore and recover the database to the time of the restore point:
+RMAN> run
+2> {
+3> set until restore point before_disaster_strikes;
+4> restore database;
+5> recover database;
+6> }
+Open the database with RESETLOGS:
+SQL> alter database open resetlogs;
+6. Verify the existence of the dropped table:
+SQL> select * from hr.job_history;
+
+Note that several less draconian methods are available to restore and recover these tables and views, such as flashback database, restoring and recovering each tablespace while the database is still online, or retrieving the tables from the recycle bin. Each recovery situation must be evaluated separately, balancing these factors:
+
+■ The time required to obtain the backup files needed for recovery. If backup files are on a tape offsite, then the time required could be unacceptable.
+■ The time to restore and recover the entire database once the recovery files are available.
+■ The time the DBA must spend to perform the recovery.
+■ The time the users must spend to re-enter lost data.
+■ The tolerance for database downtime.
+
+Recover Using Incrementally Updated Backups
+
+Using image copies in your backup and recovery strategy significantly reduces the time it takes to restore a datafile or the entire database. Image copies are already in the native Oracle datafile format and do not need to be re-created from a compressed or uncompressed RMAN backupset.
+
+Recovering Image Copies
+
+run {
+recover copy of database
+with tag 'inc_upd';
+backup incremental level 1
+for recover of copy
+with tag 'inc_upd'
+database;
+}
+
+Switch to Image Copies for Fast Recovery
+To recover your database faster, you can perform a fast switch to image copies. In other words, you can use the image copies directly, skip the restore step, and apply only the recovery step. After the original datafiles are repaired or restored, you can easily switch back with little or no impact to users who are using other data files. 
+
+The datafile for the USERS tablespace mysteriously disappears. Users start to complain immediately, reporting this message when they try to create or update a table:
+
+ERROR at line 1:
+ORA-01116: error in opening database file 4
+ORA-01110: data file 4: '/u01/app/oracle/oradata/hr/users01.dbf'
+ORA-27041: unable to open file
+Linux Error: 2: No such file or directory
+Additional information: 3
+
+Find out what datafile number you need to restore, switch to an image copy, and then recover the datafile and bring the tablespace back online:
+
+1. Since you already know that datafile #4 is having problems, query V$TABLESPACE to confirm that the USERS tablespace is the culprit:
+SQL> select ts#, name from v$tablespace where ts# = 4;
+
+The dynamic performance view V$DATAFILE_HEADER shows the error as well but does not always identify the tablespace name:
+SQL> select file#, status, error, recover, tablespace_name, name
+2 from v$datafile_header
+3 where recover = 'YES'
+4 or (recover is null and error is not null);
+
+SQL> alter tablespace users offline immediate;
+
+Switch to the datafile copy for the USERS tablespace:
+RMAN> switch tablespace users to copy;
+
+Note that you can use the SWITCH command with either the DATAFILE or TABLESPACE parameter, whichever is easier or more convenient. Note also that you don’t need to know where your datafile copy is. RMAN knows where it is and will switch it and update the control file and recovery catalog automatically with the new.
+
+Recover the USERS tablespace using the recent archived and online redo log files:
+RMAN> recover tablespace users;
+
+Finally, bring the USERS tablespace back online:
+RMAN> sql "alter tablespace users online";
+
+-- sybex
+Sql ’alter database datafile 4 offline’;
+Switch datafile 4 to copy ‘/oracle/backup/users_01.dbf’;
+Recover datafile 4;
+Sql ‘alter database datafile 4 online’;
+
+Note that if you are making image copies and backup-set copies, RMAN will determine which to use during a normal restore operation. This includes image copies that are updated with incremental backups. 
+-- sybex
+
+Using the RMAN SET NEWNAME with Fast Switch
+run {
+sql "alter tablespace users offline immediate";
+set newname for datafile '/u01/app/oracle/oradata/hr/users01.dbf' to '/u06/oradata/users01.dbf';
+restore tablespace users;
+switch datafile all;
+recover tablespace users;
+sql "alter tablespace users online";
+}
+
+Note that the SWITCH command is used in much the same way as it’s used in the preceding section. The difference is that this example restores a datafile from a backup (most likely a backupset) to an alternative location instead of switching to an existing image copy. The result of the SWITCH command, whether in a RUN block or as a standalone command, is to update the control file (and the recovery catalog if you’re using one) with the new filenames.
+If you did not specify the SET command in the preceding example, RMAN would restore the datafile for the USERS tablespace to its original location, and the SWITCH command would not perform any useful action.
+
+--sybex
+Block Media Recovery
+Sometimes one or a few blocks will become corrupt. It’s rare, but it happens. RMAN provides the ability to do online block media recovery. With block media recovery, RMAN will recover the corrupted blocks online. The only user impact will be to those users who want to access the corrupt blocks, and they will have been impacted anyway.
+
+To use the recover block command the following requirements must be met:
+
+ The database must be in ARCHIVELOG mode.
+ The database must be mounted or open.
+ There must be a current database control file in place.
+ All redo logs must be accessible.
+ Only blocks marked as MEDIA_CORRUPT can be recovered.
+ 
+For example, sometimes you will issue a DML or DDL statement and get an error such as the one found here:
+
+ORA-01578: ORACLE data block corrupted (file # 6, block # 55)
+ORA-01110: data file 6: ‘/oracle/oradata/trgt/users01.dbf’
+
+In this case, you could issue the recover datafile command using the block parameter as seen in this example:
+Recover datafile 6 block 55;
+In some cases, you may want to repair a range of blocks, as shown here:
+Recover datafile 6 block 55 to 105;
+
+You can also run the backup database validate command to determine if any blocks are media corrupt. Any blocks that are corrupt will be listed in the V$DATABASE_BLOCK_CORRUPTION view. The column CORRUPTION_TYPE will indicate if they are media corrupt.
+
+You can attempt to recover all corrupted blocks listed in the V$DATABASE_BLOCK_CORRUPTION view by using the recover command with the corruption list parameter from RMAN, as seen in this example:
+
+RMAN> recover corruption list;
+
+
+Recovering the Control File
+There are two different situations that come into play here. The first is recovering the control file from a control-file autobackup; the second is recovering a control file if you are not using control-file autobackups.
+
+Recovering Control Files with Control-File Autobackups
+There are two different situations that you will deal with when using control-file autobackups: one when you are using the flash recovery area (FRA) and the other when you are not using the FRA.
+
+Control-File Backups Using the FRA: If you are using the FRA and have enabled control-file autobackups, then restoring the current control file is easy. Simply do the following:
+
+Start the database instance with the startup nomount command.
+Issue the restore controlfile from autobackup command. RMAN will proceed to restore the control file from the latest automated control-file backup on disk.
+Mount the database after the restore is complete.
+Recover the database with the RMAN recover command.
+Open it using the alter database open resetlogs command.
+
+Control-File Backups Not Using the FRA
+SQL> select dbid from v$database;
+DBID
+----------
+454612708
+
+1. Start up the database in NOMOUNT mode. This will start the database and load the database parameter file. The FRA parameters will be set at this point.
+RMAN> startup force nomount;
+2. Issue the set dbid command to set the database DBID that RMAN will look for.
+RMAN> Set dbid 454612708;
+3. Set the control-file autobackup location with the set controlfile autobackup format command.
+RMAN> set controlfile autobackup format for device type disk to ‘c:\oracle\controlfilebackup\%F’;
+4. Restore the control file with the restore command.
+RMAN> Restore controlfile from autobackup;
+5. Mount the database for recovery.
+RMAN> Alter database mount;
+6. Issue the recover database command.
+RMAN> Recover database;
+7. Open the database using the alter database open resetlogs command.
+RMAN> alter database open resetlogs;
+
+You can also use the restore controlfile command to restore a control file to a different location and filename using the to keyword as seen in this example:
+Restore controlfile to ’/tmp/orcl.ctl’ from autobackup;
+
+Recovering Control Files When Not Using Control-File Autobackups
+If you have not enabled control-file autobackups you need to use the recovery catalog to restore a control file. Simply follow these steps:
+
+1. Start RMAN and connect to the recovery catalog.
+2. Use the startup force nomount command to start the database instance.
+3. Issue the restore controlfile command and RMAN will restore the control file.
+4. Mount the database with the alter database mount command.
+5. Issue a recover database command
+6. Open the database with the alter database open resetlogs command.
+Here is an example of the commands you would use to perform a control-file restore
+using the recovery catalog:
+Startup force nomount
+restore controlfile;
+alter database mount;
+recover database;
+Alter database open resetlogs;
+
+If you are not using control-file autobackups and you are not using a recovery catalog, what are you to do when you lose your control file? You can always re-create the control file with the create controlfile command. It is not a fun exercise to have to create your own create controlfile command from scratch and we strongly recommend that you configure control-file autobackups instead.
+
+Restoring the spfile When Using the FRA
+If you have enabled control-file autobackups, then RMAN will back up the current spfile each time a control-file autobackup occurs. To restore your spfile, you will first need to start the database from RMAN without a parameter file of any sort. Just simply type in startup nomount and the database will start using default parameter settings. This positions the database to be able to restore the spfile from the autobackup.
+
+Restoring the Spfile When Using the FRA
+
+1. startup nomount the database from RMAN.
+2. Issue the create pfile from memory command from SQL*Plus or using the SQL RMAN command.
+RMAN> sql ‘create pfile from memory’;
+3. Edit the pfile so that it contains the correct setting for the parameter DB_RECOVERY_FILE_DEST and the parameter DB_RECOVERY_FILE_DEST_SIZE.
+db_recovery_file_dest=’c:\oracle\flash_recovery_area’
+db_recovery_file_dest_size=10g
+Don’t worry about how big you need to size it because this is just a temporary parameter setting for the spfile restore. The real value of the parameter will be set after the spfile has been restored.
+4. Shut down and restart the database instance using the newly created pfile.
+RMAN> startup force nomount pfile=?/database/initorcl.ora
+5. Use the restore spfile from autobackup command to restore the spfile.
+RMAN> restore spfile from autobackup;
+6. Restart the database using the startup force command.
+RMAN> startup force
+
+Restoring the Spfile When Not Using the FRA
+
+If you are not using the FRA, the procedure to restore the spfile from an autobackup is actually slightly easier.
+set dbid command
+RMAN> Set dbid= 437680418
+
+Now you need to use the set controlfile autobackup format parameter to indicate where the control-file autobackups can be found, as shown here:
+RMAN> SET CONTROLFILE AUTOBACKUP FORMAT FOR DEVICE TYPE DISK TO ‘c:\oracle\controlfilebackup\%F’;
+
+All that remains is the restore of the spfile:
+RMAN> Restore spfile from autobackup;
+
+You can also include the set commands within the confines of a run block, as shown here:
+RUN
+{
+SET CONTROLFILE AUTOBACKUP FORMAT FOR DEVICE TYPE DISK TO ‘c:\oracle\controlfilebackup\%F’;
+RESTORE CONTROLFILE FROM AUTOBACKUP MAXSEQ 100;
+}
+
+RMAN> startup force
+
+
+--sybex
+
+Understanding Restoration to a New Host
+
+If you want to perform a disaster recovery test to another host, or you want to move a database permanently to another host, then using the RMAN RESTORE and RECOVER commands is the best method to use.
+
+Preparing the New Host
+1. Record the DBID of the source database. Use this command to query the DBID:
+SQL> select dbid from v$database;
+DBID
+----------
+3318356692
+
+2. Copy the initialization parameter file from the source database to the new host.
+3. Make sure that all source database backups are available to the new host. Do not connect to the recovery catalog.
+
+Restoring and Recovering on the New Host
+1. Configure environment variables on the new host.
+export ORACLE_SID=hr
+2. Connect to the new target database with NOCATALOG.
+rman target /
+3. Set the DBID.
+RMAN> set dbid 3318356692;
+4. Start the instance with NOMOUNT.
+RMAN> startup nomount
+5. Restore the SPFILE from backup.
+RMAN> restore spfile to pfile '?/oradata/testrecov/initorcl.ora' from autobackup;
+Note that you’re restoring the SPFILE to a PFILE, so you can make edits later.
+6. Shut down the new instance.
+SHUTDOWN IMMEDIATE
+7. Edit the PFILE.
+Edit the newly created PFILE to change any server-specific locations for initialization parameters such as these:
+■ IFILE
+■ LOG_ARCHIVE_DEST_*
+■ CONTROL_FILES
+8. Start the instance with NOMOUNT (again).
+SQL> startup force nomount pfile = '?/oradata/testrecov/initorcl.ora';
+9. Create an RMAN RUN block to restore the control file.
+run {
+restore controlfile from autobackup;
+alter database mount;
+}
+10. Create an RMAN RUN block to restore and recover the database.
+Create an RMAN RUN block that contains the appropriate SET NEWNAME commands to specify the new locations for each datafile, such as in this example:
+set newname for datafile 1 to '?/oradata/testrecov/users01.dbf';
+The script should also include any ALTER DATABASE . . . RENAME commands for the online redo log files:
+sql "alter database rename file
+''/u01/app/oracle/oradata/orcl/redo01.log'' to
+''?/oradata/testrecov/redo01.log'' ";
+Limit the recovery to the last archived redo log file, because the online redo log files for the new instance are not valid. RMAN will fail if it tries to recover past the last archived redo log file:
+set until scn 49382031;
+Finally, restore the database. Then use the SWITCH command to switch the datafile names in the control file to their new names and locations, and then recover the database:
+
+restore database;
+switch datafile all;
+recover database;
+11. Open the database with RESETLOGS.
+RMAN> alter database open resetlogs;
+
+
+---------------------
+Chapter 7 Reporting, Monitoring, and Tuning with RMAN - Sybex book 329
+
+The report command provides the following information:
+
+Database, tablespace, or datafiles that need to be backed up.
+Obsolete backups. These are backups that meet the retention criteria and can be removed with the delete obsolete commands.
+Objects in the database that need to be backed up because of unrecoverable SQL operations.
+Information on the database schema.
+
+some examples of how to use the report command.
+
+if you wanted to know which datafiles need to be backed up in your database based on the retention criteria, you could use the report need backup command:
+
+RMAN> report need backup;
+RMAN retention policy will be applied to the command
+RMAN retention policy is set to redundancy 1
+Report of files with less than 1 redundant backups
+File #bkps Name
+---- ----- ------------------------------------------
+5 0 C:\ORACLE\ORADATA\ORCL\MY_DATA_01.DBF
+
+In this example you see that datafile 5 is in need of backup with respect to the retention policy. You also see that it has 0 backups (in the #bkps column). In this case, this is a new datafile that has never been backed up.
+
+You can use various options with the report need backup command to customize the report. For example, you could say that you want to see a report of all files that have not
+been backed up in the last three days. The report would look like this:
+
+RMAN> report need backup days 3;
+Report of files whose recovery needs more than 3 days of archived logs
+File Days Name
+---- ----- -----------------------------------------------------
+1 6 C:\ORACLE\ORADATA\ORCL\SYSTEM01.DBF
+2 6 C:\ORACLE\ORADATA\ORCL\SYSAUX01.DBF
+3 6 C:\ORACLE\ORADATA\ORCL\UNDOTBS01.DBF
+4 6 C:\ORACLE\ORADATA\ORCL\USERS01.DBF
+
+There are other reporting options besides days:
+Incremental : Maximum number of incrementals to apply.
+Recovery window of : Indicates the recovery-window criteria to apply. This can be handy when trying to determine the impacts of changing the recovery-window retention policy.
+Redundancy : Indicates the level of backup redundancy for datafiles. This can be handy when trying to determine the impacts of changing the redundancy retention policy.
+
+Example of the report obsolete Command
+The report obsolete command is used to list backup sets that are marked as obsolete in the control file or the recovery catalog.
+
+If the obsolete back up sets are present in a flash recovery area (FRA), then Oracle will automatically delete the backup set pieces when space was needed or when you ran the delete obsolete command. If you were not using the FRA, you will need to run the delete obsolete command to remove those pieces.
+
+RMAN> report obsolete;
+
+Example of the report schema Command
+The report schema command provides information on the tablespaces and related datafiles (and tempfiles) in the database. Displayed by the report schema command is the datafile ID, the size of the datafile, and the tablespace that the datafile is associated with.
+
+RMAN> report schema;
+
+Example of the report unrecoverable Command
+Certain types of SQL operations can make an object unrecoverable. This is because these operations do not produce redo, in an effort to make the process more performant. Since there is no redo, there is no recovering the object, and what you end up with after a recovery is a shell of an object with no data in it.
+
+RMAN> report unrecoverable database;
+
+If you execute the a nologging statement then you should back up that tablespace immediately.
+
+Using the RMAN list Command
+
+The RMAN list command provides information on backups in your Oracle database. The list command has the following functionality:
+
+Listing expired backups
+Listing the database incarnation
+Listing database restore points
+Listing scripts
+Listing information on database backups and image copies
+
+Seeing the list expired backup Command in Action
+When you run the crosscheck command , any missing backup files will be marked as EXPIRED, meaning that they are no longer on the media where they are expected to be. The list expired command will show you the backups that are expired. You can review this list and then use the delete command to mark the backup files as deleted in the control file and the recovery catalog.
+
+RMAN> list expired backup of database;
+
+List of Backup Sets
+===================
+BS Key Type LV Size Device Type Elapsed Time Completion Time
+------- ---- -- ---------- ----------- ------------ ---------------
+425 Full 176.72M DISK 00:06:02 11-OCT-08
+BP Key: 433 Status: EXPIRED Compressed: YES Tag: TAG20081011T142622
+Piece Name: C:\ORACLE\FLASH_RECOVERY_AREA\ORCL\BACKUPSET\2008_10_11\
+O1_MF_NNNDF_TAG20081011T142622_4H22ZOMK_.BKP
+List of Datafiles in backup set 425
+File LV Type Ckp SCN Ckp Time Name
+---- -- ---- ---------- --------- ----
+1 Full 903859 11-OCT-08 C:\ORACLE\ORADATA\ORCL\SYSTEM01.DBF
+2 Full 903859 11-OCT-08 C:\ORACLE\ORADATA\ORCL\SYSAUX01.DBF
+3 Full 903859 11-OCT-08 C:\ORACLE\ORADATA\ORCL\UNDOTBS01.DBF
+4 Full 903859 11-OCT-08 C:\ORACLE\ORADATA\ORCL\USERS01.DBF
+
+In this case, you have one backup set that is expired. Each backup set has its own unique backup-set key that you will find in many reports. In this report, the backup-set key 425 is missing. This backup includes backups of four datafiles.
+
+
+RMAN> list incarnation;
+RMAN> list restore point all;
+RMAN> list all script names;
+
+if you want to see what full backups of your database are available, then you can run the list backup of database command:
+RMAN> list backup of database;
+
+You can use the summary keyword to produce summary output that is often all you need, as shown in this example:
+RMAN> list backup of database summary;
+
+You can get the following details on the various types of backups that you might be taking with RMAN:
+Lists of all backups
+Lists of backup-set backups
+Lists of archive-log backups
+Lists of image copies
+Lists of control-file backups
+Backups of specific tablespaces or datafiles
+
+RMAN> delete expired backup;
+
+Monitoring, Administering, and Tuning RMAN
+
+
+Using the V$SESSION_LONGOPS View to Monitor RMAN
+Oracle provides the V$SESSION_LONGOPS view as a means to monitor long-running processes within the Oracle database. Since RMAN uses internal database calls, records for long-running RMAN operations will appear in V$SESSION_LONGOPS. 
+
+SQL> Select sid, serial#, opname, time_remaining
+2 From v$session_longops
+3 Where sid in (select sid from v$session
+4 Where program like ‘%rman%‘)
+5 And time_remaining > 0;
+
+The output is not cumulative for the entire backup command. For example, if you executed a backup using a command like backup as compressed backup database plus archivelog delete input, the output displayed would be only for the database backup or the archived redo-log backup. Keep in mind that the backup database plus archivelog command can show a series of backups. These would include two individual archive-log backups, the database backup, and then the control-file autobackup. Each of these operations will appear in the V$SESSION_LONGOPS view differently.
+
+The V$SESSION and V$SESSION_WAIT views can be a big help in your troubleshooting efforts. These views can help identify the cause of RMAN processes that are not running as fast as you would like.
+
+SQL> Select sid, serial#, event, seconds_in_wait From v$session Where sid in (select sid from v$session Where program like ‘%rman%‘);
+SID SERIAL# EVENT SECONDS_IN_WAIT
+---------- ---------- ------------------------------ ---------------
+121 269 RMAN backup & recovery I/O 2
+129 415 SQL*Net message from client 63
+130 270 SQL*Net message from client 8
+Here you see that the backup-and-recovery I/O on SID 121 appears to be a problem. It’s been waiting 2 seconds, which is a long time for an I/O request. Note that the two other wait events are considered idle waits and are likely not a problem.
+
+
+The V$SESSION view lists waits that are occurring at that moment. We could query V$SESSION_WAIT_HISTORY and find out all waits for the session since it started, as shown here:
+SQL> Select sid, event, wait_time From v$session_wait_history Where sid in (select sid from v$session Where program like ‘%rman%‘) And wait_time>0;
+
+Administering RMAN Operations
+
+The principal
+commands used to administer RMAN are the delete command, the crosscheck command, the catalog command, and finally, the resync command.
+
+The delete command is used to mark backup set pieces, image copies, or archived redo logs as deleted if they have been previously marked as expired (missing) or obsolete (retention criteria–related).
+
+RMAN> delete expired backup;
+
+One important thing to note is that once you have marked a backup set with a DELETED status, that status cannot be changed. Thus, if you ever needed to restore that backup set piece, you would have to use the catalog command to reimport it into the database control file and recovery catalog (assuming it was still available).
+
+The crosscheck command is used to validate RMAN records in the database control file and the recovery catalog against what is physically on the backup media. 
+
+RMAN> crosscheck backup of database;
+
+The catalog command is used to import one or more backup set pieces, image copies, control-file copies, or archived redo logs into the recovery catalog. For example, say we had executed a crosscheck of our database backups and then deleted the expired backup set pieces with the delete expired command. That would mark the expired backup set piece as deleted in our control file and recovery catalog. This is okay until the missing backup set piece reappears (say we restore it from a tape backup). In this case, you will have to use the catalog command to reregister the backup set piece in the control file and recovery catalog. Here is an example of the use of the catalog command:
+
+RMAN> catalog backuppiece
+‘C:\ORACLE\FLASH_RECOVERY_AREA\ORCL\BACKUPSET\2008_10_18
+\O1_MF_NNNDF_TAG20081018T152908_4HNO9DX9_.BKP’;
+
+The catalog command can also import complete directories, as shown in this example:
+RMAN> catalog start with ‘C:\ORACLE\FLASH_RECOVERY_AREA\ORCL\BACKUPSET\2008_10_18\‘;
+
+The catalog command can come in quite handy during disaster-recovery exercises when all you have are backup set pieces and an Oracle database instance. You can create the instance, catalog the backup set pieces (including control-file autobackups), and then restore your database. The catalog command works only with disk devices, so in disaster-recovery cases you might first have to restore datafiles from tape before you can catalog them.
+
+The resync command is used to synchronize the recovery catalog with the control file. RMAN will often perform automatic resync operations, but there may be times when you will want to perform a manual resync operation. Simply issue the resync catalog command and the catalog will be synchronized with the recovery catalog, as shown in this example:
+RMAN> resync catalog;
+
+RMAN> Backup as compressed backupset duration 1:00 partial minimize load database ;
+
+Performing Oracle Advanced Recovery
+----------------------------------- 363
+
+A database incarnation is the measure of the logical lifetime of an Oracle database. A database’s first incarnation begins when it is created and ends whenever the resetlogs option is used to open the database. The next incarnation starts at the point of the resetlogs operation and ends at the point of the next resetlogs
+operations and so on. When a new incarnation is started, the log sequence numbers are reset, the online redo logs are flushed, and the database literally has a new future.
+
+
+Sometimes when performing RMAN operations it is necessary to reset to a previous database incarnation. This is pretty rare and is typically done in cases where you have
+restored your database using point-in-time recovery. After such cases, if you need to perform another restore and that restore needs to be to an SCN that is before the current resetlog SCN, then you will have to reset the database incarnation. For example, look at this output of this list incarnation command:
+
+RMAN> list incarnation;
+using target database control file instead of recovery catalog
+List of Database Incarnations
+DB Key Inc Key DB Name DB ID STATUS Reset SCN Reset Time
+------- ------- -------- ----------- ------ ---------- ----------
+1 1 ORCL 1194923408 PARENT 1 10/15/2007 10:08:59
+2 2 ORCL 1194923408 PARENT 886308 10/03/2008 13:24:36
+3 3 ORCL 1194923408 CURRENT 904361 10/03/2008 14:05:15
+
+If you wanted to restore the database to a point in time before 10/03/2008 at 14:05:15 (or SCN 904361), you would need to reset the database to one of the previous incarnations. If, however, you wanted to restore the database to the resetlog time/SCN or after that time, then you would not need to reset the database incarnation.
+
+To reset the database incarnation, you would need to mount the database first. Then use the reset database to incarnation command. You include the incarnation number that you want to switch to in the command. This number comes from the Inc Key column displayed in the list incarnation command output. Here is an example of switching the database to incarnation number 2:
+
+RMAN> shutdown immediate
+RMAN> startup mount
+RMAN> Reset database to incarnation 2;
+
+
+One frequent use of RMAN is to duplicate an existing database. Database duplication can be used for a number of different purposes, such as creating development and test databases from production databases or creating a database to test upgrades.
+
+RMAN Database Duplication Basics
+The host from which the database is being duplicated is the source host. 
+The host to which the database is being duplicated is called the destination host.
+
+The source host and destination host can be the same computer or a different computer, depending on your needs. One requirement is that the source and destination host must be on the same platform.
+
+The target or source database is the database that you will be duplicating from. You will be duplicating to a database instance that will be associated with the new database. This instance is called the auxiliary instance.
+
+Two types of database duplication exist:
+
+Active database duplication Active database duplication duplicates the live target database to the auxiliary instance over the network. As a result, no backup of the target database is required and the destination host need not have access to the RMAN backup set pieces.
+
+Backup-based database duplication Backup-based database duplication requires that a backup of the database being duplicated be available. This backup can be an RMAN backup set or image copy. The target host must have access to these backup sets in order to complete the database duplication.
+
+Database duplication takes place over what is called the auxiliary channel. This channel is created during the duplication process and is a server process associated with the auxiliary instance.
+
+When you connect to RMAN to start a database duplication, you will connect to both the target database and the auxiliary instance. This implies that network connectivity to the auxiliary instance is available, and as you will see, getting the auxiliary instance up and running is one prerequisite to starting a database-duplication operation.
+
+Preparing to duplicate your database requires a few steps:
+1. Backing up the target database (backup-based database duplication only)
+2. Making backup images available to the destination host (backup-based database duplication only)
+3. Deciding where to put the duplicate-database-related files
+4. Preparing the auxiliary instance for the duplication
+
+Before you can begin the duplication process, you must configure the auxiliary instance so that it will start. To do so, follow these steps:
+Step 1: Configure any OS-specific requirements.
+For example, in Windows you must create the Windows service, and in most Unix flavors you will need to configure shared memory.
+
+Step 2: Configure the database password file for the auxiliary instance.
+Step 3: Configure Oracle networking for the auxiliary instance.
+Step 4: Configure the database parameter file for the auxiliary instance.
+Step 5: Start the auxiliary instance.
+
+Auxiliary Database Parameters Related to Database Duplication
+
+DB_NAME : The name of the duplicated database. This same name will be used in the RMAN duplicate command. This name should be unique for databases on a given host. This parameter is a required parameter for any database duplication.
+
+CONTROL_FILES : Identifies the location of the control files for the auxiliary instance. This parameter is required unless you are using OMF.
+DB_BLOCK_SIZE : Block size of the database to be created. This parameter is required if the same parameter has been defined on the source database.
+DB_FILE_NAME_CONVERT : Contains pairs of strings that indicate the conversion path for database files from the source database to the target database. For example, if the parameter were set to ’/ora01/oracle/oradata’,’/ora02/oracle/oradata’, all files contained in /ora01/oracle/oradata would be re-created on the duplicate database in /ora02/oracle/oradata. This parameter can also be defined as part of the call to the RMAN duplicate command.
+LOG_FILE_NAME_CONVERT : Contains pairs of strings that indicate the conversion path for database redo-log files from the source database to the target database. For example, if the parameter were set to ’/ora01/oracle/oradata’,’/ora02/oracle/oradata’, all online redolog files contained in /ora01/oracle/oradata would be recreated on the duplicate database in /ora02/oracle/oradata. This parameter can also be defined as part of the call to the RMAN duplicate command.
+
+Connecting to RMAN for a Database Duplication
+When starting RMAN, you will need to connect to the following:
+The target database
+The auxiliary database
+
+set oracle_sid=orcl
+rman target=/ auxiliary=sys/password@mydb
+or
+rman target=sys/robert@orcl auxiliary=sys/password@mydb
+
+You might have noticed that we don’t use SYSDBA when connecting to RMAN. That is because all connections from RMAN to any database are always with SYSDBA privileges.
+
+The RMAN duplicate database Command
+The RMAN duplicate database command is used when performing either mode of database duplication. The command comes with a number of different options that give you ability to complete the following operations:
+Copy the source spfile to the auxiliary instance.
+Change specific parameters when copying a source spfile to the auxiliary instance.
+Indicate the location that the duplicated files should be copied to using the database filename conversion options DB_FILE_NAME_CONVERT and LOG_FILE_NAME_CONVERT.
+Create a stand-by database environment on the auxiliary instance.
+Open the duplicated database in a restricted session.
+Use the password file from the target database to create the password file on the auxiliary instance (active database duplication only).
+Skip read-only tablespaces.
+Include or exclude specific tablespaces.
+Restore to a specific restore point or use the until clause to restore to a specific time, SCN, or log sequence number (backup-based database duplication only).
+
+Here is an example of the RMAN duplication command:
+Duplicate target database to neworcl nofilenamecheck spfile;
+Duplicate target database to neworcl nofilenamecheck spfile skip tablespace users;
+
+Active Database Duplication
+Active database duplication is started by issuing the RMAN duplicate database command and including the from active database parameter. Active database duplication is not the default.
+
+Here is an example of the RMAN duplicate command performing an active database duplication:
+duplicate target database to neworcl from active database nofilenamecheck
+spfile set control_files ‘c:\oracle\oradata\neworcl\control01.ctl’,
+‘c:\oracle\oradata\neworcl\control02.ctl’
+set db_file_name_convert ’c:\oracle\oradata\orcl’,’c:\oracle\oradata\neworcl’
+set log_file_name_convert ’c:\oracle\oradata\orcl’,’c:\oracle\oradata\neworcl’;
+
+Backup-Based Database Duplication
+Using the duplicate database command without the from active database parameter starts backup-based database duplication. The auxiliary channel will be allocated automatically. When executing a backup-based database duplication, RMAN will determine the last archived redo log available. RMAN will then restore the duplicate database to the point of that last available archived redo log by default. You can use the until or to restore point parameter to change this behavior. Here is an example of the RMAN duplicate command performing a backup-based database duplication: 
+
+duplicate target database to neworcl
+spfile
+set control_files ‘c:\oracle\oradata\neworcl\control01.ctl’, ‘c:\oracle\oradata\neworcl\control02.ctl’
+set db_file_name_convert ’c:\oracle\oradata\orcl’,’c:\oracle\oradata\neworcl’
+set log_file_name_convert ’c:\oracle\oradata\orcl’,’c:\oracle\oradata\neworcl’;
+
+Once the database duplication is complete, the duplicated database will be opened and operational. You can use the restricted session parameter of the duplicate command to indicate that RMAN should open the database in a restricted session only.
+
+
+Exercise : Duplicating a Database Using Backup-Based Duplication
+
+Start RMAN and confirm that you have a valid backup with the list backup of database summary command and with the restore database validate command.
+
+RMAN> restore database validate;
+
+If you are running in Windows, create the service for the new database with oradim. In this example, you are creating a new database instance called neworcl:
+C:\>oradim -new -sid neworcl
+
+
+Create the password file for the neworcl instance:
+C:\>orapwd file=c:\oracle\product\11.1.0\db_1\database\pwdneworcl.ora
+Enter password for SYS:
+
+Create a temporary pfile for the neworcl auxiliary instance using your editor of choice. The pfile initneworcl.ora should have these parameters in it:
+db_name=neworcl
+memory_target=300m
+control_files=’c:\oracle\oradata\neworcl\control01.ctl’,
+‘c:\oracle\oradata\neworcl\control02.ctl’
+We will do the actual file-location conversions during the duplication.
+
+Create the directory for datafiles c:\oracle\oradata\neworcl:
+mkdir c:\oracle\oradata\neworcl
+
+Start up the auxiliary instance:
+C:\oracle\product\11.1.0\db_1\database>set oracle_sid=neworcl
+C:\oracle\product\11.1.0\db_1\database>sqlplus “/ as sysdba”
+SQL> startup nomount
+
+Configure service name resolution for your new auxiliary database. Add TNS entry. Now you will need to hard-code the instance name into the listener.ora file until the duplication of the database has been completed.
+
+Test the network connectivity to the auxiliary instance:
+C:\>sqlplus sys/robert@neworcl as sysdba
+
+Start RMAN, connecting to the target and the auxiliary databases:
+
+C:\oracle\product\11.1.0\db_1\database>Set oracle_sid=orcl
+C:\oracle\product\11.1.0\db_1\database>Rman target=/ auxiliary=sys/Robert@neworcl
+
+You are now ready to start the database duplication. Issue the duplicate database command, as shown here:
+duplicate target database to neworcl nofilenamecheck
+spfile 
+set control_files= ‘c:\oracle\oradata\neworcl\control01.ctl’,‘c:\oracle\oradata\neworcl\control02.ctl’
+set db_file_name_convert ’c:\oracle\oradata\orcl’,’c:\oracle\oradata\neworcl’
+set log_file_name_convert ’c:\oracle\oradata\orcl’,’c:\oracle\oradata\neworcl’;
+
+This command does the following:
+It starts the duplication process. The spfile parameter will result in the target database spfile being copied over to the duplicate database. The duplicate database will use this spfile. 
+
+Here is the output that you hopefully will see at the end of the database duplication:
+database opened
+Finished Duplicate Db at 04-OCT-08
+
+Performing a Database Disaster Recovery
+
+First, you need to plan for such an event. Taking backups and moving them offsite is the first step. You will need to make sure that you not only have backups of your database offsite, but that you have copies of the Oracle software available offsite too. Any parameter files that are not backed up by RMAN (say, your tnsnames.ora or your listener .ora files) should be backed up offsite.
+
+If you are using RMAN and you find you need to do a complete database recovery, you would follow the steps listed below. 
+
+1. Restore the OS.
+2. Restore the Oracle software.
+3. Configure Oracle networking.
+4. Ensure that you have access to the RMAN backup set pieces that you need.
+5. Restore the database spfile from the control-file autobackup. We assume that if you are doing control-file autobackups to disk, you will move those backups to tape and
+offsite them.
+6. Once the database spfile is restored, you can mount the database and restore the control files of the database from the autobackups.
+7. Once the database control file is restored, you would begin the restore and recovery of the database proper. This would complete your disaster-recovery operation. If you need to restore database files to a different location, you would use the set newname RMAN command.
+8. After you have completed the restore and recovery of the database datafiles, you would open the database with the alter database open resetlogs command.
+
+
+------------------
+
+orapwd file=C:\app\oracle\product\12.1.0\dbhome_1\dbs\orapwneworcl password=oracle entries=10
+
+oradim -new -sid neworcl -startmode auto -pfile 'C:\app\oracle\product\12.1.0\dbhome_1\dbs\initneworcl.ora'
+oradim -delete -sid neworcl

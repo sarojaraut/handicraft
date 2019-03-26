@@ -1,0 +1,151 @@
+CREATE OR REPLACE PACKAGE SlaCheckUtility
+IS
+--
+-- This package is for finding the business hours between a date range.
+-- The main function is CalcBusinessInterval.
+-- The two functions FindDayElapsedTime and IsWorkingday is invoked 
+-- from CalcBusinessInterval.
+--
+FUNCTION FindDayElapsedTime (
+i_end_range     IN TIMESTAMP,
+i_start_range   IN TIMESTAMP)
+RETURN NUMBER;
+--
+-- This function finds the valid business hours between two timestamps of the same dates
+-- i_start_range is the open day and time
+-- i_end_range is the closing day and time
+-- If the end_range will be less than start_range then this function will return 0.
+-- Also if the date is a holiday this function returns 0.
+--
+FUNCTION IsWorkingday (i_input_date IN date)
+RETURN BOOLEAN;
+--
+-- This function checks if input_date is a holiday or working day.
+-- Holiday is either FRIDAY, SATURDAY or any date present in table W_DM_HOLIDAYS_D
+-- If the input date is working day then this function will return true else return false.
+--
+FUNCTION CalcBusinessInterval(
+            i_start_range IN TIMESTAMP,
+            i_end_range   IN TIMESTAMP)
+RETURN NUMBER;
+--
+-- This function finds the valid business hours between two dates.
+-- i_start_range is the open day and time
+-- i_end_range is the closing day and time
+--
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY SlaCheckUtility
+IS
+FUNCTION FindDayElapsedTime (
+i_end_range     IN TIMESTAMP,
+i_start_range   IN TIMESTAMP)
+RETURN NUMBER
+IS
+v_result   NUMBER:=0;
+BEGIN
+--
+-- if i_end_range less than i_start_range then this function returns zero.
+-- Else this function returns elapsed time in terms of hour  
+-- e.g elapsed time between 1st jan 2012 10:00 to 1st jan 2012 13:30
+-- will be returned as 3.5 
+DBMS_OUTPUT.PUT_LINE('From FindDayElapsedTime:'||'START='||to_char(i_start_range,'DD-MON-YYYY HH24:MI:SS')||
+'...'||'END='||to_char(i_end_range,'DD-MON-YYYY HH24:MI:SS'));
+    IF (i_start_range <= i_end_range) and ( IsWorkingday(trunc(i_start_range))) THEN
+    v_result   := TO_NUMBER(EXTRACT(HOUR FROM (i_end_range-i_start_range)))+
+                  TO_NUMBER(EXTRACT(MINUTE FROM(i_end_range-i_start_range))/60);
+    END IF;
+    RETURN v_result;
+END;
+--
+--
+FUNCTION IsWorkingday (i_input_date IN date)
+RETURN BOOLEAN
+IS
+    v_workingday_flag   BOOLEAN :=TRUE ;
+    v_boolean_flag      NUMBER  := 0;
+BEGIN
+    SELECT 1 INTO v_boolean_flag 
+    FROM dual
+    WHERE TRIM(TO_CHAR(i_input_date,'DAY')) in ('FRIDAY','SATURDAY')
+        OR EXISTS (SELECT 1 
+                    FROM W_DM_HOLIDAYS_D
+                    WHERE TO_DATE(NAME,'MM/DD/YYYY') = trunc(i_input_date)
+                    );
+    IF( v_boolean_flag = 1 ) THEN 
+        v_workingday_flag := FALSE; 
+        DBMS_OUTPUT.PUT_LINE('Input Date ='||to_char(i_input_date,'DD-MON-YYYY HH24:MI:SS')|| ' Is Holiday');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Input Date ='||to_char(i_input_date,'DD-MON-YYYY HH24:MI:SS')|| ' Is Working Day');
+    END IF;
+        RETURN v_workingday_flag;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN v_workingday_flag;
+END;
+--
+--
+FUNCTION CalcBusinessInterval(
+            i_start_range IN TIMESTAMP,
+            i_end_range   IN TIMESTAMP)
+RETURN NUMBER
+IS
+v_result         NUMBER;
+v_start_window   TIMESTAMP;
+v_end_window     TIMESTAMP;
+v_running_val    NUMBER :=0;
+v_full_days_in   NUMBER :=0;
+BEGIN
+    IF i_end_range < i_start_range THEN
+        v_running_val  := 0;
+        v_full_days_in := 0;
+    ELSIF TRUNC(i_start_range) = TRUNC(i_end_range) THEN
+        --
+        -- Only calculate the number of business hours for the first day
+        -- if openday time is less than 7:30AM then start counting from 7:30AM 
+        -- Else start counting from openday time 
+        -- hence v_start_window is used to store maximum of 7:30 or the timestamp 
+        --   of i_start_range.
+        --
+        v_start_window := GREATEST (TRUNC(i_start_range) + interval '0 07:30:00' day to second, i_start_range);
+        v_end_window   := LEAST(TRUNC(i_end_range) + interval '0 14:30:00' day to second, i_end_range);
+        v_running_val  := FindDayElapsedTime(v_end_window, v_start_window);
+    ELSE
+        --
+        -- Calculate the number of business hours for the first day
+        -- From open time to 14:30 of the same day.
+        --
+        v_start_window := GREATEST (TRUNC(i_start_range) + interval '0 07:30:00' day to second, i_start_range);
+        v_end_window   := TRUNC(i_start_range) + interval '0 14:30:00' day to second;
+        v_running_val  := FindDayElapsedTime(v_end_window, v_start_window);
+        --
+        -- Calculate the number of business hours for the last day
+        -- from 7:30AM last day to the closing time
+        --
+        v_start_window := TRUNC(i_end_range) + interval '0 07:30:00' day to second;
+        v_end_window   := LEAST(TRUNC(i_end_range) + interval '0 14:30:00' day to second, i_end_range);
+        v_running_val  := v_running_val + FindDayElapsedTime(v_end_window, v_start_window);
+        --
+        -- At this stage v_running_val contains sum of elapsed for the first day and last day.
+        -- Next for all the working days between first day and last day
+        --
+        FOR i in 1..(TRUNC(i_end_range)-TRUNC(i_start_range)-1)
+        LOOP
+        IF IsWorkingday( TRUNC(i_start_range) + i) THEN 
+            v_full_days_in := v_full_days_in + 1;
+            DBMS_OUTPUT.PUT_LINE(to_char((TRUNC(i_start_range) + i),'DD-MON-YYYY')|| ' Is Working Day');
+        END IF;
+        END LOOP;
+    END IF;
+    v_result := (v_full_days_in * 7) + v_running_val;
+    return v_result;
+EXCEPTION
+    WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('Critical Error : '||SQLERRM);
+    return -1;
+END;
+END SlaCheckUtility;
+/
+
+

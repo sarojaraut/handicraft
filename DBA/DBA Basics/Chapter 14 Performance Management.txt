@@ -1,0 +1,310 @@
+14 Performance Management
+
+Memory usage in the Oracle instance falls into two categories: Program Global Areas (PGAs) that are private to each session, and the System Global Area (SGA) that is shared by all the Oracle processes. 
+
+When executing SQL, the server process makes use of the PGA to store session specific data, including
+¦ Temporary tables
+¦ Sorting rows
+¦ Merging bitmaps
+¦ Variables
+¦ The call stack
+
+Automatic PGA memory management is enabled with two instance parameters:
+¦ WORKAREA_SIZE_POLICY
+¦ PGA_AGGREGATE_TARGET
+
+The WORKAREA_SIZE_POLICY will default to AUTO, meaning that Oracle can assign PGA to sessions on demand, while attempting to keep the total allocated PGA within the PGA_AGGREGATE_TARGET. This parameter defaults to the greater of 10 MB or 20 percent of the size of the SGA and should be adjusted upward until a satisfactory proportion of statements are executing optimally, but not set so high that memory is over-allocated and the operating system has to page virtual memory to disk.
+
+SGA Memory Management : The SGA contains several memory structures, which can be sized independently.
+These are
+¦ The shared pool
+¦ The database buffer cache
+¦ The large pool
+¦ The Streams pool
+¦ The Java pool
+¦ The log buffer
+
+SGA memory management can be automatic (and Oracle Corporation advises that it should be) with the exception of the log buffer. The DBA sets a total size for the SGA, and the instance will apportion this total to the various structures, ensuring that there are no errors from undersizing of SGA components and that memory above this minimum is allocated where it will do most good. The log buffer is the one SGA component whose size is fixed at instance startup and that cannot be automatically managed.
+The parameters for manual management of the SGA are
+¦ SHARED_POOL_SIZE
+¦ DB_CACHE_SIZE
+¦ LARGE_POOL_SIZE
+¦ STREAMS_POOL_SIZE
+¦ JAVA_POOL_SIZE
+
+To enable automatic SGA management, leave all of these on default (or set to zero) and set one parameter to enable automatic shared memory management (ASSM):
+¦ SGA_TARGET
+When using ASSM, the instance will monitor demand for memory in the various SGA components and pass out memory to the components as required, downsizing components if this is necessary to keep the total allocated memory within the target.
+
+Automatic Memory Management : The Automatic Memory Management mechanism lets the Oracle instance manage server memory usage as a whole, by setting one parameter: MEMORY_TARGET.
+This takes the automatic PGA management (enabled with PGA_AGGREGATE_TARGET) and the automatic shared memory management (enabled with SGA_TARGET) a step further, by letting Oracle transfer memory between PGAs and SGA on demand.
+
+Automatic memory management is not just a tool to make database administration easy. It will often give big performance benefits as well. Many databases will experience different patterns of activity at different times, which could benefit from different memory configurations. For example, it is not uncommon for a database used for order processing to experience a very heavy transaction processing workload during most of the month, and then a heavy query processing workload during month end reporting runs. Transaction processing will typically not be demanding on PGA memory but will require a large database buffer cache. Query processing will often require large PGA allocations, but not much buffer cache.
+
+The MEMORY_TARGET parameter is dynamic—it can be adjusted without shutting down the instance—but only within a limit set by another parameter: MEMORY_MAX_TARGET. This is static, so it can only be raised by adjusting with the SCOPE=SPFILE clause and restarting the instance.
+
+In this exercise, you will disable Automatic Memory Management (if it is enabled) and set the SGA and PGA targets independently.
+
+Ensure that none of the parameters for managing SGA memory structure manually are set:
+
+alter system set db_cache_size=0 scope=memory;
+alter system set shared_pool_size=0 scope=memory;
+alter system set large_pool_size=0 scope=memory;
+alter system set java_pool_size=0 scope=memory;
+
+Disable Automatic Memory Management:
+alter system set memory_target=0 scope=memory;
+
+Set the parameters to size PGA and SGA independently, using the lowest permitted values:
+alter system set pga_aggregate_target=10m scope=memory;
+alter system set sga_target=64m scope=memory;
+
+The second command may take a few minutes to complete, and it may fail if Oracle cannot reduce the SGA to the requested value.
+
+Determine the actual size of the currently allocated PGAs, by summing up the value for the statistic “session pga memory” across all sessions:
+select sum(value) from v$sesstat natural join v$statname where name='session pga memory';
+
+314854944 - 300 MB 2500 actual
+
+Determine the actual size of the SGA:
+select sum(bytes) from v$sgastat;
+
+5422097136 - 5170 
+
+The figure will be significantly in excess of the 10 MB requested in previous Step. This is because 10 MB is a value that is so low that Oracle cannot keep to it. The PGA target is only a target, not a hard limit.
+
+SELECT 
+PGA_TARGET_FOR_ESTIMATE, 
+PGA_TARGET_FACTOR, 
+ESTD_EXTRA_BYTES_RW  
+FROM 
+V$PGA_TARGET_ADVICE;
+
+
+327680000	0.125	11724546048
+655360000	0.25	8582875136
+1310720000	0.5	    6014527488
+1966080000	0.75	6014527488
+2621440000	1	    5910720512
+3145728000	1.2	    631383040
+3670016000	1.4	    631383040
+4194304000	1.6	    631383040
+4718592000	1.8	    631383040
+5242880000	2	    631383040
+7864320000	3	    631383040
+10485760000	4	    631383040
+15728640000	6	    631383040
+20971520000	8	    631383040
+
+The fifth row of the output is the current setting: a PGA_TARGET_FACTOR of 1. It can be seen that if another 5000 MB of memory were added to the target, I/O would be reduced by more than 9 times, but adding more than this would give no further benefit.
+
+SELECT SGA_SIZE, SGA_SIZE_FACTOR, ESTD_DB_TIME, ESTD_DB_TIME_FACTOR FROM V$SGA_TARGET_ADVICE
+
+SGA_SIZE	SGA_SIZE_FACTOR	ESTD_DB_TIME	ESTD_DB_TIME_FACTOR
+
+1300	0.25	767545	6.571
+1950	0.375	335192	2.8696
+2600	0.5	    209238	1.7913
+3250	0.625	178740	1.5302
+3900	0.75	135602	1.1609
+4550	0.875	128465	1.0998
+5200	1	    116808	1
+5850	1.125	110816	0.9487
+6500	1.25	104578	0.8953
+7150	1.375	102020	0.8734
+7800	1.5	    97605	0.8356
+8450	1.625	87244	0.7469
+9100	1.75	87162	0.7462
+9750	1.875	87139	0.746
+10400	2	    87139	0.746
+
+SELECT MEMORY_SIZE, MEMORY_SIZE_FACTOR, ESTD_DB_TIME FROM V$MEMORY_TARGET_ADVICE
+
+
+select * from v$parameter where name in
+('workarea_size_policy',
+'pga_aggregate_target',
+'sga_target',
+'memory_target'
+)
+
+Interview Questions
+-------------------
+
+Oracle Invisible Index 
+An invisible index is an index that is maintained by the database but ignored by the optimizer unless explicitly specified. The syntax to change the visibility of an index is simple.  To make an index invisible: Keep in mind that rebuilding an invisible index will make it visible. 
+
+ALTER INDEX index_name INVISIBLE;
+
+To make an index visible:
+
+ALTER INDEX index_name VISIBLE
+
+Create an invisible index
+
+create index order_lines_inv on order_lines(ATTRIBUTE7) INVISIBLE;
+
+This one query can be modified to explicitly use the invisible index with a hint:
+
+select /*+ INDEX (order_lines ORDER_LINES_INV) */ id from order_lines where attribute7 = 11001;
+
+If the application code cannot be modified, it is possible to instruct the optimizer to include invisible indexes at the session level:
+
+alter session set optimizer_use_invisible_indexes = true;
+
+Invisible indexes are an attractive feature for the process of dropping an index. They are also useful when a specific application needs the benefit of a temporary index without impacting the database on a wider scale. 
+
+-----------------
+OCP IZ0-053
+Chapter 10 Memory Management Techniques
+
+
+Implement Automatic Memory Management
+Oracle recommends that you configure a new database using AMM, and then monitor the database to see how well Oracle can manage the total memory allocation. You can switch your database to ASMM at a later time to exercise more control over the total size of the SGA, but still let Oracle manage the memory allocation for individual components of the SGA. 
+
+Memory in the SGA is allocated in units of granules. A granule can be either 4MB or 16MB, depending on the total size of the SGA. If the SGA is less than or equal to 128MB, a granule is 4MB; otherwise, it is 16MB.
+
+Buffer Caches 
+The database buffer cache holds blocks of data from disk that have been recently read to satisfy a SELECT statement or that contain modified blocks that have been changed or added from a Data Manipulation Language (DML) statement.
+
+Oracle allows for tablespaces with up to five different block sizes (one block size for the default, and up to four others). Each block size requires its own buffer cache. Oracle can use two additional caches with the same block size as the default block size: the KEEP buffer pool and the RECYCLE buffer pool. Both of these pools allocate memory independently of other caches in the SGA. When a table is created, you can specify the pool where the table’s data blocks will reside by using the BUFFER_POOL KEEP or BUFFER_POOL RECYCLE clause in the STORAGE clause. For tables that you use frequently throughout the day, it would be advantageous to place the tables into the KEEP buffer pool to minimize the I/O needed to retrieve blocks in the table.
+
+Shared Pool 
+The shared pool contains two major subcaches: the library cache and the data dictionary cache. The library cache holds information about SQL and PL/SQL statements that are run against the database.
+
+The data dictionary cache holds the most frequently requested rows from the data dictionary tables, except for table and column descriptions unless they are frequently accessed. If the data dictionary cache is too small, requests for information from the data dictionary will cause extra I/O to occur; these I/O-bound data dictionary requests  are called recursive calls and should be avoided by sizing the data dictionary cache correctly.
+
+Redo Log Buffer 
+The redo log buffer holds the most recent changes to the data blocks in the datafiles. When the redo log buffer is one-third full, or every 3 seconds, or when a log switch occurs (a log switch can be forced), Oracle writes redo log records to the redo log files. The Log Writer (LGWR) process will write the redo log records to the redo log files when 1MB of redo is stored in the redo log buffer.
+
+Large Pool 
+The large pool is an optional area of the SGA. It is used for transactions that interact with more than one database, message buffers for processes performing
+parallel queries, and RMAN parallel backup and restore operations.
+
+Java Pool 
+The Java pool is used by the Oracle JVM (Java Virtual Machine) for all Java code and data within a user session. Storing Java code and data in the Java pool is analogous to SQL and PL/SQL code cached in the shared pool.
+
+Streams Pool 
+The streams pool holds data and control structures to support the Oracle Streams feature of Oracle Enterprise Edition. 
+
+Software Code Area
+Software code areas store the Oracle executable files that are running as part of an Oracle instance. These code areas are static in nature and change only when a new release of the software is installed. Typically, the Oracle software code areas are located in a privileged memory area separate from other user programs.
+
+Using AMM, Oracle takes your memory target and automatically balances SGA and PGA memory based on the current workload.
+
+When MEMORY_TARGET > 0 and these parameters are set…  ->> The behavior is…
+Both SGA_TARGET and PGA_AGGREGATE_TARGET set ->> SGA_TARGET and PGA_AGGREGATE_TARGET are minimum values for SGA and PGA; MEMORY_TARGET ranges from SGA_TARGET + PGA_AGGREGATE_TARGET to MEMORY_MAX_TARGET
+
+SGA_TARGET is set, but PGA_AGGREGATE_TARGET is NOT set ->> Both parameters are still auto-tuned, but PGA_AGGREGATE_TARGET starts out at MEMORY_TARGET – SGA_TARGET
+
+SGA_TARGET is NOT set, but PGA_AGGREGATE_TARGET is set ->> Both parameters are still auto-tuned, but SGA_TARGET starts out at MIN(MEMORY_TARGET-PGA_AGGREGATE_TARGET,SGA_MAX_SIZE)
+
+Both SGA_TARGET and PGA_AGGREGATE_TARGET are NOT set ->> Both SGA_TARGET and PGA_AGGREGATE_TARGET are auto-tuned, with 60% for SGA and 40% for PGA
+
+To enable automatic memory management, you can use the current values for SGA_TARGET and PGA_AGGREGATE_TARGET to calculate the desired value for MEMORY_TARGET. Follow these steps:
+
+Find the maximum PGA allocated from V$PGASTAT using the PGA statistic ‘maximum PGA allocated’. Then Calculate MEMORY_TARGET by adding the SGA target value to the maximum
+of the PGA target and the maximum PGA allocated since the instance was started.
+select value from v$pgastat where name='maximum PGA allocated';
+
+Set the MEMORY_MAX_TARGET in the SPFILE to a value at least as high as MEMORY_TARGET calculated above. 
+
+When MEMORY_TARGET = 0 (or not set) and these parameters are set… ->> The behavior is…
+SGA_TARGET is set ->> Oracle auto-tunes SGA components, and PGA is auto-tuned whether or not it is explicitly set
+SGA_TARGET is NOT set ->> Some SGA components must be explicitly specified, and PGA is auto-tuned
+
+¦ V$MEMORY_DYNAMIC_COMPONENTS Current status of all memory components.
+¦ V$MEMORY_RESIZE_OPS A circular buffer of the last 800 memory sizing requests.
+¦ V$MEMORY_TARGET_ADVICE Tuning advice for the MEMORY_TARGET initialization parameter.
+
+Switch from manual memory management to ASMM
+Using this query, calculate a value for SGA_TARGET based on the current values:
+SQL> select
+2 (
+3 (select sum(value) from v$sga) -
+4 (select current_size from v$sga_dynamic_free_memory)
+5 ) sga_target
+6 from dual;
+
+In other words, calculate the total memory currently allocated to SGA components, less the amount of unused memory within the allocation. Use this value to set the value of SGA_TARGET (remember that this new
+value must be less than SGA_MAX_SIZE):
+SQL> alter system set sga_target=422670336;
+
+Set the initialization parameters to zero:
+SQL> alter system set SHARED_POOL_SIZE = 0;
+SQL> alter system set LARGE_POOL_SIZE = 0;
+SQL> alter system set JAVA_POOL_SIZE = 0;
+SQL> alter system set DB_CACHE_SIZE = 0;
+SQL> alter system set STREAMS_POOL_SIZE = 0;
+
+Switching from AMM to ASMM
+Switching from AMM to ASMM is even easier than switching from manual memory management to ASMM. First, set the value of MEMORY_TARGET to zero:
+SQL> alter system set memory_target = 0;
+After you issue this command, Oracle automatically sets SGA_TARGET based on the current SGA memory usage. As you did when converting from manual memory
+management to ASMM, set the initialization parameters in to zero to maximize Oracle’s ability to auto-tune those parameters.
+
+Disabling ASMM
+You can dynamically disable ASMM by setting SGA_TARGET to zero:
+SQL> alter system set sga_target = 0;
+All of the initialization parameters are set to their current auto-tuned value. Note that the current values will most likely be different from any minimum values assigned to those parameters in the SPFILE.
+
+Identifying ASMM Manually Tuned Parameters
+When you use ASMM, only the parameters listed above are auto-tuned. The following SGA parameters, however, must be manually tuned:
+¦ DB_KEEP_CACHE_SIZE
+¦ DB_RECYCLE_CACHE_SIZE
+¦ DB_nK_CACHE_SIZE (where n = 2, 4, 8, 16, or 32)
+¦ LOG_BUFFER
+
+When you set these parameters manually, the memory allocated to these parameters is subtracted from the memory specified by SGA_TARGET.
+
+Because SGA_TARGET is a dynamic parameter, you can adjust its size as long as it is not greater than SGA_MAX_SIZE.
+Individual SGA components can be manually adjusted even if you set SGA_TARGET to auto-tune these parameters. At instance startup, any nonzero values for these parameters sets a lower limit for the memory allocated. 
+
+However, the memory allocated to the component is not changed unless the value you specify with ALTER SYSTEM is greater than the amount of memory currently allocated to the component. For example, if SHARED_POOL_SIZE is set to 300MB, and the current auto-tune value is 400MB, then setting SHARED_POOL_SIZE to 500MB will automatically allocate another 100MB from the other auto-tuned components.
+
+
+Configuring PGA Memory Management
+When you create a new instance or until you have run representative workloads, you do not have any statistics available to precisely size the PGA using PGA_AGGREGATE_TARGET. Therefore, as a starting point, you must first determine how much server memory to allocate to Oracle. A typical value for a single instance, leaving memory for the operating system and assuming no other applications on the server, is 80 percent of physical memory. From the memory allocated to Oracle, you can divide the memory between the SGA and PGA depending on the type of database applications you will run on the server:
+¦ Online Transaction Processing (OLTP) PGA can be as low as 20 percent of available memory.
+¦ Decision Support Systems (DSS) running memory-intensive queries PGA can range from 50 to 70 percent of available memory, with 50 percent as a good starting point.
+
+Automatic PGA memory management is enabled by default and behaves similarly whether you are using AMM or not. PGA_AGGREGATE_TARGET is either derived by AMM or you set it explicitly. Oracle then automatically manages the work areas for all sessions within the PGA depending on the workload.
+
+Managing PGA Memory
+Because PGA_AGGREGATE_TARGET is not a hard upper bound, Oracle may allocate more memory to the PGA during a typical workload. Thus, you should monitor PGA memory usage using dynamic performance views. 
+
+The dynamic performance view V$PGA_STAT provides an overview of all PGA memory, as you can see from this query:
+SQL> select * from v$pgastat;
+
+NAME VALUE UNIT
+--------------------------------------------- ---------- -------
+aggregate PGA target parameter 176160768 bytes
+aggregate PGA auto target 72585216 bytes
+global memory bound 35231744 bytes
+total PGA inuse 95510528 bytes
+total PGA allocated 184295424 bytes
+maximum PGA allocated 499208192 bytes
+total freeable PGA memory 13041664 bytes
+process count 43
+max processes count 51
+PGA memory freed back to OS 2656108544 bytes
+total PGA used for auto workareas 0 bytes
+maximum PGA used for auto workareas 7198720 bytes
+total PGA used for manual workareas 0 bytes
+maximum PGA used for manual workareas 271360 bytes
+over allocation count 229
+bytes processed 4525369344 bytes
+extra bytes read/written 0 bytes
+cache hit percentage 100 percent
+recompute count (total) 8001
+19 rows selected.
+SQL>
+
+
+The value for cache hit percentage is the first place to look, which ideally is 100 percent if all work areas for all processes received all the memory they need. The value for cache hit percentage is calculated using extra bytes read/written. This value is the number of extra bytes that were read or written using multiple passes because the work areas did not have enough memory. 
+
+You can monitor an individual session’s PGA memory using V$PROCESS and these columns:
+¦ PGA_USED_MEM PGA memory currently in use by the process.
+¦ PGA_ALLOC_MEM Memory allocated for the process, including memory not yet released to the operating system.
+¦ PGA_MAX_MEM Maximum PGA memory ever used by the process.
+

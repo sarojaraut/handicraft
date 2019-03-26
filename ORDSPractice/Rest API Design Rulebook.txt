@@ -1,0 +1,84 @@
+A REST API consists of an assembly of interlinked resources. This set of resources is known as the REST API’s resource model.
+
+REST API Design
+For many of us, designing a REST API can sometimes feel more like an art than a science. Some best practices for REST API design are implicit in the HTTP standard, while other pseudo-standard approaches have emerged over the past few years. Yet today, we must continue to seek out answers to a slew of questions, such as:
+• When should URI path segments be named with plural nouns?
+• Which request method should be used to update resource state?
+• How do I map non-CRUD operations to my URIs?
+• What is the appropriate HTTP response status code for a given scenario?
+• How can I manage the versions of a resource’s state representations?
+• How should I structure a hyperlink in JSON?
+
+These rules can be followed as a complete set or a la carte. You may contest the rules, but I believe that each one warrants careful consideration.
+
+Rule: Forward slash separator (/) must be used to indicate a hierarchical relationship The forward slash (/) character is used in the path portion of the URI to indicate a hierarchical relationship between resources. For example:
+http://api.canvas.restapi.org/shapes/polygons/quadrilaterals/squares
+
+Rule: A trailing forward slash (/) should not be included in URIs As the last character within a URI’s path, a forward slash (/) adds no semantic value and may cause confusion. REST APIs should not expect a trailing slash and should not include them in the links that they provide to clients. Many web components and frameworks will treat the following two URIs equally:
+http://api.canvas.restapi.org/shapes/
+http://api.canvas.restapi.org/shapes
+
+However, every character within a URI counts toward a resource’s unique identity. Two different URIs map to two different resources. If the URIs differ, then so do the resources, and vice versa. Therefore, a REST API must generate and communicate clean URIs and should be intolerant of any client’s attempts to identify a resource imprecisely.
+
+Rule: Hyphens (-) should be used to improve the readability of URIs To make your URIs easy for people to scan and interpret, use the hyphen (-) character  to improve the readability of names in long path segments. Anywhere you would use a space or hyphen in English, you should use a hyphen in a URI. For example:
+http://api.example.restapi.org/blogs/mark-masse/entries/this-is-my-first-post
+
+Rule: Underscores (_) should not be used in URIs Text viewer applications (browsers, editors, etc.) often underline URIs to provide a visual cue that they are clickable. Depending on the application’s font, the underscore (_) character can either get partially obscured or completely hidden by this underlining. To avoid this confusion, use hyphens (-) instead of underscores
+
+Rule: Lowercase letters should be preferred in URI paths When convenient, lowercase letters are preferred in URI paths since capital letters can sometimes cause problems. RFC 3986 defines URIs as case-sensitive except for the scheme and host components. For example:
+
+First : http://api.example.restapi.org/my-folder/my-doc
+Second : HTTP://API.EXAMPLE.RESTAPI.ORG/my-folder/my-doc
+Third : http://api.example.restapi.org/My-Folder/my-doc
+First : This URI is fine.
+Second : The URI format specification (RFC 3986) considers this URI to be identical to URI
+Third : This URI is not the same as URIs 1 and 2, which may cause unnecessary confusion.
+
+Rule: File extensions should not be included in URIs On the Web, the period (.) character is commonly used to separate the file name and extension portions of a URI. A REST API should not include artificial file extensions in URIs to indicate the format of a message’s entity body. Instead, they should rely on the media type, as communicated through the Content-Type header, to determine how to process the body’s content.
+
+http://api.college.restapi.org/students/3248234/transcripts/2005/fall.json -- 1
+http://api.college.restapi.org/students/3248234/transcripts/2005/fall -- 2
+1 : File extensions should not be used to indicate format preference.
+2 : REST API clients should be encouraged to utilize HTTP’s provided format selection mechanism, the Accept request header, as discussed in the section
+
+Rule: Consistent subdomain names should be used for your APIs The top-level domain and first subdomain names (e.g., soccer.restapi.org) of an API should identify its service owner. The full domain name of an API should add a subdomain named api. For example:
+http://api.soccer.restapi.org
+
+Rule: Consistent subdomain names should be used for your client developer
+portal
+Many REST APIs have an associated website, known as a developer portal, to help onboard
+new clients with documentation, forums, and self-service provisioning of secure
+API access keys. If an API provides a developer portal, by convention it should have a
+subdomain labeled developer. For example:
+http://developer.soccer.restapi.org
+
+Resource Modeling
+The URI path conveys a REST API’s resource model, with each forward slash separated
+path segment corresponding to a unique resource within the model’s hierarchy. For
+example, this URI design:
+http://api.soccer.restapi.org/leagues/seattle/teams/trebuchet
+indicates that each of these URIs should also identify an addressable resource:
+http://api.soccer.restapi.org/leagues/seattle/teams
+http://api.soccer.restapi.org/leagues/seattle
+http://api.soccer.restapi.org/leagues
+http://api.soccer.restapi.org
+Resource modeling is an exercise that establishes your API’s key concepts. This process
+is similar to the data modeling for a relational database schema or the classical modeling
+of an object-oriented system.
+Before diving directly into the design of URI paths, it may be helpful to first think about
+the REST API’s resource model.
+
+Resource Archetypes
+When modeling an API’s resources, we can start with the some basic resource archetypes.
+Like design patterns, the resource archetypes help us consistently communicate
+the structures and behaviors that are commonly found in REST API designs. A REST
+API is composed of four distinct resource archetypes: document, collection, store, and
+controller.
+
+In order to communicate a clear and clean resource model to its clients,
+a REST API should align each resource with only one of these archetypes.
+For uniformity’s sake, resist the temptation to design resources
+that are hybrids of more than one archetype. Instead, consider designing
+separate resources that are related hierarchically and/or through links,
+
+

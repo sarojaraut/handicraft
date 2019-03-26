@@ -1,0 +1,35 @@
+Data Normalisation
+
+As an example of normalization, consider a table called BOOKS storing details of books, authors, and publishers, using the ISBN number as the primary key. A primary key is the one attribute that can uniquely identify a record. 
+ISBN, Title,  Authors,  Publisher
+Storing the data in this format gives rise to several anomalies.
+
+ Insertion anamoly - it is impossible to enter details of authors who are not yet published, because there will be no ISBN number under which to store them.
+ Deletion Anamoly - A book cannot be deleted without losing the details of the publisher.
+ Update Anamoly - if a publisher’s address changes, it will be necessary to update the rows for every book he/she has published.
+  
+Furthermore:
+1. it will be very difficult to identify every book written by one author. The fact that a book may have several authors means that the “author” field must be multivalued, and a search will have to search all the values. Related to this is the problem of having to restructure the table of a book comes along with more authors than the original design can handle. 
+2. Also, the storage is very inefficient due to replication of address details across rows, and the possibility of error as this data is repeatedly entered is high. Normalization should solve all these issues. 
+
+The first normal form is to remove the repeating groups. In this case, the multiple authors: pull them out into a separate table called AUTHORS. The data structures will now look like this:
+
+BOOKS : ISBN,Title, Publisher
+AUTHORS: Name, ISBN
+
+One row in the BOOKS table is now linked to two rows in the AUTHORS table. and unpublished authors can be inserted. This solves the insertion anomaly. This is the first normal form: no repeating groups.
+
+The second normal form removes columns from the table that are not dependent on the primary key. In this example, that is the publisher’s address details: these
+depend on the publisher, not the ISBN. The BOOKS table and a new PUBLISHERS table will then look like this:
+
+BOOKS :ISBN, Title, Publisher
+PUBLISHERS :Publisher, Street, City, State
+
+All the books published by one publisher will now point to a single record in PUBLISHERS. This solves the problem of storing the address many times, and
+the consequent update anomalies and also the data consistency errors caused by inaccurate multiple entries.
+
+Third normal form removes all columns that are interdependent. In the PUBLISHERS table, this means the address columns: the street exists in only one city, and the city can be in only one state; one column should do, not three. This could be achieved by adding an address code, pointing to a separate address table:
+PUBLISHERS : Publisher, Address, Code
+
+ADDRESSES :Address Code, Street, City ,State
+One characteristic of normalized data that should be emphasized now is the use of primary keys and foreign keys.

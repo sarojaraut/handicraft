@@ -1,0 +1,32 @@
+Minimizing System Contention
+Do You Have a Wait Problem?
+SQL> select metric_name, value
+ from v$sysmetric
+ where metric_name in ('Database CPU Time Ratio',
+ 'Database Wait Time Ratio') and
+ intsize_csec =
+ (select max(INTSIZE_CSEC) from V$SYSMETRIC);
+
+In general, if the results of this query show a very high value for the Database Wait Time Ratio or if the Database Wait Time Ratio is much greater than the Database CPU Time Ratio, the database is spending more time waiting than processing
+
+-------------------------
+Detecting Disk Space Issues
+
+$ df –h
+
+Filesystem Size Used Avail Use% Mounted on
+
+------------------------------
+Identifying System Bottlenecks
+
+$ vmstat 5
+Here is some sample output:
+procs -----------memory---------- ---swap-- -----io---- --system-- -----cpu------
+r b swpd free buff cache si so bi bo in cs us sy id wa st
+2 0 228816 2036164 78604 3163452 0 0 1 16 0 0 29 0 70 0 0
+2 0 228816 2035792 78612 3163456 0 0 0 59 398 528 50 1 49 0 0
+2 0 228816 2035172 78620 3163448 0 0 0 39 437 561 50 1 49 0 0
+To exit out of vmstat in this mode, press Ctrl+C.
+
+The below instructs vmstat to run every 6 seconds for a total of 10 reports:
+$ vmstat 6 10

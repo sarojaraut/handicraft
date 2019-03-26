@@ -1,0 +1,1131 @@
+Backup and Recovery Best Practices
+you must always document your backup and recovery procedures. 
+You must have a detailed recovery plan for each type of failure you anticipate. 
+If possible, you must write scripts to automate the execution of the recovery plan during a crisis.
+
+Configure a Fast Recovery Area
+Oracle strongly supports automatic disk-based backup and recovery, wherein all the necessary backup files are stored on the disk itself. You make the initial copy of the necessary data files and archived redo log files to the fast recovery area and, from here, copy them to tape so you can store them off-site in a secure location.
+
+Schedule Regular Backups
+You, of course, can recover any database from a backup made at any remote time in the past, provided you have all the archived redo logs from that point forward. But can you imagine applying all those archived redo logs to the backups and suffering a horrendous downtime?
+
+Create Regular Backups of the Control File
+Back up a database’s control file after any structural change to your database, such as creating a new tablespace or adding or renaming a data file or an online redo log member. The best way to do this is to issue the RMAN command configure controlfile autobackup on.
+
+Multiplex the Control File
+Since the control file is absolutely necessary during a recovery, use the following guidelines to safeguard the control file:
+• Keep the Oracle-recommended three copies of the control file.
+• Put each copy of the control file on a separate disk.
+• Place at least one of the three copies on a separate disk controller.
+
+Multiplex the Redo Log Groups
+If you lose your online redo logs, you may not be able to recover all committed changes to your database following a media failure and subsequent recovery.
+
+Adopt the Right Backup Storage Strategy
+Where you store your backups is quite critical to your recovery strategy, since different storage strategies have different implications for recovery time. If you use a fast recovery area, of course, the backups are all on disk, and consequently, you can recover with the least amount of elapsed time. If you store your backups only on tape or you store them off-site, you have to endure a longer interval to restore and recover your database.
+
+Plan Your Backup-Retention Duration
+One of the key questions every backup strategy must address is how long you want to keep a backup. Although you can specify that a backup be kept forever without becoming obsolete, it’s not common to follow such a strategy, unless you’re doing it for a special reason.
+
+Plan Your Backup Schedules
+Determining a backup schedule means how often you use RMAN to back up your database files, as well as what files you back up. Do you perform nightly or weekly backups, or do you back up different files at different intervals? How frequently you create a backup will, of course, depend on how fast the data in your database is changing. If your
+database performs a very large number of DML operations on a daily basis, for example, you must back it up daily rather than weekly.
+
+Conduct Regular Trial Recoveries
+Another key part of a solid backup and recovery strategy is to schedule regular trial recoveries using your current recovery plan and the latest backups for various simulated scenarios. it is only during the test restore/recovery that you’ll know the duration of a restore/recovery and, therefore, how fast you can perform the actual restore/recovery.
+
+ou can configure the nls_date_format environment variable to include the date and time format, such as DD-MON-RRRR HH24:MI:SS. This is helpful when troubleshooting, because most often you want to know the exact date and time a specific problem or error occurred. export nls_date_format = YYYY-MM-DD:HH24:MI:SS
+
+When connecting to RMAN, you do not have to specify the sys* clause. This is because RMAN always requires that you connect as a user with sys* privileges. Therefore, you must connect to RMAN with either a user who is OS authenticated or a username/password with sys* privileges granted to it (and therefore exists in the password file).
+
+Starting with Oracle Database 10g Release 1, you can define a special area on disk called the Flash Recovery Area (FRA) that the database uses as a backup location. In Oracle Database 11g Release 2, this was renamed to Fast Recovery Area (so keeping the acronym—FRA—unchanged).
+
+Freeing FRA Space in an Emergency
+Solution 1: Delete Unneeded Files : RMAN> delete obsolete;
+Solution 2: Increase Space : SQL> alter system set db_recovery_file_dest_size = 10G;
+Solution 3: Remove Restore Points : select name, storage_size from v$restore_point; drop restore point grp2;
+Solution 4: Disable Flashback : SQL> alter database flashback off;
+
+Configuring Archived Redo Logs to Go to FRA
+alter system set log_archive_dest_1 = 'LOCATION=USE_DB_RECOVERY_FILE_DEST';
+
+
+You start up the RMAN client using the RMAN executable rman, which you’ll find in the $ORACLE_HOME/bin directory. In addition to the rman executable, RMAN also comes with two other internal components: one a set of PL/SQL procedures in the target database and the other a file named recover.bsq. RMAN turns the backup and recovery commands you issue into PL/SQL procedure calls using the recover.bsq file to construct the calls. 
+
+By default, all RMAN-related records in the target database’s control file are overwritten after seven days, but you can control the length of retention by setting a higher value for the initialization parameter control_file_record_keep_time.
+
+You can’t use the connect catalog command to connect to the recovery catalog after having issued RMAN commands in the nocatalog mode—you must first exit RMAN before you can restart and make a connection to the recovery catalog.
+
+You can save RMAN output to a text file by issuing the spool command and specifying the name of the log file.
+RMAN> spool log to '/tmp/rman/backuplog.f';
+RMAN> backup datafile 1;
+RMAN> spool log off;
+
+The spool command works the same way as it does in SQL*Plus. If the file with the same name you specify already exists, RMAN will overwrite the file, unless you specify the append option. For example:
+spool log to '/tmp/rman/backuplog.f' append
+
+Logging Command-Line RMAN Output
+rman target / cmdfile commandfile1.rcv log /u01/app/oracle/outfile.txt
+
+Scripting RMAN
+
+#!/bin/ksh
+export ORACLE_SID=$1
+export LEVEL=$2
+export TIMESTAMP='date +'%Y%m%d''
+export BACKUP_DIR=/u01/app/oracle/backup
+export LOGFILE=${BACKUP_DIR}/rman-level$(LEVEL)_$(TIMESTAMP).log
+rman target / catalog rman/rman@rcat > ${LOGFILE} <<- EOF
+sql 'alter system archive log current';
+change archivelog all crosscheck;
+allocate channel for maintenance type disk;
+delete noprompt expired archivelog all;
+run {
+allocate channel ch1 type disk format
+'${BACKUP_DIR}/%d_level${LEVEL}_${TIMESTAMP}_%s_U%U.bak';
+set limit channel ch1 kbytes=2000000;
+backup incremental level ${LEVEL} (database);
+release channel ch1;
+resync catalog;
+}
+EOF
+
+or
+you can have a file called full_backup.rman consisting of the following run block:
+
+run {
+allocate channel d1 type disk;
+backup full database format '/export/rman/rman_%n_%T_%s_%p.bus';
+}
+You can then invoke RMAN from the operating system command line to execute this file as follows:
+$ rman target / @full_backup.rman
+
+Creating Dynamic Command Files
+
+Create the RMAN command file that uses two substitution variables:
+#backup.cmd
+connect target sys/<sys_password>@prod1
+run {
+backup database
+tag &1
+format '&2 ';
+}
+exit;
+
+Create the shell script to run the backup command file you created in step 1:
+#!/bin/ksh
+# script name: nightly_backup.sh
+set tag=$argv[1]
+set format=$argv[2]
+rman @backup.cmd using $tag $format
+
+$nightly_backup.sh longterm_backup back0420
+
+RMAN> startup dba pfile=/tmp/initprod1.ora;
+Opens the database with the restricted session privilege will be able to connect. Typically DBAs give the restricted session privilege only to each other. It gives you a way to do work in the database while ensuring that no business users are connected.
+
+Checking the Syntax of RMAN Commands
+To check the syntax of RMAN commands, you must start the RMAN client with the operating system command-line argument checksyntax.
+
+$rman checksyntax
+RMAN> run {backup database;}
+The command has no syntax errors
+
+File goodcmdfile contains a couple of restore and recovery commands and 
+$rman checksyntax @/tmp/goodcmdfile
+
+You can find out the number of RMAN server sessions using this formula: Number of sessions = C+N+2. where the following is true:
+• C is the number of channels allocated.
+• N is the number of “connect” options used in the allocate channel commands (if no connect options are used, N has the value of 1).
+
+To identify the Oracle session ID of the RMAN session, look for the following types of messages in the RMAN log: 
+
+channel ch2: sid=12 devtype=SBT_TAPE
+
+------------
+You can view information about RMAN’s persistent configuration settings by querying the
+V$RMAN_CONFIGURATION view, as shown here:
+SQL> select * from v$rman_configuration;
+The V$RMAN_CONFIGURATION view shows only those parameters for which you’ve set a nondefault value.
+You can also view all the configuration using  show all from rman prompt.
+-------------------
+You can return an individual configuration setting to its default value, as shown in the following example:
+
+RMAN> configure backup optimization clear;
+
+RMAN> select algorithm_name,algorithm_description, is_default from v$rman_compression_algorithm;
+
+RMAN> configure device type disk backup type to compressed backupset;
+
+RMAN> CONFIGURE COMPRESSION ALGORITHM 'BASIC';
+
+The ZLIB compression algorithm offers speed but not the best compression ratio. The alternate compression algorithm, BZIP2, is slower but provides a better compression ratio. In Oracle Database 12c, both the ZLIB and the BZIP2 compression algorthims are deprecated. A new compression algorithm named BASIC is the default starting with Oracle Database 12c. The BASIC algorithm replaces the BZIP2 algorithm.
+
+------------
+Configuring Multiple Backup Copies
+
+RMAN> configure datafile backup copies for device type disk to 2;
+
+The configure ... backup copies command shown here specifies that RMAN must make two copies of each backup piece for all types of backups (archived redo logs, data files, control files) made to a disk device. 
+
+RMAN> configure channel device type disk format '/save1/%U','/save2/%U','save3/%U';
+
+When you next execute a backup command, RMAN will place one copy each of the resulting backup piece in the /save1, /save2, and /save3 directories.
+
+-----
+Tagging RMAN Backups
+You can assign a character string called a tag to either a backup set or an image file.
+RMAN> backup copies 1 datafile 5 tag test_bkp;
+
+-----------
+Creating a Backup Retention Policy
+RMAN> configure retention policy to recovery window of 7 days;
+RMAN> configure retention policy to redundancy 2;
+RMAN> show retention policy;
+
+---------
+Configuring an Archived Redo Log Deletion Policy
+
+By default, RMAN doesn’t use an archived redo log policy—that is, the configure archivelog deletion policy is set to the value of none by default. However, you can specify your own archived redo log deletion policy using the configure command.
+
+RMAN> configure archivelog deletion policy to backed up 2 times to sbt;
+
+The preceding configure command specifies that once an archived redo log has been backed up twice to tape, it’s eligible for deletion from all archived redo log locations, including the fast recovery area. The configuration of an archived redo log deletion policy is a new feature introduced in the Oracle Database 11g release.
+-------
+Limiting the Size of Individual Backup Pieces
+RMAN> configure channel device type disk maxpiecesize = 1g;
+RMAN> backup as backupset tablespace users;
+
+---------------
+Configuring the Maximum Size of Backup Sets
+You want to limit the size of an individual backup set because your operating system won’t support files larger than a certain size.
+RMAN> configure maxsetsize to 1g;
+
+------------------
+You can create the recovery catalog in a target database that you want to back up using the recovery catalog, but that’s an unwise choice! In such a case, losing the target database means you’ve lost the recovery catalog as well, thus making recovery much harder or even impossible.
+
+It’s a good policy to back up the recovery catalog right after you back up the target databases. This way, you can secure the most recent backup information records of all your production databases. Always run the recovery catalog instance in the archivelog mode, and try to make at least one backup on disk and on tape each time you back up the catalog database.
+
+Creating the Recovery Catalog Owner
+connect sys/oracle@catdb as sysdba
+create tablespace cattbs datafile '/u01/app/oracle/oradata/catdb/cattbs_01.dbf' size 500M;
+create user rman identified by rman
+temporary tablespace temp
+default tablespace cattbs
+quota unlimited on cattbs;
+grant recovery_catalog_owner to rman;
+rman target=rman/rman
+RMAN> create catalog;
+
+Registering Target Databases
+rman target / catalog rman/rman@catdb
+RMAN> startup mount;
+RMAN> register database;
+
+--------------
+Uncataloging RMAN Records
+
+You want to remove information from the recovery catalog, perhaps pertaining to a deleted backup or to a file that you have deleted with an operating system utility.
+RMAN> change controlfilecopy '/u01/app/oracle/rman/backup/control01.ctl' uncatalog;
+RMAN> change datafilecopy '/u01/app/oracle/rman/backup/users01.dbf' uncatalog;
+
+---------------
+Making Backups with RMAN
+
+You can make image copies only on disk, not on a tape device. Therefore, you can use the backup as copy option only for disk backups, and the backup as backupset option is the only option for making tape backups.
+
+----------
+Backing Up the Server Parameter File
+RMAN> backup spfile;
+
+Backing Up Data Files
+RMAN> backup datafile 1,2,3,4 format '/u01/app/oracle/rman/%d_%U.bus';
+
+Instead of specifying a data file number, you can specify the names of the data files you want to back up. In the following example, the first command configures a channel with a specific file name format, and the second command backs up two data files:
+
+RMAN> configure channel device type disk format '/oraback/prod1/%d_%U.bus';
+RMAN> backup datafile '/u01/app/oracle/oradata/system01.dbf', '/u01/app/oracle/oradata/users01.dbf';
+
+Backing Up Tablespaces
+RMAN> backup tablespace users,example;
+RMAN> backup tablespace system format '/u01/app/oracle/backup/%d_%U.bus';
+
+Making a Whole-Database Backup
+RMAN> backup database;
+
+To make sure you have a complete set of archived redo logs through the time of the backup, it is common practice to archive the current online redo log, as shown in the following example:
+
+RMAN> alter system archive log current;
+
+The backup database command backs up all data files and the control file but not the archived redo logs. If you take a consistent backup of the database, you can later use this backup to restore and recover without performing media recovery. That is, you won’t have to apply any changes from the archived redo logs before opening the database.
+
+To take a consistent backup, you must satisfy the following two conditions:
+You must first shut down the database normally, that is, use one of the following statements: shutdown, shutdown normal, shutdown immediate, or shutdown transactional.
+• You must start up the database in mount state before taking the backup.
+
+If you’re recovering a database using inconsistent backups, you must first make the database consistent through applying the archived redo logs before you can open it. Backups taken under the following conditions are inconsistent:
+• If you create a backup of a database after restarting a database that was shut down abruptly (say, because of a power failure) or with the shutdown abort command
+• If you create a backup of the database while the database is open.
+
+There’s nothing wrong with inconsistent backups—by definition, all open database backups are inconsistent.
+
+Backing Up Archived Redo Logs
+RMAN> backup archivelog all;
+The backup archivelog command shown in this example will back up only a single copy of each of the archived redo logs. 
+
+You can make a backup of the archived redo logs using any of the following clauses with the backup command:
+• archivelog all
+• plus archivelog
+• archivelog from...
+
+When you use the backup database plus archivelog command to back up archive logs as part of another backup, RMAN will perform the following operations in the sequence listed here:
+1. Run the alter system archive log current command.
+2. Run the backup archivelog all command.
+3. Back up the rest of the data files specified by the backup database command.
+4. Run the alter system archive log current command.
+5. Back up the new archive logs generated during the backup operation.
+
+The sequence of operations listed here means that RMAN will have all the necessary archived redo log information it’ll need down the road if it has to perform a complete recovery of the database.
+
+Backing Up Everything
+RMAN> configure controlfile autobackup on;
+RMAN> backup database plus archivelog;
+
+If you issue the LIST BACKUP BY FILE command now, you can see that RMAN has a record of all the backed-up files, sorted by the backup file type (data files, archive logs,
+control files, and the spfile).
+RMAN> list backup by file;
+
+Backing Up Recovery Files in the FRA
+You want to back up all the recovery files located in the fast recovery area of a database so that you can store them offline on tape.
+
+Use either the recovery area clause or the db_recovery_file_dest clause with your backup command to back up all the recovery files for a database (recovery area and db_recovery_file_dest are synonymous). 
+
+Performing Incremental Backups
+RMAN> backup incremental level 0 database;
+
+RMAN> backup incremental level 1 database;
+Backup sets are the only choice you have for creating level 1 incremental backups to either a tape device or a disk device. RMAN makes differential incremental backups by default if you don’t specify the incremental backup type.
+
+RMAN> backup incremental level 1 cumulative database;
+The previous command backs up all data blocks that have changed since the last level 0 backup.
+
+While incremental backups do, in general, take significantly less time to complete than a full backup of the same files, you can’t be absolutely sure that this is always true. This is because of how RMAN checks data blocks for changes. Even during an incremental backup (at a greater than level 0 incremental backup), RMAN still reads all data blocks in a data file into the memory to check the block’s SCN number. Any block with an SCN more recent than the SCN of the level 0 incremental backup is moved from the input buffer to the output buffer, and from there it’s written to the backup piece.
+
+If you want fast incremental backup performance, use the block change tracking feature, where RMAN doesn’t scan all the data blocks to see whether they’ve changed, to determine whether they are candidates for the incremental backup.
+
+1. First, make sure the db_create_file_dest parameter is set. If it isn’t, set it using the alter system command, as shown in this example:
+SQL> alter system set db_create_file_dest='/u01/app/oracle/dfiles' scope= both;
+2. Enable block change tracking by using the following alter database statement:
+RMAN> alter database enable block change tracking using file '/u01/app/oracle/backup/change_track.f';
+
+Creating Multiple Backup Sets
+
+RMAN> backup
+copies 2
+database
+format '/u01/app/oracle/backup/db_%U',
+'/u02/app/oracle/backupdb_%U';
+
+Making Copies of Backup Sets
+You have previously made backups in the form of backup sets and want to make copies of these backups for off-site storage and other purposes.
+
+RMAN> backup device type sbt
+2> backupset
+3> completed before 'sysdate -2';
+
+Making Copies of Image Copy Backups
+You want to make copies of image copy backups you’ve already made using RMAN.
+RMAN> backup as copy copy of database;
+RMAN> backup as backupset copy of tablespace users;
+RMAN> backup as backupset copy of datafile 4;
+
+Excluding a Tablespace from a Backup
+RMAN> show exclude;
+RMAN> configure exclude for tablespace users;
+
+You have a tablespace whose contents don’t change over time or a tablespace that contains temporary data, such as test data, that you don’t need to back up. You want to exclude such tablespaces from a whole backup of the database.
+
+You can disable tablespace exclusion and include a previously excluded tablespace in future backups by using the following command:
+RMAN> configure exclude for tablespace users clear;
+
+Even after excluding a specific tablespace as shown in the previous section, you can back up that tablespace either by using the noexclude option in a backup database or backup copy of database command or by issuing a backup tablespace command.
+
+RMAN> backup database noexclude;
+
+Skipping Read-Only, Offline, or Inaccessible Files
+You want RMAN to skip the backing up of read-only, offline, or inaccessible data files and archived redo log files.
+
+RMAN> backup database
+skip inaccessible
+skip readonly
+skip offline;
+
+Note that you can persistently skip read-only, offline, and inaccessible tablespaces by using the configure exclude command explained before.
+
+-------------
+Encrypting RMAN Backups
+You want to encrypt the backups made with RMAN to meet your organization’s security guidelines. By default, all RMAN backups are unencrypted (encryption is turned off ), but you can encrypt any RMAN backup in the form of a backup set.
+
+The default encryption mode in RMAN is transparent encryption. Transparent encryption uses the Oracle encryption key management infrastructure to create and restore encrypted backups. 
+
+1. Configure the Oracle Encryption Wallet (Oracle Wallet) if it hasn’t already been configured before. You can do this in several ways, including using the Oracle Wallet Manager. However, using the SQL command we show you here is probably the easiest way to create the wallet. Before you create the Oracle Wallet, first create a directory named wallet in the directory $ORACLE_BASE/admin/$ORACLE_SID. After that, issue the following statement from SQL*Plus:
+SQL> alter system set encryption key identified by "sammyy11";
+
+The alter system statement will do the following for you:
+If you already have an Oracle Wallet, it opens that wallet and creates (or re-creates) the master encryption key.
+If you don’t have an Oracle Wallet already, it creates a new wallet, opens the wallet, and creates a new master encryption key.
+2. If you’re using the encrypted wallet, open the wallet. If you’re using the auto login form of the Oracle Wallet, you don’t have to do this, since the Oracle Wallet is always open under this method. The SQL statement in the previous step automatically opens a new wallet after creating it.
+3. Configure encrypted backups using the configure command, as shown in the following example:
+RMAN> configure encryption for database on;
+
+The previous command will configure automatic backup encryption for all database files using the default 128-bit key (AES128) algorithm. You can use an alternative encryption algorithm by specifying the algorithm parameter with the value for the alternative encryption algorithm (AES256, for example). You don’t have to specify any encryption-related options or clauses with your backup commands when you configure encryption using the configure command, as shown in the example.
+
+4. Make encrypted backups by using the usual backup or backup ... backupset command, as shown here:
+RMAN> backup database;
+
+If you don’t want to configure an Oracle Wallet, you can still perform encrypted backups by using the set encryption command. This method is called password encryption of backups since the DBA must provide a password both for creating an encrypted backup and for restoring an encrypted backup. Use the set encryption command to use password encryption, as shown here:
+RMAN> set encryption on identified by <password> only;
+
+The set encryption on command lets you make password-protected backups. If you’ve also configured transparent encryption, then the backups you make after this will be dual protected—with the password you set here as well as by transparent encryption.
+
+It’s a good idea to configure multiple channels when performing backup encryption using RMAN because of the additional demands on resources for encrypting backup data
+
+The following command shows a variation of the configure command, where we use the tablespace option with the configure command to specify encryption for a specific tablespace named example:
+RMAN> configure encryption for tablespace example on;
+
+When you back up the database, only the example tablespace backup will be in an encrypted form. You can disable encryption for the tablespace example by using the following command:
+RMAN> configure encryption for tablespace example off;
+
+----------------------
+Making a Compressed Backup
+You want to compress RMAN backups to save storage space.
+RMAN> backup
+2> as compressed backupset
+3> database plus archivelog;
+
+RMAN’s compression capabilities are especially useful when you’re backing up to disk and confront a tight disk space situation. Just make sure you schedule the compressed backups during a low database usage period, because of the higher CPU overhead for compression.
+---------------------------
+Parallelizing Backups
+You want to make the backups complete faster by parallelizing them.
+
+If you’re backing up to multiple disk drives, you can allocate a disk channel for each disk drive. You can use the format clause of the allocate channel command to spread the backups across multiple disks to enhance backup performance. Here’s an example that shows how to spread the backup of a database across four disks:
+
+run
+{
+allocate channel d1 device type disk format '/u01/%d_backups/%U';
+allocate channel d2 device type disk format '/u02/%d_backups/%U';
+allocate channel d3 device type disk format '/u03/%d_backups/%U';
+allocate channel d4 device type disk format '/u04/%d_backups/%U';
+backup database;
+}
+
+The degree of parallelism for a specific device type controls the number of server sessions that will be used for I/O for a specific device type. It’s best to allocate only one channel for each physical device on the server. That is, if you have only a single disk drive, don’t set the degree of parallelism
+If you want to configure persistent backup parallelism, first specify the degree of parallelism for the device type you want, as shown here:
+
+configure device type disk parallelism 4;
+configure default device type to disk;
+configure channel 1 device type disk format '/u01/%d_backups/%U';
+configure channel 2 device type disk format '/u02/%d_backups/%U';
+configure channel 3 device type disk format '/u03/%d_backups/%U';
+configure channel 4 device type disk format '/u04/%d_backups/%U';
+
+RMAN will henceforward distribute all your backups over the four disks by default. You can undo the configuration of parallelism for the disk device in the following manner:
+
+RMAN> configure device type disk clear;
+
+You can also specify the degree of parallelism for tape backups by using the following command:
+RMAN> configure device type sbt parallelism 3;
+
+----------------------
+Manually Allocating RMAN Channels
+
+run
+{
+allocate channel disk1 device type disk format '/disk1/backups/%U';
+allocate channel disk2 device type disk format '/disk2/backups/%U';
+allocate channel disk3 device type disk format '/disk3/backups/%U';
+backup database plus archivelog;
+}
+
+Each of the three allocate channel commands allocates a separate disk channel for each of three disk drives and also employs the format option to specify file names that point to the different disk drives.
+
+---------------
+Displaying Information About Database Files
+You want to display information about all the data files in the target database.
+RMAN> report schema;
+
+---------------
+Identifying Obsolete Backups
+You want to find out whether any backups are obsolete according to the retention policy you configured.
+RMAN> crosscheck backup;
+RMAN> report obsolete;
+
+---------------------
+Listing RMAN Backups
+You want to see the backups that are recorded in the RMAN repository for a target database.
+RMAN> list backup;
+The basic list command shown in the previous example lists all backups in the RMAN repository for the target database by serially listing each backup set (including the backup pieces information) and proxy copy. It also identifies all the files that are part of the backup. If you would rather list the backups by just the backup files, you can do so by using the list backup by file command, as shown in the following example:
+RMAN> list backup by file;
+
+Using the list command isn’t the only way to view the status of RMAN backups. You can also check backup status by querying the recovery catalog views RC_DATAFILE_COPY, RC_ARCHIVED_LOG, and V$BACKUP_FILES. You can also get the output of the list command in a summarized form by specifying the keyword summary when using the list command, as shown here:
+RMAN> list backup summary;
+
+RMAN> list expired archivelog all;
+RMAN> list expired backup;
+
+Direct Editing of Crontab
+1. crontab –e
+2. Save the file and exit. The line is now scheduled in crontab.
+3. Check cron for all scheduled programs:
+$ crontab –l
+
+To schedule it at 10:23 p.m. every Friday and Sunday, use this:
+23 22 * * 5,7 rman.sh
+To schedule it at 10:23 p.m. on March 10, use this:
+23 22 10 03 * rman.sh
+To schedule it every 15 minutes every day, use this:
+0,15,30,45 * * * * rman.sh
+
+-------------
+Restoring the Control File
+Your control file restore method is highly dependent on your backup strategy
+
+We highly recommend that you enable the control file auto backup feature with the configure controlfile autobackup on RMAN command. This will ensure that you have a backup of your control file after every RMAN backup and also after making database structural changes (such as adding a data file).
+
+Recovering controlfile Using FRA and Autobackup Enabled
+
+$ rman target /
+RMAN> startup nomount;
+RMAN> restore controlfile from autobackup;
+
+Recovering controlfile Using FRA and Autobackup Disabled
+In this case you have to explicitly tell RMAN from which directory and backup piece to restore the control file. Inspect your FRA, look in the backupset directory, and look for the latest directory created in that directory. Use that directory and name to restore the control file.
+
+$ rman target /
+RMAN> startup nomount;
+RMAN> restore controlfile from '/u01/fra/O12C/backupset/2012_07_17/o1_mf_ncnnf_TAG20120717T0954_80cd0x_.bkp';
+------------
+Restoring Control File Using Recovery Catalog
+$ rman target /
+RMAN> connect catalog rcat/rcat@rcat
+RMAN> startup nomount;
+RMAN> restore controlfile;
+
+Using a recovery catalog makes it straightforward to restore the control file. When you issue the restore controlfile command, RMAN will retrieve from the recovery catalog the location and name of the file that contains the control file backup and restores the control file appropriately. Because the recovery catalog knows the location of the RMAN backup piece, it doesn’t matter whether the backup piece is in a fast recovery area, or in a configured channel location, or if you’re using the auto backup of the control file feature.
+
+If you have registered two databases in the recovery catalog with the same name, then you might receive an error such as this when you attempt to list backups or restore the control file:
+
+RMAN-06004: ORACLE error from recovery catalog database:
+RMAN-20005: target database name is ambiguous
+
+In this situation, you will need to first set your database identifier (DBID) before you can restore your control file.
+If any of the data files, online redo log files, or archived redo log files are physically available, you can use the SQL alter system dump statement to write the DBID to a trace file. 
+SQL> connect / as sysdba
+SQL> startup nomount;
+SQL> oradebug setmypid -- just to find out the tracefile name
+SQL> alter system dump datafile 'C:\oracle\app\oradata\ocp11g\system01.dbf' block min 1 block max 10;  -- system datafile
+SQL> alter system dump logfile 'C:\oracle\app\oradata\ocp11g\redo01.log'; -- any redologfile or archived logfle
+SQL> oradebug tracefile_name
+The trace file with the DBID will be in your diagnostic trace file destination. If you search for the string “Db ID,” you should find something similar to this output:
+Db ID=3412777350=0xcb6ad986, Db Name='O12C'
+------------
+Restoring Control File to Nondefault Location
+Using Auto Backups
+$ rman target /
+RMAN> restore controlfile to '/u01/test/control01.ctl' from autobackup;
+
+Using a Recovery Catalog
+The recovery catalog knows the location of the last good backup of the control file; therefore, you don’t need to use a from autobackup clause.
+$ rman target /
+RMAN> connect catalog rcat/rcat@rcat
+RMAN> restore controlfile to '/u01/test/control01.ctl';
+
+Using a Manually Configured RMAN Backup Piece
+This example shows how to restore to a nondefault location from a backup that was created with a manually configured location for the RMAN backup piece:
+RMAN> restore controlfile to '/u01/test/control01.ctl' from '/u01/rman/o12c/O12C19ngbbph_1_1.bk';
+
+----------------
+Restoring Lost Copy of Multiplexed Control File
+You attempt to start your database and receive the following error:
+ORA-00205: error identifying controlfile, check alert log. . .
+You check your target database alert.log file and verify that Oracle can’t obtain the status of one of your database control files.
+
+You don’t need to issue an RMAN restore controlfile command in this scenario. You have two methods to get your database restarted:
+You can modify your initialization file (spfile or init.ora) so that it references only the good remaining control file(s).
+You can copy a good control file to the location of the bad or missing control file.
+
+----------
+When Oracle displays errors indicating there has been a media failure, we always recommend you look in the alert.log file for more details. There may be more than one data file that needs to be restored and recovered, and you won’t get all of that information from error messages displayed on your screen. Oracle will often just display on your screen the first file that it detects is missing or damaged.
+
+We also recommend querying the data dictionary for more information. The V$DATAFILE_HEADER view derives its information from the data file headers and reports in the ERROR and RECOVER columns any potential problems. For example, a YES or null value in the RECOVER column indicates there is a problem:
+SQL> select file#, status, error,recover from v$datafile_header;
+
+Also the V$RECOVER_FILE view displays the status of files needing media recovery. The V$RECOVER_FILE reads from the control file and displays information about files needing media recovery:
+SQL> select file#, online_status, error from v$recover_file;
+
+FILE# ONLINE_ ERROR
+---------- ------- --------------
+4 ONLINE FILE NOT FOUND
+
+Restoring Data Files to Nondefault Locations
+$ rman target /
+RMAN> startup mount;
+RMAN> run{
+set newname for datafile 4 to '/u02/dbfile/o12c/users01.dbf';
+set newname for datafile 5 to '/u02/dbfile/o12c/tools01.dbf';
+restore datafile 4, 5;
+switch datafile all; # Update control file with new file names.
+recover datafile 4, 5;
+alter database open;
+}
+
+If the database is open, you have to place the data files offline first and then set their new names for restore and recovery:
+sql "alter database datafile 4, 5 offline" # in 11g
+alter database datafile 4, 5 offline # in 12c
+
+--------------
+Performing Block-Level Recovery
+
+When performing daily backups, you notice that RMAN is reporting in your target database alert.log file that there is a corrupt block in a large data file. It could take a significant amount of time to perform the traditional restore and recover of a large data file. You wonder whether there is a method for just recovering the corrupt block and not the entire data file.
+
+When RMAN detects corrupt blocks, it writes an error to the alert.log file and also populates the V$DATABASE_BLOCK_CORRUPTION view. You can instruct RMAN to recover the blocks listed as corrupt in that view as follows:
+
+RMAN> recover corruption list;
+
+You can instruct RMAN to recover blocks in two ways:
+• Use the corruption list clause (as shown in the Solution section).
+• Specify individual data files and blocks. If you’re using Oracle Database 11g or newer, use the recover data file N block N command to recover individual blocks within a data file. If you’re using Oracle Database 10g or 9i, use the blockrecover command to perform block-level recovery.
+
+RMAN> recover datafile 5 block 21 to 25;
+RMAN> recover datafile 10 block 24;
+RMAN> recover datafile 7 block 22 datafile 8 block 43;
+RMAN> recover datafile 5 block 24 from tag=tues_backup;
+RMAN> recover datafile 6 block 89 restore until sequence 546;
+
+---------------
+Forcing RMAN to Restore a File
+
+As part of a test exercise, you attempt to restore a data file twice and receive this RMAN message:
+restore not done; all files read only, offline, or already restored
+In this situation, you want to force RMAN to restore the data file again.
+
+The following command forces RMAN to restore a file, even if RMAN determines that file doesn’t need to be restored:
+RMAN> restore datafile '/u01/dbfile/o12c/users01.dbf' force;
+
+By default, RMAN will not restore a data file that is in the correct location and contains the expected information in the data file header. This is known as restore optimization. You rarely will need to use the force feature, but in some circumstances, you may know an aspect about your environment that RMAN is not aware of, and thus need to force a restore.
+
+------------
+Restoring the spfile
+You might need to restore the spfile for one of several reasons:
+• You accidentally deleted your server parameter file.
+• You want to view an old copy of the spfile.
+• You can’t start your instance with the current spfile.
+
+Using a Recovery Catalog
+$ rman target / catalog rcat/rcat@rcat
+RMAN> startup nomount;
+If there is no valid spfile or init.ora file in the default location, then a few errors will be thrown:
+	startup failed: ORA-01078: failure in processing system parameters
+	LRM-00109: could not open parameter file...
+	starting Oracle instance without parameter file for retrieval of spfile
+RMAN> restore spfile;
+RMAN> startup force; # startup using restored spfile
+
+If you receive an error such as this when running the restore command:
+RMAN-20001: target database not found in recovery catalog
+Then first set the DBID:
+RMAN set dbid 3414586809;
+
+case -2 Not Using a Recovery Catalog, RMAN Auto Backup in Default Location
+
+$ rman target /
+RMAN> startup force nomount; # start instance for retrieval of spfile
+RMAN> set dbid 3414586809;
+RMAN> restore spfile from autobackup;
+RMAN> startup force; # startup using restored spfile
+
+Case-3 Not Using a Recovery Catalog, RMAN Auto Backup Not in Default Location
+$ rman target /
+RMAN> set dbid 3414586809;
+RMAN> startup force nomount; # start instance for retrieval of spfile
+RMAN> restore spfile from '/u01/fra/O12C/autobackup/2012_07_30/o1_mf_s_789989279_81fb00rl_.bkp';
+RMAN> startup force; # startup using restored spfile
+
+-----------------
+
+Restoring and Recovering to a Different Server
+
+You work in an environment where you need to duplicate a production database to a test server. However, the network security is such that there is no direct network connectivity between the production and test environments. In other words, you won’t be able to use the RMAN duplicate database features to automatically re-create a remote database because there is no direct network connection between the production server and test server. You’ll have to manually copy your RMAN backups from to a secure server that does have access to production and from there copy the RMAN backups to the test server.
+
+Solution
+Follow these high-level steps to re-create a database with an RMAN backup to a different server:
+1. Create an RMAN backup on the originating database.
+2. Copy RMAN backup from the originating server to the destination server. All steps after this are performed on the destination database server.
+3. Ensure that Oracle is installed on destination server (same version as the originating server).
+4. Source the required OS variables.
+5. Create an init.ora file for the database to be restored.
+6. Create any required directories for data files, control files, and online redo logs.
+7. Startup the database in NOMOUNT mode.
+8. Restore a control file from the RMAN backup.
+9. Start up the database in MOUNT mode.
+10. Make the control file aware of the location of the RMAN backups.
+11. Rename and restore the data files to reflect new directory locations.
+12. Recover the database.
+13. Set the new location for the online redo logs.
+14. Open the database.
+15. Add a tempfile.
+16. Rename the database (optional).
+
+For this example, the source database is named o12c, and the destination database will be named DEVDB.
+In this example, the originating server and destination server have different mount point names. On the source database, the location of the data files and control files are here:
+/u01/dbfile/o12c
+On the destination database, the data files and control files will be renamed and restored to this directory:
+/ora01/dbfile/DEVDB
+The destination database online redo logs will be placed in this directory:
+/ora01/oraredo/DEVDB
+The destination database archive redo log file location will be set as follows:
+/ora01/arc/DEVDB
+
+Step 1: Create an RMAN Backup on the Originating Database
+Make sure you have the autobackup control file feature turned on
+RMAN> backup database plus archivelog;
+You can verify the names and locations of the backup pieces via the list backup command
+Step 2: Copy RMAN Backup to Destination Server
+$ scp 1* oracle@DEVBOX:/ora01/rman/DEVDB
+$ scp c-* oracle@DEVBOX:/ora01/rman/DEVDB
+Step 4: Source the Required OS Variables
+You need to establish the operating system variables, such as ORACLE_SID, ORACLE_HOME, and PATH. Initially, we usually set the ORACLE_SID variable to match what it was on the original database. The database name will be changed as part of the last step in this recipe (optional). Here are the settings for ORACLE_SID and ORACLE_HOME on the destination server:
+$ echo $ORACLE_SID
+o12c
+$ echo $ORACLE_HOME
+/ora01/app/oracle/product/12.1.0.1/db_1
+
+Step 5: Create an init.ora File for the Database to be Restored
+Copy the init.ora file from the original server to the destination server and modify it so that it matches the destination box in terms of any directory paths.
+
+Ensure you change parameters such as control_files to reflect the new path directories on the destination server (/ora01/dbfile/DEVDB in this example).
+
+Step 6: Create Any Required Directories for Data Files, Control Files, and Dump/Trace Files
+Step 7: Start Up the Database in Nomount Mode
+$ rman target /
+RMAN> startup nomount;
+Step 8: Restore a Control File from the RMAN Backup
+RMAN> restore controlfile from '/ora01/rman/DEVDB/c-3414586809-20120805-10';
+Step 9: Start Up the Database in Mount Mode
+RMAN> alter database mount;
+Step 10: Make the Control File Aware of the Location of the RMAN Backups
+First, use the crosscheck command to let the control file know that none of the backups or archive redo logs are in the same location they were on the original server:
+RMAN> crosscheck backup; # Crosscheck backups
+RMAN> crosscheck copy; # Crosscheck image copies and archive logs
+Now use the catalog command to make the control file aware of the location and names of the backup pieces that were copied to the destination server.
+
+RMAN> catalog start with '/ora01/rman/DEVDB';
+Step 11: Rename and Restore the Data Files to Reflect New Directory Locations
+If your destination server has the exact same directory structure as the original server directories, you can issue the restore command directly:
+RMAN> restore database;
+
+However, when restoring data files to locations that are different from the original directories, you'll have to use the set newname command. Create a file that uses an RMAN run{} block that contains the appropriate set newname and restore commands. We like to use a SQL script that generates SQL to give a starting point. Here is a sample script:
+
+set head off feed off verify off echo off pages 0 trimspool on
+set lines 132 pagesize 0
+spo newname.sql
+--
+select 'run{' from dual;
+--
+select
+'set newname for datafile ' || file# || ' to ' || '''' || name || '''' || ';'
+from v$datafile;
+--
+select
+'restore database;' || chr(10) ||
+'switch datafile all;' || chr(10) ||
+'}'
+from dual;
+--
+spo off;
+
+After you run the script, the newname.sql script that was generated contains the following:
+run{
+set newname for datafile 1 to '/u01/dbfile/o12c/system01.dbf';
+set newname for datafile 2 to '/u01/dbfile/o12c/sysaux01.dbf';
+set newname for datafile 3 to '/u01/dbfile/o12c/undotbs01.dbf';
+set newname for datafile 4 to '/u01/dbfile/o12c/users01.dbf';
+restore database;
+switch datafile all;
+}
+
+Now, modify the contents of the newname.sql script to reflect the directories on the destination database server.
+Here is what the final newname.sql script looks like for this example:
+run{
+set newname for datafile 1 to '/ora01/dbfile/DEVDB/system01.dbf';
+set newname for datafile 2 to '/ora01/dbfile/DEVDB/sysaux01.dbf';
+set newname for datafile 3 to '/ora01/dbfile/DEVDB/undotbs01.dbf';
+set newname for datafile 4 to '/ora01/dbfile/DEVDB/users01.dbf';
+restore database;
+switch datafile all;
+}
+
+Now, connect to RMAN and run the prior script to restore the data files to the new locations:
+$ rman target /
+RMAN> @newname.sql
+
+All of the data files have been restored to the new database server. You can use the RMAN report schema command to verify that the files have been restored and are in the correct locations:
+RMAN> report schema;
+
+Step 12: Recover the Database
+RMAN> recover database;
+
+RMAN will restore and apply as many archive redo logs as it has in the backup pieces and then may throw an
+error when it reaches an archive redo log that doesn’t exist. For example:
+RMAN-06054: media recovery requesting unknown archived log for...
+That error message is fine.
+
+Step 13: Set the New Location for the Online Redo Logs
+If your source and destination servers have the exact same directory structures, you don’t need to set a new location for the online redo logs (so you can skip this step).
+
+
+set head off feed off verify off echo off pages 0 trimspool on
+set lines 132 pagesize 0
+spo renlog.sql
+select
+'alter database rename file ' || chr(10)
+|| '''' || member || '''' || ' to ' || chr(10) || '''' || member || '''' ||';'
+from v$logfile;
+spo off;
+For this example, here is a snippet of the renlog.sql file that was generated:
+alter database rename file
+'/u01/oraredo/o12c/redo01a.rdo' to
+'/u01/oraredo/o12c/redo01a.rdo';
+
+alter database rename file
+'/u02/oraredo/o12c/redo03b.rdo' to
+'/u02/oraredo/o12c/redo03b.rdo';
+The contents of renlog.sql need to be modified to reflect the directory structure on the destination server. Here iswhat renlog.sql looks like after being edited for this example:
+alter database rename file
+'/u01/oraredo/o12c/redo01a.rdo' to
+'/ora01/oraredo/DEVDB/redo01a.rdo';
+...
+alter database rename file
+'/u02/oraredo/o12c/redo03b.rdo' to
+'/ora01/oraredo/DEVDB/redo03b.rdo';
+Update the control file by running the prior script:
+SQL> @renlog.sql
+
+Step 14: Open the Database
+
+SQL> alter database open resetlogs;
+
+Step 15: Add Tempfile
+When you start your database, Oracle will automatically try to add any missing tempfiles to the database. Oracle won’t be able to do this if the directory structure on the destination server is different from that of the source server. In this scenario you will have to manually add any missing tempfiles.
+
+SQL> alter database tempfile '/u01/dbfile/o12c/temp01.dbf' offline;
+SQL> alter database tempfile '/u01/dbfile/o12c/temp01.dbf' drop;
+SQL> alter tablespace temp add tempfile '/ora01/dbfile/DEVDB/temp01.dbf' size 100m;
+Step 16: Rename the Database
+If you need to rename the database to reflect the name for a development or test database, create a trace file that contains the create controlfile statement and use it to rename your database. The basic steps involved are:
+
+1. Generate a trace file that contains the SQL command to re-create the control files:
+SQL> alter database backup controlfile to trace as '/tmp/cf.sql' resetlogs;
+2. Shut down the database:
+SQL> shutdown immediate;
+
+3. Modify the /tmp/cf.sql trace file; be sure to specify SET DATABASE "<NEW DATABASE NAME>" in the top line of the output:
+CREATE CONTROLFILE REUSE SET DATABASE "DEVDB" RESETLOGS ARCHIVELOG
+
+4. Create an init.ora file that matches the new database name:
+$ cd $ORACLE_HOME/dbs
+$ cp init<old_sid>.ora init<new_sid>.ora
+5. Modify the DB_NAME variable within the new init.ora file (in this example, it’s set to DEVDB):
+db_name='DEVDB'
+6. Set ORACLE_SID operating system variable to reflect the new SID name (in this example it’s set to DEVDB):
+$ echo $ORACLE_SID
+DEVDB
+7. Start up the instance in nomount mode:
+SQL> startup nomount;
+8. Run the trace file to re-create the control file (trace file from step 2):
+SQL> @/tmp/cf.sql
+9. Open the database with open resetlogs:
+SQL> alter database open resetlogs;
+10. As a last step, ensure that your temporary tablespace exists:
+ALTER TABLESPACE TEMP ADD TEMPFILE '/ora01/dbfile/DEVDB/temp01.dbf' SIZE 104857600 REUSE AUTOEXTEND OFF;
+----
+Performing Incomplete Recovery
+Usually you perform incomplete database recovery because of one of the following reasons:
+You don’t have all the redo required to perform a complete recovery. You’re missing either archived redo log files or online redo log files (current or unarchived) that are required for complete recovery. This situation could arise because the required redo files are damaged or missing.
+• You purposely want to roll the database back to a point in time. For example, you would do this in the event somebody accidentally truncated a table and you intentionally wanted to roll the database back to just before the truncate table command was issued.
+--------------
+Duplicating Databases and Transporting Data
+Duplicating a database comes in handy when you need to test a backup and recovery strategy.
+You can duplicate a database when you accidentally lose a very large table and must recover it from a backup. Instead of performing a time-consuming database recovery, you can simply create a duplicate database and export the table and then import it into the production database.
+Starting with Oracle 12c, you can run the RMAN command recover table to restore a table to a point in time in the past by restoring the table from an rMAN backup. However, duplicating a database may be the best solution when dealing with earlier releases.
+Besides duplicating databases, RMAN’s duplicate database capability also helps you set up standby databases, which are not merely one-time copies of the production databases but are continually updated versions of the production database. The primary purpose of a standby database is to serve as the production server during recovery and failover situations.
+
+It’s important to remember that the most recent point to which you can recover a duplicate database is the last redo log file archived by the source database. This is so because the duplication process doesn’t back up and apply the source database online redo log files. Therefore, RMAN will always perform a database point-in-time recovery during database duplication.
+
+You can use RMAN to duplicate a database in any of the following ways:
+• Active duplication: duplicate the database files directly over the network
+• Backup-based duplication without a target connection: use the recovery catalog and duplicate files from RMAN backup sets and image copies
+• Backup-based duplication with a target connection: use RMAN to create duplicate database files from existing RMAN backup sets and image copies
+• Backup-based duplication without a target connection or a recovery catalog: RMAN uses backup sets and copies stored in a directory designated by the parameter BACKUP_LOCATION
+
+----------------
+Renaming Database Files in a Duplicate Database
+
+You’re planning to duplicate a database without OFA or ASM files and learn that there are multiple ways to specify file names for the duplicate database. You want to find out which file-renaming method is best for you.
+
+There are multiple ways to rename files for a duplicate database when you use non-OMF and non-ASM file storage, as summarized in the following list.
+
+1. Use the set newname command to name the file system data files and tempfiles.
+You can employ the set newname command to rename data files before you issue the duplicate database command.
+You need to include the set newname command inside an RMAN run block, as shown in the following example.
+run
+{
+set newname for datafile 1 to '/u01/app/oracle/oradata/system01.dbf';
+set newname for datafile 2 to '/u01/app/oracle/oradata/sysaux01.dbf';
+set newname for datafile 3 to '/u01/app/oracle/oradata/undotbs01.dbf';
+set newname for datafile 4 to '/u01/app/oracle/oradata/users01.dbf';
+set newname for datafile 5 to '/u01/app/oracle/oradata/users02.dbf';
+set newname for tempfile 1 to '/u01/app/oracle/oradata/temp01.dbf';
+duplicate target database to dupdb
+...
+}
+
+The following example shows how to execute the set newname command at the database level:
+run
+{
+set newname for database to '/u01/app/oracle/oradata/%U';
+duplicate target database to dupdb
+...
+}
+
+2. Use the configure auxname command to rename data files.
+
+configure auxname for datafile 1 to '/u01/app/oracle/oradata/system01.dbf';
+configure auxname for datafile 2 to '/u01/app/oracle/oradata/sysaux01.dbf';
+configure auxname for datafile 3 to '/u01/app/oracle/oradata/undotbs01.dbf';
+configure auxname for datafile 4 to '/u01/app/oracle/oradata/users01.dbf';
+configure auxname for datafile 5 to '/u01/app/oracle/oradata/users02.dbf';
+
+set newname for tempfile 1 to '/u01/app/oracle/oradata/temp01.dbf';
+duplicate target database
+to dupdb
+logfile
+group 1 ('/u01/app/oracle/oradata/duplogs/redo01a.log',
+
+You need to execute the set newname command to name the tempfile(s), as shown in the preceding example.
+
+3. Use the db_file_name_convert command to generate file names
+You can also use the db_file_name_convert command to generate the target file names. You can convert target file names from /oracle to /dupdb/oracle, for example. To generate names for log files you can use the analogous command log_file_name_convert.
+-------------
+Creating a Duplicate Database from RMAN Backups
+
+In this sequence of steps to create a duplicate database using RMAN backups, the target database is named orcl, and the duplicate database, also known as the auxiliary database in RMAN parlance, is named orcl1. Here are the steps to duplicate a database to the same server.
+
+1. Back up the target database as follows:
+RMAN> connect target /
+RMAN> backup database plus archivelog;
+
+2. Use a dedicated listener configuration for RMAN by making the following additions to your listener.ora file:
+
+SID_LIST_LISTENER =
+(SID_LIST =
+(SID_DESC =
+(GLOBAL_DBNAME = orcl1)
+(ORACLE_HOME = /u01/app/oracle/product/12.01.1)
+(SID_NAME =orcl1)
+)
+)
+
+3. Once you modify the listener.ora file, restart the listener:
+$ lsnrctl start
+
+4. Add the following information to the tnsnames.ora file, located in the $ORACLE_HOME/network/admin directory:
+orcl1 =
+(DESCRIPTION =
+(ADDRESS_LIST =
+(ADDRESS = (PROTOCOL = TCP)(HOST = virtual1.vm.alapati.com)(PORT = 1521))
+)
+(CONNECT_DATA =
+(SERVER = DEDICATED)
+(SERVICE_NAME = orcl1.vm.alapati.com)
+)
+)
+
+
+5. Create the init.ora file for the duplicate database, orcl1. During the database duplication process, RMAN will create the control files, the data files, and the redo log files for the duplicate database with the file name structure you provide through the db_file_name_convert and log_file_name_convert initialization parameters. The database duplication process will create a set of control files for the new duplicate database in the location specified by the control_files initialization parameter. Following are the contents of the init.ora file for creating the duplicate database orcl1:
+
+db_name = orcl1
+db_block_size = 8192
+compatible = 12.0.0.0
+remote_login_passwordfile = exclusive
+control_files = ('/u05/app/oracle/oradata/orcl1/control01.ctl',
+'/u05/app/oracle/oradata/orcl1/control02.ctl')
+db_file_name_convert = ('/u01/app/oracle/oradata/orcl',
+'/u05/app/oracle/oradata/orcl1')
+log_file_name_convert = ('/u01/app/oracle/oradata/orcl',
+'/u05/app/oracle/oradata/orcl1')
+
+Only the db_name and the control_files initialization parameters are required. The db_block_size parameter is also required if this parameter is set in the target database. All the other initialization parameters are optional. In this example, the init.ora file for the duplicate database is named initorcl1.ora. Save this file in the appropriate location. (On Linux/Unix, the default location is $ORACLE_HOME/dbs, and on Windows it is %ORACLE_HOME%\database.)
+
+6. Start the new auxiliary database (duplicate database) instance. You must start the new instance in nomount mode since you don’t have a control file for this new database yet.
+For example:
+$ export ORACLE_SID=orcl1
+[oracle@virtual1 dbs]$ sqlplus /nolog
+SQL> connect / as sysdba
+SQL> startup nomount pfile=$ORACLE_HOME/dbs/initorcl1.ora
+
+7. Start RMAN, and connect to the target database, after making sure you first set the ORACLE_SID environmental variable to the source database, orcl. Note that the target database can be mounted or open.
+[oracle@virtual1 dbs]$ rman target sys/Ninamma11@orcl auxiliary /
+
+Note I f you’re duplicating a database to the same host, as is the case in this example, you don’t have to use a password file. You can simply choose to use operating system authentication to connect to the auxiliary instance. If you must access a database from a different host, on the other hand, you must use a password file for both the target and auxiliary instances, and they must use the same sysdba password.
+
+8. Issue the duplicate target database command to start the database duplication (since the Oracle 11.2 release, the word target is optional—that is, you can just issue the following command instead: duplicate database to orcl1).
+
+RMAN> duplicate target database to orcl1;
+
+it should show message like below.
+..
+..
+database opened
+Finished Duplicate Db at 16-NOV-12
+RMAN>
+The database duplication is successfully completed. You now have an identical copy of the source database (orcl), named orcl1.
+
+
+These prerequisites apply to all database duplication jobs:
+• You must start the auxiliary instance with the nomount option.
+• You can’t use a standby database as the target database.
+• You’ll need the password file for the auxiliary instance only if you’re using the RMAN client on a different host than the auxiliary host or if you duplicate from an active database.
+• The target database can be open or closed.
+• Both the source and destination databases must be on the same operating system platform (32-bit and 64-bit versions of a platform are considered identical). However, when duplicating from a 32-bit platform to a 64-bit platform, you must run the utlrp.sql script (located in the $ORACLE_HOME/rdbms/admin directory) to convert the code to the new operating system format.
+
+During the database duplication, RMAN does the following:
+1. Generates a unique DBID for the new duplicate database.
+2. Creates a new control file for the duplicate database.
+3. Restores the backups and performs an incomplete recovery using all the backups and archived redo logs. 
+4. Shuts down and starts up the auxiliary instance.
+5. Opens the duplicate database with the resetlogs option, thus clearing the online redo logs.
+
+If you are duplicating a database to the same Oracle home as the primary database, you must use a different DB_UNIQUE_NAME for the duplicate database.
+----------
+Duplicating a Database- by using network-based duplication of databases
+
+As we mentioned earlier, this capability is also called active database duplication. The steps are essentially the same as those we showed for the older backup-based
+database duplication techniques earlier. There’s absolutely no need for any preexisting backups to duplicate the source database. In this solution, we describe an example showing how to perform active database duplication by specifying the active database clause of the RMAN duplicate command. In the example, the source and duplicate databases are on the same host, so you do need to use different database file names for the two databases. The source database is named orcl and the duplicate database is named orcl2. Here’s the process:
+
+1. Add the following information to the tnsnames.ora file, located in the $ORACLE_HOME/network/admin directory:
+
+ORCL2=
+(DESCRIPTION =
+(ADDRESS = (PROTOCOL = TCP)(HOST = virtual1.vm.alapati.com)(PORT = 1521))
+(CONNECT_DATA =
+(SERVER = DEDICATED)
+(SERVICE_NAME = orcl2.vm.alapati.com)
+)
+)
+
+2. We’re going to specify the spfile during our database duplication. You need only one parameter, db_name, to denote the name of your new duplicate database. You don’t need to set the initialization parameters such as db_file_name_convert and log_file_name_convert, because you’re going to set these parameters directly in the duplicate database command itself. So, the contents of the SPFILE for the auxiliary instance will look like this:
+db_name = orcl2
+
+3. In this example, the init.ora file for the duplicate database is named initorcl2.ora. Save this file in the appropriate location. (On Linux/Unix, the default location is $ORACLE_HOME/dbs, and on Windows, it’s %ORACLE_HOME%\database.)
+
+4. Create a password file for connecting remotely to the auxiliary instance with the sysdba privilege. This is because when you perform active database duplication, the target database instance must connect directly to the auxiliary database instance. Note that the password file connection requires the same sysdba password as that of the source database.
+[oracle@virtual1 dbs]$ export ORACLE_SID=orcl2
+[oracle@virtual1 dbs]$ orapwd password=Ninamma11 file=orapworcl2
+
+5. Start the auxiliary database (duplicate database) instance. You must start the new instance in the nomount mode since you don’t have a control file for this new database yet.
+$ export ORACLE_SID=orcl2
+$ sqlplus /nolog
+SQL> startup nomount
+
+6. Start up RMAN, and connect to the target database after making sure you first set the ORACLE_SID environmental variable to the source database, which is named orcl in our case. The target database can be mounted or open.
+RMAN> connect target sys/Ninamma11@orcl
+
+7. Connect to the duplicate database using the keyword auxiliary through an SQL*Net connection:
+RMAN> connect auxiliary orcl1
+auxiliary database Password:
+connected to auxiliary database: ORCL1 (not mounted)
+
+8. Issue the duplicate target database command to start the database duplication process. For example:
+RMAN> duplicate target database
+2> to orcl1
+3> from active database;
+
+..
+..
+Finished Duplicate Db at 27-NOV-12
+RMAN>
+
+
+You start the active database duplication process by using the from active database clause of the RMAN duplicate command. The inter-instance network connection is used to copy the source database files to the specified destination on the auxiliary instance. Since we didn’t specify backup sets explicitly in the duplicate database command, RMAN copies the source data files over to the destiantion server as RMAN image copies. At the end of the data file copying process, RMAN uses a “memory script” to complete the recovery before opening the new duplicate database. RMAN decides the end time for the duplication based on when it completes the copying of the online data files.
+
+If you were to perform the active database duplication on a different host with the same directory structure, your database duplication command must include the nofilenamecheck clause, as shown here:
+
+RMAN> duplicate database
+to newdb
+from active database
+nofilenamecheck;
+
+If you’d rather create a standby database instead of a duplicate database, all you have to do is replace the to auxdb part of the duplicate database command with the for standby clause, as shown here:
+RMAN> duplicate target database
+for standby
+from active database;
+
+If the source database files are spread over multiple directories, you must use the set newname parameter instead of the db_file_name_convert parameter to rename the files in the duplicate database.
+
+------------
+Duplicating a Database to a Past Point in Time
+RMAN> connect target sys/<sys_password>@targdb
+RMAN> connect auxiliary sys/<sys_password.@dupdb
+RMAN> duplicate target database
+to dupdb
+spfile
+nofilenamecheck
+until time 'sysdate-1';
+
+-------------
+You want to skip certain tablespaces when duplicating a database.
+run
+{
+allocate channel C1 device type disk;
+allocate auxiliary channel C2 device type disk;
+duplicate database to aux
+skip tablespace users, tools;
+}
+
+----------------
+You want to synchronize a duplicate database with its parent database.
+
+Once you create a duplicate database from a source database, you can periodically “update” or synchronize the duplicate database by simply rerunning the duplicate command over again, in essence re-creating the duplicate.
+
+In the following example, we first perform a one-time setup of the new data file names by using the configure auxname clause, as shown here:
+
+RMAN> connect target /
+RMAN> connect catalog rman/rman@catdb
+RMAN> connect auxiliary sys/Nicholas11@dupdb
+RMAN> run {
+configure auxname for datafile 1 to '/u01/app/oracle/oradata1/system01.dbf';
+configure auxname for datafile 2 to '/u01/app/oracle /oradata2/sysaux01.dbf';
+configure auxname for datafile 3 to '/u01/app/oracle /oradata3/undotbs01.dbf';
+configure auxname for datafile 4 to '/u01/app/oracle /oradata4/drsys01';
+configure auxname for datafile 5 to '/u01/app/oracle /oradata5/example01.dbf';
+configure auxname for datafile 6 to '/u01/app/oracle /oradata6/indx01.dbf';
+configure auxname for datafile 7 to '/u01/app/oracle /oradata7/users01.dbf';
+}
+
+Synchronize the duplicate database with the source database by periodically executing the duplicate target database command to re-create the duplicate database. For example:
+
+RMAN> connect target /
+RMAN> connect catalog rman/rman@catdb
+RMAN> connect auxiliary sys/Ninamma11@dupdb
+RMAN> duplicate target database to dupdb
+logfile
+group 1 ('/u01/app/oracle/duplogs/redo01a.log',
+'/u02/app/oracle/duplogs/redo01b.log') size 200k reuse,
+group 2 ('/u01/app/oracle/duplogs/redo02a.log',
+'/u02/app/oracle /duplogs/redo02b.log') size 200k reuse;
+
+To set up a database for periodic synchronization, you must first use the configure command to set persistent new names for the data files. Once you set the persistent data file names, the file names will be recorded in the control file, and RMAN will use the same file names each time you synchronize the duplicate database by using the duplicate command.
+
+Remember that you have to employ the configure auxname clause only once—the first time you duplicate the database. RMAN will reuse the same file names anytime you execute the duplicate command.
+

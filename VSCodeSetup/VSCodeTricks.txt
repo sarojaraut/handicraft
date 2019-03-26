@@ -1,0 +1,22 @@
+Code > Preferences > User Snippets and select the language
+
+Adding a file extension to a language > 
+
+You can add new file extensions to an existing language with the files.associations setting.
+
+For example, the setting below adds the .myphp file extension to the php language identifier:
+
+    "files.associations": {
+        "*.myphp": "php"
+    }
+
+Integrated Terminal : Use the ⌃` keyboard shortcut with the backtick character.
+Terminal instances can be added by hitting the plus icon on the top-right of the TERMINAL panel or by triggering the ⌃⇧`
+You can also split the terminal by triggering the ⌘\
+
+https://www.growingwiththeweb.com/2017/03/mastering-vscodes-terminal.html
+
+pl_create_eventfail_incident
+pl_create_certiffail_incident
+
+l_event_failure_alert_needed

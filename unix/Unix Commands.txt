@@ -1,0 +1,1227 @@
+Printing th nth line of a file
+head -<n> file.txt | tail -1
+sed �n '4 p' test  -- printing 4th line
+
+How to remove the first line / header from a file?
+
+sed '1 d' file.txt > new_file.txt
+
+How to get the nth word of a line in Unix?
+
+echo 'A quick brown fox jumped over the lazy cat' | cut -f4 -d' '
+
+Basic syntax of AWK
+
+The basic syntax of [awk] is like this: 
+
+awk 'pattern space''{action space}'
+
+How to check if a file is zipped in Unix?
+
+file �i file.zip
+
+How to connect to Oracle database from within shell script?
+
+res=`sqlplus -s username/password@database_name <<EOF
+SET HEAD OFF;
+select count(*) from dual;
+EXIT;
+EOF`
+
+echo $res
+
+How to execute a database stored procedure from Shell script?
+
+$> SqlReturnMsg=`sqlplus -s username/password@database<<EOF
+BEGIN
+Proc_Your_Procedure(� your-input-parameters �); 
+END;
+/
+EXIT;
+EOF`
+
+$> echo $SqlReturnMsg
+
+How to check the command line arguments in a UNIX command in Shell Script?
+
+In a bash shell, you can access the command line arguments using $0, $1, $2, � variables, where $0 prints the command name, $1 prints the first input parameter of the command, $2 the second input parameter of the command and so on
+
+How to fail a shell script programmatically? 
+Just put an [exit] command in the shell script with return value other than 0. this is because the exit codes of successful Unix programs is zero. So, suppose if you write 
+
+How to check if the last command was successful in Unix?
+To check the status of last executed command in UNIX, you can check the value of an inbuilt bash variable [$?]. See the below example:
+
+How to check all the running processes in Unix?
+The standard command to see this is [ps]. But [ps] only shows you the snapshot of the processes at that instance. If you need to monitor the processes for a certain period of time and need to refresh the results in each interval, consider using the [top] command. 
+
+Is there a way to erase all files in the current directory, including all its sub-directories, using only one command?
+
+Yes, that is possible. Use �rm �r *� for this purpose. The rm command is for deleting files. The �r option will erase directories and subdirectories, including files within. The asterisk represents all entries.
+
+23) Differentiate cmp command from diff command.
+
+The cmp command is used mainly to compare two files byte by byte, after which the first encountered mismatch is shown. On the other hand, the diff command is used to indicate the changes that is to be made in order to make the two files identical to each other.
+
+42) Write a command that will find all text files in a directory such that it does not contain the word ora in any form (that is, it must include the words Amazing, AMAZING, or aMAZINg)
+
+Answer: grep �vi amazing *.txt
+
+What is relative path and absolute path.
+Absolute path : Exact path from root directory.
+Relative path : Relative to the current path.
+
+Is it possible to count number char, line in a file; if so, How?
+Yes, wc-stands for word count.
+wc -c for counting number of characters in a file.
+wc -l for counting lines in a file.
+
+Is �du� a command? If so, what is its use?
+Yes, it stands for �disk usage�. With the help of this command you can find the disk capacity and free space
+of the disk.
+
+What will the following command do?
+$ echo *
+It is similar to 'ls' command and displays all the files in the current directory.
+
+Write a command to kill the last background job?
+Kill $!
+
+What is the use of �grep� command?
+�grep� is a pattern search command. It searches for the pattern, specified in the command line with
+appropriate option, in a file(s).
+Syntax : grep
+Example : grep 99mx mcafile
+
+find . -name foo\*bar
+
+This will search from the current directory down for foo*bar (that is, any filename that begins with foo and ends with bar).  Note that wildcards in the name argument must be quoted so the shell doesn't expand them before passing them to find.  Also, unlike regular shell wildcards, these will match leading periods in filenames.  (For example �find -name \*.txt�.) 
+
+find / -type f -mtime -7 | xargs tar -rf weekly_incremental.tar
+gzip weekly_incremental.tar
+
+will find any regular files (i.e., not directories or other special files) with the criteria �-type f�, and only those modified seven or fewer days ago (�-mtime -7�).  Note the use of xargs, a handy utility that coverts a stream of input (in this case the output of find) into command line arguments for the supplied command (in this case tar, used to create a backup archive). 
+
+Using the tar option �-c� is dangerous here;  xargs may invoke tar several times if there are many files found, and each �-c� will cause tar to over-write the previous invocation.  The �-r� option appends files to an archive.  Other options such as those that would permit filenames containing spaces would be useful in a �production quality� backup script.
+
+Another use of xargs is illustrated below.  This command will efficiently remove all files named core from your system (provided you run the command as root of course): 
+
+find / -name core | xargs /bin/rm -f
+find / -name core -exec /bin/rm -f '{}' \; # same thing
+
+Using -exec Efficiently: 
+The -exec action takes a command (along with its options) as an argument.  The arguments should contain {} (usually quoted), which is replaced in the command with the name of the currently found file.  The command is terminated by a semicolon, which must be quoted (�escaped�) so the shell will pass it literally to the find command. 
+
+To use a more complex action with -exec, you can use �sh -c complex-command� as the Unix command.  Here's a somewhat contrived example, that for each found file replaces �Mr.� with �Mr. or Ms.�, and also converts the file to uppercase: 
+
+   find whatever... -exec sh -c 'sed "s/Mr\./Mr. or Ms./g" "{}" \
+   | tr "[:lower:]" "[:upper:]" >"{}.new"' \;
+   
+The -exec action in find is very useful, but since it runs the command listed for every found file it isn't very efficient.  On a large system this makes a difference!  One solution is to combine find with xargs as discussed above: 
+
+  find whatever... | xargs commandHowever this approach has two limitations.  
+  
+Firstly not all commands accept the list of files at the end of the command.  A good example is cp: 
+
+find . -name \*.txt | xargs cp /tmp  # This won't work!
+
+Secondly, filenames may contain spaces or newlines, which would confuse the command used with xargs
+
+
+$ expr 6 + 3
+Now It will print sum as 9 , But
+$ expr 6+3
+will not work because space is required between number and operator (See Shell Arithmetic)
+
+Don't put spaces on either side of the equal sign when assigning value to variable. For e.g.. In
+following variable declaration there will be no error
+$ no=10
+
+Modify above and store division of x and y to variable called z
+$ x=20
+$ y=5
+$ z=`expr x / y`
+$ echo $z
+
+$ ./first
+Here '.'(dot) is command, and used in conjunction with shell script. The dot(.) indicates to current shell that the command following the dot(.) has to be executed in the same shell i.e. without the loading of another shell in memory. Or you can also try following syntax to run Shell Script
+
+$# holds number of arguments specified on command line.
+ and $* or $@ refer to all arguments in passed to script. Now to obtain total no. of Argument to particular script, your $#
+variable.
+
+$ myshell foo bar
+
+myshell it is $0
+foo it is $1
+bar it is $2
+
+Here $# will be 2
+
+You can also refer all of them by using $* (which expand to `$0,$1,$2...$9`)
+
+Exit Status
+By default in Linux if particular command is executed, it return two type of values, (Values are used to see whether command is successful or not) if return value is zero (0), command is successful, if return value is nonzero (>0), command is not successful or some sort of error executing command/shell script. This value is know as Exit Status of that command. To determine this exit Status we use $? variable of shell.
+
+if test $1 -gt 0
+then
+echo "$1 number is positive"
+fi
+
+if [ $# -eq 0 ]
+then
+echo "$0 : You must give/supply one integers"
+exit 1
+fi
+
+for i in 1 2 3 4 5
+do
+echo "Welcome $i times"
+done
+
+$ vech=Bus
+$ echo $vech
+Bus
+$ /bin/bash
+$ echo $vech
+NOTE:-Empty line printed
+$ vech=Car
+$ echo $vech
+Car
+$ exit
+$ echo $vech
+Bus
+
+$ vech=Bus
+$ echo $vech
+Bus
+$ export vech
+$ /bin/bash
+$ echo $vech
+Bus
+$ exit
+$ echo $vech
+
+Syntax: command1 && command2
+Here command2 is executed if, and only if, command1 returns an exit status of zero. 
+An OR list has the Syntax: command1 || command2
+Here command2 is executed if and only if command1 returns a non-zero exit status. You can use both as follows
+
+command1 && comamnd2 if exist status is zero || command3 if exit status is non-zero
+Here if command1 is executed successfully then shell will run command2 and if command1 is not
+successful then command3 is executed. For e.g.
+
+$ rm myf && echo File is removed successfully || echo File is not removed
+If file (myf) is removed successful (exist status is zero) then "echo File is removed successfully" statement
+is executed, otherwise "echo File is not removed" statement is executed (since exist status is non-zero)
+
+$ rm bad_file_name111
+rm: cannot remove `bad_file_name111': No such file or directory ,is the output (error) of the above
+program. Now if we try to redirect this error-output to file, it can not be send to file
+
+$ rm bad_file_name111 2>er
+Note that no space are allowed between 2 and >, The 2>er directs the standard error output to file.
+
+$ cat > demoscr
+if [ $# -ne 2 ]
+then
+echo "Error : Number are not supplied"
+echo "Usage : $0 number1 number2"
+exit 1
+fi
+ans=`expr $1 + $2`
+echo "Sum is $ans"
+
+$ ./demoscr
+Error : Number are not supplied
+Usage : ./demoscr number1 number2
+$ ./demoscr > er1
+$ ./demoscr 5 7
+Sum is 12
+
+Here for first sample run , our script prints error message indicating that we have not given two number. For second sample run, we have redirect output of our script to file, since it's error we have to show it to user, It means we have to print our error message on stderr not on stdout. To overcome this problem replace above echo statements as follows
+echo "Error : Number are not supplied" 1>&2
+echo "Usage : $0 number1 number2" 1>&2
+
+Now if you run as
+$ ./demoscr > er1
+Error : Number are not supplied
+Usage : ./demoscr number1 number2
+
+It will print error message on stderr and not on stdout. The 1>&2 at the end of echo statement, directs the standard output (stdout) to standard error (stderr) device.
+Syntax: from>&destination
+
+
+------------- Advanced Shell Scripting
+
+Sha-Baang - #!/bin/sh 
+at the head of a script tells your system that this file is a set of commands to be fed to the command interpreter indicated
+
+#! can be omitted if the script consists only of a set of generic system commands, using no internal shell directives.  the variable assignment line, lines=50, uses a shell-specific construct.
+
+./scriptname  If it begins with a "sha-bang" line, invoking the script calls the correct command interpreter to run it.
+
+, - comma operator. The comma operator links together a series of arithmetic operations. All are evaluated, but only the last one is returned.
+
+let "t2 = ((a = 9, 15 / 3))"
+# Set "a = 9" and "t2 = 15 / 3"
+
+` - command substitution. The `command` construct makes available the output of command for assignment to a variable. This is also known as backquotes or backticks.
+
+* - wild card [asterisk]. The * character serves as a "wild card" for filename expansion in globbing. By itself, it matches every filename in a given directory.
+echo *
+
+? - test operator. Within certain expressions, the ? indicates a test for a condition.
+In a double-parentheses construct, the ? can serve as an element of a C-style trinary operator. [17]
+condition?result-if-true:result-if-false
+
+(( var0 = var1<98?9:21 ))
+
+# if [ "$var1" -lt 98 ]
+# then
+# var0=9
+# else
+# var0=21
+# fi
+
+${} - Parameter substitution.
+$' ... ' - Quoted string expansion. This construct expands single or multiple escaped octal or hex values into ASCII [18] or Unicode characters.
+
+$*, $@ - positional parameters.
+
+$? -exit status variable. The $? variable holds the exit status of a command, a function, or of the script itself.
+$$ -process ID variable. The $$ variable holds the process ID [19] of the script in which it appears.
+() -command group. A listing of commands within parentheses starts a subshell.
+
+a=123
+( a=321; )
+echo "a = $a" # a = 123
+# "a" within parentheses acts like a local variable.
+
+array initialization.
+Array=(element1 element2 element3)
+
+{xxx,yyy,zzz,...} - Brace expansion. 
+
+echo \"{These,words,are,quoted}\" # " prefix and suffix
+# "These" "words" "are" "quoted"
+
+cat {file1,file2,file3} > combined_file
+# Concatenates the files file1, file2, and file3 into combined_file.
+cp file22.{txt,backup}
+# Copies "file22.txt" to "file22.backup"
+A command may act upon a comma-separated list of
+
+Extended Brace expansion.
+echo {a..z} # a b c d e f g h i j k l m n o p q r s t u v w x y z
+# Echoes characters between a and z.
+
+> &> >& >> < <>
+redirection.
+
+command &>filename redirects both the stdout and the stderr of command to filename.
+
+command >&2 redirects stdout of command to stderr.
+
+ls -l | tr 'a-z' 'A-Z'
+
+Introduction to Variables and Parameters
+
+The only times a variable appears "naked" -- without the $ prefix -- is when declared or assigned,
+
+Note that $variable is actually a simplified form of ${variable}. In contexts where the $variable syntax causes an error the longer form may work
+
+hello="A B C D"
+echo $hello # A B C D
+echo "$hello" # A B C D
+# As we see, echo $hello and echo "$hello" give different results.
+# =======================================
+# Quoting a variable preserves whitespace.
+# =======================================
+
+echo "$uninitialized" # (blank line)
+let "uninitialized += 5" # Add 5 to it.
+echo "$uninitialized" # 5
+# Conclusion:
+# An uninitialized variable has no value,
+#+ however it evaluates as 0 in an arithmetic operation.
+
+a=`ls -l` # Assigns result of 'ls -l' command to 'a'
+echo $a # Unquoted, however, it removes tabs and newlines.
+echo
+echo "$a" # The quoted variable preserves whitespace.
+# (See the chapter on "Quoting.")
+
+Positional parameters
+$0 is the name of the script itself, $1 is the first argument, $2 the second, $3 the third, and so forth. After $9, the arguments must be enclosed in brackets, for example, ${10}, ${11}, ${12}.
+
+The special variables $* and $@ denote all the positional parameters.
+$* - All of the positional parameters, seen as a single word
+$@ - Same as $*, but each parameter is a quoted string, that is, the parameters are passed on intact, without interpretation or expansion. This means, among other things, that each parameter in the argument list is seen as a separate word.
+
+$! -PID (process ID) of last job run in background
+$$ -Process ID (PID) of the script itself.
+
+Following a shift, the $@ holds the remaining command-line parameters, lacking the previous $1,
+which was lost.
+
+until [ -z "$1" ] # Until all parameters used up . . .
+do
+echo -n "$1 "
+shift
+done
+echo # Extra linefeed.
+# But, what happens to the "used-up" parameters?
+echo "$2"
+# Nothing echoes!
+# When $2 shifts into $1 (and there is no $3 to shift into $2)
+#+ then $2 remains empty.
+# So, it is not a parameter *copy*, but a *move*.
+exit
+
+The shift command can take a numerical parameter indicating how many positions to shift.
+
+Quoting can also suppress echo's "appetite" for newlines.
+
+bash$ echo $(ls -l)
+total 8 -rw-rw-r-- 1 bo bo 13 Aug 21 12:57 t.sh -rw-rw-r-- 1 bo bo 78 Aug 21 12:57 u.sh
+
+bash$ echo "$(ls -l)"
+total 8
+-rw-rw-r-- 1 bo bo 13 Aug 21 12:57 t.sh
+-rw-rw-r-- 1 bo bo 78 Aug 21 12:57 u.sh
+
+Consider single quotes ("full quoting") to be a stricter method of quoting than double quotes ("partial quoting").
+
+Exit and Exit Status
+After a script terminates, a $? from the command-line gives the exit status of the script, that is, the last command executed in the script, which is, by convention, 0 on success or an integer in the range 1 - 255 on error.
+
+eq - is equal to , if [ "$a" -eq "$b" ]
+
+
+Operations and Related Topics
+
+variable assignment
+Initializing or changing the value of a variable
+= - All-purpose assignment operator, which works for both arithmetic and string assignments.
+
+var=27
+category=minerals # No spaces allowed after the "=".
+
+Do not confuse the "=" assignment operator with the = test operator.
+
+# = as a test operator
+if [ "$string1" = "$string2" ]
+then
+command
+fi
+# if [ "X$string1" = "X$string2" ] is safer,
+#+ to prevent an error message should one of the variables be empty.
+# (The prepended "X" characters cancel out.)
+
+
+$RANDOM is an internal Bash function (not a constant) that returns a pseudorandom [47] integer in the range 0 - 32767.
+
+#!/bin/bash
+# pick-card.sh
+# This is an example of choosing random elements of an array.
+# Pick a card, any card.
+Suites="Clubs
+Diamonds
+Hearts
+Spades"
+Denominations="2
+3
+4
+5
+6
+7
+8
+9
+10
+Jack
+Queen
+King
+Ace"
+# Note variables spread over multiple lines.
+suite=($Suites) # Read into array variable.
+denomination=($Denominations)
+num_suites=${#suite[*]} # Count how many elements.
+num_denominations=${#denomination[*]}
+echo -n "${denomination[$((RANDOM%num_denominations))]} of "
+echo ${suite[$((RANDOM%num_suites))]}
+
+Manipulating Strings
+
+${#string}
+expr length $string
+These are the equivalent of strlen() in C.
+expr "$string" : '.*'
+
+
+stringZ=abcABC123ABCabc
+echo ${#stringZ} # 15
+echo `expr length $stringZ` # 15
+echo `expr "$stringZ" : '.*'` # 15
+
+expr index $string $substring
+Numerical position in $string of first character in $substring that matches.
+
+echo `expr index "$stringZ" C12` # 6
+# C position.
+echo `expr index "$stringZ" 1c` # 3
+# 'c' (in #3 position) matches before '1'.
+
+Substring Extraction
+
+${string:position}
+Extracts substring from $string at $position.
+If the $string parameter is "*" or "@", then this extracts the positional parameters, starting at $position.
+${string:position:length}
+Extracts $length characters of substring from $string at $position.
+
+stringZ=abcABC123ABCabc
+# 0123456789.....
+# 0-based indexing.
+echo ${stringZ:0} # abcABC123ABCabc
+echo ${stringZ:1} # bcABC123ABCabc
+echo ${stringZ:7} # 23ABCabc
+echo ${stringZ:7:3} # 23A
+# Three characters of substring.
+
+# Is it possible to index from the right end of the string?
+echo ${stringZ:-4} # abcABC123ABCabc
+# Defaults to full string, as in ${parameter:-default}.
+# However . . .
+echo ${stringZ:(-4)} # Cabc
+echo ${stringZ: -4} # Cabc
+# Now, it works.
+# Parentheses or added space "escape" the position parameter.
+
+If the $string parameter is "*" or "@", then this extracts a maximum of $length positional
+parameters, starting at $position.
+echo ${*:2} # Echoes second and following positional parameters.
+echo ${@:2} # Same as above.
+
+Substring Replacement
+${string/substring/replacement}
+Replace first match of $substring with $replacement. [50]
+${string//substring/replacement}
+Replace all matches of $substring with $replacement.
+
+stringZ=abcABC123ABCabc
+echo ${stringZ/abc/xyz} # xyzABC123ABCabc
+# Replaces first match of 'abc' with 'xyz'.
+echo ${stringZ//abc/xyz} # xyzABC123ABCxyz
+# Replaces all matches of 'abc' with # 'xyz'.
+
+for arg in [list]
+do
+command(s)...
+done
+
+for planet in "Mercury Venus Earth Mars Jupiter Saturn Uranus Neptune Pluto"
+# All planets on same line.
+# Entire 'list' enclosed in quotes creates a single variable.
+# Why? Whitespace incorporated into the variable.
+do
+echo $planet
+done
+echo; echo "Whoops! Pluto is no longer a planet!"
+exit 0
+
+Missing in [list] in a for loop
+
+#!/bin/bash
+# Invoke this script both with and without arguments,
+#+ and see what happens.
+for a
+do
+echo -n "$a "
+done
+# The 'in list' missing, therefore the loop operates on '$@'
+#+ (command-line argument list, including whitespace).
+echo
+exit 0
+
+Generating the [list] in a for loop with command substitution
+
+#!/bin/bash
+# for-loopcmd.sh: for-loop with [list]
+#+ generated by command substitution.
+NUMBERS="9 7 3 8 37.53"
+for number in `echo $NUMBERS` # for number in 9 7 3 8 37.53
+do
+echo -n "$number "
+done
+echo
+exit 0
+
+Listing all users on the system
+
+#!/bin/bash
+# userlist.sh
+PASSWORD_FILE=/etc/passwd
+n=1 # User number
+for name in $(awk 'BEGIN{FS=":"}{print $1}' < "$PASSWORD_FILE" )
+# Field separator = : ^^^^^^
+# Print first field ^^^^^^^^
+# Get input from password file /etc/passwd ^^^^^^^^^^^^^^^^^
+do
+echo "USER #$n = $name"
+let "n += 1"
+done
+# USER #1 = root
+# USER #2 = bin
+# USER #3 = daemon
+# ...
+# USER #33 = bozo
+exit $?
+
+Debugging
+
+sh -n scriptname checks for syntax errors without actually running the script. This is the equivalent of inserting set -n or set -o noexec into the script.
+
+sh -v scriptname echoes each command before executing it. This is the equivalent of inserting set -v or set -o verbose in the script.
+
+trap : Specifies an action on receipt of a signal; also useful for debugging.
+
+trap '' 2
+# Ignore interrupt 2 (Control-C), with no action specified.
+
+trap 'echo "Control-C disabled."' 2
+# Message when Control-C pressed.
+
+The DEBUG argument to trap causes a specified action to execute after every command in a script. This permits tracing variables, for example.
+
+trap 'echo "VARIABLE-TRACE> \$variable = \"$variable\""' DEBUG
+# Echoes the value of $variable after every command.
+
+trap '' SIGNAL (two adjacent apostrophes) disables SIGNAL for the remainder of the script. trap SIGNAL restores the functioning of SIGNAL once more. This is useful to protect a critical portion of a script from an undesirable interrupt.
+
+trap '' 2 # Signal 2 is Control-C, now disabled.
+command
+command
+command
+trap 2 # Reenables Control-C
+
+The set command enables options within a script. At the point in the script where you want the options to take effect, use set -o option-name or, in short form, set -option-abbrev. These two forms are equivalent.
+
+
+set -o verbose
+# Echoes all commands before executing.
+
+set -v
+# Exact same effect as above.
+
+Table E-1. Reserved Exit Codes
+Exit Code Number : Meaning : Example : Comments
+1 : Catchall for general errors :  let "var1 = 1/0" : Miscellaneous errors, such as "divide by zero" and other impermissible operations
+2 : Misuse of shell builtins (accordingto Bash documentation) : empty_function() {} : Missing keyword or command
+126 : Command invoked cannot execute : /dev/null : Permission problem or command is not an executable
+127 : "command not found" : illegal_command : Possible problem with $PATH or a typo
+128 : Invalid argument to exit : exit 3.14159 : exit takes only integer args in the range 0 - 255 
+128+n : Fatal error signal "n" : kill -9 $PPID of script : $? returns 137 (128 + 9)
+130 : Script terminated by Control-C : Ctl-C : Control-C is fatal error signal 2, (130 = 128 + 2, see above)
+255* : Exit status out of range : exit -1 : exit takes only integer args in the range 0 - 255
+
+I/O Redirection
+
+: > filename
+# The > truncates file "filename" to zero length.
+# If file not present, creates zero-length file (same effect as 'touch').
+# The : serves as a dummy placeholder, producing no output.
+
+> filename
+# The > truncates file "filename" to zero length.
+# If file not present, creates zero-length file (same effect as 'touch').
+# (Same result as ": >", above, but this does not work with some shells.)
+
+1>filename # Redirect stdout to file "filename."
+1>>filename # Redirect and append stdout to file "filename."
+2>filename # Redirect stderr to file "filename."
+2>>filename # Redirect and append stderr to file "filename."
+&>filename # Redirect both stdout and stderr to file "filename." # This operator is now functional, as of Bash 4, final release.
+M>N # "M" is a file descriptor, which defaults to 1, if not explicitly set. # "N" is a filename. # File descriptor "M" is redirect to file "N."
+M>&N # "M" is a file descriptor, which defaults to 1, if not set. # "N" is another file descriptor.
+
+2>&1
+# Redirects stderr to stdout.
+# Error messages get sent to same place as standard output.
+>>filename 2>&1
+bad_command >>filename 2>&1
+# Appends both stdout and stderr to the file "filename" ...
+
+0< FILENAME
+< FILENAME
+# Accept input from a file.
+# Companion command to ">", and often used in combination with it.
+#
+# grep search-word <filename
+
+[j]<>filename
+	# Open file "filename" for reading and writing, 	#+ and assign file descriptor "j" to it. 	# If "filename" does not exist, create it.
+	# If file descriptor "j" is not specified, default to fd 0, stdin. 	# 	# An application of this is writing at a specified place in a file.
+	echo 1234567890 > File # Write string to "File".
+	exec 3<> File # Open "File" and assign fd 3 to it.
+
+command < input-file > output-file
+# Or the equivalent:
+< input-file command > output-file # Although this is non-standard.
+
+ls -yz >> command.log 2>&1
+# Capture result of illegal options "yz" in file "command.log."
+# Because stderr is redirected to the file,
+
+An exec <filename command redirects stdin to a file. From that point on, all stdin comes from that file, rather than its normal source (usually keyboard input). This provides a method of reading a file line by line and possibly parsing each line of input using sed and/or awk.
+
+#!/bin/bash
+# Redirecting stdin using 'exec'.
+exec 6<&0 # Link file descriptor #6 with stdin.
+# Saves stdin.
+exec < data-file # stdin replaced by file "data-file"
+read a1 # Reads first line of file "data-file".
+read a2 # Reads second line of file "data-file."
+echo
+echo "Following lines read from file."
+echo "-------------------------------"
+echo $a1
+echo $a2
+echo; echo; echo
+exec 0<&6 6<&-
+# Now restore stdin from fd #6, where it had been saved,
+#+ and close fd #6 ( 6<&- ) to free it for other processes to use.
+#
+# <&6 6<&- also works.
+echo -n "Enter data "
+read b1 # Now "read" functions as expected, reading from normal stdin.
+echo "Input read from stdin."
+echo "----------------------"
+echo "b1 = $b1"
+echo
+exit 0
+
+Similarly, an exec >filename command redirects stdout to a designated file. This sends all command output that would normally go to stdout to that file.
+
+exec N > filename affects the entire script or current shell. Redirection in the PID of the script or shell from that point on has changed. However . . .
+N > filename affects only the newly-forked process, not the entire script or shell.
+
+#!/bin/bash
+# reassign-stdout.sh
+LOGFILE=logfile.txt
+exec 6>&1 # Link file descriptor #6 with stdout.
+# Saves stdout.
+exec > $LOGFILE # stdout replaced with file "logfile.txt".
+# ----------------------------------------------------------- #
+# All output from commands in this block sent to file $LOGFILE.
+echo -n "Logfile: "
+date
+echo "-------------------------------------"
+echo
+echo "Output of \"ls -al\" command"
+echo
+ls -al
+echo; echo
+echo "Output of \"df\" command"
+echo
+df
+# ----------------------------------------------------------- #
+exec 1>&6 6>&- # Restore stdout and close file descriptor #6.
+echo
+echo "== stdout now restored to default == "
+echo
+ls -al
+echo
+exit 0
+
+Internal Commands and Builtins
+A builtin is a command contained within the Bash tool set, literally built in. This is either for performance reasons -- builtins execute faster than external commands, which usually require forking off a separate process.
+
+A builtin may be a synonym to a system command of the same name, but Bash reimplements it internally. For example, the Bash echo command is not the same as /bin/echo, although their behavior is almost identical.
+
+I/O
+echo
+prints (to stdout) an expression or variable 
+echo Hello
+echo $a
+An echo requires the -e option to print escaped characters. Normally, each echo command prints a terminal newline, but the -n option suppresses this.
+
+read
+"Reads" the value of a variable from stdin, that is, interactively fetches input from the keyboard.
+The -a option lets read get array variables
+
+#!/bin/bash
+# "Reading" variables.
+echo -n "Enter the value of variable 'var1': "
+# The -n option to echo suppresses newline.
+read var1
+# Note no '$' in front of var1, since it is being set.
+
+A read without an associated variable assigns its input to the dedicated variable $REPLY.
+
+echo -n "Enter another value: "
+read # No variable supplied for 'read', therefore...
+#+ Input to 'read' assigned to default variable, $REPLY.
+var="$REPLY"
+
+Normally, inputting a \ suppresses a newline during input to a read. The -r option causes an
+inputted \ to be interpreted literally.
+
+#!/bin/bash
+echo
+echo "Enter a string terminated by a \\, then press <ENTER>."
+echo "Then, enter a second string (no \\ this time), and again press <ENTER>."
+read var1 # The "\" suppresses the newline, when reading $var1.
+# first line \
+# second line
+echo "var1 = $var1"
+# var1 = first line second line
+# For each line terminated by a "\"
+#+ you get a prompt on the next line to continue feeding characters into var1.
+echo; echo
+echo "Enter another string terminated by a \\ , then press <ENTER>."
+read -r var2 # The -r option causes the "\" to be read literally.
+# first line \
+echo "var2 = $var2"
+# var2 = first line \
+
+Filesystem
+cd - The familiar cd change directory command finds use in scripts where execution of a command requires being in a specified directory.
+
+Variables
+let - The let command carries out arithmetic operations on variables. [60] In many cases, it functions as a less complex version of expr. 
+
+let a=11 # Same as 'a=11'
+let a=a+5 # Equivalent to let "a = a + 5"
+# (Double quotes and spaces make it more readable.)
+echo "11 + 5 = $a" # 16
+
+var=0
+echo $? # 0
+# As expected.
+let var++
+echo $? # 1
+# The command was successful, so why isn't $?=0 ???
+# Anomaly!
+let var++
+echo $? # 0
+# As expected.
+
+"If the last ARG evaluates to 0, let returns 1; let returns 0 otherwise." ['help let']
+
+eval
+eval arg1 [arg2] ... [argN]
+Combines the arguments in an expression or list of expressions and evaluates them. Any variables within the expression are expanded. The net result is to convert a string into a command.
+
+Each invocation of eval forces a re-evaluation of its arguments.
+a='$b'
+b='$c'
+c=d
+echo $a # $b
+# First level.
+eval echo $a # $c
+# Second level.
+eval eval echo $a # d
+# Third level.
+
+y=`eval ls -l` # Similar to y=`ls -l`
+echo $y #+ but linefeeds removed because "echoed" variable is unquoted.
+echo
+echo "$y" # Linefeeds preserved when variable is quoted.
+
+The eval command can be risky, and normally should be avoided when there exists a reasonable alternative.
+
+set
+The set command changes the value of internal script variables/options. One use for this is to toggle option flags which help determine the behavior of the script. Another application for it is to reset the positional parameters that a script sees as the result of a command (set `command`). The script can then parse the fields of the command output.
+
+
+Using set with the -- option explicitly assigns the contents of a variable to the positional parameters. If no variable follows the -- it unsets the positional parameters.
+variable="one two three four five"
+set -- $variable
+# Sets positional parameters to the contents of "$variable".
+first_param=$1
+second_param=$2
+shift; shift # Shift past first two positional params.
+# shift 2 also works.
+remaining_params="$*"
+echo
+echo "first parameter = $first_param" # one
+echo "second parameter = $second_param" # two
+echo "remaining parameters = $remaining_params" # three four five
+
+unset -The unset command deletes a shell variable, effectively setting it to null. Note that this command does not affect positional parameters.
+
+bash$ unset PATH
+bash$ echo $PATH
+
+export - The export command makes available variables to all child processes of the running script or shell. One important use of the export command is in startup files, to initialize and make accessible environmental variables to subsequent user processes.
+
+Unfortunately, there is no way to export variables back to the parent process, to the process that called or invoked the script or shell.
+
+#!/bin/bash
+# Yet another version of the "column totaler" script (col-totaler.sh)
+#+ that adds up a specified column (of numbers) in the target file.
+# This uses the environment to pass a script variable to 'awk' . . .
+#+ and places the awk script in a variable.
+ARGS=2
+E_WRONGARGS=85
+if [ $# -ne "$ARGS" ] # Check for proper number of command-line args.
+then
+echo "Usage: `basename $0` filename column-number"
+exit $E_WRONGARGS
+fi
+filename=$1
+column_number=$2
+#===== Same as original script, up to this point =====#
+export column_number
+# Export column number to environment, so it's available for retrieval.
+# -----------------------------------------------
+awkscript='{ total += $ENVIRON["column_number"] }
+END { print total }'
+# Yes, a variable can hold an awk script.
+# -----------------------------------------------
+# Now, run the awk script.
+awk "$awkscript" "$filename"
+
+source, . (dot command) - This command, when invoked from the command-line, executes a script. Within a script, a source file-name loads the file file-name. Sourcing a file (dot-command) imports code into the script, appending to the script (same effect as the #include directive in a C program). The net result is the same as if the "sourced" lines of code were physically present in the body of the script. This is useful in situations when multiple scripts use a common data file or function library.
+
+#!/bin/bash
+# Note that this example must be invoked with bash, i.e., bash ex38.sh
+#+ not sh ex38.sh !
+. data-file # Load a data file.
+# Same effect as "source data-file", but more portable.
+# The file "data-file" must be present in current working directory,
+#+ since it is referred to by its basename.
+# Now, let's reference some data from that file.
+echo "variable1 (from data-file) = $variable1"
+echo "variable3 (from data-file) = $variable3"
+
+exit - Unconditionally terminates a script. The exit command may optionally take an integer argument, which is returned to the shell as the exit status of the script. It is good practice to end all but the simplest scripts with an exit 0, indicating a successful run.
+
+exec - This shell builtin replaces the current process with a specified command. Normally, when the shell encounters a command, it forks off a child process to actually execute the command. Using the exec builtin, the shell does not fork, and the command exec'ed replaces the shell. When used in a script, therefore, it forces an exit from the script when the exec'ed command terminates.
+
+#!/bin/bash
+exec echo "Exiting \"$0\" at line $LINENO." # Exit from script here.
+# $LINENO is an internal Bash variable set to the line number it's on.
+# The following lines never execute.
+echo "This echo fails to echo."
+exit 99 # This script will not exit here.
+
+true - A command that returns a successful (zero) exit status, but does nothing else.
+bash$ true
+bash$ echo $?
+0
+
+jobs - Lists the jobs running in the background, giving the job number. Not as useful as ps.
+
+It is all too easy to confuse jobs and processes. Certain builtins, such as kill, disown, and wait accept either a job number or a process number as an argument. The fg, bg
+and jobs commands accept only a job number. 
+bash$ sleep 100 &
+[1] 1384
+
+bash $ jobs
+[1]+ Running sleep 100 &
+
+"1" is the job number (jobs are maintained by the current shell). "1384" is the PID or process ID number (processes are maintained by the system). To kill this job/process,
+either a kill %1 or a kill 1384 works.
+
+fg, bg - The fg command switches a job running in the background into the foreground. The bg command restarts a suspended job, and runs it in the background. If no job number is specified, then the fg or bg command acts upon the currently running job.
+
+wait - Suspend script execution until all jobs running in background have terminated, or until the job number or process ID specified as an option terminates.
+
+times -Gives statistics on the system time elapsed when executing commands, in the following form:
+0m0.020s 0m0.020s
+This capability is of relatively limited value, since it is not common to profile and benchmark shell scripts.
+
+kill -Forcibly terminate a process by sending it an appropriate terminate signal
+
+kill -l lists all the signals (as does the file /usr/include/asm/signal.h).
+A kill -9 is a sure kill, which will usually terminate a process that stubbornly refuses to die with a plain kill. Sometimes, a kill -15 works.
+
+killall - The killall command kills a running process by name, rather than by process ID. If there are multiple instances of a particular command running, then doing a killall on that command will terminate them all.
+
+External Filters, Programs and Commands
+
+Basic Commands
+
+ls - The basic file "list" command. It is all too easy to underestimate the power of this humble command.  For example, using the -R, recursive option, ls provides a tree-like listing of a directory structure. Other useful options are -S, sort listing by file size, -t, sort by file modification time
+
+cat, tac - cat, an acronym for concatenate, lists a file to stdout. When combined with redirection (> or >>), it is commonly used to concatenate files. tac, is the inverse of cat, listing a file backwards from its end.
+
+rev -reverses each line of a file, and outputs to stdout. This does not have the same effect as tac, as it preserves the order of the lines, but flips each one around (mirror image).
+
+bash$ cat file1.txt
+This is line 1.
+This is line 2.
+bash$ tac file1.txt
+This is line 2.
+This is line 1.
+bash$ rev file1.txt
+.1 enil si sihT
+.2 enil si sihT
+
+cp - This is the file copy command. cp file1 file2 copies file1 to file2, overwriting file2 if it already exists
+Particularly useful are the -a archive flag (for copying an entire directory tree), the -u update flag (which prevents overwriting identically-named newer files), and the -r and -R recursive flags.
+
+mv -This is the file move command. It is equivalent to a combination of cp and rm. It may be used to move multiple files to a directory, or even to rename a directory.
+
+When used in a non-interactive script, mv takes the -f (force) option to bypass user input.
+When a directory is moved to a preexisting directory, it becomes a subdirectory of the destination directory.
+
+rm -Delete (remove) a file or files. The -f option forces removal of even readonly files, and is useful for bypassing user input in a script.
+
+The rm command will, by itself, fail to remove filenames beginning with a dash. Why? Because rm sees a dash-prefixed filename as an option. 
+
+bash$ rm -badname
+rm: invalid option -- b
+Try `rm --help' for more information.
+
+One clever workaround is to precede the filename with a " -- " (the end-of-options flag).
+
+rm -- -badname
+Another method to is to preface the filename to be removed with a dot-slash .
+bash$ rm ./-badname
+
+rmdir -Remove directory. The directory must be empty of all files -- including "invisible" dotfiles -- for this command to succeed.
+
+mkdir -Make directory, creates a new directory. For example, mkdir -p project/programs/December creates the named directory. The -p option automatically creates any necessary parent directories.
+
+chmod - Changes the attributes of an existing file or directory
+
+chmod u+s filename
+# Sets "suid" bit on "filename" permissions.
+# An ordinary user may execute "filename" with same privileges as the file's owner.
+# (This does not apply to shell scripts.)
+
+chmod 1777 directory-name
+# Gives everyone read, write, and execute permission in directory,
+#+ however also sets the "sticky bit".
+# This means that only the owner of the directory,
+#+ owner of the file, and, of course, root
+#+ can delete any particular file in that directory.
+chmod 111 directory-name
+# Gives everyone execute-only permission in a directory.
+# This means that you can execute and READ the files in that directory
+#+ (execute permission necessarily includes read permission
+#+ because you can't execute a file without being able to read it).
+# But you can't list the files or search for them with the "find" command.
+# These restrictions do not apply to root.
+chmod 000 directory-name
+# No permissions at all for that directory.
+# Can't read, write, or execute files in it.
+# Can't even list files in it or "cd" to it.
+# But, you can rename (mv) the directory
+#+ or delete it (rmdir) if it is empty.
+# You can even symlink to files in the directory,
+#+ but you can't read, write, or execute the symlinks.
+# These restrictions do not apply to root.
+
+chattr -Change file attributes. This is analogous to chmod above, but with different options and a different invocation syntax, and it works only on ext2/ext3 filesystems.
+
+One particularly interesting chattr option is i. A chattr +i filename marks the file as immutable The file cannot be modified, linked to, or deleted, not even by root. This file attribute can be set or removed only by root. In a similar fashion, the a option marks the file as append only.
+
+ln - Creates links to pre-existings files. A "link" is a reference to a file, an alternate name for it. The ln command permits referencing the linked file by more than one name and is a superior alternative to
+aliasing.
+The ln creates only a reference, a pointer to the file only a few bytes in size. The ln command is most often used with the -s, symbolic or "soft" link flag. Advantages of using the -s flag are that it permits linking across file systems or to directories. The syntax of the command is a bit tricky. For example: ln -s oldfile newfile links the previously existing oldfile to the newly created link, newfile.
+
+Both of these [types of links] provide a certain measure of dual reference -- if you edit the contents of the file using any name, your changes will affect both the original name and either a hard or soft new name. The differences between them occurs when you work at a higher level. The advantage of a hard link is that the new name is totally independent of the old name -- if you remove or rename the old name, that does not affect the hard link, which continues to point to the data while it would leave a soft link hanging pointing to the old name which is no longer there. The advantage of a soft link is that it can refer to a different file system (since it is just a reference to a file name, not to actual data). And, unlike a hard link, a symbolic link can refer to a directory.
+
+man, info - These commands access the manual and information pages on system commands and installed utilities. When available, the info pages usually contain more detailed descriptions than do the man pages.
+
+find 
+-exec COMMAND \;
+Carries out COMMAND on each file that find matches. The command sequence terminates with ; (the ";" is escaped to make certain the shell passes it to find literally, without interpreting it as a special character). If COMMAND contains {}, then find substitutes the full path name of the selected file for "{}".
+
+find ~/ -name 'core*' -exec rm {} \; # Removes all core dump files from user's home directory.
+
+DIR=/home/bozo/junk_files
+find "$DIR" -type f -atime +5 -exec rm {} \;
+
+# Deletes all files in "/home/bozo/junk_files" that have not been accessed in *at least* 5 days (plus sign ... +5).
+
+xargs - A filter for feeding arguments to a command, and also a tool for assembling the commands themselves. It breaks a data stream into small enough chunks for filters and commands to process. Consider it as a powerful replacement for backquotes. In situations where command substitution fails with a too many arguments error, substituting xargs often works. [73] Normally, xargs reads from stdin or from a pipe, but it can also be given the output of a file. The default command for xargs is echo. This means that input piped to xargs may have linefeeds and other whitespace characters stripped out.
+
+expr - All-purpose expression evaluator: Concatenates and evaluates the arguments according to the operation given (arguments must be separated by spaces). Operations may be arithmetic, comparison, string, or logical.
+
+expr 3 + 5
+returns 8
+expr 5 % 3
+returns 2
+y=`expr $y + 1`
+Increment a variable, with the same effect as let y=y+1 and y=$(($y+1)). This is an
+example of arithmetic expansion.
+
+date - Simply invoked, date prints the date and time to stdout. Where this command gets interesting is in its formatting and parsing options.
+
+# %j gives day of year.
+
+# %s yields number of seconds since "UNIX epoch" began,
+#+ but how is this useful?
+prefix=temp
+suffix=$(date +%s) # The "+%s" option to 'date' is GNU-specific.
+filename=$prefix.$suffix
+echo "Temporary filename = $filename"
+# It's great for creating "unique and random" temp filenames,
+#+ even better than using $$.
+
+date +%k%M
+# Echoes hour and minute in 24-hour format, as a single digit string.
+
+touch - Utility for updating access/modification times of a file to current system time or other specified time, but also useful for creating a new file. 
+
+sleep
+This is the shell equivalent of a wait loop. It pauses for a specified number of seconds, doing nothing. It can be useful for timing or in processes running in the background, checking for a specific event every so often (polling). sleep 3 # Pauses 3 seconds.
+
+sort
+File sort utility, often used as a filter in a pipe. This command sorts a text stream or file forwards or backwards, or according to various keys or character positions.
+
+uniq - This filter removes duplicate lines from a sorted file. It is often seen in a pipe coupled with sort.
+
+cat list-1 list-2 list-3 | sort | uniq > final.list
+# Concatenates the list files,
+# sorts them,
+# removes duplicate lines,
+# and finally writes the result to an output file.
+
+The useful -c option prefixes each line of the input file with its number of occurrences.
+bash$ cat testfile
+This line occurs only once.
+This line occurs twice.
+This line occurs twice.
+This line occurs three times.
+This line occurs three times.
+This line occurs three times.
+
+
+bash$ uniq -c testfile
+1 This line occurs only once.
+2 This line occurs twice.
+3 This line occurs three times.
+
+bash$ sort testfile | uniq -c | sort -nr
+3 This line occurs three times.
+2 This line occurs twice.
+1 This line occurs only once.
+
+cut - A tool for extracting fields from files. It is similar to the print $N command set in awk, but more limited. It may be simpler to use cut in a script than awk. Particularly important are the -d (delimiter) and -f (field specifier) options.
+
+Using cut to obtain a listing of the mounted filesystems: cut -d ' ' -f1,2 /etc/mtab
+Using cut to list the OS and kernel version: uname -a | cut -d" " -f1,3,11,12
+
+cut -d ' ' -f2,3 filename is equivalent to awk -F'[ ]' '{ print $2, $3 }' filename
+It is even possible to specify a linefeed as a delimiter. The trick is to actually embed a linefeed (RETURN) in the command sequence.
+
+bash$ cut -d'
+' -f3,7,19 testfile
+This is line 3 of testfile.
+This is line 7 of testfile.
+This is line 19 of testfile.
+
+head - lists the beginning of a file to stdout. The default is 10 lines, but a different number can be specified. The command has a number of interesting options.
+
+if [[ `head -c$TESTCHARS "$file"` = "$SHABANG" ]]
+# head -c2 #!
+# The '-c' option to "head" outputs a specified
+#+ number of characters, rather than lines (the default).
+
+tail - lists the (tail) end of a file to stdout. The default is 10 lines, but this can be changed with the -n option. Commonly used to keep track of changes to a system logfile, using the -f option, which outputs lines appended to the file.
+
+grep - A multi-purpose file search tool that uses Regular Expressions. g/re/p -- global - regular expression - print.
+The -i option causes a case-insensitive search.
+The -w option matches only whole words.
+The -l option lists only the files in which matches were found, but not the matching lines.
+The -r (recursive) option searches files in the current working directory and all subdirectories below it.
+The -n option lists the matching lines, together with line numbers.
+The -v (or --invert-match) option filters out matches.
+The -c (--count) option gives a numerical count of matches, rather than actually listing the matches.
+
+How can grep search for two (or more) separate patterns? What if you want grep to display all lines in a file or files that contain both "pattern1" and "pattern2"?
+One method is to pipe the result of grep pattern1 to grep pattern2.
+
+egrep -- extended grep -- is the same as grep -E. This uses a somewhat different, extended set of Regular Expressions, which can make the search a bit more flexible. It also allows the boolean | (or) operator.
+
+egrep 'matches|Matches' file.txt
+
+fgrep -- fast grep -- is the same as grep -F. It does a literal string search (no Regular Expressions), which generally speeds things up a bit.
+
+wc - wc gives a "word count" on a file or I/O stream: 
+wc -w gives only the word count.
+wc -l gives only the line count.
+wc -c gives only the byte count.
+wc -m gives only the character count.
+wc -L gives only the length of the longest line.
+
+tr - character translation filter.
+Must use quoting and/or brackets, as appropriate. Quotes prevent the shell from reinterpreting the special characters in tr command sequences. Brackets should be quoted to prevent expansion by the shell.
+Either tr "A-Z" "*" <filename or tr A-Z \* <filename changes all the uppercase letters in filename to asterisks (writes to stdout). On some systems this may not work, but tr
+A-Z '[**]' will.
+
+tar - The standard UNIX archiving utility. Originally a Tape ARchiving program, it has developed into a general purpose package that can handle all manner of archiving with all types of destination devices. 
+
+1. -c create (a new archive)
+2. -x extract (files from existing archive)
+--delete delete (files from existing archive)
+This option will not work on magnetic tape devices.
+3.
+4. -r append (files to existing archive)
+5. -A append (tar files to existing archive)
+6. -t list (contents of existing archive)
+7. -u update archive
+8. -d compare archive with specified filesystem
+9. --after-date only process files with a date stamp after specified date
+
+gzip - The standard GNU/UNIX compression utility, replacing the inferior and proprietary compress. The corresponding decompression command is gunzip, which is the equivalent of gzip -d.
+
+zip, unzip - Cross-platform file archiving and compression utility compatible with DOS pkzip.exe. "Zipped" archives seem to be a more common medium of file exchange on the Internet than "tarballs."
+
+which - which command gives the full path to "command." This is useful for finding out whether a particular command or utility is installed on the system.
+
+diff, patch - diff: flexible file comparison utility. It compares the target files line-by-line sequentially. In some applications, such as comparing word dictionaries, it may be helpful to filter the files through sort and uniq before piping them to diff. diff file-1 file-2 outputs the lines in the files that differ, with carets showing which file each particular line belongs to.
+
+The diff command returns an exit status of 0 if the compared files are identical, and 1 if they differ. This permits use of diff in a test construct within a shell script (see
+below).
+
+cmp - The cmp command is a simpler version of diff, above. Whereas diff reports the differences between two files, cmp merely shows at what point they differ.
+
+basename - Strips the path information from a file name, printing only the file name. The construction basename $0 lets the script know its name, that is, the name it was invoked by. This can be used for "usage" messages if, for example a script is called with missing arguments:
+
+dirname - Strips the basename from a filename, printing only the path information.
+
+sum, cksum, md5sum, sha1sum - These are utilities for generating checksums. A checksum is a number [77] mathematically calculated from the contents of a file, for the purpose of checking its integrity. A script might refer to a list of checksums for security purposes, such as ensuring that the contents of key system files have not been altered or corrupted. For security applications, use the md5sum (message digest 5 checksum) command, or better yet, the newer sha1sum (Secure Hash Algorithm).
+
+uuencode - This utility encodes binary files (images, sound files, compressed files, etc.) into ASCII characters, making them suitable for transmission in the body of an e-mail message or in a newsgroup posting. This is especially useful where MIME (multimedia) encoding is not available.
+uudecode - This reverses the encoding, decoding uuencoded files back into the original binaries.
+
+dos2unix - This utility, written by Benjamin Lin and collaborators, converts DOS-formatted text files (lines terminated by CR-LF) to UNIX format (lines terminated by LF only), and vice-versa.
+
+host - Searches for information about an Internet host by name or IP address, using DNS.
+
+ipcalc - Displays IP information for a host. With the -h option, ipcalc does a reverse DNS lookup, finding the name of the host (server) from the IP address.
+
+bash$ ipcalc -h 202.92.42.236
+HOSTNAME=surfacemail.com
+
+nslookup - Do an Internet "name server lookup" on a host by IP address. This is essentially equivalent to ipcalc -h or dig -x . The command may be run either interactively or noninteractively, i.e., from within a script.
+
+traceroute - Trace the route taken by packets sent to a remote host. This command works within a LAN, WAN, or over the Internet. The remote host may be specified by an IP address. The output of this command may be filtered by grep or sed in a pipe.
+
+ping - Broadcast an ICMP ECHO_REQUEST packet to another machine, either on a local or remote network. This is a diagnostic tool for testing network connections, and it should be used with caution. 
+
+ssh - Secure shell, logs onto a remote host and executes commands there. This secure replacement for telnet, rlogin, rcp, and rsh uses identity authentication and encryption.
+
+scp - Secure copy, similar in function to rcp, copies files between two different networked machines, but does so using authentication, and with a security level similar to ssh.
+
+factor - Decompose an integer into prime factors.
+jot, seq - These utilities emit a sequence of integers, with a user-selectable increment.
+
+bash$ seq 5
+1
+2
+3
+4
+5
+bash$ seq -s : 5
+1:2:3:4:5
+
+
+

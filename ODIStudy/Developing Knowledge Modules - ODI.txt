@@ -1,0 +1,116 @@
+Knowledge Modules (KMs) are code templates.
+
+The RKM is in charge of connecting to the application or metadata provider then transforming and writing the resulting metadata into Oracle Data Integrator's repository. The metadata is written temporarily into the SNP_REV_xx tables. The RKM then calls the Oracle Data Integrator API to read from these tables and write to Oracle Data Integrator's metadata tables of the work repository in incremental update mode.
+
+The CKM is in charge of checking that records of a data set are consistent with defined constraints. The CKM can be used in 2 ways:
+¦ To check the consistency of existing data. This can be done on any datastore or within mappings, by setting the STATIC_CONTROL option to "Yes". In the first case, the data checked is the data currently in the datastore. In the second case, data in the target datastore is checked after it is loaded.
+In STATIC_CONTROL mode, the CKM reads the constraints of the table and checks them against the data of the table. Records that don't match the constraints are written to the "E$" error table in the staging area.
+
+¦ To check consistency of the incoming data before loading the records to a target datastore. This is done by using the FLOW_CONTROL option. In this case, the CKM simulates the constraints of the target datastore on the resulting flow prior to writing to the target.
+In FLOW_CONTROL mode, the CKM reads the constraints of the target table of the Mapping. It checks these constraints against the data contained in the "I$" flow table of the staging area. Records that violate these constraints are written to the "E$" table of the staging area.
+
+An LKM is in charge of loading source data from a remote server to the staging area. It is used by mappings when some of the source datastores are not on the same data server as the staging area.
+
+The LKM creates the "C$" temporary table in the staging area then loads the source records into the "C$" table of the staging area. A mapping may require several LKMs when it uses datastores from different sources. When all source datastores are on the same data server as the staging area, no LKM is required.
+
+The IKM is in charge of writing the final, transformed data to the target table. Every mapping uses a single IKM. When the IKM is started, it assumes that all remote source data sets have been loaded by LKMs into "C$" temporary tables in the staging area, IKM simply needs to execute the "Staging and Target" transformations. 
+
+Simple "append" IKMs directly write this result set into the target table. More complex IKMs create an "I$" table to store this result set.
+
+Guidelines for Knowledge Module Developers
+Never start from a blank page. Start from an existing KM that is close to your use case. Duplicate this KM and customize it by editing the code.
+
+As a reminder:
+¦ LKMs are designed to load remote source data sets to the staging area into Loading ("C$") tables.
+¦ IKMs apply the source flow from the staging area to the target. They start from the Loading tables, may transform and join them into a single integration table ("I$") table, may call a CKM to perform data quality checks on this integration table, and finally write the flow data to the target
+¦ CKMs check data quality in a datastore or a integration table ("I$") against data quality rules expressed as constraints. The rejected records are stored in the error table ("E$")
+¦ RKMs are in charge of extracting metadata from a metadata provider to the Oracle Data Integrator repository by using the SNP_REV_xx temporary tables.
+¦ JKMs are in charge of creating and managing the Change Data Capture infrastructure.
+
+Be also aware of these common pitfalls:
+¦ Avoid creating too many KMs: A typical project requires less than 5 KMs! Do not confuse KMs and procedures, and do not create one KM for each specific use case. Similar KMs can be merged into a single one and parameterized using options.
+¦ Avoid hard-coded values, including catalog or schema names in KMs: You should instead use the substitution methods getTable(), getTargetTable(), getObjectName(), knowledge module options or others as appropriate.
+¦ Avoid using variables in KMs: You should instead use options or flex fields to gather information from the designer.
+¦ Writing the KM entirely in Jython, Groovy or Java: You should do that if it is the appropriate solution (for example, when sourcing from a technology that only has a Java API). SQL is easier to read, maintain and debug than Java, Groovy or Jython code.
+¦ Using <%if%> statements rather than a check box option to make code generation conditional.
+
+Other common code writing recommendations that apply to KMs:
+¦ The code should be correctly indented.
+¦ The generated code should also be indented in order to be readable.
+¦ SQL keywords such as "select", "insert", etc. should be in lowercase for better readability.
+
+Chapter - 2 Introduction to the Substitution API
+
+The methods that are accessible from the Knowledge Modules and from the procedures are direct calls to Oracle Data Integrator methods implemented in Java. These methods are usually used to generate some text that corresponds to the metadata stored into the Oracle Data Integrator repository.
+
+The substitution methods are used in any text of a task of a Knowledge Module or of a procedure. Generic Syntax is <%=java_expression%>
+
+The <%= %> tags are used to output the text returned by java_expression. This syntax is very close to the syntax used in Java Server Pages (JSP).
+
+CREATE TABLE <%=odiRef.getTable("L", "INT_NAME", "A")%>
+
+odiRef.getTable(pMode, pProperty, pLocation)
+Possible Values for pMode::
+"L" uses the local object mask to build the complete path of the object. This value is used when pMode is not specified.
+"R" uses the object mask to build the complete path of the object
+"A" Automatic. Defines automatically the adequate mask to use.
+
+Possible values for pLocation
+
+"W" : Returns the full name of the object in the physical catalog and the physical work schema that corresponds to the current tuple (context, logical schema)
+"D" : Returns the full name of the object in the physical catalog and the physical data schema that corresponds to the current tuple (context, logical schema).
+"A" : Lets odi determine the default location of the object. This value is used if pLocation is not specified.
+ 
+Possible Values for pProperty
+ID :  Datastore identifier.
+TARG_NAME : Full name of the target datastore. In actions, this parameter returns the name of the current table handled by the DDL command
+COLL_NAME : Full name of the loading datastore.
+INT_NAME : Full name of the integration datastore.
+ERR_NAME : Full name of the error datastore.
+CHECK_NAME : Name of the error summary datastore.
+CT_NAME : Full name of the checked datastore.
+FK_PK_TABLE_NAME : Full name of the datastore referenced by a Foreign Key
+JRN_NAME : Full name of the journalized datastore.
+JRN_VIEW : Full name of the view linked to the journalized datastore.
+JRN_DATA_VIEW : Full name of the data view linked to the journalized datastore.
+JRN_TRIGGER : Full name of the trigger linked to the journalized datastore.
+JRN_ITRIGGER : Full name of the Insert trigger linked to the journalized datastore.
+JRN_UTRIGGER : Full name of the Update trigger linked to the journalized datastore.
+JRN_DTRIGGER : Full name of the Delete trigger linked to the journalized datastore.
+SUBSCRIBER_TABLE : Full name of the datastore containing the subscribers list.
+CDC_SET_TABLE : Full name of the table containing list of CDC sets.
+CDC_TABLE_TABLE : Full name of the table containing the list of tables journalized through CDC sets.
+CDC_SUBS_TABLE : Full name of the table containing the list of subscribers to CDC sets.
+CDC_OBJECTS_TABLE : Full name of the table containing the journalizing parameters and objects.
+<flexfield code> :  Flexfield value for the current target table
+ 
+Example
+If you have defined the following elements:
+
+physical schema: Pluton.db_odi.dbo
+Data catalog: db_odi
+Data schema: dbo
+Work catalog: tempdb
+Work schema: temp_owner
+Local Mask: %CATALOG.%SCHEMA.%OBJECT
+Remote mask: %DSERVER:%CATALOG.%SCHEMA.%OBJECT
+Loading prefix: CZ_
+Error prefix: ERR_
+Integration prefix: I$_
+
+And you have associated this physical schema to the logical schema: MSSQL_ODI in your context CTX_DEV and your table is named CUSTOMER 
+
+<%=odiRef.getTable("L", "COLL_NAME", "W")%> = tempdb.temp_owner.CZ_0CUSTOMER
+<%=odiRef.getTable("R", "COLL_NAME", "D")%> = MyServer:db_odi.dbo.CZ_0CUSTOMER
+<%=odiRef.getTable("L", "INT_NAME", "W")%>  = tempdb.temp_owner.I$_CUSTOMER
+<%=odiRef.getTable("R", "ERR_NAME", "D")%>  = MyServer:db_odi.dbo.ERR_CUSTOMER
+ 
+The Oracle Data Integrator Substitution API is implemented in the Java class OdiReference, whose instance OdiRef is available at any time. For example, to call a method called getFrom(), you have to write odiRef.getFrom().
+
+For backward compatibility, the "odiRef" API can also be referred to as "snpRef" API. "snpRef" and "odiRef" object instances are synonyms, and the legacy syntax snpRef.<method_name> is still supported but deprecated.
+
+The following syntax is used in an IKM to call the execution of a check procedure (CKM).
+This syntax automatically includes all the CKM procedure commands at this point of in the processing.
+<% @ INCLUDE (CKM_FLOW | CKM_STATIC) [DELETE_ERROR] %>
+
+

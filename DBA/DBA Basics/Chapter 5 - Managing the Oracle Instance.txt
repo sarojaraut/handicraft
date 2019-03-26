@@ -1,0 +1,214 @@
+Chapter 5 - Managing the Oracle Instance
+
+Starting and Connecting to Database Control
+
+Database Control is a tool for managing one database (though this database can be clustered). If there are several database instances running off the same Oracle Home, then each instance will have its own Database Control instance. The tool is written in Perl and Java, and accessed from a browser. All communications with Database Control are over HTTPS, the secure sockets variant of HTTP, and there should therefore be no problems with using Database Control from a browser anywhere in the world—the communications will be secure, and any firewall proxy servers will have no problem routing them. The only configuration needed on the firewall will be making it aware of the port on which Database Control is listening for connection requests.
+
+The configuration of Database Control will have been done at database creation time. This configuration includes two vital bits of information: the host name of the computer on which Database Control is running and the TCP port on which it will be listening. If it is ever necessary to change either of these, Database Control will need to be reconfigured.
+
+The three commands to start or stop Database Control and to check its status are:
+
+emctl start dbconsole
+emctl stop dbconsole
+emctl status dbconsole
+
+For any of these commands to work, three environment variables must be set: PATH, ORACLE_HOME, and ORACLE_SID. The PATH is needed to allow the operating system to find the emctl utility, which lives in ORACLE_HOME/bin. The ORACLE_HOME and ORACLE_SID are needed so that emctl can find the Database Control configuration files. These are in three places: the directory ORACLE_HOME/sysman/config has general configuration directives that will apply to all Database Control instances running from the Oracle Home (one per database), and also ORACLE_HOME/hostname_sid/sysman/config and a similarly named directory beneath ORACLE_HOME/oc4j/j2ee have the details for the Database Control that manages one particular database; hostname is the hostname of the machine, and sid is the value of the ORACLE_SID variable.
+
+To connect to Database Control, use any reasonably up-to-date browser. The URL is
+https://hostname:port/em
+
+where hostname is the name of the machine on which Database Control is running, and port is the TCP port on which it is listening for incoming connection requests. If the host has several names or several network interface cards, any will do.
+
+Database listner must be running to access the DBCA. The database listener is a process that monitors a port for database connection requests. These requests (and all subsequent traffic once a session is established) use Oracle Net.
+
+Database Startup and Shutdown
+
+Ordinary users cannot start up or shut down a database. This is because an ordinary user is authenticated against the data dictionary. It is logically impossible for an ordinary user to start up an instance and open (or create) a database, since the data dictionary cannot be read until the database is open. You must therefore connect with some form of external authentication: you must be authenticated either by the operating system, as being a member of the group that owns the Oracle software, or by giving a username/password combination that exists in an external password file. 
+
+If you are using SQL*Plus, the syntax of the CONNECT command tells Oracle what type of authentication you wish to use: the default of data dictionary authentication, password file authentication, or operating system authentication.
+
+These are the possibilities:
+connect user/pass[@connect_alias]             -- normal, data dictionary, authentication
+connect user/pass[@connect_alias] as sysdba
+connect user/pass[@connect_alias] as sysoper
+connect / as sysdba
+connect / as sysoper
+
+Anyone connecting with the first (data dictionary, authentication) syntax cannot—no matter who he/she is—issue startup or shutdown commands. The second two examples instruct Oracle to go to the external password file to validate the username/password combination.
+
+The last two examples use operating system authentication; Oracle will go to the host operating system and check whether the operating system user running SQL*Plus is a member of the operating system group that owns the Oracle software, and if the user passes this test, he/she will be logged on as SYSDBA or SYSOPER without any need to give a username and password.
+
+A user connecting with any of the bottom four syntaxes will be able to issue startup and shutdown commands and will be able to connect no matter what state the database is in— it may not even have been created yet. Note that the first three examples can include a database connect string; this is necessary if the connection is to be made across a network. Naturally, this is not an option for operating system authentication, because operating system authentication relies on the user being logged on to the machine hosting the Oracle server:
+
+SYSOPER and SYSDBA : These are special privileges with special capabilities. They can only be enabled when users are connecting with an external authentication method: either operating system or password file. SYSOPER has the ability to issue these commands:
+STARTUP
+SHUTDOWN
+ALTER DATABASE [MOUNT | OPEN | CLOSE | DISMOUNT]
+ALTER [DATABASE | TABLESPACE] [BEGIN | END] BACKUP
+RECOVER
+
+The SYSDBA privilege includes all of these, but in addition has the ability to create a database, to do an incomplete recovery, and to create other SYSOPER and SYSDBA users. Use of the SYSDBA privilege logs you on to the instance as user SYS and use of the SYSOPER privilege connects you as a user PUBLIC.
+
+Startup: NOMOUNT, MOUNT, and OPEN
+
+Instance and the database are separate entities; they can exist independently of each other. The startup process is therefore staged: first you build the instance in memory, second you enable a connection to the database by mounting it, and third you open the database for use. At any moment, a database will be in one of four states:
+
+¦ SHUTDOWN
+¦ NOMOUNT
+¦ MOUNT
+¦ OPEN
+
+When the database is SHUTDOWN, all files are closed and the instance does not exist. 
+In NOMOUNT mode, the instance has been built in memory (the SGA has been created and the background processes started, according to whatever is specified in its parameter file), but no connection has been made to a database. It is indeed possible that the database does not yet exist.
+In MOUNT mode, the instance locates and reads the database control file.
+In OPEN mode, all database files are located and opened and the database is made available for use by end users.
+
+The startup process is staged: whenever you issue a startup command, it will go through these stages. It is possible to stop the startup part way. For example, if your control file is damaged, or a multiplexed copy is missing, you will not be able to mount the database, but by stopping in NOMOUNT mode you may be able to repair the damage. Similarly, if there are problems with any datafiles or redo log files, you may be able to repair them in MOUNT mode before transitioning the database to OPEN mode.
+
+In Details 
+
+NOMOUNT : When you issue a startup command, Oracle will attempt to locate a parameter file. There are three default filenames. On Unix they are
+$ORACLE_HOME/dbs/spfileSID.ora, $ORACLE_HOME/dbs/spfile.ora , $ORACLE_HOME/dbs/initSID.ora
+On windows the dbs directory is "database". spfileSID.ora is undoubtedly the most convenient file to use as your parameter file. Normally, you will only use spfile.ora in a RAC environment, where one file may be used to start several instances. You will only use an initSID.ora file if for some reason you need to make manual edits; spfiles are binary files and cannot be edited by hand.
+
+Oracle will try to find a intialization file in the above mentioned order, using the first file it finds and ignoring the rest. If none of them exist, the instance will not start. An “init” file is known as a “static” parameter file or a pfile, because it is only read once, at instance startup. An “spfile” is known as a dynamic parameter file, because Oracle continuously reads and updates it while the instance is running. A parameter file of one sort or the other is essential, because there is one parameter without a default value: the DB_NAME parameter.
+The only files used in NOMOUNT mode are the parameter file and the alert log. The parameters in the parameter file are used to build the SGA in memory and to start the background processes. Entries will be written out to the alert log describing this process. Where is the alert log? In the location given by the BACKGROUND_DUMP_DEST parameter.
+
+Once the instance is successfully started in NOMOUNT mode, it may be transitioned to MOUNT mode by reading the controlfile. It locates the controlfile by using the CONTROL_FILES parameter, If the controlfile (or any multiplexed copy of it) is damaged or missing, the database will not mount. All copies of the controlfile must be available and identical if the mount is to be successful. As part of the mount, the names and locations of all the datafiles and online redo logs are read from the controlfile, but Oracle does not yet attempt to find them. This happens during the transition to OPEN mode. If any files are missing or damaged, the database will remain in MOUNT mode and cannot be opened until you take appropriate action. Furthermore, even if all the files are present, they must be synchronized before the database opens. If the last shutdown was orderly, with all database buffers in the database buffer cache being flushed to disk by DBWn, then everything will be synchronized: Oracle will know that that all committed transactions are safely stored in the datafiles, and that no uncommitted transactions are hanging about waiting to be rolled back. However, if the last shutdown was disorderly (such as from a loss of power, or the server being rebooted), then Oracle must repair the damage and the database is considered to be in an inconsistent state.
+
+The process that mounts and opens the database (and carries out repairs, if the previous shutdown was disorderly) is the SMON process. Only once the database has been successfully opened will Oracle permit user sessions to be established.
+
+Shutdown should be the reverse of startup. During an orderly shutdown, the database is first closed, then dismounted, and finally the instance is stopped. During the close phase, all sessions are terminated: active transactions are rolled back by PMON, completed transactions are flushed to disk by DBWn, and the datafiles and redo log files are closed. During the dismount, the controlfile is closed. Then the instance is stopped by deallocating the SGA and terminating the background processes.
+
+Shutdown [ NORMAL, IMMEDIATE, TRANSACTIONAL, and ABORT]
+There are options that may be used on the shutdown command, all of which require either a SYSDBA or a SYSOPER connection:
+
+Normal : This is the default. No new user connections will be permitted, but all current connections are allowed to continue. Only once all users have (voluntarily!) logged off, will the database actually shut down.
+Transactional : No new user connections are permitted; existing sessions that are not in a transaction will be terminated; sessions currently in a transaction are allowed to complete the transaction and will then be terminated. Once all sessions are terminated, the database will shut down.
+Immediate : No new sessions are permitted, and all currently connected sessions are terminated. Any active transactions are rolled back, and the database will then shut down.
+Abort : As far as Oracle is concerned, this is the equivalent of a power cut. The instance terminates immediately. Nothing is written to disk, no file handles are closed, and there is no attempt to terminate transactions that may be in progress in any orderly fashion.
+
+There is a startup command startup force that can save time. It is two commands in one: a shutdown abort followed by a startup.
+
+To open the database in restricted mode you will issue the startup restrict command. If your database is already open, you can put it in restricted mode with the alter database enable restricted session command. To disable restricted session and allow users to connect to the database, use the alter database disable restricted session command.
+
+Conduct a Startup and a Shutdown
+1. Log on to the computer as a member of the operating system group that owns the ORACLE_HOME, and set the environment variables appropriately for ORACLE_HOME and PATH and ORACLE_SID, as described.
+2. Check the status of the database listener, and start it if necessary. From an operating system prompt:
+
+lsnrctl status
+lsnrctl start
+
+3. Check the status of the Database Control console, and start it if necessary. From an operating system prompt:
+emctl status dbconsole
+emctl start dbconsole
+4. Launch SQL*Plus, using the /nolog switch to prevent an immediate logon prompt:
+sqlplus /nolog
+5. Connect as SYS with operating system authentication: 
+connect / as sysdba
+6. Start the instance only:
+startup nomount;
+7. Mount the database:
+alter database mount;
+8. Open the database:
+alter database open;
+9. Confirm that the database is open by querying a data dictionary view:
+select count(*) from dba_data_files;
+10. From a browser, connect to the Database Control console. The hostname and port will have been shown in the output of the emctl status dbconsole
+11. Log on as SYS with the password selected at database creation, and choose
+SYSDBA from the Connect As drop-down box.
+12. On the database home page, click the Shutdown
+
+Static and Dynamic Parameters, and the Initialization Parameter File
+
+To view the parameters and their current values, a query such as this will do: 
+select name,value from v$parameter order by name;
+A query that may give slightly different results is
+select name,value from v$spparameter order by name;
+
+V$PARAMETER shows the parameter values currently in effect in the running instance. V$SPPARAMETER shows the values in spfile on disk.
+
+ALTER SYSTEM SET DB_CREATE_FILE_DEST = 'C:\ORA' SCOPE = [MEMORY/SPFILE/BOTH] -- default is both
+
+You can create a pfile from spfile and viceversa.
+
+create spfile [='spfilename'] from pfile [='pfilename'];
+
+create pfile [='pfilename'] from spfile [='spfilename'] ;
+
+If names are not given for spfilename or pfilename, then the default names based 
+
+In total there are close on three hundred parameters (the exact number will vary between releases and platforms) that it is acceptable for the DBA to set. There are in fact about another fifteen hundred parameters, known as “hidden” parameters, that the DBA is not supposed to set; these are not usually visible and should only be set on the advice of Oracle Support. The (approximately) three hundred parameters are divided into “basic” and “advanced.” The idea is that most database instances will run well with default values for the advanced parameters. Only about thirty-three (the exact number may vary between versions) are “basic.” So setting parameters is not an enormous task. But it is enormously important.
+
+Use the Alert Log and Trace Files
+
+The alert log is a continuous record of critical operations applied to the instance and the database. Its location is determined by the instance parameter BACKGROUND_DUMP_DEST, and its name is alert_SID.log, where SID is the name of the instance.
+
+The critical operations recorded in the alert include
+All startup and shutdown commands, including intermediate commands such as ALTER DATABASE MOUNT, All errors internal to the instance (the ORA-600 errors, about which the DBA can do nothing other than report them to Oracle Support), Any detected datafile block corruptions, Any record locking deadlocks that may have occurred , All operations that affect the physical structure of the database, such as creating or renaming datafiles and online redo logs, All ALTER SYSTEM commands that adjust the values of initialization parameters. All log switches and log archives.
+
+The alert log entry for a startup shows all the non-default initialization parameters. This information, together with the subsequent record of changes to the instance with ALTER SYSTEM and to the database physical structures with ALTER DATABASE, means that it is always possible to reconstruct the history of changes to the database and the instance. This can be invaluable when trying to backtrack in order to find the source of a problem.
+
+Trace files are generated by the various background processes, usually when they hit an error. These files will be located in the BACKGROUND_DUMP_DEST directory, along with the alert log. If a background process has failed because of an error, the trace file generated will be invaluable in diagnosing the problem.
+
+Use Data Dictionary and Dynamic Performance Views
+The data dictionary is metadata: data about data. It describes the database, both physically and logically, and its contents. User definitions, security information, integrity constraints, and (from release 10g onward) performance monitoring information are all part of the data dictionary. It is stored as a set of segments in the SYSTEM and SYSAUX tablespaces.
+
+There are more than three hundred dynamic performance views. You will often hear them referred to as the “Vee dollar” views, because their names are prefixed with “V$”. In fact, the “Vee dollar” views are not views at all—they are synonyms onto views that are prefixed with “V_$”,
+
+Dynamic performance views that are populated from the instance, such as V$INSTANCE or V$SYSSTAT, are available at all times, even when the instance is in NOMOUNT mode. Dynamic performance views that are populated from the controlfile, such as V$DATABASE or V$DATAFILE, cannot be queried unless the database has been mounted, which is when the controlfile is read. By contrast, the data dictionary views (prefixed DBA, ALL, or USER) can only be queried after the database—including the data dictionary—has been opened.
+
+The dynamic performance views are created at startup, updated during the lifetime of the instance, and dropped at shutdown. This means that they will contain values that have been accumulated since startup time; For this reason, it is generally true that the dynamic performance views give you statistics, not metrics. Note that as a general rule, V$ views are singular and data dictionary views are plural. But there are exceptions.
+
+-----------------------------
+Configuring an Efficient Environment
+
+Typically, DBAs work with multiple servers and multiple databases. In these situations, you may have numerous terminals’ sessions open on your screen. You can run the following types of commands to identify your current working environment:
+
+$ hostname -a
+$ id
+$ who am i
+$ echo $ORACLE_SID
+$ pwd
+
+To avoid confusion about which server you’re working on, it’s often desirable to configure your command prompt to display information regarding its environment, such as the machine name and database SID.
+
+Consistently use one OS shell when working on your database servers. I recommend that you use the Bash shell; it contains all the most useful features from the other shells (Korn and C), plus it has additional features that add to its ease of use.
+
+$ PS1='[\h:\u:${ORACLE_SID}]$ '
+The \h specifies the hostname. The \u specifies the current OS user. $ORACLE_SID contains the current setting for your Oracle instance identifier. Here is the command prompt for this example:
+[oracle12c:oracle:o12c]$
+
+YOu can add thisline to .bashrc in bash shell and .profile in korn shell.
+
+Customizing Your SQL Prompt
+SQL> SET SQLPROMPT '&_USER.@&_CONNECT_IDENTIFIER.> '
+
+SQLPATH OS variable is set in the .bashrc OS file, which is executed each time a new shell is logged in to or started. Here is the entry:
+export SQLPATH=$HOME/scripts
+
+Create a file named login.sql in the HOME/scripts directory. Place the following line in the file:
+SET SQLPROMPT '&_USER.@&_CONNECT_IDENTIFIER.> '
+
+To see the result, you can either log out and log back in to your server or source the .bashrc file directly:
+
+$ . ./.bashrc
+
+Now, log in to SQL. Here is an example of the SQL*Plus prompt: SYS@devdb1>
+
+Creating Shortcuts for Frequently Used Commands
+
+$ alias bdump='cd /u01/app/oracle/diag/rdbms/o12c/o12c/trace'
+To show all aliases that have been defined, use the alias command, with no arguments:
+$ alias
+
+Listed next are some common examples of alias definitions you can use:
+alias l.='ls -d .*'
+alias ll='ls -l'
+alias lsd='ls -altr | grep ^d'
+alias sqlp='sqlplus "/ as sysdba"'
+alias shutdb='echo "shutdown immediate;" | sqlp'
+alias startdb='echo "startup;" | sqlp'
+
+If you want to remove an alias definition from your current environment, use the unalias command. The following example removes the alias for lsd:
+$ unalias lsd

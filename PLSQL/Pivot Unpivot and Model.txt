@@ -1,0 +1,679 @@
+Pivoting Operations
+The data returned by business intelligence queries is often most usable if presented in a crosstabular format. The pivot_clause of the SELECT statement lets you write crosstabulation queries that rotate rows into columns, aggregating data in the process of the rotation.
+
+SELECT ....
+FROM <table-expr>
+PIVOT
+(
+aggregate-function(<column>) AS <alias>
+FOR <pivot-column> IN (<value1>, <value2>,..., <valuen>)
+) AS <alias>
+WHERE .....
+
+Example -1 Simple Pivot : The following statement illustrates a typical pivot on the channel column:
+SELECT * FROM
+   (SELECT 
+      product, channel, amount_sold
+   FROM sales_view
+   ) S 
+PIVOT (SUM(amount_sold)
+   FOR CHANNEL IN (
+      3 AS DIRECT_SALES, 
+      4 AS INTERNET_SALES,
+      5 AS CATALOG_SALES, 
+      9 AS TELESALES))
+ORDER BY product;
+
+select * 
+from(
+select 
+   order_number, 
+   event_type, 
+   created_dtm
+from w_io_web_ord_hdr 
+where created_dtm > to_date('08-NOV-18','dd-Mon-yy')+30
+   and submit_count is null
+) all_events
+pivot(
+   min(created_dtm) dtm
+   for event_type in (
+   'dispatch'             as despatch
+   ,'cancel'              as cancel
+   ,'tocollect'           as tocollect
+   ,'collected'           as collected
+   ,'returned-to-store'   as uncollected_return
+   ,'received-by-dc'      as dcreceived
+   ,'return'              as return
+   );
+
+PRODUCT DIRECT_SALES INTERNET_SALES CATALOG_SALES TELESALES
+---------------------- ------------ -------------- --------
+...
+Internal 6X CD-ROM 229512.97 26249.55
+Internal 8X CD-ROM 286291.49 42809.44
+Keyboard Wrist Rest 200959.84 38695.36 1522.73
+
+1.The pivot_clause computes the aggregation functions specified at the beginning of the clause. pivot_clause does not contain an explicit GROUP BY clause. Instead, the pivot_clause performs an implicit GROUP BY.
+
+2.The grouping columns and aggregated values calculated in Step 1 are configured to produce the following cross-tabular output:
+ a. All the implicit grouping columns not referred to in the pivot_clause, followed by
+ b. New columns corresponding to values in the pivot_in_clause Each aggregated value is transposed to the appropriate new column in the cross-tabulation. 
+
+select job, deptno, sum(sal) from emp group by job, deptno
+
+JOB	      DEPTNO	SUM(SAL)
+PRESIDENT	10	     5000
+MANAGER	   20	     2975
+CLERK	      10	     1300
+SALESMAN	   30	     5600
+ANALYST	   20	     6000
+MANAGER	   30	     2850
+MANAGER	   10	     2450
+CLERK	      30	     950
+CLERK	      20	     1900
+
+Output of both the queries below are same
+
+select job,dept_10_sal,dept_20_sal,dept_30_sal 
+from 
+(select job, deptno, sal from emp) 
+-- without above sub query 14 records would be shown in the final output
+-- rows will be grouped across all the remaining columns except sal used in aggregation
+pivot
+( sum(sal) 
+for deptno in (10 as dept_10_sal,20 as dept_20_sal,30 as dept_30_sal)
+)
+
+select job, dept_10_sal, dept_20_sal, dept_30_sal
+from 
+(select job, deptno, sal from emp) 
+-- without above sub query 14 records would be shown in the final output
+-- rows will be grouped across all the remaining columns except sal used in aggregation
+pivot
+( sum(sal) sal
+for deptno in (10 as dept_10,20 as dept_20,30 as dept_30)
+)
+
+JOB	        DEPT_10_SAL	 DEPT_20_SAL	 DEPT_30_SAL
+CLERK	         1300	        1900	          950
+SALESMAN			                              5600
+PRESIDENT	   5000		
+MANAGER	      2450	        2975	         2850
+ANALYST		                 6000	
+
+Note that the query creates column headings by concatenating the pivot values, the underscore character (_), and the alias of the aggregate column. If the length of the generated column heading exceeds the maximum length of a column name, then an ORA-00918 error is returned. To avoid this error, use AS alias to specify a shorter column alias for the pivot column heading, the aggregate value column name, or both.
+
+Example -2 Pivoting: Multiple Aggregates
+
+If you are only concerned about MANAGER on dept 10, MANAGER on dept 30 and ANALYST on dept 20
+
+select  total_mgr_10, total_mgr_30, total_ana_20
+from 
+(select job, deptno, sal from emp) 
+pivot
+( 
+sum(sal)
+for (job, deptno) in (
+   ('MANAGER',10) as total_mgr_10,
+   ('MANAGER',30) as total_mgr_30,
+   ('ANALYST',20) as total_ana_20)
+)
+
+TOTAL_MGR_10	TOTAL_MGR_30	TOTAL_ANA_20
+2450	           2850	          6000
+
+SELECT *
+FROM
+   (SELECT 
+      product, channel, quarter, quantity_sold
+   FROM sales_view
+   ) 
+   PIVOT (SUM(quantity_sold)
+      FOR (channel, quarter) IN
+      ((5, '02') AS CATALOG_Q2,
+      (4, '01') AS INTERNET_Q1,
+      (4, '04') AS INTERNET_Q4,
+      (2, '02') AS PARTNERS_Q2,
+      (9, '03') AS TELE_Q3
+      )
+   );
+
+Example -3 Pivoting on Multiple Columns
+
+SELECT *
+FROM
+   (SELECT 
+      product, channel, amount_sold, quantity_sold
+   FROM sales_view
+   ) 
+   PIVOT (SUM(amount_sold) AS sums,
+      SUM(quantity_sold) AS sumq
+      FOR channel IN (5, 4, 2, 9)
+   )
+ORDER BY product;
+
+PRODUCT 5_SUMS 5_SUMQ 4_SUMS 4_SUMQ 2_SUMS 2_SUMQ 9_SUMS 9_SUMQ
+------------- ------ ------ ------ ------ ------ ------ ------ ------
+O/S Doc Set English 142780.36 3081 381397.99 8044 6028.66 134
+O/S Doc Set French 55503.58 1192 132000.77 2782
+
+Unpivoting Operations
+An unpivot does not reverse a PIVOT operation. Instead, it rotates data from columns into rows. If you are working with pivoted data, an UNPIVOT operation cannot reverse any aggregations that have been made by PIVOT or any other means.
+
+select *
+from
+    (
+        select
+            'a' v1,
+            'e' v2,
+            'i' v3,
+            'o' v4,
+            'u' v5
+        from dual
+    )
+    unpivot
+    (
+        value
+        for column_type in
+            (v1,v2,v3,v4,v5)
+    )
+
+    Number of rows in the final output = 5 * number of source rows -- 5 is the number of columns in the unpivot for clause
+
+Output
+
+COLUMN_TYPE	  VALUE
+-----------------
+V1             a
+V2	            e
+V3	            i
+V4	            o
+V5	            u
+
+select *
+from
+    (
+        select
+            'a' v1,
+            'e' v2,
+            'i' v3,
+            'o' v4,
+            'u' v5
+        from dual
+    )
+    unpivot
+    (
+        value
+        for column_type in
+            (v1,v2,v3)
+    )
+  
+V4	V5	COLUMN_TYPE	VALUE
+o	u	   V1	        a
+o	u	   V2	        e
+o	u	   V3	        i
+
+------------------------------------------------------
+
+select * from
+(
+select *
+from
+    (
+        select
+            'a' v1,
+            'e' v2,
+            'i' v3,
+            'o' v4,
+            'u' v5
+        from dual
+    )
+    unpivot
+    (
+        value
+        for column_type in
+            (v1,v2,v3,v4,v5)
+    )
+)
+pivot ( min(value) 
+for column_type in
+('V1' as V1,
+'V2' as V2,
+'V3' as V3,
+'V4' as V4,
+'V5' as V5)
+)
+
+------------------------------------------------------
+select deptno
+ ,(select dname from dept d where d.deptno = e.deptno) dname
+ ,sum(case when job = 'ANALYST' then 1 end) ANALYST
+ ,sum(case when job = 'CLERK' then 1 end) CLERK
+ ,sum(case when job = 'MANAGER' then 1 end) MANAGER
+ ,sum(case when job = 'PRESIDENT' then 1 end) PRESIDENT
+ ,sum(case when job = 'SALESMAN' then 1 end) SALESMAN
+ ,count(*) total
+from emp e
+group by rollup(deptno)
+
+select deptno -- row column
+  ,analyst, clerk, manager, president, salesman -- pivoted columns
+  ,total, dname -- data carried through
+from ( -- Inner query counts the number of employees for each deptno and job and then sum of counts across deptno.
+  select deptno, job, count(*) c
+    ,(select dname from dept d where d.deptno = e.deptno) dname
+    ,sum(count(*)) over (partition by deptno) as total
+  from emp e
+  group by job, deptno
+)
+pivot
+ (sum(c)
+  for job in (
+   'ANALYST' as analyst
+  ,'CLERK' as clerk
+  ,'MANAGER' as manager
+  ,'PRESIDENT' as president
+  ,'SALESMAN' as salesman)
+)
+order by deptno
+
+Unpivot : It's only useful for data that's not completely normalised.
+
+For example, demo_customers has two phone number columns. UNPIVOT allows these to be represented as separate rows. Phone_number is the new column which could be likened to a union of the two original phone number columns. The phone_type column is also introduced, indicating the source for each row.
+
+select customer_id, cust_first_name
+  ,phone_number, phone_type
+from demo_customers
+unpivot (
+ phone_number
+  for phone_type in (phone_number1,phone_number2)
+);
+
+CUSTOMER_ID CUST_FIRST_NAME PHONE_NUMBER PHONE_TYPE
+1 John 703-555-2143 PHONE_NUMBER1
+1 John 703-555-8967 PHONE_NUMBER2
+2 William 404-555-3285 PHONE_NUMBER1
+3 Edward 617-555-3295 PHONE_NUMBER1
+4 Frank 773-555-7693 PHONE_NUMBER1
+5 Fiorello 212-555-3923 PHONE_NUMBER1
+6 Albert 314-555-4022 PHONE_NUMBER1
+7 Eugene 860-555-1835 PHONE_NUMBER1
+
+
+SQL>
+
+select * from
+(
+select rownum EMPNO, 
+decode(mod(rownum,4),0,'COMP',1,'MECH',2,'CIVIL','ELECTO') DEPTNAME,
+decode(mod(rownum,4),0,'MGR0',1,'MGR1',2,'MGR2','MGR3') MGR
+from dual connect by rownum <=10
+)
+pivot
+(count(empno) as EMPCNT for MGR in 
+('MGR0' as MGR0,'MGR1' as MGR1,'MGR2' as MGR2,'MGR3' AS MGR3))
+--
+--
+select * from
+(
+select rownum EMPNO, 
+decode(mod(rownum,4),0,'COMP',1,'MECH',2,'CIVIL','ELECTO') DEPTNAME,
+decode(mod(rownum,4),0,'MGR0',1,'MGR1',2,'MGR2','MGR3') MGR
+from dual connect by rownum <=10
+)
+pivot
+(count(empno) as EMPCNT for DEPTNAME in 
+('COMP' as COMP,'MECH' as MECH,'CIVIL' as CIVIL,'ELECTO' AS ELECTO))
+--
+--
+
+SELECT * FROM
+(
+SELECT * FROM
+(
+SELECT ROWNUM EMPNO, 
+DECODE(MOD(ROWNUM,4),0,'COMP',1,'MECH',2,'CIVIL','ELECTO') DEPTNAME,
+DECODE(MOD(ROWNUM,4),0,'MGR0',1,'MGR1',2,'MGR2','MGR3') MGR
+FROM DUAL CONNECT BY ROWNUM <=10
+)
+PIVOT
+(COUNT(EMPNO) AS EMPCNT FOR DEPTNAME IN 
+('COMP' AS COMP,'MECH' AS MECH,'CIVIL' AS CIVIL,'ELECTO' AS ELECTO))
+)
+UNPIVOT (EMPCNT FOR DEPTNAME IN (COMP_EMPCNT AS 'COMP',
+MECH_EMPCNT AS 'MECH',CIVIL_EMPCNT AS 'CIVIL',ELECTO_EMPCNT AS 'ELECTO'))
+
+--
+--
+
+WITH
+   T
+AS
+(
+   SELECT
+      DEPTNO,
+      JOB,
+      SAL
+   FROM
+      EMP
+)
+SELECT
+   *
+FROM
+   T
+PIVOT
+(
+   MIN(SAL) AS MINSAL,
+   MAX(SAL) AS MAXSAL
+FOR
+   (JOB)
+IN
+   (
+      'CLERK' AS CLERK,
+      'SALESMAN' AS SALES
+   )
+)
+ORDER BY
+   DEPTNO;
+
+    DEPTNO CLERK_MINSAL CLERK_MAXSAL SALES_MINSAL SALES_MAXSAL
+---------- ------------ ------------ ------------ ------------
+        10         1300         1300
+        20          800         1100
+        30          950          950         1250         1600
+
+
+SELECT alpha, column_name
+FROM   (SELECT 'A' first_column,
+               'B' second_column,
+               'C' third_column,
+               'D' fourth_column
+        FROM   dual) unpivot(alpha FOR column_name IN(first_column
+                                                     ,second_column
+                                                     ,third_column
+                                                     ,fourth_column))
+                                                     
+OUT PUT
+ALPHA	COLUMN_NAME
+A	FIRST_COLUMN
+B	SECOND_COLUMN
+C	THIRD_COLUMN
+D	FOURTH_COLUMN
+
+Model Clause
+
+create table sales_view 
+(
+country   varchar2(30)
+,product  varchar2(30)
+,year     number
+,sales    number
+);
+
+insert into sales_view
+with cnt as
+(select 'A,B,C,D' name from dual),
+prod as
+(select 'Prod-1,Prod-2' name from dual),
+Year as
+(select '2013,2014' name from dual)
+select country, product, year ,rownum from
+(
+(select regexp_substr(name,'[^,]+',1,rownum) country from cnt
+connect by rownum <=regexp_count(name,',')+1) a
+cross join
+(select regexp_substr(name,'[^,]+',1,rownum) product from prod
+connect by rownum <=regexp_count(name,',')+1) b
+cross join
+(select regexp_substr(name,'[^,]+',1,rownum) year from year
+connect by rownum <=regexp_count(name,',')+1) c
+)
+
+commit;
+
+select country, product, year, sales
+from sales_view
+--where country='B'
+model return updated rows
+partition by (country)
+dimension by (product, year)
+measures(sales)
+RULES (
+sales['Prod-1', 2015] = sales['Prod-1', 2013] + sales['Prod-1', 2014]
+,sales['Prod-2', 2015] = sales['Prod-1', 2013] + sales['Prod-1', 2014]+10
+)
+order by country, product, year
+
+This statement partitions data by country, so the formulas are applied to data of one country at a time.
+
+if we want to update the existing sales value for the prod-1 in the year 2013, in country A, and set it to 10?
+
+select country, product, year, sales
+from sales_view
+where country='A'
+model return updated rows
+partition by (country)
+dimension by (product, year)
+measures(sales)
+RULES (
+sales['Prod-1', 2013] = 10
+)
+order by country, product, year
+
+Update  Year to 2015, and sales to 10 for all records where product=Prod-1
+Use rowid to avoid the error : ORA32638 : Non unique addressing in MODEL dimensions 
+select rowid,country, product, year, sales
+from sales_view
+model return all rows
+--partition by (country)
+dimension by (rowid,country,product)
+measures(sales, year)
+RULES (
+sales[any, 'A', 'Prod-1'] = 10
+,year[any, 'A', 'Prod-1'] = 2015
+)
+order by country, product, year
+
+Symbolic Cell Reference: Multi-cell access and updates
+What if we want to update the sales for the product Prod-1 in all years after 2013 where we already have values recorded? 
+
+select country, product, year, sales
+from sales_view
+where country='A'
+model return updated rows
+partition by (country)
+dimension by (product, year)
+measures(sales)
+RULES (
+sales[product='Prod-1', year >2013] = 10
+)
+order by country, product, year
+
+NOTE: Symbolic references are very powerful, but they are solely for updating existing cells: they cannot create new cells such as sales projections in future years. If a cell reference uses symbolic notation in any of its dimensions, then its formula will perform only updates. Later we will discuss FOR loops in the Model clause, which provide a concise technique for creating multiple cells from a single formula.
+
+What if we want a single query to update the sales for several products in several years for multiple countries, and we also want it to insert new cells?
+
+select country, product, year, sales
+from sales_view
+MODEL RETURN UPDATED ROWS
+PARTITION BY (country)
+DIMENSION BY (product, year)
+MEASURES (sales)
+RULES (
+sales['Prod-1', 2015] = sales['Prod-1', year = 2013] , -- positional notation: can insert new cell
+sales['Prod-2', year > 2013] = sales['Prod-2', 2013],     -- symbolic notation: can update existing cell
+sales['Prod-3', 2013] = sales['Prod-1', 2013] + sales['Prod-2', 2013] ) -- positional notation: permits creation of new cell for new product Prod-3
+ORDER BY country, product, year;
+
+Multi-Cell References on the Right Side of a Formula
+
+Multi-cell references can be used on the right side of formulas in which case an aggregate function needs to be applied on them to convert them to a single value.
+
+How can we forecast the sales of Prod-1 in country A for the year 2015 to be 100 more than the maximum sales in the period 2013?
+
+select country, product, year, sales
+from sales_view
+MODEL RETURN UPDATED ROWS
+PARTITION BY (country)
+DIMENSION BY (product, year)
+MEASURES (sales)
+RULES (
+sales['Prod-1', 2015] = 100 + MAX(sales)[any, year between 2013 and 2014] 
+)
+ORDER BY country, product, year;
+
+NOTE: Aggregate functions can appear only on the right side of formulas. Arguments used in the aggregate function can be constants, bind variables, measures of the MODEL clause, or expressions involving them.
+
+CV() Function: Use left-side values in right side calculations
+
+The CV() function is a very powerful tool used on the right side of formulas to copy left side specifications that refer to multiple cells. This allows for very compact and flexible multi-cell formulas. 
+
+What if we want to update the sales values for Prod-1 in country A for multiple years, using a formula where: each year's sales is the sum of Prod-2 sales for that
+year?
+
+SELECT 
+  country, product, year, sales
+FROM sales_view
+MODEL RETURN UPDATED ROWS
+PARTITION BY (country)
+DIMENSION BY (product, year)
+MEASURES (sales)
+RULES (
+sales['Prod-1', any] = sales['Prod-2', cv()]  
+)
+ORDER BY country, product, year;
+
+The CV() functions used in the formula return the year dimension value of the cell currently referenced on the left side. When the left side of the formula
+above references the cell 'Prod-1' and 1999, the right side expression would resolve to: sales['Prod-2', 1999]
+
+Using CV() in expressions for inter-row calculations
+CV() allows for very flexible expressions. For instance, by subtracting from the CV(year) value we can refer to other rows in our data set. If we have the expression "CV(year) �2" in a cell reference, we can access data from 2 years earlier.
+
+The formula results in a null if there is no value for the product two years earlier.
+
+Wild Card with "ANY" keyword
+A wild card operator is very useful for cell specification, and Model provides the ANY keyword for this purpose. Note that the ANY wildcard prevents cell insertion when used with either positional or symbolic notation.
+
+If you want to create new cells for year 2015 for all products with sales value as sales value of same product in 2014.
+
+SELECT 
+  country, product, year, sales
+FROM sales_view
+MODEL RETURN UPDATED ROWS
+PARTITION BY (country)
+DIMENSION BY (product, year)
+MEASURES (sales)
+RULES (
+sales[for product in ('Prod-1','Prod-2'), 2015] = sales[cv(), '2014']  
+)
+ORDER BY country, product, year;
+
+Remember queries like this will not work : As ANY does not create new cells.
+
+SELECT 
+  country, product, year, sales
+FROM sales_view
+MODEL RETURN UPDATED ROWS
+PARTITION BY (country)
+DIMENSION BY (product, year)
+MEASURES (sales)
+RULES (
+sales[any, 2015] = sales[cv(), '2014']  
+)
+ORDER BY country, product, year;
+
+above query is same as : similar to for clause but without for key word. This will also stop creating new cells, only existing cells will be updated.
+
+SELECT 
+  country, product, year, sales
+FROM sales_view
+MODEL RETURN UPDATED ROWS
+PARTITION BY (country)
+DIMENSION BY (product, year)
+MEASURES (sales)
+RULES (
+sales[product in ('Prod-1','Prod-2'), 2015] = sales[cv(), '2014']  
+)
+ORDER BY country, product, year;
+
+FOR Loops which range over a value sequence
+If the dimension values needed for a cell reference come from a sequence with regular intervals, you can use another form of the FOR construct:
+FOR dimension FROM <value1> TO <value2> [INCREMENT | DECREMENT] <value3>
+This specification creates dimension values between value1 and value2 by starting from value1 and incrementing (or decrementing) by value3.
+
+Order of evaluation of Formulas
+By default, formulas are evaluated in the order they appear in the MODEL clause. The keywords "SEQUENTIAL ORDER" can be specified in the MODEL clause to make such an evaluation order explicit. To have models calculated so that all formula dependencies are processed in correct order, use the AUTOMATIC ORDER keywords. When a model has many formulas, it can be more efficient to use the AUTOMATIC ORDER option than to manually check that formulas are listed in a logically correct sequence.
+
+NULL Measures and Missing Cells
+Applications using SQL Models must work with two forms of non-deterministic values for a cell measure: cells which exist in the array but are assigned a NULL, and cells which are not in the array at all. A cell which is referred to by a cell reference but not found in the array is called a missing cell. MODEL clause default treatment for NULLs is the same as all other SQL tasks, and missing cells are treated by default as NULLs. Model also provides an alternate treatment of such cells. The keywords "IGNORE NAV" (where NAV stands for non-available values) can be added at the model or individual rule level. This phrase allows formulas to treat NULLs and missing cells as 0's in numeric calculations and as empty strings for character processing.
+
+
+select
+  etl_batch_run_id
+  ,report_group
+  ,t_to
+  ,comm_ren
+  ,clm_dth
+  ,clm_dis
+  ,data_date
+from
+    ams.tams_cashflow_nl_s1 t1,
+    ams_etl.MANIFEST_WP_000000034327__YT m
+where m.batch_run_id = t1.etl_batch_run_id
+and run_type_group='AOS'
+and t1.etl_batch_run_id=16780
+model return updated rows
+partition by (report_group,etl_batch_run_id)
+dimension by(t_to,data_date)
+measures(comm_ren,clm_dth,clm_dis)
+rules(
+comm_ren[1, to_date('30/09/2013','dd/mm/yyyy')] = comm_ren[0, to_date('30/09/2013','dd/mm/yyyy')] + comm_ren[1, to_date('30/09/2013','dd/mm/yyyy')]
+)
+order by report_group
+
+CREATE OR REPLACE VIEW sales_rollup_time
+AS
+SELECT country_name country, calendar_year year, calendar_quarter_desc quarter,
+GROUPING_ID(calendar_year, calendar_quarter_desc) gid, SUM(amount_sold) sale,
+COUNT(amount_sold) cnt
+FROM sales, times, customers, countries
+WHERE sales.time_id = times.time_id AND sales.cust_id = customers.cust_id
+AND customers.country_id = countries.country_id
+GROUP BY country_name, calendar_year, ROLLUP(calendar_quarter_desc)
+ORDER BY gid, country, year, quarter;
+
+SELECT country, year, quarter, sale, csum
+FROM sales_rollup_time
+WHERE country IN ('United States of America', 'United Kingdom')
+MODEL DIMENSION BY (country, year, quarter)
+MEASURES (sale, gid, 0 csum)
+(
+csum[any, any, any] =
+SUM(sale) OVER (PARTITION BY country, DECODE(gid,0,year,null)
+ORDER BY year, quarter
+ROWS UNBOUNDED PRECEDING)
+)
+ORDER BY country, gid, year, quarter;sales[FOR product IN (SELECT product_name FROM interesting_products)
+FOR year IN (2004, 2005)] = 1.1 * sales[CV(product), CV(year)-1]
+
+As another example, consider the scenario where you want to introduce a new country, called new_country, with sales that mimic those of Poland for all products and years where there are sales in Poland. This is accomplished by issuing the following statement:
+
+SELECT country, product, year, s
+FROM sales_view
+MODEL
+DIMENSION BY (country, product, year)
+MEASURES (sales s) IGNORE NAV
+RULES UPSERT
+(s[FOR (country, product, year) IN
+(SELECT DISTINCT 'new_country', product, year
+FROM sales_view
+WHERE country = 'Poland')] = s['Poland',CV(),CV()])
+ORDER BY country, year, product;
+
+sales['Bounce', FOR year FROM 2001 TO 2005 INCREMENT 1] =
+sales['Bounce', year=CV(year)-1] * 1.2
+
+Oracle Database returns an error if you use FOR year FROM 2005 TO 2001 INCREMENT -1. You should use either FOR year FROM 2005 TO 2001 DECREMENT 1 or FOR year FROM 2001 TO 2005 INCREMENT 1.
+
+The MODEL clause, in its default behavior, requires the PARTITION BY and DIMENSION BY keys to uniquely identify each row in the input to the model. Oracle verifies that and returns an error if the data is not unique. Uniqueness of the input rowset on the PARTITION BY and DIMENSION BY keys guarantees that any single cell reference accesses one and only one cell in the model.
+

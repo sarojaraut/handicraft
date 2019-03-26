@@ -1,0 +1,18 @@
+@C:\oracle\app\product\11.2.0\dbhome_1\md\admin\mdinst.sql
+
+SQL> execute validate_sdo;
+SQL> select comp_id, control, schema, version, status, comp_name from dba_registry  where comp_id='SDO';
+SQL> select object_name, object_type, status from dba_objects where owner='MDSYS' and status <> 'VALID' order by object_name;
+
+    A sample valid 10.2.0.4.0 installation shows the following output:
+
+    SQL> execute validate_sdo;
+
+    PL/SQL procedure successfully completed. 
+
+    SQL> select comp_id, control, schema, version, status, comp_name from dba_registry  where comp_id='SDO';
+			  
+			  
+http://oradbastuff.blogspot.co.uk/2010/11/how-to-install-oracle-spatial-10g11g.html
+
+86 brendon close, UB3 5NH

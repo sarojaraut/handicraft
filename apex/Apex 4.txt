@@ -1,0 +1,1755 @@
+Well versed with Java Script, HTML, CSS 
+
+Custom authentication method.
+best practices
+building a packaged application that includes supporting objects
+Application Bundling and Deployment
+Building Charts
+Dynamic actions
+Plug-ins
+Clear understanding of logs and debug information maintained by Apex tool.
+web servicecalls
+
+
+
+
+Coding, testing and documentation for Oracle Apex along with operational and system level documentation.
+Apex application diagnosis and performance tuning.
+Generating interactive, classic and PLSQL based reports using apex.
+Implemented very complex client-side actions/validations using dynamic action of Oracle apex.
+Designed a dashboard using different type of charts and reports.
+Create Apex triggers for different functions of the application including database and report triggers.
+Worked closely with project head for product development and testing phase of the project.
+
+
+
+
+
+Familiar with JavaScript, jQuery, CSS, HTML
+Well versed with advanced apex features like web services, plug-ins, apex collections.
+
+Each workspace is distinct and segregated from all others. In simple terms, each workspace represents a virtual private container in which developers create and deploy their APEX applications.
+
+-------------
+To login to an APEX workspace you must have access to a valid APEX user.
+
+Instance Administrators are special users that manage and maintain the overall APEX instance. They are able to set instance level preferences and messages, create and manage workspaces, monitor space utilization, and many other actions related to the overall APEX installation.
+
+Workspace Administrators are responsible for managing the details of a specific workspace and can manage user accounts related to the workspace, monitor workspace activity, view log files, override developer locks and settings, etc.
+
+Developers are the users who create and edit the applications within the workspace. They have access to the underlying tables in the schema(s) assigned to the workspace and may create and modify database objects and stored PL/SQL units. Most people writing APEX applications only need this level of access.
+
+End Users are only able to run applications within a workspace. They do not have direct access to any of the underlying database objects, nor do they have access to any of the APEX development modules. 
+
+Hierarchy between the different types of objects.
+
+workspace <- application <- pages <- regions(Region can be nested) <- item
+
+When a workspace is created, it is linked with at least one, and possibly many, underlying database schemas.
+When an application is created, it is assigned a single “parse as” schema from the list of schemas associated with the workspace.
+You only need to associate a schema to a workspace if you will be using it as the “parse as” schema for an application within that workspace or need to access the schema objects directly from within the SQL Workshop.
+
+logic that controls or manipulates the UI is best placed within APEX and logic that implements business rules or controls the data is best placed in stored program units within the database.
+
+The APEX wizards make heavy use of database metadata for the objects in its “parse as” schema. If you are trying to create applications against synonyms from another schema or across a database link to another database, in many cases the wizards won’t be functional because the metadata for these objects is unavailable.
+
+Selecting an Authentication Method
+
+Application Express: Users and passwords are local to the APEX workspace. These users are managed in the same way the developer accounts are inside the APEX workspace.
+
+No Authentication: This is like a public web site. The users will not be prompted for any type of authentication. This is useful for informational applications where the question of “Who are you” is not important.
+
+Database Account: This option uses the Oracle Database schema user names and passwords for credentials. Some organizations use this type of database driven authentication to keep track of users. The application still executes as the APEX schema.
+
+
+Breadcrumbs are a popular navigation structure. They give a quick and intuitive representation of the current navigation path to the user with optional functionality to navigate back using the structure.
+
+Lists of Values, or LOVs, are an APEX component that can be mapped to different item types including select lists, multiple select lists, checkboxes, and radio groups. These types of structures help assure data collected through transactions is consistent.
+
+There are two types of LOVs in APEX:
+• Static: a set list of options within APEX.
+• Dynamic: based on SQL against the database.
+
+Static List of Values : A static list of values is simply a set of display and return value pairs. This type of list is normally short and un-changing. When defining a static list of values and item level, there are two types data options:
+• STATIC: Entries are automatically alphabetized.
+• STATIC2: Entries will render in the order which they are entered.
+The syntax for specifying a static LOV is as follows: TYPE:DISPLAY;RETURN, DISPLAY;RETURN,…
+The TYPE may be either STATIC or STATIC2. STATIC:C;1,A;2,D;3,B;4,
+STATIC2(/,;):One;1/Two;2/Three;3/Four;4
+
+Dynamic List of Values : As with Static LOVs, Dynamic LOVs have a display and return value pair requirement. The difference is that the values are obtained through a SQL query.
+
+SELECT ename d, empno r
+FROM  emp 
+WHERE depno = :my_item 
+ORDER BY 1
+
+SELECT c1, c2 
+  FROM 
+(SELECT decode(
+         (SELECT count(*) 
+            FROM emp2 b 
+           WHERE a.ename = b.ename), 
+          1, '+' || ename, ename) c1, 
+         ename c2 
+   FROM emp a)
+   
+A function that returns a SQL query with two columns:
+IF :MY_ITEM='10' THEN
+  RETURN 
+  'SELECT ename, empno 
+FROM  emp 
+WHERE depno = 10 
+ORDER BY 1';
+ELSE
+  RETURN 
+  'SELECT ename, empno 
+FROM emp 
+WHERE depno = :my_item 
+ORDER BY 1';
+END IF;
+
+APEX Forms
+Forms are used to display, edit, and collect data, which is then sent back to the database for processing. Forms can interface with tables, views (via “instead of” triggers), procedures, and web services. An APEX form is actually a collection of APEX objects acting together as a single, cohesive unit to perform insert, update, and delete operations on data elements. An APEX form generally consists of a region, one or more items, one or more buttons, and one or more processes that handle interactions with the database.
+
+The following are some of the form types that you can create
+• Form on a Procedure: A form based on the arguments of a procedure, typically to collect values for passing in to a procedure for subsequent processing.
+• Form on a Table or View: A form built on the columns of a table or view, having one item for each table column and processing a single row of data at a time.
+• Form on a Table or View with Report: A form built on the columns of a table or view, having one item for each table column and processing a single row of data at a time, plus a report on the contents of the table or view, with navigational elements between the report and form pages.
+• Master-Detail Form: A form on a pair of tables having a master-detail relationship. The APEX Master-Detail Form wizard creates all the data, processing, and navigational elements required for managing master-detail data.
+• Tabular Form: A multi-row, multi-column form (like a spreadsheet) that allows editing of multiple rows and columns of data at once.
+• Form on a SQL Query: A form built on the results of a SQL query. This is a very powerful form construct due to its flexibility.
+• Summary Page: A display-only form showing selected items from an existing input form page. A summary page is often used in building a confirmation page for a wizard.
+• Form on a Web Service: A form on the arguments of a web service.
+• Form and Report on a Web Service: A single-row form on the arguments of a web service with a corresponding report of all rows of data, including navigational elements for moving from report to form and back.
+
+Sharing Database Connections
+Multiple APEX users can share the same database connection. There is a one-to-many relationship between APEX users and database sessions. This is why APEX can scale as well as it does—it doesn’t need dedicated database sessions, only a database session to use to process a request from a user.
+APEX, being stateless, must rely on an external mechanism to manage session state. The APEX engine has a built-in session state management component. This session-state management is an
+integral part of APEX—it can’t be disabled or circumvented.
+
+Each APEX user is assigned a unique session identifier. Session state management functions the same, regardless of how the user authenticates to the system—APEX authentication, database
+authentication, customer authentication, or public user. Yes, even unauthenticated users are assigned a session identifier. By default, APEX will purge inactive sessions older than 24 hours every eight hours. APEX session state values are stored in a table in the database. The APEX engine recognizes the user by his session identifier and retrieves the appropriate set of session state values for the user’s session.
+
+http://localhost:8080/apex/f?p=104:5:12287771070052::NO:::
+
+APEX session identifer in the above APEX URL = 12287771070052;
+
+Setting and Retrieving Session State
+Session state is set by user input items, computations, processes, and PL/SQL code. In PL/SQL, when within an APEX process, you can set an item equal to a value, like so:
+:P1_ITEM_NAME := 'some value';
+In PL/SQL, when in a stored procedure, you can use the apex_util.set_session_state procedure to set a value in session state, like so:
+apex_util.set_session_state( 'P1_ITEM_NAME', 'some value');
+The syntax to retrieve session state for an item varies according to where you are referencing the item. In templates or regions, tabs, menus or lists, use the following substitution string syntax (and do not forget the trailing dot!):
+&P1_ITEM_NAME.
+Use the following syntax within SQL statements:
+:P1_ITEM_NAME.
+From PL/SQL, use one of the following two options depending upon what type of block or program unit you are in:
+Anonymous PL/SQL block: :P1_ITEM_NAME.
+PL/SQL Unit Called from APEX: V('P1_ITEM_NAME')
+From within conditions, use this syntax: P1_ITEM_NAME
+
+Viewing Session State : To view session state, click on the Session link in the Developer’s Toolbar.
+
+Websheet Structure
+A websheet is a container for web pages. The web pages, in turn, are containers for sections. A section, which is similar to a region in an APEX database application, contains your content. Annotations are used to enhance the content and the search functionality.
+There are four section types.
+Text: Text sections contain text that is easily formatted.
+Navigation: Navigation sections help you navigate through your hierarchy of pages.
+Data: Data sections are used to display data in a row and column format that is similar to a spreadsheet.
+Chart: Chart sections are used to display graphs.
+
+Content Navigation
+Content navigation enables you to quickly go to pages and sections within a page. Page navigation is mandatory. Section navigation is optional and is useful on long pages that require a lot of vertical scrolling. 
+
+Page navigation is created in two ways. First, the websheet itself automatically creates page navigation by adding breadcrumbs and right hand side sections that contain links to child and peer pages. For small websheets, the breadcrumbs and the right side navigation sections might be all you need.
+Second, you can add page navigation manually by creating a page navigation section.
+
+Section navigation is optional. It’s good for content-heavy pages that require a great deal of scrolling to
+reach the bottom of the page. Section navigation is almost identical to page navigation. The main difference between page and section navigation sections is the lack of hierarchy in section navigation; sections have no children.
+
+Navigation Bar Entries
+
+login, logout, welcome message etc
+
+shared component -> navigation section -> navigation bar entries .. create one, make context sensitive using condition such as user is public user, user authenticated 
+
+Global Pages
+A Global Page is a special type of page that acts as a “master page” for your application and can be added one per user interface type (that is, you may have one Global Page for the desktop UI and another for the mobile UI).
+
+Items placed on a Global Page are rendered on every page in its related UI for that application unless conditionally told to do otherwise. Although you can assign any page number to a Global Page, the default page number for a Global Page related to a desktop interface is zero (0).
+
+Global Pages are only used during page rendering and no Page Processing section would be displayed when looking at the definition of a Global Page in the APEX page editor. Regions that are added to a Global Page are included even on the Login page. Although the APEX Builder lets you add calculations, validations, and processes to a Global Page, these items don’t execute.
+
+Breadcrumb Regions : Breadcrumbs are a popular navigation structure. They give the user a quick and intuitive representation of the current navigation path with optional functionality to navigate back using the structure. They’re managed as shared components and have their own region type and template. When you ran the Create Application Wizard, the pages that the wizard created automatically included a region to contain the breadcrumbs.
+
+you can use the Copy Region feature in APEX to duplicate the region to your Global/any Page.
+
+Deleting an item-> double click on the item to go the item definition and click on delete button.
+
+Lists : As the name implies, a list is a structure that APEX uses to keep a collection of data for links. The list structure allows menus to be displayed consistently across numerous application pages, with easy maintenance in the Shared Components area of an application.
+
+List templates have a lot of capability. They support hierarchical lists, graphical bullets, dynamic HTML, and highlighting for the current page. Lists can contain data in a parent-child relationship; some list templates are specifically designed to display parent-child data.
+
+Shared Components -> Navigation section -> list -> create
+
+List Regions : A list as a shared component doesn’t display in an application directly. A list region must be configured on a page in order for the list to be seen by the user.
+
+PLSQL Function body returning boolean
+
+IF :APP_PAGE_ID <100 THEN
+RETURN TRUE;
+ELSE
+RETURN FALSE;
+END IF;
+
+Template Positions
+
+Display points (e.g "Region Position 3) when selecting the location of the region. This location is based on knowledge of the theme and template you chose. APEX has a utility that displays approximate region placement and allows quick selection of display points. To get a preview of display points in a page template
+
+Navigate to the edit screen of any region -> User Interface tab-> locate the Display Point -> Click the flashlight to the right of the drop-down
+
+Lists of Values
+
+LOVs are an APEX component that can be mapped to different item types including Select Lists, Multiple Select Lists, Checkboxes, and Radio Groups. These types of structures help ensure that data collected through transactions is consistent. There are two types of LOVs in APEX:
+• Static: A set list of options in APEX
+• Dynamic: Based on SQL against the database
+
+Static List of Values: A static list of values is simply a set of display and return value pairs.
+• STATIC: Entries are automatically alphabetized.
+• STATIC2: Entries render in the order in which they’re entered.
+
+TYPE:DISPLAY;RETURN,DISPLAY;RETURN,...
+
+If you wish the display value and the return value for a given entry to be the same, omit the semicolon and specify only one value.
+
+TYPE: VALUE,VALUE,VALUE,...
+
+STATIC2:C;1,A;2,D;3,B;4,
+STATIC:C;1,A;2,D;3,B;4,
+
+Dynamic List of Values
+
+SELECT DISTINCT
+  INITCAP(created_by) d,
+  created_by r
+FROM
+  tickets
+ORDER BY
+  created_by
+
+APEX Forms
+Forms are used to display, edit, and collect data which is then sent back to the database for processing. Forms can interface with tables, views (via “instead of” triggers), procedures, and web services. An APEX form is actually a collection of APEX objects acting together as a single, cohesive unit to perform insert, update, and delete operations on data elements. An APEX form generally consists of a region, one or more items, one or more buttons, and one or more processes that handle interactions with the database.
+
+Although it’s possible to alter or delete individual elements, doing so may cause the form to not work properly if an error is introduced; thus doing so isn’t recommended.
+
+The APEX wizards do handle most of the work of creating a form for you. However, it’s rare that you won’t have to make some minor changes to what the wizard creates.
+
+Changing the Label Templates
+to hide an item : page definition -> Identification region -> set Display As to Hidden.
+changing to mandatory type : In the User Interface region, set Template to Required with Help.
+adjusting field length: In the Element region, set Form Element Width to 20, and click Apply Changes.
+
+You want to hide the P2_STATUS_ID item from the user because you don’t want the user to change this value. You do, however, want all new tickets to be created with a default value of OPEN. Because you can’t guarantee which STATUS_ID maps to which STATUS, you can call a simple function and pass in the STATUS. This function, in turn, returns the corresponding STATUS_ID, which is set as the default value for P2_STATUS_ID:
+
+In the Default region, set Default Value to RETURN get_status ('OPEN'); and set Default Value Type to PL/SQL Function Body, and then click Apply Changes.
+
+Making the Fields Mandatory
+Create a new validation by right-clicking the Validating node on the Page Processing tree and selecting Create Validation
+another way is: page definition-> In the Settings section, set Value Required to Yes, and click Apply Changes.
+
+The main difference between the item-level and a full validation is that with the item-level validation, you can’t conditionally control when the attribute is applied and you don’t have direct control over the error message that is emitted.
+
+Form on a Procedure
+Another way to create a form in APEX is to create it based on the parameters of a PL/SQL procedure. Instead of the traditional DML processes, APEX calls the associated procedure and executes whatever logic is embedded within it. This method is also referred to as using table APIs because this is the option to use if all access to tables in your workspace schema must be through a table API.
+
+
+Master-Detail Report and Form
+
+With a single, simple wizard, you can quickly create a report and corresponding forms to manage data stored in a master-detail fashion.
+
+go to edit region by double clicking on the region section of report
+report attributes -> column attributes -> adjust columns to be shown, sorting order
+Detail changes at column level like date format etc can be done by clicking on the edit pencil link of each column. CSS style can be changed(e.g font-weight:bold) in column formmating section. Include In Export can be changed to no in the column definition section.
+Layout and Pagination section, set Enable Partial Page Refresh to Yes.
+Adjust values in the report export section.
+To modify a report so that it can fetch data from more than one table -> edit page region -> query definition -> add remove columns and join condition etc
+A structured report is a result returned from the Query Builder. A SQL report is more flexible, because it allows you to enter any valid SQL, rather than rely on a limited set of declarative options. Go to the region definition by double-clicking its name. In the Tasks region on the right side of the page, click Convert to SQL Query. Click OK when prompted.
+
+Understanding Session State
+
+Unlike a stateful database application, where a connection is maintained continuously and all values retain their value until changed or removed or until the session ends, an APEX application doesn’t maintain a continuous connection to the database. APEX is a stateless system—the APEX engine generates HTML pages based on directives stored in the APEX repository. Each page-rendering is a stateless transaction. An APEX session ties the stateless HTML pages together.
+
+An APEX session is logically and physically distinct from the underlying database sessions. A database session is stateful, and an APEX session is stateless.
+
+Multiple APEX users can share the same database connection. There is a one-to-many relationship between APEX users and database sessions. This is why APEX can scale as well as it does—it doesn’t need dedicated database sessions, only a database session to use to process a request from a user.
+
+APEX, being stateless, must rely on an external mechanism to manage session state. The APEX engine has a built-in session-state management component. This session-state management is an integral part of APEX—it can’t be disabled or circumvented.
+
+Each APEX user is assigned a unique session identifier. The APEX engine recognizes the user by their session identifier and retrieves the appropriate set of session-state values for the user’s session. The values of all APEX items, both page items and application items, are tied to this unique session identifier. This identifier is referred to as the APP_SESSION_ID. 
+
+Setting and Retrieving Session State
+Session state is set by user-input items, computations, processes, and PL/SQL code. In PL/SQL, when within an APEX process, you can set an item equal to a value, like so:
+:P1_ITEM_NAME := 'some value';
+
+In PL/SQL, when in a stored procedure, you can use the apex_util.set_session_state procedure to set a value in session state:
+apex_util.set_session_state( 'P1_ITEM_NAME', 'some value');
+
+The syntax to retrieve session state for an item varies according to where you’re referencing the item.
+
+In templates or regions, tabs, menus, or lists, use the following substitution-string syntax (and don’t forget the trailing dot!): &P1_ITEM_NAME.
+
+In SQL statements: :P1_ITEM_NAME
+From PL/SQL, use one of the following two options depending on what type of block or program unit you’re in:
+Anonymous PL/SQL block: :P1_ITEM_NAME
+PL/SQL Unit Called from APEX: V('P1_ITEM_NAME')
+
+Within conditions, use this syntax: P1_ITEM_NAME
+
+The V function just mentioned is an APEX-provided function that retrieves the session-state value of an APEX item. Exercise caution when using this function, because using it in a stored program unit could introduce performance issues.
+
+Viewing Session State
+To view session state, click the Session link on the Developer toolbar.
+
+APEX Items
+There are two types of APEX items: page items, which are displayed to the user on a page, and application items, which hold values in an application but aren’t displayed. When referencing item values in queries, you should use bind variables. You may also want to reference some of the built-in items that are available.
+
+Page vs. Application Items
+APEX page items are the UI controls that let users view and enter data—Text Field, Textarea, Select List, Checkbox, and so on. Page items are associated with a specific page and have UI properties associated with them; the item is displayed to the user (or not) according to the UI properties.
+
+Application items aren’t associated with a page and have no UI properties. They hold values in an application that are essential but not necessarily displayed. You can use an application item much like a global variable. For example, you may need to calculate sales tax based on the state the user lives in. You could read that sales tax percent from a table when the user logs in and keep the value in an application item for use throughout the user’s session.
+
+Built-In Items
+APEX includes several built-in items for referencing key APEX application-wide session-state values.
+
+• APP_ID: The application identifier of the currently running application
+• APP_ALIAS: The application alias of the currently running application
+• APP_USER: The currently signed-on user
+• APP_SESSION: The session identifier of the currently signed-on user
+• APP_PAGE_ID: The currently running page identifier
+
+APEX URL Syntax
+
+Every APEX page is a call to the APEX engine. Every APEX URL is really a call to a specific page, passing various parameters.
+
+f?p is the call to the f PL/SQL procedure passing the argument p. The argument is actually a concatenation of nine arguments combined into one, delimited by a colon. The nine elements of the p argument are the same for all APEX page requests. You may omit one or more of the arguments, but you must include the colon delimiters as placeholders. The elements that form the p argument are as follows:
+• APP_ID: The application number or alias
+• APP_PAGE_ID: The page number or alias
+• APP_SESSION: The APEX session identifier
+• REQUEST: The HTML request
+• DEBUG: A debug flag, set to YES or NO or omitted to use the current value of the debug flag
+• Clear Cache: A list of pages for which to clear the cache
+• Item names: A list of APEX item names, separated by commas
+• Item values: A list of APEX item values, separated by commas, that correspond in order to the items specified in the list of item names
+• Printer Friendly: A flag that determines whether the page is rendered in Printer Friendly mode
+
+
+f?p=&APP_ID.:10:&APP_SESSION.:::10 Calls page 10 of the current application using the current session and clears the session cache for page 10
+f?p=&APP_ID.:5:&APPSESSION.::NO::P2_ID:1234 Calls page 5 of the current application using the current session, not in Debug mode, setting the value of P2_ID to 1234
+f?p=&APP_ID.:5:&APP_SESSION.::YES Calls page 5 of the current application using the current session in Debug mode
+
+Searchable APEX Reports
+
+add a text field item. modify the query and append the clause AND UPPER(subject) LIKE '%'||UPPER(:P200_SEARCH)||'%'
+also good to add a go button.
+
+Any time you add a Search item to a page, it’s a very good idea to also add a Reset Pagination process. This prevents the APEX reporting engine from losing its place in a result set:
+
+In the upper-right section of the page, click the Create button and select Page control on this page -> Select Process ->Select Reset Pagination
+
+Item Layout
+APEX 4.2 provides two ways to adjust item layout: adjusting certain item attribute settings, and dragging items in the tree view.
+
+Edit the item by double-clicking its name. In the Default Value section enter SYSDATE as the Default Value and set Default Value Type to PL/SQL Expression.
+In the Read Only section, set Read Only Condition Type to Always.
+
+Force the user to use date picker, rather than entering the values which can throw error.
+Edit the item by double-clicking its name. In the Element region, enter 12 for Form Element Width.
+Add the following text immediately after the existing text in the HTML Form Element
+Attributes field 
+readonly="readonly"
+
+the final text would look something like : onchange="htmldb_item_change(this)" readonly="readonly"
+
+Placing Multiple Items in the Same Row
+Using your mouse, click and drag an item and displace. If you try to drag the item to outside the bounds of the tree, a red X is displayed. When the position indicator is in the right place, and you see a green check mark indicating a valid position, release the mouse button to reposition the field.
+
+making number of fields displayed on the same line- Edit and item by double-clicking its name in the tree. In the Grid Layout section, set Start New Row to No. When the region refreshes, make sure New Column is set to Yes.
+
+Implementing LOVs
+
+Edit the item by double-clicking its name. In the Identification section, set Display As to Select List. 
+In the List of Values section , set Named LOV to TECHS, set Display Extra Values to No, set Display Null Value to Yes, enter - Select a Tech - for Null Display Value, and click Apply Changes.
+
+For proper alignment In the Grid Layout region, Column Span can be adjusted.
+
+To prevent the floating columns caused by resizing the text area, you need to tell APEX to start a new grid. Doing so resets the table column widths, which improves the item alignment: In the Grid Layout section, set Start New Grid to Yes.
+
+Master-Detail Cleanup
+
+you should hide the foreign key columns
+enable sorting on appropriate columns
+
+APEX Help
+Providing help to end users is an often forgotten and typically tedious task. Developers typically take the easy route and skip it altogether. Or the task is minimized or cut at the end of a project.
+
+Adding a Help Text Region
+Create a new region by clicking the Create button at upper right on the page and selecting Region on this page from the drop-down menu.
+Select Help Text, and click Next.
+Enter Help for the Title, set Region Template to Hide and Show Region, set Parent Region to Manage Tickets (0)
+
+After running the application, notice that not all the items are shown in the Help region. This is due to the fact that some help text was added to this region when the UI Defaults were defined, but the other items’ help text is still empty.
+
+Seeding Help Text
+At upper right in the Application Builder, click the Application Utilities icon. In the Page Specific Utilities region at right of the page, click Item Utilities. Click Grid Edit of all Item Help Text.
+Click Seed Item Help Text.
+
+Declarative BLOBs
+Using BLOB columns allows you to easily upload and download files, such as documents, spreadsheets, and images, into your applications.
+
+Plan ahead when using the Declarative BLOBs feature. At design time, include these columns in tables that will use declarative BLOBs:
+
+• FILENAME: Stores the actual file name that is used when a user downloads the file
+• MIME_TYPE: Stores the type of the file so browsers know which application to launch (Word for .doc, Excel for .xls, and so on)
+• LAST_UPDATED: Stores the date the BLOB was last updated
+• CHARACTER_SET: Stores the character set of the BLOB, which is essential for indexing and processing data that resides within the BLOB
+
+First, map the FILE_NAME and MIME_TYPE columns to the form that is used to upload the document, so these details are saved in the database. 
+
+Edit the blob item by double clicking. In the Settings region, enter MIME_TYPE for MIME Type Column, FILE_NAME for Filename
+Column, and Download for Download Link Text.
+
+
+Forms and Reports—Advanced
+
+Tabular Forms
+Tabular forms allow users to edit both rows and columns of data at once, much like a spreadsheet. The developer can choose a different element type for each column—text box, text area, select list, check box, radio group, and so on. Users can make changes to multiple data elements and submit them as a single transaction. APEX tabular forms
+handle inserts, updates, and deletes—all with no code!
+
+Click the Create button at upper right on the page, and select New Page from the menu.
+Select Form, and click Next.
+Select Tabular Form, and click Next.
+
+
+Despite its name, a tabular form is actually a SQL report with certain column-level options enabled and some processes added to handle data manipulation.
+
+Interactive Reports
+The beauty of APEX interactive reports is that they give the end user powerful ad hoc query capability with exactly zero lines of code written by the developer. End users can customize the following:
+• Searching
+• Sort order
+• Columns
+• Breaking
+• Highlighting
+• Computations
+• Aggregations
+• Charts
+• Group by
+• Flashback time
+• Saved reports
+• Subscription (e-mail notification)
+
+Interactive reports are technically nothing more than a report type. The Create Report Wizard steps are similar, and you expend the same effort in building an interactive report as for a classic report. Classic reports can be easily converted to interactive reports. There is no way to revert from an interactive report to a classic report. (But why would you want to?)
+
+Select New Page, and click Next. Select Report, and click Next. Select Interactive Report, and click Next.
+
+A user can define multiple filters per report. Multiple filters are combined with the logical AND operator. Filters defined through the Search Bar are combined with filters defined in the Filter action. Currently there is no provision in interactive reports to implement a logical OR for filters.
+
+Calendars
+Sometimes there are trends in data that aren’t obvious when viewed in the traditional row/column format. By simply displaying data a different way, such as in a calendar report, trends can become obvious. The APEX calendar report can display data in a daily, weekly, or monthly view and doesn’t require that you enter any SQL.
+
+An APEX calendar is a type of APEX report. Data is rendered on a calendar instead of in a traditional row/column format. The calendar format allows you to view your data in a new way. The single requirement for an APEX calendar is that the underlying table or view must have at least one DATE column.
+
+There are two types of APEX calendars:
+• Easy/Declarative: Created entirely by using the APEX Easy Calendar Wizard.
+• SQL calendar: Created by entering a custom SQL query. The SQL query must contain a DATE column.
+
+Charts
+In APEX 4.2, charts got a major facelift with the incorporation of AnyChart 6. Not only does this release of AnyChart produce charts that look much more professional than in previous releases, but the charting engine also provides the option to use either Flash-based or HTML5-based charts. This is a huge leap forward for applications aimed at the mobile market, because HTML5 charts render on most modern browsers with no need for extra plug-ins.
+
+The beauty of the new charting engine is that you can flip between rendering Flash and HTML5 charts at any time during the development of the page, and the declarative data remains the same, regardless of the choice of rendering.
+
+Flash and HTML5 charts have almost identical functionality, but HTML5 charts are only able to render the 2D versions of the chart types. This is a small price to pay for the ability to render on any modern browser without having to continually update your Flash drivers.
+
+Writing Queries for Charts
+APEX charts generally need a query of this type
+SELECT
+	link,
+	label,
+	value
+FROM
+table
+WHERE
+where conditions
+GROUP BY
+group by column list
+ORDER BY
+Order by column list
+
+where
+• link is a link to an APEX page or other URL.
+• label is the label for the chart element.
+• value is the value to be charted.
+
+SELECT
+'f?p=&APP_ID.:200:' || :APP_SESSION || '::::P200_STATUS_ID:' || sl.status_id link,
+sl.status label,
+count(*) value
+FROM
+tickets t,
+status_lookup sl
+WHERE
+t.status_id = sl.status_id
+GROUP BY
+sl.status_id, sl.status
+ORDER BY
+3 DESC
+
+Filtering Data Using a Chart
+
+The link that you included in your SQL statement passes a status value to the P200_STATUS_ID field on page 200.
+Ensure there is an select list element and value of this element is referenced in the query of the underlying report.
+
+Programmatic Elements
+
+Required Values
+In the Settings section, change Value Required to Yes
+
+Validations
+The purpose of validations is to assist in providing data quality and to ensure integrity of data entered by the user. Mechanically, validations are tests that evaluate to TRUE or FALSE. Validations are evaluated when a page is processed or submitted.
+
+Validations can also be executed on the client side using JavaScript. Although the interactive nature of JavaScript can be very attractive in the user interface, it can also be circumvented easily. Any validations that are executed in JavaScript should also be supported with appropriate validations during page processing or at the database level.
+
+There are four types of validations: item level, page level, and, for tabular forms, column level and row level. Item-level validations operate against a single APEX item. Page-level validations are used when multiple items are involved in validating the condition. Tabular form validations behave similarly but against the columns and rows of the tabular form.
+
+Item-Level Validation
+
+The requirement is to have an end date entered whenever the status is closed
+
+
+Set Condition Type to PL/SQL Function Body Returning a Boolean
+
+IF :P210_STATUS_ID = get_status('CLOSED') THEN
+RETURN TRUE;
+ELSE
+RETURN FALSE;
+END IF;
+
+Page-Level Validation
+Compare the Created On date with the Closed On Date to ensure that they occur in chronological order
+
+Computations
+The APEX computation is analogous to a PL/SQL function. The intent is to act on an item in the application by setting the value using a variety of methods.
+
+Execution
+It’s important to understand when a computation is executed relative to when a value is shown on a page and to when other values are available to the computation. When using the value of an item in a computation, the current session state for that item is the value that is used.
+
+On the page definition screen, several computation points are shown in the page tree. You can adjust the computation point by clicking and dragging the computation in the tree to a different computation point, or by editing the computation and changing the values for the sequence and computation point directly.
+
+The types of computations are as follows:
+• Static Assignment: Simple static text value
+• PL/SQL Function Body: PL/SQL function syntax with a RETURN statement
+• SQL Query (Return Single Value): Any SQL statement as long as it returns a single row and a single column
+• SQL Query (Return Colon Separated Values): SQL used for multi select items
+• SQL Expression: Expression used in the SELECT portion of an SQL statement
+• PL/SQL Expression: Same as SQL Expression
+• Item Value: Name of another item in the application
+
+The Help Desk application has a requirement to display the number of days a ticket has been open.
+
+Processes
+If computations are analogous to database functions, then processes are analogous to database procedures. A process is a container for a unit of logic. Processes are arguably the most complex part of APEX, because they’re the construct used to deal with data processing in the database as well as references to APIs such as those used to send e-mail and perform any other business logic required in the application.
+
+Execution Points
+Process execution points are the same as for computations. The most commonly used execution points for processes are On Submit - After Computations and Validations and On Demand - Run This Process When Requested by AJAX, because as these points support button-press activities and dynamic actions.
+
+Processes can be defined at the individual page level or at the application level as part of the shared components. Functionally, page processes and application processes behave the same. The difference is where business logic is contained. For processes that need to run on all pages, you can define an application process. Also, just as with regions, you can use Global Pages to define processes that run on every page, but only for page rendering.
+
+A requirement that the application keep track of the last time a record was modified. You can do this by updating a Last Updated date on the record every time it’s saved. There’s more than oneway to accomplish this task. Here you do it with a process.
+
+PL/SQL Regions
+
+The PL/SQL region type is effectively an open container for PL/SQL with the additional option to generate output. You can use Oracle Web Application (OWA) Toolkit procedures such as htp.p to generate the output. References to APEX items can be made using bind variable syntax (for example, :P1_ITEM_NAME), the v function (for example, v('P1_ITEM_NAME')), or the substitution string syntax (for example, &P1_ITEM_NAME.) to support the logic contained in the region.
+
+Below is the code for a dynamic PL/SQL region that alters the output based on the application user
+
+edit the region type to plsql anonymous block and add the following text.
+
+DECLARE
+l_count NUMBER;
+l_status_id NUMBER := get_status('OPEN');
+BEGIN
+	IF :APP_USER != 'nobody' THEN
+		SELECT count(*)
+		INTO l_count
+		FROM tickets
+		WHERE assigned_to = :APP_USER
+		AND status_id = l_status_id;
+		htp.p('<h1>Welcome to the APEX Issue Tracking System, '
+		|| :APP_USER || '</h1>'
+		|| 'You have ' || l_count || ' Open tickets.<br />'
+		|| 'Select an option from the list');
+	ELSE
+		htp.p('<h1>Welcome to the APEX Issue Tracking System</h1>'
+		|| 'Select an option from the list');
+	END IF;
+END;
+
+Dynamic SQL
+APEX supports dynamic SQL in reports and can support PL/SQL functions returning SQL statements as a result.
+
+DECLARE
+l_sql VARCHAR2(500);
+BEGIN
+	l_sql := l_sql || q'!
+	SELECT
+	subject,
+	created_on,
+	assigned_to
+	FROM
+	tickets t,
+	status_lookup sl
+	WHERE
+	t.status_id = sl.status_id
+	AND sl.status = 'OPEN'
+	!';
+	IF :APP_USER = 'nobody' THEN
+	l_sql := l_sql || q'! AND public_flag = 'Y' !';
+	END IF;
+RETURN l_sql;
+END;
+
+the sQl statement uses a quoting syntax that you may not be familiar with. oracle Database 10g introduced a quoting mechanism for string literals that allows you to define your own string delimiters, removing the need to double up single quotes in strings. any character can be used as a delimiter, including bracket combinations () {} [] <>. the basic syntax is q'X string X' where X is any single character. the q'X opens the literal string, and the X' closes the literal string.
+
+Dynamic Actions
+Dynamic actions have been significantly extended in APEX 4.2, providing more flexibility and functionality declaratively. APEX uses the declarative information provided to generate the required JavaScript code, which is then implemented at runtime.
+
+One of the major advantages of using declarative dynamic actions as opposed to hand-coded JavaScript is that dynamic actions understand and can take advantage of APEX core objects such as regions and items, allowing easy reference and manipulation.
+
+Another benefit of using declarative logic is that, when you choose to upgrade to the next release of APEX when it comes out, the framework around dynamic actions will ensure that any code generated will be compatible with the new version of APEX.
+
+Prior to APEX 4.2, dynamic actions were split into two categories: Standard and Advanced. APEX 4.2 has done away with this artificial separation and now provides only one wizard to create dynamic actions.
+
+The definition of a dynamic action can be broken down into the following components:
+
+Identification: Defines the name of the dynamic action and its execution sequence.
+
+When: Defines when the action will be fired. You can choose the event, the object or objects that will participate in causing the action to fire, and any condition that applies to the event.
+
+Actions: Dynamic actions can contain both True and False action sets. The True action set is executed if the defined event occurs for the selected objects and any condition applied evaluates to TRUE. The False action set executes if the defined event occurs for the selected objects and any condition applied evaluates to FALSE.
+
+Affected elements: Identifies which objects on the page are affected by the dynamic action.
+
+Dynamic actions are all about making your application’s user interface easier for the user
+
+Simple Example
+Restrict input into the Body textarea until the user has entered something into the From e-mail address field.
+
+Identification : right click on the email item and create dynamic action, give a name to the triggering action
+when: Event = Change and  Condition = null. "Selection type" is the item type (item/region/button), "items" is the name of the items(comma separated). condition=is null Event is the event that will cause the dynamic action to fire.
+The events are categorized as follows:
+
+    Browser Events - Standard browser events.
+    Framework Events - Framework events are triggered from within the Application Express framework. (after/before refresh, before submit)
+    Component Events - Only available when there is a component available to your application that triggers a custom event. These events are triggered from either native components or plug-in components you have installed in your application. (change order shuttle)
+    Custom Event - Any custom event triggered from your application. (custom)
+
+Action:  The native actions built into Application Express are:
+
+    Add Class - Adds 1 or more CSS classes to the affected elements.
+    Alert - Displays an Alert.
+    Cancel Event - Cancels the current event.
+    Clear - Clears the affected elements.
+    Confirm - Displays a confirmation dialog. If the user chooses 'Cancel' then the proceeding actions are not executed and the current event is canceled.
+    Disable - Disables the affected elements. By disabling the affected elements, this means that the page item will be non-editable and will not retain the item's value when the page is submitted.
+    Enable - Enables the affected elements.
+    Hide - Hides the affected elements. Also has the option to 'Hide all page items on the same line'.
+    Execute JavaScript Code - Allows you to define or call custom, page specific JavaScript code to use within the dynamic action framework. If you are defining JavaScript code that is specific to just one page, you can also make use of the new page level attribute 'Function and Global Variable Declaration' to define this. Functions and variables defined here can then subsequently be referenced from this action.
+    Refresh - Triggers a refresh of the affected elements. Note: Not all elements do support a refresh, but you can use it for example for Interactive Reports, Classic Reports and all item types with cascading LOV support. Plug-ins might support this action as well.
+    Remove Class - Removes 1, more or all CSS classes from the affected elements.
+    Set Style - Sets any style (CSS) property to the affected elements.
+    Set Focus - Sets the focus to the affected elements. This will default to the 1st of the affected elements if there are multiple. This can be especially useful when used in conjunction with the 'Show' and 'Enable' actions to take the user straight to the appropriate item.
+    Set Value - Sets the value of the affected elements. This supports the following 'Set Types': 'Static Assignment', 'JavaScript Expression', 'SQL Statement', 'PL/SQL Expression' and 'PL/SQL Function Body'.
+    Show - Shows the affected elements. Also has the option to 'Show all the page items on the same line'.
+    Submit Page - Submits the page.
+
+APEX validations won’t fire until the user submits the page. Create a dynamic action that checks each of these page items as you navigate through the form to see if you left the value null. If the value is null, the background color of the item will be set to pink.
+
+Set Event to Lose Focus, and enter the following for the Items field, P2_SUBJECT,P2_DESCR,P2_CREATED_BY
+Deselect Fire On Page Load.
+In the Settings region, enter background for Style Name and pink for Value,
+Set Selection Type to Triggering Element
+
+Dynamic Actions Using PL/SQL
+Dynamic actions are architected to be an extensible framework, giving the developer full control over coding complex actions that might not be available in a purely declarative environment.
+
+you take the requirement for P2_CREATED_BY to be entered in uppercase and use SQL and PL/SQL to create a dynamic action that alters the user’s input to uppercase, no matter what they enter.
+
+Set Event to Lose Focus or key release, set Condition to is not null,
+set action to set value
+In the Settings region, select PL/SQL Expression for Set Type.
+Enter UPPER(:P2_created_by) for PL/SQL Expression and P2_CREATED_BY in Page Items to Submit.
+
+However, because the value the user entered into the web browser has not been submitted to APEX, that value isn’t currently in session state. That’s why you need to include it in the list of page items to submit.
+
+Dynamic actions that use sQL or pL/sQL for their conditions or body actually make a call back to the database server to run the code in question. Depending on the weight and complexity of the code, this could potentially introduce performance issues. save the use of sQL and pL/sQL for actions that require interaction with the database to retrieve data that isn’t available from directly within the page.
+
+Dynamic Actions Using JavaScript
+
+If the user has set the status to CLOSED, the dynamic action will automatically set the Closed On date to today’s date:
+
+Note- P210_STATUS_ID is a select list and returned value is actually status_id as in the database
+Set Condition to JavaScript expression and value to this.triggeringElement.options[this.triggeringElement.selectedIndex].text == 'CLOSED'
+
+The keyword this references the JavaScript event that kicked off the chain of events to start with, and triggeringElement references the item on the page that was at the root of the event. So in this case, this.triggeringElement is talking about P210_STATUS_ID. 
+
+Because of the way you’ve declaratively defined the P210_STATUS_ID select list, only one option can be selected at a time. You can access the option that is currently selected on the page by using the JavaScript this.triggeringElement.selectedIndex. The square brackets use that index to reference the selected option from the P210_STATUS_ID select list.
+
+Although you could reference the value of the selected option, that would only give you the ID of the selected status. You’d then have to make a round trip to the database to find out the text status. Instead, you can use the .text JavaScript method to get the text that the select list is displaying to the end user and see what they selected.
+
+Application Bundling and Deployment
+
+The concept of application bundling and deployment is something developers should consider from the beginning when designing an application.
+
+Identifying Application Components
+You can break the various components into roughly four main groups:
+• External files: Your application may access files that don’t reside in the APEX repository. For instance, your company may have a common set of CSS and image files that are used by several web sites to maintain a standard look and feel.
+• Database objects: These include all the tables, views, PL/SQL objects, and any other database objects used by your application. Most of the time, these reside in your application’s “parse as” schema.
+• APEX-based files: These are files that have been uploaded into the Files section of an application’s supporting objects. They may include images, CSS, JavaScript, static files, and so on, and are stored in the APEX repository.
+• APEX application export: This is the core of the APEX application, containing the pages, regions, items, validations, and so on.
+
+External Files
+You need to keep careful track of what files your application uses and whether those files have changed during the development of your application. Another area of concern is whether other applications, APEX or otherwise, use these same files.
+
+Database Objects
+It may seem that database objects should be straightforward, considering that they exist in Oracle and the SQL code for their definition can be re-created relatively easily. And for a brand-new application, this assumption is fairly accurate.
+
+However, the minute an application goes live, if you need to change the table structure, you can’t simply replace the underlying tables with new versions. The users have probably entered or manipulated data in the system, and it’s your job to make sure that when new versions of the system are rolled out, the integrity of the data is maintained.
+
+The Utilities menu in the APEX SQL Workshop contains a Generate DDL tool, which does exactly what its name implies. If you run it against your application’s “parse as” schema, it allows you to generate a SQL script containing the underlying database objects.
+
+The generation engine does a good job of creating objects that are dependent on other objects in the correct order so that no errors will occur when the script is run. However, it’s always a good idea to test these scripts to make sure everything runs smoothly.
+
+Oracle’s SQL Developer product also has a tool that lets you generate DDL for a selected schema.
+
+This tool is very similar to the APEX wizard, but it gives you more control over the format and contents of the output, including whether to include schema names, storage clauses, grants, and so on. Another benefit of SQL Developer is the ability to export the data that exists in the tables. This comes in very handy for seed data that is needed for the system to function properly.
+
+Whether you choose to use the APEX-based tool or SQL Developer, generating the object-creation scripts for a new system is straightforward.
+
+For applications that have already been released into a production environment, the process can be much more complex. You need to take into account the version that is in production and how the underlying database structure may differ from the version you’ve created in development and are ready to deploy.
+
+compare the production schema with development schema using one of the following tool and generate the script to synchronise the two database.
+
+• SQL Developer: Oracle’s own product can run a full schema comparison between two separate schemas on separate servers and generate a script that synchronizes one schema with another. Older versions of this tool suffered from some problems, but as of SQL Developer version 3.2 the comparison engine has been significantly upgraded and the generated scripts are solid.
+
+• TOAD for Oracle: TOAD(which originally stood for Tool for Oracle Application Development) is a tool written and distributed by Dell’s software division (formally Quest Software). Although it can do a lot more, the schema-comparison tool that’s available as part of the DB Admin module is quite sophisticated and will generate very clean and accurate scripts.
+
+However, none of these tools take into account the data that may reside in the tables that are being altered. Be very careful before you implement any of the generated upgrade scripts, understand what they may do to the underlying data, and mitigate any risks of data loss or corruption.
+
+APEX-Based Files
+
+APEX provides the ability for developers to upload static files into the APEX metadata repository as part of an application’s shared components. The three types of files that are supported are CSS, images, and static files. Let’s talk about each of these file types.
+
+while exporting you have to export all these file types separately by clicking on the file tab of export utility. When you select the Files tab, you see a set of sub-tabs, one for each file type.
+
+
+APEX Application Exports
+All configured and assigned shared components are included in the APEX application export, whether they’re being used by the application or not. For instance, there can only ever be one authentication scheme current for an APEX application, but more than one authentication scheme may be configured and assigned to the application. The same is true for user interface themes.
+
+
+Owner Override: Allows you to override the currently assigned “parse as” schema by either entering or selecting one.
+Export Public Interactive Reports: Dictates whether report definitions saved by end users and marked as public are exported as part of the application.
+Export Private Interactive Reports: Dictates whether report definitions saved by end users and marked as private are exported as part of the application.
+
+The export file name consists of the letter f followed by the application ID, with a .sql extension. For example, an application with an ID of 9238 is named f9239.sql.
+This script can, in turn, be imported into the same workspace, a different workspace, or even a different server.
+
+Supporting Objects
+The application export captures the complete definition of your application, including most shared components, but it doesn’t contain everything you would need to completely reconstitute your application on another server. However, APEX provides a feature that allows you to bundle the scripts for things such as the underlying database tables inside the application export. This feature is called Supporting Objects.
+
+You reach the Supporting Objects management interface by navigating to the shared components for an application and selecting the Manage Supporting Objects option from the Tasks menu.
+
+
+Development Best Practices
+
+I highly recommend that instead of using SYSAUX you create a dedicated tablespace that you’ll use specifically for the APEX database objects and metadata. By using a dedicated tablespace, you can gain a far greater degree of control and flexibility over the administration of the APEX environment. For example, should it become necessary to recover the tablespace using point-in-time recovery from an Oracle Recovery Manager (RMAN) backup, you’ll be confident that you haven’t affected any other database components, like AWR (which may not be the case if you install into SYSAUX).
+
+For small developments or evaluation, it may be fine to create a new schema through the APEX wizard. However, from a maintenance point of view, this approach often increases the difficulty in correlating schemas, tablespaces, datafiles, and workspaces because of the nondescriptive names. While this may not be a primary concern to you as a developer, it can be critical to how quickly the DBA is able to restore your schema from a backup if necessary.
+
+You can reference these static files in two ways:
+• They can be stored on a file system that’s accessible by the Oracle HTTP Server (OHS).
+• They can be uploaded to the database via the Application Builder interface.
+
+Both methods have advantages and disadvantages, and you should be aware of how each method will affect your application. 
+Uploading Static Files to the Database
+You can upload static files to the database simply by using a browser. This means that you can upload a new image to the database and use it in your application immediately. When you reference these static files in your application, they are actually downloaded to the end user’s browser via a database procedure. For example, if you uploaded a static file called logo.jpg, you could reference that file in an HTML region in your application with the following line of code: <img src="#WORKSPACE_IMAGES#logo.jpg"></img> When that HTML region is processed, the #WORKSPACE_IMAGES# directive will be translated into something like this: <img src="wwv_flow_file_mgr.get_file?p_security_group_id=16&p_fname=logo.jpg"></img>. Quite often, browsers fail to store the image in their cache. In these cases, the
+static file will be rerequested every time the page is displayed, resulting in slower loading pages and images that appear to flicker as they reload. You can write your own get_file replacement procedure to enable the browser to cache the static files.
+
+Storing Static Files on the Server File System
+Storing files directly in the web server file system usually makes caching the static files happen transparently, since the OHS can add some default expiry headers to the file as it is requested by the user’s browser. When the user views the same page again, his browser determines whether the image can be reloaded from the browser cache or if it needs to be requested again from the web server. By taking advantage of caching for static files, your application will appear far more responsive to your end users, as well as put less load on your database.
+
+The downside of storing static files directly in the file system is that they aren’t as integrated with your application. For example, you’ll need to ensure that they are backed up as a separate process, since they won’t be backed up as part of the database.
+
+Application Portability and Code Reuse
+Using Substitution Strings to Avoid Hard-Coding References
+
+e.g You can avoid hard-coding the application ID by using the APP_ID substitution string. Here’s an example of a typical URL where the application ID (112) has been hard-coded: f?p=112:1:&APP_SESSION.:
+If you import your application into an APEX environment that already has an application that uses the same application ID, forcing you to use a different ID, you may forget to update your hard-coded references. In that case, your links will point to the wrong application. To avoid this, you should use the APP_ID substitution string
+
+if you stored all your images in the database by uploading them through the Application Builder interface, you might refer to a particular image file like this:
+<img src="#APP_IMAGES#logo.gif" type="image/jpeg" />
+
+However, if you now wanted to store the images in the file system rather than in the database, you’d need to change every reference like this one to use a different path to the file.
+
+To simplify and minimize the number of changes you’ll need to make, you can define a substitution string that will be used in place of the #APP_IMAGES# substitution string. You can find the Substitution Strings section on the Application Definition page in the Shared Components part of the Application Builder. When you define the substitution string IMAGE_PATH for the value
+#APP_IMAGES#, the URL then looks like this:
+<link rel="stylesheet" href="&IMAGE_PATH.logo.gif" type="text/css" />
+
+Effectively, this creates a substitution string that references a substitution string. At runtime, this will be expanded to reference the same download procedure that was used before. The advantage of using this technique is that if you later decide to store the static files in the file system, rather than storing them within the database, you can simply change the value of your substitution string to reflect the new location,
+
+Separating Data and Application Logic from Style and Presentation
+
+To ensure that your applications and code are as portable and reusable as possible, you should strive to keep the data itself distinct from its presentation. This means that in general you shouldn’t embed HTML markup into the data-retrieval process. For example, suppose you want to display employee names in bold in a report. You could use a query like this:
+select '<b>' || ename || '</b>' as ename, deptno, sal from emp
+However, it’s better to keep the HTML markup out of the query. You could use a custom report template or use the column formatting section within the report attributes to apply some CSS formatting to the individual column. Then the query to bold the names would look like this:
+select ename, deptno, sal from emp
+
+Using Page Zero/global page
+If you want to display the same page element on all or multiple pages of your application, consider making use of page zero. When you place a page element on page zero, that element can be seen on all other pages of your application.
+
+
+Report Pagination Style
+Different report pagination styles affect performance when displaying a report. For example, some pagination styles will display something like “Row Ranges X to Y of Z,” If you don’t need to display how many total rows are returned from the query, choose a pagination style that displays only “Row Ranges X to Y.” It is worth noting that if you decide to display the total number records the report will return, the database will fetch all the rows, even though you may not display them all. If you don’t need to display the total number of rows, the report will be rendered after the rows for the first page are fetched.
+
+Error and Exception Handling
+Your APEX application can use many different anonymous PL/SQL blocks, functions, procedures, and packages as it executes. If an error or exception occurs during the execution of some code, you need to be able to handle that error or exception gracefully, in such a fashion that flow of execution by the APEX engine is not broken. For example, the following code catches an exception and sets the value of an application item:
+
+declare
+v_salary INTEGER;
+begin
+select
+salary
+into
+v_salary
+from
+emp
+where
+empno = :P1_EMPNO;
+return v_salary;
+:APP_ERROR_MSG := null;
+exception
+when no_data_found then
+:APP_ERROR_MSG := 'Could not find the employee record.';
+end;
+
+You can then display the application item on the page in an HTML region using this syntax: &APP_ERROR_MSG.
+
+You would then create a branch on the page to branch back to itself if the value of the application item is not null, thereby enabling the user to see the error and correct it.
+
+Packaged Code
+APEX allows you to write SQL and PL/SQL code directly in a number of places via the Application Builder interface. For example, suppose you create the following after-submit process in your login page to audit that a user logged in to the application.
+
+begin
+insert into tbl_audit
+(id, user_name, action)
+values
+(seq_audit.nextval, :APP_USER, 'Logged On');
+end;
+
+Now, while this would work, it means that if you ever want to modify the logic of the auditing, you need to change the application.For example, notice that you aren’t currently storing a timestamp of when the audit action was performed. To add that functionality, you’d need to modify the tbl_audit table and add an extra column to store the timestamp information (if that column didn’t already exist), and then edit the application to change the PL/SQL page process to include the timestamp information, like this:
+
+A much more efficient approach is to try to isolate the number of places you directly code logic into your application by placing that code into a package and then calling the packaged procedure or function from your application.
+
+APEX Development Advisor
+You access the APEX Development Advisor from the Utilities menu of an application home page. You should review each of the Checks to Perform to ensure that you get only the information you need.
+
+APEX Code Debugger
+The integrated Code Debugger has a clean, graphical user interface to view detailed application execution details. Debugging can be enabled or disabled for an application using the Edit Application Properties button on the Application Home Page. Once debugging has been enabled, it can be activated at any time during execution (when running in development mode) by pressing the “Debug” button at the bottom of the application page. Clicking the “View Debug” button at the bottom of any page brings up the Debug Message page.
+
+--------------------------------------
+If the admin account is already locked, we have to unlock it first. This can be easily done by running the apxchpwd.sql script, which can be found in the main Apex directory of the unzipped installation file of APEX:
+
+1. Start SQL*Plus and connect as sys with the sysdba role.
+2. Run the script by entering @apxchpwd.sql.
+3. Follow the instructions and enter a new password.
+
+--------------
+Expert Oracle Application Express
+OHS, EPG, and APEX Listener Compared
+
+
+----------------------------------------------------------------
+Theme 25. One really cool feature about this theme is that you can easily create buttons that have icons on them.
+
+Simply choose a button template that has icon in its name. For example, Large Button with Icon: 
+Then, in the Button CSS Classes field, enter any of the following classes to get the icon you’d like:
+
+They're four ways to reference variables in APEX:
+
+:Bind_variables - Bind variables can be used in any block of SQL or PL/SQL code inside APEX. 
+		SELECT ename   
+		FROM emp
+		 WHERE deptno = :p1_deptno
+&Substitution_strings. - Substitution strings use the &variable. notation. They can be used anywhere in your APEX application such as a HTML region or even a template. This should not be used in inline SQL and PL/SQL code for security reasons.
+V / NV functions - If you want to reference APEX variables in compiled code, such as views, packages, and procedures, you can't use bind variables. The easiest way to reference the variables is to use the V (for strings) and NV (for numbers) functions. For example:
+#Hash# - The hash notation of #variable# is used in multiple places. When creating column links in a report you can use the hash notation to represent column values. The following figure highlights how column values are referenced in a report link.
+
+Using SQL to view APEX session state
+select item_name, component_comment
+      ,apex_util.get_session_state(item_name) session_value
+from  apex_application_page_items
+where application_id = :APP_ID
+and   page_id        = :APP_PAGE_ID
+-----------
+How to Trigger Dynamic Action From Button
+Modify Button Template:
+
+You'll need to modify the button template to allow for the button attributes to be applied to the button. This will allow us to use an ID to identify a button. To apply the button attributes go to Shared Components > Templates > Select the default button template (for most instances called "Button"). Add #BUTTON_ATTRIBUTES# to the button tag in the Template section. For example from:
+
+<button value="#LABEL#" onclick="#LINK#" class="button-gray" type="button">
+
+To:
+
+<button value="#LABEL#" onclick="#LINK#" class="button-gray" type="button" #BUTTON_ATTRIBUTES#>
+
+Create Button
+On the page you're working on create a Region Button:
+
+Button Name: TEST BUTTON
+Label: Test Button
+Button Style: Template Based Button
+Button Template: Button (or what ever button template you modified)
+Button Attributes: id="test_button"
+Make sure the id is unique
+
+Action: Redirect to URL
+URL Target: javascript:return;
+
+Create Dynamic Action
+Create a Dynamic Action. When you get to the "When" section:
+
+Event: Click
+Selection Type: DOM Object
+DOM Object: test_button
+The DOM object represents the ID that you defined while creating the button.
+Condition: No Condition
+
+-----------
+ APEX 4.0 Interactive Reports - Customize Wait Display
+Over a year ago I wrote about how to customize the APEX IR wait logo (http://www.talkapex.com/2009/04/apex-interactive-reports-customize-wait_28.html). If you read that post you'll notice it's quite lengthy and can be intimidating if you're new to JavaScript.
+
+With APEX 4.0 this is a lot easier to do since they're plugins to declaratively add this functionality. This post will go over how to customize the APEX IR Wait logo in APEX 4.0. You can try a demo here: http://apex.oracle.com/pls/apex/f?p=20195:3200
+
+- Create an IR report region
+1
+2
+3
+4
+5
+	
+    SELECT e.*, SUM (e.sal) OVER () test
+      FROM emp e
+CONNECT BY LEVEL <= 5
+
+- Install Plugin
+
+- Download the Simple Modal plugin: http://www.apex-plugin.com/oracle-apex-plugins/dynamic-action-plugin/simple-modal.html
+- Shared Components / Plug-ins / Import
+- They're 2 plugins included in the zip file. Import both of them (Show and Close)
+
+- Create Show Dynamic Action
+
+- RClick on the IR region and click "Create Dynamic Action:
+- Advanced
+- Name: Show IR Wait
+- Next
+- Event: Before Refresh
+- Selection Type: DOM Object
+- DOM Object: apexir_WORKSHEET_REGION
+- Note: We're using the DOM object and not the region since we can port this example to Page 0 and it will apply to all your IRs
+- Next
+- Action: Select Simple Modal - Show
+- You can modify some of the plugin attributes here if you'd like
+- Next
+- Selection Type: DOM Object
+- DOM Object: apexir_LOADER
+- Create
+
+- Create Close Dynamic Action
+
+- RClick on the IR region and click "Create Dynamic Action:
+- Advanced
+- Name: Close IR Wait
+- Event: After Refresh
+- Selection Type: DOM Object
+- DOM Object: apexir_WORKSHEET_REGION
+- Next
+- Action: Select Simple Modal - Close
+- Create
+
+Now when you run the IR it'll make the screen modal while it's reloading the data. If you want to run on all IRs then you can add this dynamic action to Page 0.
+
+-------------
+How to Find Current APEX Version 
+development page and looked in the bottom right hand corner:
+or
+
+SELECT *
+FROM apex_release
+
+-------------------------
+Recipes
+
+Adding Client-side JavaScript Validation to Your Form
+
+Navigate to the HTML Header and Body Attribute tab. In the HTML Header field, enter the JavaScript code
+
+<script type="text/javascript">
+function validSalary(object){
+if(parseInt(object.value)>5000)
+alert('Salary must be a figure below $5000');
+}
+</script>
+
+Navigate to the Page Definition area of your form again. Right click on the P1_SALARY form item. Navigate to the Element tab, and type the code in the HTML Form Element Attributes field
+onblur="validSalary(this);"
+
+Client-side validation in APEX is implemented entirely in JavaScript, and is useful because it does not incur an additional round trip to the server. You typically use client-side validation when you need to:
+• Check for missing values.
+• Check if a numerical or date value falls within a certain range.
+• Check if the length of a particular value exceeds a maximum number of characters.
+The HTML Header and Body Attribute section of the form allows you to insert blocks of JavaScript that are included together when a particular page is rendered. You can use this section to insert a list of JavaScript functions that can be selectively called from any item in the form. The HTML Form Element attribute field, as you saw earlier, allows you to specify JavaScript event handlers for each page item on the form. You can make calls to JavaScript functions defined in the HTML Header and Body Attribute section from this area.
+
+3. Creating the Cascading Relationship between select lists.
+
+In the Page Definition > Page Rendering view, edit the SUBCATEGORY field. Navigate to the List Of Values tab. Set the Cascading LOV Parent Item(s) field
+to P1_CATEGORY.
+In the List of Values definition area, add the filter WHERE PARENTCATEGORYID=:P1_CATEGORY to the SQL
+
+Previously, APEX developers had to manually write JavaScript/AJAX code to create dynamic behavior. In Apex 4.0, the wizards allows you to easily generate dynamic client-side behavior—shielding the developer from the intricacies of JavaScript programming.
+
+4. Interacting with a Web Service
+
+5. Adding an Image Header to Your Form
+
+Shared Components->Shared Components->images and upload the image.
+
+Now, navigate to an existing form in the application and click on it to view its Page Definition.
+In the Shared Components area of the form-> expand the Templates node-> followed by the Region node->right-click on the Form Region node, and choose the Edit menu item
+
+Add the following HTML tag above the DIV tag in the template box:
+
+<img border="0" src="#APP_IMAGES#ab.jpg">
+
+A template is an HTML string that represents a User Interface element in an APEX application. For example, the standard template for a button looks something like this:
+<button value="#LABEL#" onclick="#LINK#"
+class="button-gray" type="button">
+<span>#LABEL#</span>
+</button>
+
+The flexibility with templates is that developers can actually modify these templates, creating a standard template that is used throughout the entire application or workspace.
+
+Every type of control and user interface element in APEX is represented by a template. A complete collection of these templates is known as a theme. In other words, a theme is a collection of templates.
+
+Improving Application Performance
+APEX performance is good enough to handle usage-heavy scenarios.
+
+Measuring Page Access Frequency
+Login to APEX and click the large Administration icon -> Monitor Activity -> Scroll down to the Page View Analysis section -> Most Viewed Pages over All Applications link
+Login to APEX and click the large Administration icon -> Monitor Activity -> Scroll down to the Page View Analysis section -> Weighted Page Performance link.
+
+Measuring Page Performance in APEX
+
+** Measuring Region Performance in APEX
+In the Edit Region page, click the Header and Footer tab. In the Region Footer section, enter the following line:
+
+#ROWS_FETCHED# rows fetched (from a total of #TOTAL_ROWS# rows) in #TIMING# seconds
+
+** Enabling Region Caching
+You have a region that retrieves a list of fixed/static data from the database for display.
+Region Definition page -> Click the Caching tab. Change the Caching drop-down list from Not Cached to Cached.
+
+** Enabling Page Caching
+Page Definition page -> Click the Cache tab. Change the Cache drop-down list from No to Yes.
+
+** Defining User Access Rights
+
+Shared Components-> In the Security area -> Authorization Schemes -> create -> scheme type = exist sql query "select 1 from jobs where LOWER(v('APP_USER')) = 'greg'"
+
+now edit the button, item where authorisation needs to be implemented -> in the security section set this authorization scheme
+
+** Set the Display Type field to Display As Text (escape special characters)-  if you find a field contains special code like java script code which can create unintended result.
+** Open the application-> Click on the Utilities-> Click on the Database Object Dependencies to list out all dependant objects.
+
+** To discover the application URL - Mouseover the Run Application icon, right-click on it, and choose to view the shortcut/link for the icon
+
+http://localhost:8080/apex/f?p=103:1:1121291168995976:::::
+
+remove the session id from he url. 
+-------------------------
+Book - Expert Oracle Apex
+Debugging
+
+An APEX application is basically a group of pages that are linked together via buttons, hyperlinks, tabs, etc. When a user navigates through the application, submits data, or requests to view an APEX page, there are actually two phases that the APEX engine goes through to provide the correct information back to the user:
+
+ACCEPT (Processing): This phase acts upon the request made by the user and, if appropriate, runs any defined validations, computations, processes and branches. This includes setting session state and manipulating the underlying database tables.
+SHOW (Rendering): This phase executes all appropriate code to render the page that was identified by the branch taken in the Processing phase. Page rendering may also contain computations, processes and branches, as well as the visual components that make up the page to be rendered.
+
+Enabling Debug
+
+Edit the application properties and navigating to the Properties region on the Definition tab will allow you to turn the ability to interactively debug on or off.
+By default the attribute is set to disallow interactive debugging.
+
+Then enable debugging at the session level using one of the below two methods.
+
+The Developer Toolbar will be visible if you are running an application while you are also logged in to the application’s parent workspace as a developer. Debug mode can be toggled on and off from the Developer Toolbar.
+
+You may also enable Debug mode by setting the DEBUG component of the APEX URL to YES. Following is both the URL syntax and an example of using the debug component to enable debug:
+http://server/apex/f?p=App:Page:Session:Request:Debug:ClearCache:ItemNames:ItemValues
+
+ to view all debug messages in the application application -> utilities -> debug messages
+ 
+ APEX Debugging API
+ 
+ procedure enable_debug_messages (p_level in number default 7);
+ 
+ apex_debug_message.enable_debug_messages(p_level => 7);
+apex_debug_message.log_message(‘S H O W --- Programmatically enabled’);
+ 
+procedure disable_debug_messages;
+Usage Notes
+DISABLE_DEBUG_MESSAGE will turn off debugging no matter how it was enabled.
+
+LOG_MESSAGE Procedure
+This procedure allows the developer to emit debug messages from within either APEX anonymous
+blocks or stored packages and procedures called from APEX.
+Syntax
+procedure log_message (
+p_message in varchar2 default null,
+p_enabled in boolean default false,
+p_level in number default 7);
+Parameters
+p_message: Message to be logged up to 4000 characters
+p_enabled: Whether to log the message regardless of whether Debug mode is enabled. Pass one of
+the following values:
+TRUE: Message will be logged regardless of debug mode.
+FALSE: Message will only be logged if debug mode is enabled.
+p_level: Identifies the level of the log message.
+
+
+LOG_PAGE_SESSION_STATE Procedure
+This procedure allows the developer to emit session state information into the debug messages table for
+a given page in the current application.
+Syntax
+procedure log_page_session_state (
+p_page_id in number default null,
+p_enabled in boolean default false,
+p_level in number default 7);
+
+Examining the Debug Data
+
+APEX_DEBUG_MESSAGES View
+Most of the columns in the view are pretty self explanatory, but the relationship between the MESSAGE_TIMESTAMP, ELAPSED_TIME, and EXECUTION_TIME merits some discussion.
+The MESSAGE_TIMESTAMP is very straightforward; it’s merely the accurate timestamp of when the debug message was entered into the underlying debug message tables. To get a clear picture of the order in which things happened during a page SHOW or ACCEPT, simply order the rows ascending by the MESSAGE_TIMESTAMP.
+The EXECUTION_TIME is calculated as the difference between the current Timestamp and the Timestamp from the subsequent record. So, in essence, it shows how much time had elapsed between the two records being inserted. You can see this calculation in the definition of the APEX_DEBUG_MESSAGE view. The view uses the LEAD and PARTITION functions to calculate the difference between the two timestamps.
+The ELAPSED_TIME is something different entirely. This column is supposed to show the elapsed time since the beginning of the page submission or the page view.
+
+Themes
+
+Defining Theme Attributes
+To access the attributes of a theme, simply click the name of a theme (detailed view).
+
+Component Defaults
+The Component Defaults section, shown in Figure 10-8, allows you to specify a default template when new components are added to your application via the APEX wizards. Defaults that are assigned to APEX components can always be overridden when creating or modifying components in the Application Builder.
+
+Region Defaults
+Similar to Component Defaults, the Region Defaults section, allows you to specify which region templates to use when creating regions with the APEX wizards.
+
+Calendar Icon Details
+The Calendar Icon Details attribute allows you to change the default icon used when rendering a datepicker item.
+
+Templates
+Almost every component in APEX has an associated template. The template’s function is to provide the user interface for a specific component type when pages are rendered. Templates are mostly HTML, but also contain template-specific substitution strings or tokens that, during runtime, will be replaced with another template or the contents of its associated component. Templates may also contain references to static files, such as images, CSS files, and JavaScript libraries.
+
+------------------
+The key difference between conditions and authorization schemes is that a condition is used to control the rendering and processing of a specific element of your application (a page, a region, an item, and so on), whereas an authorization scheme is used to control access to a specific element in your application.
+APEX offers many different condition types:
+No Condition : The wording of the No Condition type varies depending on the actual element type you’re using. For example, it may read “Button NOT Conditional” if you are using a button, or simply “No Condition” for a report region. However, the result is the same: the page element will always be displayed.
+
+Exists (SQL Query Returns at Least One Row) : select 1 from user_repository where upper(username) = :APP_USER and admin = 'Y'
+
+SQL Expression : A SQL expression is essentially any Boolean expression that you might place into a where clause. In fact,
+the logic in SQL expressions is effectively evaluated as a where clause restriction in a SQL statement. In
+other words, the APEX engine will perform a query such as the following:
+select 1 from dual where <your expression here>
+
+where the condition evaluates to true if a row is returned from the query, and evaluates to false if no rows are returned.
+
+The equivalent SQL expression of above query (in Exists example condition)logic would be something like this: :APP_USER in (select username from user_repository where admin ='Y')
+
+PL/SQL Expression : A PL/SQL Expression condition can consist of any valid PL/SQL syntax that evaluates to a true or false value. For example, you could use logic such as the following: length(:P1_USERNAME) < 8
+This returns true if the value contained in the P1_USERNAME page item is less than eight characters long.
+
+You want to display somespecial message during the last week of every month. Simply add a new HTML Text region to the page and set condition to :
+
+to_char(sysdate, 'w') = to_char(last_day(sysdate), 'w')
+
+PL/SQL Function Body Returning a Boolean:  The PL/SQL Function Body Returning a Boolean condition type, as you’d guess, allows you to use a PL/SQL function that returns true or false to determine whether the condition succeeds or fails. For example, you could use something like the following code:
+begin
+if :APP_USER = 'BOB' then
+return true;
+else
+return false;
+end if;
+end;
+
+you could put that code into a packaged function, then call that function in the condition:
+
+pkg_auth.check_for_bob;
+
+Request = Expression 1 : Whenever a page is submitted, the value of the REQUEST application attribute is set to the name of the object that caused the page to be submitted. This happens, for example, when a user clicks a button or a particular tab. Using the REQUEST application attribute means you can perform different actions depending on what the user actually did.
+
+let’s say you want to keep track of the search phrases
+you need to create a new PL/SQL page process that will fire after a page submission
+insert into user_searches
+(id, logged, username, search_phrase)
+values
+(search_seq.nextval, sysdate, :APP_USER, :P23_SUBJECT)
+
+You also need to make sure that this process fires only if the user has clicked the Go button; otherwise, it will end up inserting rows into the user_searches table when the user performs other actions, such as navigating to the page using the Bugs tab. The key to doing this is to use the value of the REQUEST setting for the Go button. Often, with an automatically generated element, the REQUEST value will already be defaulted to something sensible. If not, you can set or change the value. It’s also very important to notice that you’re using the REQUEST value, not the name or label of the button.
+
+With the REQUEST value of the Go button set to Go, you can use that value in the PL/SQL page process condition "Request = Expression 1" and set value to "Go".
+
+You may have also spotted a problem with this way of recording searches. Currently, the PL/SQL page process will execute only if the user clicks the Go button. Many people
+simply press the Enter/Return key after they’ve entered something in the Search field. The existing logic won’t log those searches into the user_searches table. A simple way to address this problem is to make the REQUEST value of the Go button and the REQUEST value of the P1_REPORT_SEARCH text field the same. Then you’d need to check for only a single REQUEST value in the PL/SQL page process condition, regardless of whether the page was submitted as a result of the user clicking the Go button or hitting
+Enter/Return.
+
+However, if you examine the attributes of the P1_REPORT_SEARCH text field, you’ll see that, unlike for the button, you can’t specify your own REQUEST value for the text field. In the case of a text field (and other element types), the REQUEST value is defined to be the actual element name; that is, the REQUEST value for the P1_REPORT_SEARCH text item is P1_REPORT_SEARCH. Since you can’t change the REQUEST value of the text field to be the same as the button, you will need to change the REQUEST value of the button to be the same as the text field,
+
+Request != Expression 1 : The Request != Expression 1 condition type is the reverse of the Request = Expression 1 type.
+
+Request Is Contained Within Expression 1: The Request Is Contained within Expression 1 condition type allows you to compare the REQUEST value against the multiple values specified in Expression 1. In the previous example that used the Request = Expression 1 condition, we modified the REQUEST value of the Go button to match the REQUEST value of the P23_SUBJECT text field so we could compare a single REQUEST value. Using the Request Is Contained within Expression 1 condition type instead you can simply use the two different REQUEST values, rather than needing to make the REQUEST values the same. like "P1_REPORT_SEARCH,GO" 
+
+Notice that this example uses a comma-separated list of values in Expression 1. However, the text in Expression 1 is actually evaluated using an INSTR test, so the REQUEST value is tested like this: INSTR(text in expression 1, value of REQUEST item) > 0 and the condition is effectively evaluated as this: INSTR('P23_SUBJECT,Go', :REQUEST) > 0
+So it does not really matter which delimiter you use.
+
+Value of Item in Expression 1 = Expression 2 : For example, say you wanted to modify your application so that rather than logging every search phrase, it logs only the use of the search phrase “secure.”
+
+Value of Item in Expression 1 Is NULL : The purpose of the Value of Item in Expression 1 Is NULL condition type should be fairly obvious. This condition can be very useful. For example, you can easily modify your application so that users are given a warning if they click the Go button without entering a search phrase into the Search text field. Usually, the best way to achieve this is to use a validation, but you can implement similar functionality by creating a new field with warning text that will appear only if the Search text field is empty and the user clicked Go. 
+
+Current Page = Expression 1 : The Current Page = Expression 1 condition is ideal when you use shared components or make use of page zero (covered in Chapter 1) and want to conditionally display or process a page element based on which page the user is currently viewing. For example, the Logout link would be displayed where it makes sense.
+
+Current Page Is Contained Within Expression 1 (Comma Delimited List of Pages) : The Current Page Is Contained within Expression 1 (comma delimited list of pages) condition is similar to the Current Page = Expression 1 condition, but it allows you to supply a comma-delimited list of pages rather than just limiting you to a single page.
+
+User Is Authenticated (Not Public): The User is Authenticated (not public) condition evaluates to true if the user has successfully authenticated to the application using the current authentication scheme, which can be either one of the built-in schemes or a custom authentication scheme. A typical use of this condition is to display different information to users depending on whether or not they are logged in to your application. For example, you might have a navigation menu that gives extra options to people after they have logged in.
+
+Current Language Is Contained Within Expression 1 : The Current Language is Contained within Expression 1 condition is extremely useful for enabling your application to take advantage of multiple-language support. Using this condition type, you can perform different processing depending on the language setting of the web browser that the user is using.
+
+Never: As the name suggests, the Never condition will never be active—the page element will never be displayed or processed. You would typically use this condition type if you wished to temporarily disable a page element for debugging purposes. You might also use it to disable an element but not remove it completely from your application (in case you wanted to revert back to using it again in the future). However, leaving a lot of unused code lying around is generally not a good long-term strategy.
+
+Authorization Schemes
+Like conditions, authorization schemes allow you to control the display and processing of elements within your application. However, unlike a condition, an authorization scheme is a far more secure choice when it comes to restricting the areas of your application that a user should be able to access.
+
+As an example, we will create an authorization scheme that determines whether the current user is an administrator. First, you need to create the scheme itself.
+
+As when you define the logic for a condition, you can select from different authorization scheme types, such as Exists SQL Query and PL/SQL Function Returning a Boolean.
+
+You must also specify an error message that will be displayed to a user when the authorization scheme fails. Supplying an error message is mandatory for an authorization scheme, unlike with a condition.
+
+An important configuration setting you can define for an authorization scheme is called the evaluation point. You can use the evaluation point setting to define whether the authorization scheme logic should be evaluated every time you view a page that uses it or evaluated only once per session. For this example, choose once per session.
+
+When you choose once per session for the evaluation point, the result of the authorization scheme is cached, and the cached value is used whenever an element references the authorization scheme.
+
+Then use the Authorization Scheme drop-down list, to select the USER_IS_ADMIN scheme you created.
+
+Protecting Your Resources : At first glance, it might look like you have succeeded in preventing non administrators from being able to create new records (by making it conditional and hiding it if the user is non administrator ), since they can no longer access the Create button. However, it’s important to note the distinction here between the following:
+• Preventing the user from seeing the button
+• Preventing the user from doing whatever clicking the button would have done
+
+using conditional hiding you can hide the create button (which ultimately redirects to the create form), but the users can still view the create form by modifying the url. To protect create form from any misuse authorisation scheme needs to be used on the entire page.
+
+You can implement to make a call to the apex_util.reset_authorizations routine in other ways. It gives you many different alternatives to forcing the user to authenticate to the application again. For example, you could write a process that calls the reset_authorizations procedure only if X number of minutes have elapsed since the last time a call was made to it, or you could have a process that checks a table for a flag that determines whether the authorizations should be invalidated.
+
+Data Security
+Using conditional display and authorization schemes to control which data users can access and modify. However, even when you use both of these methods, users may still be
+able to gain access to data that they should not be able to view, or even worse, be able to modify or delete that data.
+
+f?p=App:Page:Session:Request:Debug:ClearCache:itemNames:itemValues:PrinterFriendly
+http://127.0.0.1:8080/pls/apex/f?p=107:2:34396854152511::::P3_ID:2
+
+8080: The port number on which the web server is listening.
+/pls: Indicates that the request is to be handled by the mod_plsql handler.
+/apex: The DAD name that you have specified in the configuration files. The DAD contains details about which database instance to connect to, as well as which user to connect as.
+
+
+f?p=: Represents the core procedure that is called for APEX pages. The procedure is called f and contains a number of parameters. The sample URL passes only one parameter, called p.
+Session: The numeric session ID, which enables session state information to be maintained between page views by a user. The session ID can be referenced using the following syntax: • Substitution string: &SESSION. • PL/SQL: v('SESSION'). • Bind variable: :APP_SESSION.
+Request: The value of the REQUEST session item, which can then be referenced during the accept phase of the page processing. For example, you can determine which button was pressed by referencing the value of REQUEST. You can reference REQUEST using the following syntax: • Substitution string: &REQUEST. • PL/SQL: v('REQUEST') • Bind variable: :REQUEST
+ClearCache: Allows items in the session cache to be cleared (the values are set to NULL). The value depends on exactly what you wish to clear, such as:
+• To clear cached items on an individual page, specify that page number.
+• To clear cached items on multiple pages, specify the page numbers in a comma separated format.
+• To reset collections, specify individual collection names (or a comma-separated list of collection names).
+• To reset the pagination on the requested page (if you wish to reset the pagination on a previously viewed report, for example), use the keyword RP.
+• To clear the cache for all pages and all application items in the current application, use the keyword APP.
+• To clear any items associated with all applications that have been used in the current session, use the keyword SESSION.
+itemNames: A comma-separated list of item names that are used to set session state.
+itemValues: A comma-separated list of item values that are used to set session state. These values are passed in the same order as the item names. You can’t pass a value that includes a colon (since that would be parsed as a URL delimiter); you would need to escape the colon character or use an alternative character and then substitute it back for a colon in your code. You may pass a comma in the item value, but you must enclose the characters with backslashes, as in \Smith, Bob\.
+
+
+
+
+------------- Navigation and Layout -------------
+Tabs
+Tabs are an extremely simple yet efficient way of allowing users to navigate between different pages in your application.
+
+You can access the tabs used in your application in many different ways. For example, each page definition in the Application Builder contains a list of the tabs used on that page in the Shared Components section
+
+You can also view all of your application’s tabs from the Shared Components section for the application.
+
+Understanding Tab States: Current and Noncurrent : When users click a tab, they are taken to the page that’s assigned as the current page for that tab. However, the tab can also be “current” for a number of pages, represented by the Tab Also Current for Pages attribute.
+
+view the tabs orintation - shared components -> tabs -> manage tabs 
+
+Navigation Bars
+Like tabs, navigation bars can be an easy way to enable user navigation in your application. ( e.g the logout link in the top right corner.
+shared components -> Navigation Bar Entries (in navigation section) URL target of &LOGOUT_URL.,
+create home entry, create help entry 
+
+Now let’s create the Help entry. This time, use a URL target. The URL target uses the following value:
+javascript:popUp2('f?p=&APP_ID.:HELP:&SESSION.', 400, 400);
+The popUp2 JavaScript routine is one that is defined in the standard APEX JavaScript libraries, so you can use it in your own applications. The first parameter to the procedure is the URL you wish to open. The second and third parameters to the JavaScript routine are the width and the height of the pop-up window.
+
+Breadcrumbs
+Breadcrumbs are yet another tool you can use to help users navigate your application. However, unlike most of the other navigation tools, breadcrumbs have a quite unique characteristic: they allow users to easily see their current position in the application relative to other areas of the application. Users can go back to previous locations in the application by following the breadcrumb trail created by their actions.
+
+An application can have multiple breadcrumbs defined and can display multiple breadcrumbs simultaneously. But displaying more than two menus is rarely helpful and can actually make the task of navigating more confusing.
+
+shared components -> breadcrumbs -> 
+This outline view of the breadcrumb entries makes it easy to see how each breadcrumb entry relates to every other breadcrumb, they are presented in indented format.
+
+You can also see that each breadcrumb entry corresponds to a particular page. This is similar to the way that tabs can be tied to a particular page; however, unlike a tab, a breadcrumb can relate to only an individual page.
+
+Page: Specifies where the breadcrumb entry will appear. If you see that the Analyze breadcrumb entry is assigned to page 5, which means that the breadcrumb entry will be shown if you are on page 5.
+
+Parent Entry: Defines the parent breadcrumb entry that will appear with this breadcrumb entry. The parent for the Analyze breadcrumb is the Home breadcrumb, so if you are on page 5, you will see not only the Analyze breadcrumb, but also the Home breadcrumb. Similarly, if you have any other breadcrumbs that use the Analyze breadcrumb as their parent, the Analyze breadcrumb will also be displayed when you are on any of those pages. As mentioned earlier, the Home breadcrumb entry is the root entry, because it doesn’t have a parent entry defined.
+
+Target: Assigns a target for the breadcrumb entry. In this case, the target is also page 5, so clicking the breadcrumb entry will take you to page 5. (Remember that the breadcrumb entry can also be displayed when the user is on a page other than page 5 if that page uses a breadcrumb that is a descendant of this breadcrumb.)
+
+Displaying Breadcrumbs
+To display your breadcrumb menu on a page, you must create a Breadcrumb region on that page. You can then select which breadcrumb menu you wish to use (breadcrumb entries should have been created from shared component). The wizard allows you to create a new breadcrumb entry for the page and specify which breadcrumb entry should be the parent for the new entry.
+
+usually
+create a single breadcrumb item
+add breadcrumb entries to that and define the parent child relationship
+add breadcrumb region to the page and make reference to the breadcrumb entries.
+
+Lists
+Lists are another tool you can use to create a navigation aid in your application. Lists share many of the features of tabs, navigation bars, and breadcrumbs. They are extremely versatile—perhaps even more so than some of the other navigation tools.
+
+You can give each list entry a target (where clicking the list entry will take the user).
+You can define a condition for each.
+you can build a hierarchy of list entries, with one entry being the parent of another. (To show the hierarchy, you need to change the template from Vertical Unordered List without Bullet to another template, such as DHTML Tree)
+As with tabs, you can also incorporate authorization schemes with individual list entries. Notice that the hierarchy of the list items is still preserved, even though one of the items is no longer visible.
+Lists have a couple of features that can be extremely useful in certain circumstances. One is the ability to automatically count the number of times a user selects a particular list entry.
+
+Chart Query Types
+The basic format of the query to define the chart data is essentially the same for many chart types and
+styles. The standard format for the query is:
+select
+<link>,
+<label>,
+<value>
+from table
+
+where link represents the link to use if the user clicks that particular data item in the chart, label represents the text to use as the label in the chart, and value represents the numeric value to use for the data point.
+Dial Chart Syntax
+select
+<value>
+<maximum_value>
+[ , <low_value [ , <high_value> ]
+from
+table
+
+where value is the initial value for the data point, maximum value is the highest possible value allowed for the data point, and low_value and high_value are the historical low and high values (optional).
+
+Multiple Series Syntax
+
+select
+link,
+label,
+series_1_value,
+series_2_value,
+[ , ...]
+from
+table
+
+Candlestick Chart Syntax
+
+select
+link,
+label,
+open,
+low,
+high,
+close
+from
+table
+
+Flash Maps
+Flash Maps are created using map files, which are included with APEX in conjunction with a query. The syntax of the query is basically the same for any map page, but what you include in the query has to match with the type of map you select. If you plan to use your own data to reference geographical information in a map, it must correspond to the region information associated with the map. If, for example, you want to show the population of Dallas County on a map of Texas, you need to have ‘dallas’ in your data as that is the lowest level of detail associated with state maps of the United States. The syntax used with maps is very simple, as shown here:
+SELECT null link, region label, value Populations
+FROM (
+SELECT 'Florida' region, 18328340 value FROM dual
+UNION ALL
+SELECT 'Alaska' region, 686293 value FROM dual)
+
+On a map of the United States, this query would result in Florida and Alaska being highlighted, with each displaying the label and value when the mouse is hovered over the region.
+
+
+-------------------------
+Understanding Websheets
+
+A websheet is a container for web pages. The web pages, in turn, are containers for sections. A section, which is similar to a region in an APEX database application, contains your content. Annotations are used to enhance the content and the search functionality.
+
+There are five section types:
+• Text: Text sections contain text that is easily formatted. Links to other content and images are embedded within the text by using very simple markup syntax.
+• Navigation: Navigation sections help you navigate through your hierarchy of pages. Creating these sections requires very little thought or effort on your part. You can also set up navigation within a long page by using section navigation.
+• Data: Data sections are used to display data in a row and column format that is similar to a spreadsheet. There are two types of data sections: report and data grid. A report is used to display read-only data from outside your websheet. Data grids are spreadsheet-like objects that you build. You’re responsible for defining the columns, adding data-entry business rules, providing default values, and so on. If you’ve used spreadsheets, you’ll find this work relatively easy to do.
+• Chart: Chart sections are used to display graphs. Chart sections get their data from data sections. You link a chart section to a data section by using a simple intuitive wizard.
+• PL/SQL: Users with PL/SQL knowledge can create PL/SQL sections and write their own code against the associated schema. PL/SQL sections are available only if the websheet application developer has enabled the Allow SQL and PL/SQL attribute on the Websheet Properties page.
+
+Study Guide for 1Z0-450: Oracle Application Express 4: Developing Web Applications
+
+
+
+
+--------------- Caching images from database
+
+To make this work, you need to do 3 things:
+
+    Make the If-None-Match CGI environment variable available to mod_plsq or the embedded gateway.
+    Send the ETag header back with any image request.
+    When an image is requested, compare the ETag and If-None-Match headers and either return a 304 Not Modified header or return the image.
+
+If you’re using the Embedded PL/SQL Gateway, execute the following code as SYS to add 2 CGI environment variables:
+
+	
+begin
+DBMS_EPG.SET_DAD_ATTRIBUTE (
+   dad_name    => 'APEX',
+   attr_name   => 'cgi-environment-list',
+   attr_value  => 'HTTP_IF_NONE_MATCH');
+ 
+DBMS_EPG.SET_DAD_ATTRIBUTE (
+   dad_name    => 'APEX',
+   attr_name   => 'cgi-environment-list',
+   attr_value  => 'IF_MODIFIED_SINCE');
+end;
+/
+
+------------
+Converting runtime environment into a full development environment and vice versa
+It's always possible to switch from a runtime to a production environment and vice versa. If you want to convert a runtime to a full development environment log in as SYS with the SYSDBA role and on the command line type @apxdvins.sql. For converting a full development to a runtime environment, type @apxdevrm—but export websheet applications first.
+
+
+Leveraging the Database
+
+Instrumentation
+
+Efficient lookup tables
+Lookup tables are tables where the data change is slow, meaning that the data hardly (if ever after the initial load) changes. The data is inserted once, but is queried very frequently. Tables like these are excellent candidates to be implemented as single-table hash clusters, provided that the size of the table is primarily static and the lookup is done with an equality query. Another option is to use an index-organized table; think of it as a combination of an index and table in one structure.
+
+SQL> create cluster lookup_c
+2 (id number)
+3 single table
+4 hashkeys 50000
+5 size 50
+6 /
+Cluster created.
+
+When we create the table definition, we need to specify the cluster that we just created and named as lookup_c. For this example, we are going to create a table, based on a query, with 50,000 records in it:
+SQL> create table lookup_hash
+2 (id
+3 ,description
+4 )
+5 cluster lookup_c (id)
+6 as
+7 select rownum
+8 , object_name
+9 from (select * from dba_objects
+10 union all
+11 select * from dba_objects
+12 )
+13 where rownum <= 50000
+14 /
+Table created.
+
+On line 5, we indicate the cluster to be used. The final step for this table is to create a primary key.
+
+SQL> alter table lookup_hash
+2 add constraint hspk primary key (id)
+3 /
+Table altered.
+
+SQL> create table lookup_io_t
+2 (id primary key, description)
+3 organization index
+4 as
+5 select rownum id
+6 , object_name description
+7 from (select * from dba_objects
+8 union all
+9 select * from dba_objects
+10 )
+11 where rownum <= 50000
+12 /
+
+Analytic functions
+
+With analytic functions you can retrieve data from more than one row at the same time without the need for a self join.
+
+The processing order of a query with analytic functions happens in three stages.
+First of all the Joins, WHERE conditions, GROUP BY, and HAVING clauses are applied.
+Next, partitions created and the analytic functions are applied to the resulting result set. 
+Finally, the ORDER BY clause is processed.
+
+Within each partition, it's possible to specify a window. The window determines the range of rows in the current partition for which you want to perform calculations for
+the current row. Analytic functions are always performed from the perspective of the current row. You can consider the current row as the reference point for the window. Windows come in two flavours. The first one is an anchored window, and the second is a sliding window. 
+
+The default windows clause is RANGE UNBOUNDED PRECEDING. This means that the window is expanding from the first row in the partition to the current row. Because
+the first row in the result set is the starting point for the window, and therefore has a fixed point, this is called an anchored window.
+
+In a sliding window this is different. A sliding window moves along with the current row. The sliding window comes in two varieties. There is a range window, determined by a numeric offset. This window includes all rows where the specified column has a value that falls within the range starting from the current row. For example, all rows where the sal is between 200 less than the current sal and 350 more than the current sal:
+
+over (order by sal range between 200 preceding and 350 following )
+
+The second type of sliding window is the row window. Here, you can specify how many rows you want to look back or look forward into the result set. For example, calculate the analytic function for the current record over (no more than) two records prior to the current record and (no more than) two records following the current
+record—with all records sorted by salary: 
+
+over (order by sal rows between 2 preceding and 2 following)
+
+Example 1 : sum (sal) over (order by empno) overall_total 
+In this example, you can see that the partition keyword is omitted; therefore there's only one single group. There is, however, a window that is expanding with each row.
+The window is determined by the order by clause in line 4. The (implicit) window clause in this example is RANGE UNBOUNDED PRECEDING, which is the default for the Window clause. This means that all preceding salaries are added to the current row's salary, thereby creating a running total.
+
+To make this a running total per department, simply add a partition clause as done in the following example:
+
+sum (sal) over (partition by deptno order by empno ) department_total
+
+Visualizing the window
+To help you visualize where a window starts and where it ends, you can use the analytic functions FIRST_VALUE and LAST_VALUE, which return the specified column value for the first or last record in the window:
+
+select ename
+	, sum (sal) over (partition by deptno
+	order by empno
+	) dept_total
+	, first_value (ename) over (partition by deptno
+	order by empno
+	) fv
+	, last_value (ename) over (partition by deptno
+	order by empno
+	) lv
+from emp
+where deptno = 20
+	order by deptno, empno
+/
+
+ENAME DEPT_TOTAL FV LV
+---------- ---------- ---------- ----------
+SMITH 800 SMITH SMITH
+JONES 3775 SMITH JONES
+SCOTT 6775 SMITH SCOTT
+ADAMS 7875 SMITH ADAMS
+FORD 10875 SMITH FORD
+
+Accessing values from other records
+There are three different functions that allow you to access values from elsewhere in the result set, namely FIRST_VALUE, LAST_VALUE, and NTH_VALUE. The FIRST_VALUE function retrieves a value from the first row in the window, and LAST_VALUE retrieves a value from the last row in the window. NTH_VALUE allows you to access a value from any row in the window.
+
+With these functions, you can do a comparison between different rows in your result set. For example, determining the difference between the highest earning employee
+and the second highest earning employee: 
+select deptno
+	, ename
+	, first_value(sal) over (partition by deptno order by sal desc
+	)
+	- 
+	nth_value(sal,2) from first
+	over (partition by deptno order by sal desc )
+	top2_difference
+from emp
+
+FIRST_VALUE can also be retrieved with the following statement: nth_value (sal, 1) from first over ()
+LAST_VALUE can be retrieved as follows: nth_value (sal, 1) from last over ()
+
+Another way of accessing other rows in the result set
+Occasionally, it's necessary to access values from different rows in the result set. The LAG and LEAD functions do just that
+
+Let's take a look at another example. For each employee, we want to show the next employee to be hired in the same job:
+ SQL> select ename, job
+  , hiredate
+  , lead (ename) over (partition by job
+  order by hiredate
+  ) next_hiree_in_job
+  from emp
+  order by job
+  , hiredate;
+
+It's also possible to look further ahead or back in the result set. LAG and LEAD have two additional optional parameters. One parameter is for the offset of number of
+records. The third parameter provides a default value in case LAG or LEAD points outside the window.
+
+Ranking—top N
+
+There are three variants to the ranking function—RANK, DENSE_RANK, and ROW_NUMBER. These functions assign numbers based on the ORDER BY clause within each partition. They all do it a little bit differently.
+
+The difference lies in the way equality is resolved. RANK allows ranking numbers to be skipped. DENSE_RANK uses a different kind of ranking, which doesn't skip any
+number. ROW_NUMBER assigns an arbitrary number to each row when it is not possible to resolve ORDER BY of the windows clause, comparable to the way ROWNUM assigns a value to a row.
+
+ SQL> select ename
+  , deptno
+  , sal
+  , rank() over (partition by deptno
+  order by sal desc
+  ) rk
+  , dense_rank() over (partition by deptno
+  order by sal desc
+  ) dr
+  , row_number() over (partition by deptno
+  order by sal desc
+  ) rn
+  from emp
+  where deptno = 20
+  order by deptno
+ , sal desc;
+ 
+One very neat trick with the ranking functions is to pivot the result set. Instead of showing the rows of the result set down the page, have the results go across the
+page. In the following example, the ranking function ROW_NUMBER is combined with the PIVOT function:
+
+  select *
+  from (select ename
+  , deptno
+  , rn
+  from (select ename
+  , deptno
+  , row_number() over (partition by deptno
+  order by sal desc
+  ) rn
+  from emp
+  )
+  where rn <= 3
+  )
+  pivot (max (ename)
+  for rn in (1,2,3) )
+  /
+
+  DEPTNO 1 2 3
+---------- ---------- ---------- ----------
+10 KING CLARK MILLER
+20 SCOTT FORD JONES
+30 BLAKE ALLEN TURNER
+
+Stringing it all together
+
+A frequent requirement is for a way to aggregate strings. Nowadays the LISTAGG function has relieved this burden. Although not strictly an analytic function, it can be used like one. The following example shows all the names of employees within the same department as a comma-separated string:
+select deptno,
+ename,
+listagg(ename,',') within group(order by sal) over (partition by deptno) enames
+from emp;
+
+  
+Grouping sets
+
+select empno,
+	sum(sal) salary
+from emp
+group by empno
+union all
+select null,
+	sum(sal) salary
+from emp
+
+To get the same results as above, you can combine these two separate statements by using a single GROUP BY clause with the GROUPING SETS keyword.
+
+select empno,
+	sum(sal) salary
+from emp
+group by grouping sets
+(empno,
+()
+)
+
+The two grouping sets used in this query are : one is empno and other is an empty set indicated by empty braces.
+
+select empno,
+	deptno,
+	sum(sal) salary
+from emp
+group by grouping sets
+(
+(empno),
+(deptno),
+()
+)
+
+GROUPING SETS allow you to create multiple sets to group results. if you don't need the grand total then remove the empty pair of bracket.
+
+Rollup
+Rollups is a specialized type of grouping functions. Rollups generates a subtotal line for every set in the Rollup clause.
+
+SQL> select deptno
+ , sum (sal)
+ from emp
+ group by rollup
+ (deptno)
+ /
+DEPTNO SUM(SAL)
+---------- ----------
+10 8750
+20 10875
+30 9400
+   29025
+   
+The Rollup expression in the preceding example can be written as follows:
+group by grouping sets
+((),deptno)
+
+The method to determine the grouping sets with the Rollup clause is as follows:
+• First all the arguments in the Rollup clause are one grouping set
+• Then all the arguments minus the last one comprise the next grouping set
+• All the arguments minus the last two comprise the following grouping set,
+and so on.
+
+Cube
+The Cube clause is typically used in online analytic processing. When you want to provide aggregated results along with every possible dimension
+
+select deptno
+	,job
+	,sum (sal)
+from emp
+group by cube
+	(deptno, job)
+	
+The query in the shows a summation of the salary:
+• Per department and job
+• Per department
+• Per job
+• Grand total
+
+select deptno
+	,job
+	,sum (sal)
+from emp
+group by grouping sets
+	((deptno, job)
+	,(deptno)
+	,(job)
+	,()
+	)
+	
+	-------
+Logging and tracing
+It can be quite difficult to debug slow regions or reports. A trace file can help to analyze the slow performance. Append &p_trace=YES to the URL, as follows:
+http://hostname:port/apex/f?p=appid:pageid&P_TRACE=YES 
+Grant alter session to APEX_PUBLIC_USER Otherwise trace file will not be created.
+
+APEX will automatically generate a SQL trace file, and putting it in USER_DUMP_DEST. USER_DUMP_DEST specifies the pathname for a directory where the server will write debugging trace files on behalf of a user process.
+
+Application Express Advisor
+The Advisor performs several checks on your application, including programming errors, security issues, quality assurance, and other best practices. Advisor can be run for one page, a set of pages, or for all pages. Under Checks to Perform, review the selected checks. Enable and disable checkboxes as appropriate.

@@ -1,0 +1,555 @@
+Supported Topologies >
+
+Unidirectional - reporting
+Bidirectional - Active to active, instant failover. 
+peer to peer - Load balancing and high availability. source to target in a loop.
+Broadcast - Data distribution , one source to many target
+Consolidation - Many source to one target, dataware house, mart/store
+Cascading - Scalibility and data tiering . One source to one target to another target.
+
+Replication Design Consideration
+Source and terget database supported? are the servers standalone or clustered
+Data volume including change data
+Data requirements , triggers and sequences?
+Security requirements , should the trails files be encrypted?
+Network requirements , is there any firewal, distance between two data centres, bandwidth available between two sentres.
+
+Initial Load > Sql over db link, exp/imp, transportable TS
+
+c:\ggs_src\ggsci
+create subdirs
+exit
+
+edit params mgr
+or
+notepad E:\ggs_src\dirprm\mgr.prm
+
+-- add the following to it: ( or 7840 )
+port 7809
+-- recommended also:
+BOOTDELAYMINUTES 3
+autostart ER *
+PURGEOLDEXTRACTS dirdat/*, USECHECKPOINTS, MINKEEPDAYS 3
+
+-- install the Manager as a service:
+E:\ggs_src>install ADDSERVICE AUTOSTART
+Service 'GGSMGR' created.
+Install program terminated normally.
+
+GGSCI (WIN11SRC) 1>start manager
+Starting Manager as service ('GGSMGR')...
+Service started.
+GGSCI (WIN11SRC) 2> info manager
+Manager is running (IP port WIN11SRC.7809).
+
+Uninstalling GoldenGate
+
+stop EXTRACT *
+stop REPLICAT *
+stop MGR
+
+-- delete the process groups (if there is any)
+dblogin userid ggs_owner password g
+delete EXTRACT *
+delete REPLICAT *
+
+exit
+
+-- remove GGMGR service and stop logging into the Windows Event Log
+E:\ggs\install deleteevents deleteservice
+
+-- remove the gg home directory:
+-- log in as sys and drop the gg owner user:
+
+Preparing a Database for GoldenGate
+create tablespace ggs_data
+datafile 'E:\ORADATA\ORADB\ggs_data.dbf' size 200m
+autoextend on next 10m maxsize 4g;
+
+create user ggs_owner identified by g
+default tablespace ggs_data
+temporary tablespace temp;
+
+grant connect, resource to ggs_owner;
+grant create table to ggs_owner;
+grant execute on dbms_flashback to ggs_owner;
+grant execute on utl_file to ggs_owner;
+grant flashback any table to ggs_owner;
+grant select any dictionary, select any table to ggs_owner;
+grant create any table to ggs_owner;
+grant insert any table to ggs_owner;
+grant update any table to ggs_owner;
+grant delete any table to ggs_owner;
+grant drop any table to ggs_owner;
+
+Oracle GoldenGate relies on the redo logs to capture the data that it needs to replicate source transactions. The Oracle redo logs on the source system must be configured properly before you start Oracle GoldenGate processing.
+Configuring Logging Properties : Broadly there are four different types of logging.
+
+1. Forced logging mode : Strongly recomended by Oracle. 
+   SELECT force_logging FROM v$database;
+   ALTER DATABASE FORCE LOGGING;
+
+2. Minimum database-level supplemental logging : Must for all Oracle GoldenGate use cases. 
+   SELECT supplemental_log_data_min FROM v$database;
+   ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+   
+3. Schema-level supplemental logging : One of option-3 schema-level logging or option-4 table-level is must for all tables to be replicated.
+
+dblogin userid ggs_owner password g
+ADD SCHEMATRANDATA schema {[ALLOWNONVALIDATEDKEYS] [NOSCHEDULINGCOLS | ALLCOLS]}
+
+By default(ADD SCHEMATRANDATA schema_name) enables unconditional supplemental logging of the primary key and conditional supplemental logging of unique key(s) and foreign key(s) of all tables in a schema. All of these keys together are known as the scheduling columns.
+ALLCOLS : Enables unconditional supplemental logging of all of the columns in a table, for all of the tables in a schema. Use if the primary key, unique key, and foreign key columns are not identical at both source and target, use ALLCOLS. Required when using DDL support.
+
+NOSCHEDULINGCOLS : Enables unconditional supplemental logging of the primary key and all valid unique indexes of all tables in a schema. Use only for nonintegrated Replicat. This is the minimum required schema-level logging.
+
+4. Table-level supplemental : One of option-3 schema-level logging or option-4 table-level is must for all tables to be replicated.
+
+ADD TRANDATA {[container.]owner.table | schema.table [JOURNAL library/journal] |
+   library/file [JOURNAL library/journal]}
+[, NOSCHEDULINGCOLS | ALLCOLS]
+[, COLS (columns)]
+[, INCLUDELONG | EXCLUDELONG]
+[, LOBSNEVER | LOBSALWAYS | LOBSIFCHANGED | LOBSALWAYSNOINDEX]
+[, NOKEY]
+
+ADD TRANDATA : Enables unconditional supplemental logging of the primary key and conditional supplemental logging of unique key(s) and foreign key(s) of a table. Required for all Oracle GoldenGate use cases unless schema-level supplemental logging is used.
+ADD TRANDATA with ALLCOLS option : Enables unconditional supplemental logging of all of the columns of the table. 
+ADD TRANDATA with NOSCHEDULINGCOLS option : Enables unconditional supplemental logging of the primary key and all valid unique indexes of a table. Use only for nonintegrated Replicat. This is the minimum required table-level logging.
+
+-- to check it the database is running in archivelog mode:
+select log_mode from v$database ;
+
+-- to make it running in archivelog mode:
+shutdown immediate 
+startup mount
+alter database archivelog;
+
+-- it must be YES or IMPLICIT
+SELECT SUPPLEMENTAL_LOG_DATA_MIN FROM V$DATABASE;
+
+-- to enable it: Oracle strongly encourages putting the source database into forced logging mode and enabling minimal supplemental logging at the database level when using Oracle GoldenGate.
+
+ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+
+The following should be carried out to support DDL replication (if needed):
+To replicate just sequence values, you do not need to install the Oracle GoldenGate DDL support environment. You can just use the SEQUENCE parameter.
+
+1. In both Source and Target databases:
+
+-- create a file named as GLOBALS in the GoldenGate directory, if one does not exist
+E:\ggs_src>notepad GLOBALS
+-- add the following into the GLOBALS file:
+GGSCHEMA ggs_owner
+
+2. Exit all users sessions to Oracle database. Prevent the start of any new session
+
+3. In the GoldenGate directory, run SQL*Plus and log in as SYSDBA:
+-- Run the scripts: @marker_setup.sql, @ddl_setup.sql then @role_setup.sql
+-- Supply the name of the Oracle GoldenGate schema for each script
+E:\ggs_src>sqlplus /nolog
+SQL> conn sys/ora11g as sysdba
+Connected.
+SQL> @marker_setup.sql
+...
+SQL> @ddl_setup.sql
+...
+SQL> @role_setup.sql
+
+4. Grant the created role (default name is GGS_GGSUSER_ROLE) to all Oracle GoldenGate Extract users.
+SQL> GRANT GGS_GGSUSER_ROLE TO hr;
+
+5. Run the ddl_enable.sql script to enable the DDL trigger:
+@ddl_enable.sql
+
+5. Installing Support for Oracle Sequences
+
+Notes on Tables to Replicate in Oracle database
+• The table to replicate should not have the NOLOGGING option set.
+• If there is no primary key or unique index exists on any table, GG will use all the columns as supplemental logging key pair for both extracts and replicates. Avoid this!
+• If we define key columns in the GG extract parameter file and if we don't have the supplemental logging enabled on that key columns combination, then GG will assume missing key columns record data as "NULL".
+
+Processes Naming Convention
+Here is a proposed naming convection standard for process names. A proposed on is a name that has the following:
+• Process Type: local Extract (L or E), initial-load Extract (I), direct-load Replicate (D), Data Pump (P), or Replicate (R)
+• The application: such as human resources (HR), payroll (PRL), sales (SL)..etc
+• Environment: development (DEV), production (PROD), testing (TST)
+• A numeric indicator to show if there are multiple Extract or Replicate groups
+
+Testing environment used for this tutorial was configured as follows:
+             Source Environment     :      Target Environment
+Hostname > 
+   WIN11SRC : WIN11TRG
+Database Software >
+   Oracle Database 11g R2 : Oracle Database 11g R2
+OS > 
+   Windows XP 32-bit : Windows XP 32-bit
+Extract Capture Mode > classic
+Replicated Tables >
+HR.COUNTRIES      : HR.COUNTRIES    
+HR.DEPARTMENTS    : HR.DEPARTMENTS
+HR.EMPLOYEES      : HR.EMPLOYEES
+HR.JOB_HISTORY    : HR.JOB_HISTORY
+HR.JOBS           : HR.JOBS
+HR.LOCATIONS      : HR.LOCATIONS
+HR.REGIONS        : HR.REGIONS
+
+WIN11SRC >> IHRDEV1(Intial Load Extract) >> (Network) >> DHRDEV1(Intial/direct load Replicat) >> WIN11TRG
+WIN11SRC >> LHRDEV1(Local Extract) > Local trail > PHRDEV1(Data Pump) >> (Network) >> connector > remote trail > RHRDEV1( Replicat) >> WIN11TRG
+
+-- In the Source database, make sure all the tables to replicate have key constraint:
+--List down tables without keys
+select t.table_name from dba_tables t where t.owner='HR' and
+t.table_name in ('COUNTRIES','DEPARTMENTS','EMPLOYEES','JOB_HISTORY','JOBS','LOCATIONS','REGIONS')
+minus
+select c.table_name from dba_constraints c where c.owner='HR' and c.constraint_type in ('P','U')
+
+-- the LOGGING option in the table level should be ENABLED
+select table_name from dba_tables where owner='HR' and logging='NO' and table_name in ('COUNTRIES','DEPARTMENTS','EMPLOYEES','JOB_HISTORY','JOBS','LOCATIONS','REGIONS')
+
+-- to enable it:
+begin
+for r in ( select table_name from dba_tables where owner='HR' and logging='NO' and table_name in ('COUNTRIES','DEPARTMENTS','EMPLOYEES','JOB_HISTORY','JOBS','LOCATIONS','REGIONS')) loop
+execute immediate 'alter table hr.'|| r.table_name ||' LOGGING';
+end loop;
+end;
+/
+
+-- log the primary key values:
+-- the gg command in the example actually executes in the background:
+-- ALTER TABLE <..> ADD SUPPLEMENTAL LOG GROUP <...> (<keyCol>) ALWAYS;
+GGSCI (WIN11SRC) 1> dblogin userid ggs_owner password g
+GGSCI (WIN11SRC) 2> add trandata hr.employees
+
+The GGSCI ADD TRANDATA command requires obtaining the appropriate table dictionary locks, and when the applications performing data manipulation at  the same time, it prevent the command from executing and returning an ORA-00054: resource busy and acquire with NOWAIT specified.
+
+If possible, use the ADD SCHEMATRANDATA command rather than the ADD TRANDATA command. The ADD SCHEMATRANDATA command ensures replication continuity should DML occur on an object for which DDL has just been performed.
+
+Use ADD SCHEMATRANDATA to enable schema-level supplemental logging for a table. ADD SCHEMATRANDATA acts on all of the current and future tables in a given schema to automatically log a superset of available keys that Oracle GoldenGate needs for row identification.
+
+To use the Oracle GoldenGate DDL replication feature, you must use the ADD SCHEMATRANDATA command to log the required supplemental data.
+
+SCHEMATRANDATA
+Enables unconditional supplemental logging of the primary key and conditional supplemental logging of unique key(s) and foreign key(s) of all tables in a schema. All of these keys together are known as the scheduling columns.
+•Enables Oracle supplemental logging for new tables created with a CREATE TABLE.
+•Updates supplemental logging for tables affected by an ALTER TABLE to add or drop columns.
+•Updates supplemental logging for tables that are renamed.
+•Updates supplemental logging for tables for which unique or primary keys are added or dropped.
+•If you must log additional, non-key columns of a specific table (or tables) for use by Oracle GoldenGate, such as those needed for FILTER statements and KEYCOLS clauses in the TABLE and MAP parameters, issue an ADD TRANDATA command for those columns. 
+
+•Before using ADD SCHEMATRANDATA, issue the DBLOGIN command. The user who issues the command must be granted the Oracle Streams administrator privilege.
+SQL> exec dbms_streams_auth.grant_admin_privilege('user')
+
+-- to generate the script for a group of tables:
+set echo off
+set verify off
+set pagesize 2000
+set linesize 250
+set trim on
+set heading off
+set feedback off
+spool &&SCHEMA..add_trandata.obey
+select 'add trandata &SCHEMA..'||table_name
+from dba_tables where owner = '&SCHEMA' ;
+spool off
+
+-- to run the script in gg:
+GGSCI (WIN11SRC) 1> dblogin userid ggs_owner password g
+GGSCI (WIN11SRC) 2> obey diroby/HR.add_trandata.obey
+
+-- in gg: to confirm the table logging is enabled:
+dblogin userid ggs_owner password g
+info trandata hr.EMPLOYEES
+
+-- in db: to confirm the table logging is enabled:
+select owner, log_group_name, table_name from dba_log_groups where owner = 'HR';
+
+-- to know which column values are being logged:
+select * from DBA_LOG_GROUP_COLUMNS where owner = 'HR';
+
+Note: If you use ADD SCHEMATRANDATA command to add the supplement logging, the information should be obtained from logmnr$always_suplog_columns.
+eg: select * from table(logmnr$always_suplog_columns('SCHEMAUSER','T'));
+
+Note: If you find out GG is logging ALL the columns because of the absence of a key column, adding a key column is not enough to resolve the issue. You need to do the following as well:
+GGSCI> delete trandata hr.EMPLOYEES
+GGSCI> add trandata hr.EMPLOYEES
+
+In Target: disable triggers and cascade-delete constraints. Use either SUPPRESSTRIGGERS option of the Replicate DBOPTIONS parameter or the SQL commands as follows:
+
+-- in Target: disable cascade-delete constraints
+select 'alter table '||owner||'.'||table_name||
+' disable constraint '||constraint_name||';'
+from all_constraints
+where delete_rule = 'CASCADE'
+and owner = 'HR';
+
+-- disable triggers:
+select 'alter trigger '||owner||'.'||trigger_name||
+' disable ;'
+from all_triggers
+where owner = 'HR';
+
+1. verify the manager is running
+GGSCI (WIN11SRC) 2> info manager
+Manager is running (IP port WIN11SRC.7840)
+2. create and edit the Extract parameter
+GGSCI (WIN11SRC) 2>edit params LHRDEV1
+-- add the following to it:
+Extract LHRDEV1
+-------------------------------------------------------------------
+-- Local extract for HR schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.WE8MSWIN1252)
+-- this is needed, if you have more than one instance:
+SETENV (ORACLE_HOME = "E:\oracle\product\11.2.0\dbhome_1")
+SETENV (ORACLE_SID = "ORADB")
+
+USERID GGS_OWNER@ORA11SRC, PASSWORD g
+-- specify the two-character local Extract trail-file name
+ExtTrail dirdat/L1
+-- Table parameter must end with semicolon
+Table HR.REGIONS;
+Table HR.LOCATIONS;
+Table HR.JOB_HISTORY;
+Table HR.JOBS;
+Table HR.EMPLOYEES;
+Table HR.DEPARTMENTS;
+Table HR.COUNTRIES;
+
+3. add the Extract process
+-- create the process and start checkpoint:
+ADD EXTRACT LHRDEV1, TRANLOG, BEGIN NOW
+-- add local extract trail file:
+ADD EXTTRAIL dirdat/l1, EXTRACT LHRDEV1, MEGABYTES 100
+-- start the extract (stop command stops it)
+START EXTRACT LHRDEV1
+
+/* verify the extract: */
+-- basic info displayed:
+info extract LHRDEV1
+-- detailed info displayed:
+info extract LHRDEV1, DETAIL
+-- get stats about the extract operation:
+stats ext LHRDEV1
+
+4. create the Data Pump parameter file:
+-- no env variables should be defined
+edit params PHRDEV1
+Extract PHRDEV1
+-------------------------------------------------------------------
+-- Data Pump extract for HR schema
+-------------------------------------------------------------------
+-- source and desc identical
+PassThru
+RmtHost WIN11TRG, MgrPort 7840
+-- remote trail file number prefix:
+RmtTrail dirdat/l2
+Table HR.REGIONS;
+Table HR.LOCATIONS;
+Table HR.JOB_HISTORY;
+Table HR.JOBS;
+Table HR.EMPLOYEES;
+Table HR.DEPARTMENTS;
+Table HR.COUNTRIES;
+
+5. create the Data Pump process:
+ADD EXTRACT PHRDEV1, EXTTRAILSOURCE dirdat/l1
+ADD RMTTRAIL dirdat/l2, EXTRACT PHRDEV1, MEGABYTES 100
+START EXTRACT PHRDEV1
+-- verify the process:
+info extract PHRDEV1
+info extract PHRDEV1, detail
+stats ext PHRDEV1
+
+7 >>>> Configure data initialization (initial-load)
+• Prerequisite: You must disable any foreign-key constraints on the target tables.
+• To speed up: drop the check constraints and the indexes.
+
+-- implement the prerequisite and recommendation above
+1. create direct-load Extract parameter file:
+ON SOURCE
+edit params IHRDEV1
+
+Extract IHRDEV1
+-------------------------------------------------------------------
+-- Initial Load extract for HR schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.WE8MSWIN1252)
+USERID GGS_OWNER@ORA11SRC, PASSWORD g
+RmtHost WIN11TRG, mgrport 7840
+-- name of the Replicate: DHRDEV1 (D DIRECT LOAD)
+RmtTask Replicat, Group DHRDEV1
+Table HR.EMPLOYEES;
+
+2. add the Initial-load Extract:
+ADD EXTRACT IHRDEV1, SOURCEISTABLE
+
+3. configure and add Initial-load replicate:
+-- Replicat is started and stopped automatically by GoldenGate when
+-- you start the initial-load Extract
+ON THE TARGET host:
+edit params DHRDEV1
+Replicat DHRDEV1
+-------------------------------------------------------------------
+-- Initial load replicat for HR schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.WE8MSWIN1252)
+USERID GGS_OWNER@ORA11TRG, PASSWORD g
+-- src and trg are identical (no data-definitions file)
+AssumeTargetDefs
+-- use COLMAP option if the tables do not match
+Map HR.EMPLOYEES, Target HR.EMPLOYEES ;
+
+
+4. add the Replicat group:
+ADD REPLICAT DHRDEV1, SPECIALRUN
+5. start the Initial-load:
+GGSCI (WIN11SRC) > START EXTRACT IHRDEV1
+-- to verify the Initial-load (after the initialization is finished):
+GGSCI (WIN11TRG) > VIEW REPORT DHRDEV1
+
+/* Option2: Alternate option for using GG initial load Using third party solution*/
+1. Make sure the prerequisites are met.
+2. Start the ongoing synchronization Locally and data-pump Extracts to capture changes.
+3. Execute the initial load using the utility you have chosen.
+4. Start the ongoing synchronization Replicat to apply changes made during the initialization.
+
+8 >>>> In the target system: configure the replicate.
+• Prerequisite: You must disable any foreign-key constraints on the target tables.
+• To speed up: drop the check constraints and unnecessary indexes.
+
+
+1. create the parameter file:
+GGSCI (WIN11TRG)> edit params RHRDEV1
+Replicat RHRDEV1
+-------------------------------------------------------------------
+-- Replicat for HR Schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.WE8MSWIN1252)
+USERID GGS_OWNER@ORA11TRG, PASSWORD g
+-- typically, this is used some time after the initial-load.
+-- Later, NOHANDLECOLLISIONS is used
+HANDLECOLLISIONS
+-- if the source and target are identical
+-- if different, generate a data-definitions file
+AssumeTargetDefs
+-- semicolon is mandatroy
+Map HR.REGIONS, Target HR.REGIONS;
+Map HR.LOCATIONS, Target HR.LOCATIONS;
+Map HR.JOB_HISTORY, Target HR.JOB_HISTORY;
+Map HR.JOBS, Target HR.JOBS;
+Map HR.EMPLOYEES, Target HR.EMPLOYEES;
+Map HR.DEPARTMENTS, Target HR.DEPARTMENTS;
+Map HR.COUNTRIES, Target HR.COUNTRIES;
+
+2. add checkpoint table:
+dblogin userid ggs_owner@ora11trg password g
+ADD CHECKPOINTTABLE HR.GG_CHKPT
+
+3. add the Replicate
+ADD REPLICAT RHRDEV1, EXTTRAIL dirdat/l2, CHECKPOINTTABLE HR.GG_CHKPT
+
+START REPLICAT RHRDEV1
+
+4. verify the Replicate is running
+GGSCI (WIN11TRG) > info replicat RHRDEV1
+GGSCI (WIN11TRG) > info replicat RHRDEV1, detail
+
+
+Customizing GoldenGate Replication
+
+• By default, the process report is generated every time it starts up and default location is /dirrpt folder and has rpt extension
+• To determine the location of a process report: info <grp> detail
+• To view a process report, use any of the following:
+o standard shell command for viewing a text file
+o Oracle GoldenGate Director
+o VIEW REPORT command in GGSCI
+• The following parameters influence the report contents:
+
+specify when Extract or Replicat generates interim runtime statistics in a process report
+REPORT AT 1:00
+REPORT ON SUNDAY
+REPORT ON SUNDAY AT 1:00
+To send it manually:
+SEND EXTRACT|REPLICAT xxx REPORT
+
+To add a count of the records GoldenGate has processed since startup.
+Rate = # of records processed since startup / total time since startup
+Delta = # of records since last report / time since last report
+
+REPORTCOUNT EVERY 5000 RECORDS
+-- SECONDS | MINUTES | HOURS
+REPORTCOUNT EVERY 5 MINUTES, RATE
+
+To force report files to age on a regular schedule, It doesn't affect the stats data though
+REPORTROLLOVER AT 05:00 ON Friday
+
+• Discard file is a log of the records that cannot be processed by gg:
+Discard Filename can be fully qualified or relative to gg home. If maximum size is defined and reached, the process abends.
+
+DISCARDFILE <file name> [, APPEND | PURGE] [, MAXBYTES <n> | MEGABYTES <n>]
+
+DISCARDFILE discard.dsc, PURGE, MEGABYTES 2
+
+DiscardRollover at 02:00 ON SUNDAY
+
+• To automatically purge your old trail files after they have been processed.
+• It’s best to add it to your Manager parameter file (mgr.prm) so purging can be managed centrally for all Extracts and Replicates.
+• When using this parameter, do not permit trail files to be deleted by any user or program other than Oracle GoldenGate. It will cause PURGEOLDEXTRACTS to function improperly.
+
+Deletes unprocessed trail files
+PURGEOLDEXTRACTS dirdat/*, USECHECKPOINTS, MINKEEPDAYS 2
+
+Adding Data Filtering and Mapping
+
+You may filter in any of the Extract, Replicate, Data Pump or all. It is a good practice though to let the Extract extract all required data and apply the filtering in the data pump process.
+
+-- specific tables:
+Table HR.EMPLOYEES;
+Table HR.JOBS;
+
+-- specific columns (include the Key-column):
+-- Note: passthru isn't possible when this option is used
+Table HR.EMPLOYEES COLS (employee_Id, first_name, last_name);
+
+-- all except specifi colums:
+Table HR.EMPLOYEES COLSEXCEPT (email);
+
+-- filtering rows:
+-- WHERE clause to your TABLE statement on the Extract or
+-- to your MAP statement on the Replicat
+Table HR.EMPLOYEES, WHERE (EMPLOYEE_ID < 100);
+-- Double quotes are required for string literals
+Map HR.EMPLOYEES, Target HR.EMPLOYEES, WHERE (JOB_ID = "IT_PROG");
+
+-- filtering based on the DML operation
+Table HR.EMPLOYEES, FILTER (ON DELETE, SALARY / 12 < 1000);
+
+Mapping Different Objects
+• This is to handle the situations where the source and target are not identical (when ASSUMETARGETDEFS is not applicable). In this case, a data definitions file is required
+• If the mapping is on the target server, you generate the data definitions file on the source server and transfer it to the target server.
+• If the mapping is on the source using the Extract, you create a data definitions file on the target server and transfer it to the source server.
+
+1. on the source:
+EDIT PARAMS defgen
+defsfile ./dirdef/RHRDEV1.defs
+USERID GGS_OWNER@ORA11SRC, PASSWORD g
+TABLE HR.EMPLOYEES;
+
+2. use defgen utility to generate the definition file:
+defgen paramfile dirprm/defgen.prm
+
+3. Copy ./dirdef/RHRDEV1.defs to target in dirdef directory.
+
+4. Modify the Replicate param file:
+edit params RHRDEV1
+...
+--AssumeTargetDefs
+SourceDefs dirdef/RHRDEV1.defs
+...
+Map HR.EMPLOYEES, Target HR.STAFF,
+COLMAP (USEDEFAULTS,
+WAGES = @COMPUTE(SALARY * 12)
+FULL_NAME = @STRCAT(LAST_NAME,",",FIRST_NAME));
+
+

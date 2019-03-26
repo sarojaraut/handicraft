@@ -1,0 +1,137 @@
+Chapter 8 Monitoring and Tuning RMAN
+
+Monitoring RMAN Sessions and Jobs
+RMAN populates the column V$SESSION.CLIENT_INFO with the string rman and the name of the channel. Remember that each RMAN channel corresponds to a server process, and therefore V$SESSION will have one row for each channel. 
+
+Create an RMAN job that backs up the USERS tablespace using two disk channels:
+RMAN> run {
+2> allocate channel ch1 type disk;
+3> allocate channel ch2 type disk;
+4> backup as compressed backupset tablespace users;
+5> }
+
+While the RMAN job is running, join the views V$PROCESS and V$SESSION to retrieve the CLIENT_INFO column contents:
+SQL> select sid, spid, client_info
+2 from v$process p join v$session s on (p.addr = s.paddr)
+3 where client_info like '%rman%'
+4 ;
+SID SPID CLIENT_INFO
+---------- ------------------------ ------------------------
+126 25070 rman channel=ch2
+130 7732 rman channel=ch1
+
+Note that RMAN’s user processes will still exist in V$SESSION until you exit RMAN or start another backup operation.
+
+If you have multiple RMAN jobs running, some with two or more channels allocated, it might be difficult to identify which process corresponds to which RMAN backup or recovery operation. To facilitate the desired differentiation, you can use the SET COMMAND ID command within an RMAN RUN block, as in this example:
+run {
+set command id to 'bkup users';
+backup tablespace users;
+}
+When this RMAN job runs, the CLIENT_INFO column in V$SESSION contains the string id=bkup users to help you identify the session for each RMAN job. (where client_info= 'id=bkup users')
+
+Using V$SESSION_LONGOPS
+The initialization parameter STATISTICS_LEVEL must be set to TYPICAL or ALL before the view V$SESSION_LONGOPS will contain information about long-running RMAN jobs. The default value for STATISTICS_LEVEL is TYPICAL.
+RMAN populates two different types of rows in V$SESSION_LONGOPS: detail rows and aggregate rows. Detail rows contain information about a single RMAN job step, such as creating a single backup set. Aggregate rows apply to all files referenced in a single RMAN command, such as BACKUP DATABASE.
+
+This example initiates a full database backup, and while the backup is running, both detail and aggregate rows for active RMAN jobs are shown:
+
+SQL> select sid, serial#, opname, context, sofar, totalwork
+2 from v$session_longops
+3 where opname like 'RMAN%'
+4 and sofar <> totalwork
+5 ;
+
+The SID and SERIAL# are the same columns you see in V$SESSION. The OPNAME column is a text description of the operation monitored in the row, and for RMAN, it contains the prefix RMAN:. The CONTEXT column contains a value of 7 for aggregate operations, 2 for backup output operations, and 1 for everything else. The column SOFAR is, as you might expect, a measure of the progress of a step. Its value differs depending on the type of operation:
+
+■ For image copies, it is the number of blocks read.
+■ For backup input rows, it is the number of blocks read from the files being backed up.
+■ For backup output rows (backup set or image copy), it is the number of blocks written so far to the backup piece.
+■ For restore operations, it is the number of blocks processed so far to the destination files.
+■ For proxy copies (copy operations from a media manager to or from disk), it is the number of files that have been copied so far.
+The column TOTALWORK has a similar definition, except that it estimates the total amount of work required during the step:
+
+To calculate the progress of an RMAN step as a percent complete, you can divide SOFAR by TOTALWORK as follows and add this expression to the SELECT statement: round(sofar/totalwork*100,1)
+
+Leveraging RMAN Error Logs and Messages
+RMAN-specific error messages have a prefix with the format RMAN-nnnn, and this message can be preceded or followed by ORA-nnnnn messages or vendor-specific messages, depending on the type of error.
+
+Turning on RMAN debugging generates a lot of output, so Oracle recommends that you specify a file to contain debugging output.
+[oracle@srv04 ~]$ rman target / catalog rman/rman@rcat debug trace dbg_rman.trc
+Turn off debugging temporarily for the USERS tablespace but turn it back on for the CHGTRK tablespace:
+RMAN> run {
+2> debug off;
+3> backup tablespace users;
+4> debug on;
+5> backup tablespace chgtrk;
+6> }
+
+Tuning RMAN
+RMAN backup performs its tasks within a channel in one of three main phases:
+1. Read phase: The channel reads data blocks into the input buffers.
+2. Copy phase: The channel copies blocks from the input buffers to the output buffers and performs additional processing, if necessary:
+■ Validation Check blocks for corruption, which is not CPU-intensive.
+■ Compression Use BZIP2 or ZLIB to compress the block, which is CPU-intensive.
+■ Encryption Use an encryption algorithm (transparent, password-protected, or both) to secure the data, which is CPU-intensive.
+3. Write phase: The channel writes the blocks from the output buffers to the output device (disk or tape).
+
+Parallelizing Backup Sets
+One of the simplest ways to improve RMAN performance is to allocate multiple channels (either disk or tape). The number of channels you allocate should be no larger than the number of physical devices;
+
+Tuning RMAN Channels
+You can further tune your RMAN backup performance by tuning individual channels with the CONFIGURE CHANNEL and ALLOCATE CHANNEL commands. Each CHANNEL command accepts the following parameters:
+■ MAXPIECESIZE The maximum size of a backup piece.
+■ RATE The number of bytes per second read by RMAN on the channel.
+■ MAXOPENFILES The maximum number of input files that a channel can  have open at a given time.
+
+The MAXPIECESIZE parameter is useful when you back up to disk and the underlying operating system limits the size of an individual disk file, or when a tape media manager cannot split a backup piece across multiple tapes.
+
+Note that the RATE parameter doesn’t improve performance but throttles performance intentionally to limit the disk bandwidth available to a channel. This is useful when your RMAN backups must occur during periods of peak activity elsewhere in the database.
+
+MAXOPENFILES was reviewed in the preceding section, but it is worth revisiting when you want to optimize the performance of an individual channel. For example, you can use MAXOPENFILES to limit RMAN’s use of operating system file handles or buffers.
+
+Tuning the BACKUP Command
+Just like the CONFIGURE CHANNEL command, the BACKUP command has parameters that can help you improve performance or limit the computing resources that a channel uses for an RMAN backup. Here are the key tuning parameters for the BACKUP command:
+■ MAXPIECESIZE The maximum size of a backup piece per channel.
+■ FILESPERSET The maximum number of files per backupset.
+■ MAXOPENFILES The maximum number of input files that a channel can have open at a given time.
+■ BACKUP DURATION Decrease or increase the time to complete the backup.
+
+BACKUP DURATION specifies an amount of time to complete the backup. You can qualify this option with MINIMIZE TIME to run the backup as fast as possible, or MINIMIZE LOAD to use the entire timeframe specified in the BACKUP DURATION window. In addition, you can use the PARTIAL option, as you might expect, to save a partial backup that was terminated due to time constraints. For example, to limit a full database backup to 2 hours, run it as fast as possible, and save a partial backup, use this command:
+RMAN> backup duration 2:00 partial database;
+
+Configuring LARGE_POOL_SIZE
+You can adjust the value of the initialization parameter LARGE_POOL_SIZE to improve RMAN backup performance. If you do not set LARGE_POOL_SIZE, the RMAN server processes use memory from the shared pool. This may cause contention with many other processes that use the shared pool. If RMAN’s request for memory from the shared pool cannot be fulfilled, RMAN uses memory from the Program Global Area (PGA), writes a message to the alert log, and uses synchronous I/O for this backup. But synchronous I/O can be inefficient; therefore, you can resize the value of the large pool for disk backups using this calculation:
+additional_large_pool_size = #channels * 16MB
+
+Note also that RMAN will only use memory from the large pool if DBWR_IO_SLAVES is set to a value greater than zero.
+
+When RMAN reads or writes data, the I/O operations are either synchronous or asynchronous. A synchronous I/O operation limits a server process from performing more than one operation at a time. It must wait for one operation to finish before another can start. As you might expect, an asynchronous operation can initiate an I/O operation and immediately perform other operations including initiating another I/O operation.
+
+You can use initialization parameters to control the type of I/O operations. For tape backups, you can set BACKUP_TAPE_IO_SLAVES to TRUE to configure backups for asynchronous operations. Otherwise, set it to FALSE for synchronous operations. The default is FALSE.
+
+Monitoring Asynchronous I/O
+To monitor asynchronous I/O operations, you use the dynamic performance view V$BACKUP_ASYNC_IO. The key columns to watch are the following:
+■ IO_COUNT Number of I/Os performed on the file.
+■ LONG_WAITS Number of times the backup or restore process had to tell the OS to wait for the I/O to complete.
+■ SHORT_WAIT_TIME_TOTAL Total time, in hundredths of a second, taken for nonblocking polling for I/O completion.
+■ LONG_WAIT_TIME_TOTAL Total time, in hundredths of a second, taken while blocking waits for I/O completion.
+
+The largest ratio of LONG_WAITS to IO_COUNT is a likely bottleneck in the backup process. SHORT_WAIT_TIME_TOTAL and LONG_WAIT_TIME_TOTAL are also indicators of a bottleneck if they are nonzero. This example identifies two input files with nonzero ratios:
+
+SQL> select long_waits / io_count waitcountratio, filename
+2 from v$backup_async_io
+3 where long_waits / io_count > 0
+4 order by long_waits / io_count desc
+5 ;
+WAITCOUNTRATIO FILENAME
+-------------- ----------------------------------------
+.248201439 /u01/oradata/bkup/6bjmt1e3_1_1
+.2 /u01/app/oracle/flash_recovery_area/HR/a
+utobackup/2008_07_31/o1_mf_s_661554862_%
+u_.bkp
+SQL>
+For these two files, you may consider increasing the multiplexing to decrease or eliminate the wait times when backing them up.
+
+Monitoring Synchronous I/O
+The dynamic performance view V$BACKUP_SYNC_IO will help you identify bottlenecks in synchronous I/O operations, as well as the progress of backup jobs. You use the column DISCRETE_BYTES_PER_SECOND to view the I/O rate of the operation. You then compare that rate to the maximum rate of the output device
+

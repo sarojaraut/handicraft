@@ -1,0 +1,134 @@
+TKPROF
+
+set autotrace traceonly;
+or
+ALTER SESSION SET SQL_TRACE=TRUE|
+Finding the trace file in oracle 11g
+SELECT value FROM v$diag_info WHERE  name = 'Default Trace File';
+
+You may require to append a separate identifier in the trace file name to identify the file easily.
+ALTER SESSION SET TRACEFILE_IDENTIFIER = "MY_TEST_SESSION";
+
+tkprof ora01124.trc report.txt
+
+select owner, count(*)
+from all_objects
+group by owner
+call count cpu elapsed disk query current rows
+-----------------------------------------------
+Parse 1 0.00 0.00 0 0 0 0
+Execute 1 0.00 0.00 0 0 0 0
+Fetch 2 1.20 1.21 0 86091 4 15
+----------------------------------
+total 4 1.20 1.21 0 86091 4 15
+Misses in library cache during parse: 0
+Optimizer goal: CHOOSE
+Parsing user id: 69
+Rows Row Source Operation
+--------------------------
+15 SORT GROUP BY
+21792 FILTER
+21932 NESTED LOOPS
+46 TABLE ACCESS FUL
+
+Here we see the three main phases of the query:
+• The PARSE phase — where Oracle finds the query in the shared pool (soft parse) or creates a new plan for the query (hard parse).
+• The EXECUTE phase.This is the work done by Oracle upon the OPEN or EXECUTE of the query. For a SELECT, this will be many times ʹemptyʹ whereas for an UPDATE, this will be where all of the work is done.
+• Then, there is the FETCH phase. For a SELECT, this will be where most of the work is done and visible, but a statement like an UPDATE will show no work (you donʹt ʹFETCHʹ from an UPDATE).
+
+The column headings in this section have the following meanings:
+• CALL – Will be one of PARSE, EXECUTE, FETCH, or TOTAL. Simply denotes which phase of query processing we are looking at.
+• COUNT – How many times the event occurred. This can be a very important number. Below, we will take a look at how to interpret the values.
+• CPU – In CPU seconds, how much time was spent on this phase of the query execution. This is only filled in if TIMED_STATISTICS was enabled.
+• ELAPSED – As measured by the wall clock; how long this phase of query execution took. This is only filled in if TIMED_STATISTICS is enabled.
+• DISK – How many physical I/Os to the disk our query performed.
+• QUERY – How many blocks we processed in consistent read mode. This will include counts of blocks read from the rollback segment in order to ʹrollbackʹ a block.
+• CURRENT – How many blocks were read in ʹCURRENTʹ mode. CURRENT mode.
+• ROWS – How many rows were affected by that phase of processing. A SELECT will show them in the FETCH phase. An UPDATE would show how many rows were updated in the EXECUTE phase.
+
+parse count to execute count ratio 
+Ideally, the parse count would be one and the execute count would be higher than one. If we see a high parse count, this implies we are performing many soft parses of this query.
+
+If you have a TKPROF report in which all SQL statements are executed one time only, you are probably not using bind variables. In a real application trace, the same SQL should be executed more than once. Too much unique SQL typically implies you are not using bind variables correctly.
+
+A large disparity between CPU time and elapsed time – This would indicate that you spent a lot of time waiting for something. This wait could be for any number of reasons. For example, an update that was blocked by another session would have a very large elapsed time versus CPU time. A SQL query that performs lots of physical disk I/O might have lots of wait time for I/O to complete.
+
+A large CPU or elapsed time number – If you can make them go faster, your program will go faster.
+
+A high (FETCH COUNT)/(rows fetched) ratio - Here we take the number of FETCH calls (two in our example) and the rows fetched count (15 in our example). If this number is near one and the rows fetched is greater than one, our application is not performing bulk fetches. In PL/SQL you would use the BULK COLLECT directive. 
+
+An excessively high disk count – This is harder to evaluate as a rule of thumb, however if the DISK COUNT = QUERY + CURRENT MODE BLOCK COUNT, then all blocks, were read from disk. You might have to do some SGA resizing or work on the query to develop one that requires less block reads.
+
+Misses in library cache during parse: 0 -  It indicates that we performed a soft parse of the query. The very first time a query is executed, we would expect this count to be one. If almost every query you execute has a one for this value, it would indicate you are not using bind variables (and you need to fix that). You are not reusing SQL.
+
+The last section of the TKPROF report for this query is the query plan.
+
+This is the actual query plan that was used by Oracle at run time. The interesting thing about this plan is that the rows that flow through each step of the plan are visible.
+
+I prefer to never use the EXPLAIN= however and would recommend the same for you. The reason is that the explain plan query may differ radically from the actual query used at run time. The only plan that can be trusted is the plan saved in the trace file itself.
+
+
+
+---------------
+EXPLAIN PLAN displays the series of operations Oracle performs in order to run your SQL statement. It provides information on the estimates of rows to be returned, the order of access and join methods, filter operations, and aggregations, as well as optimization information such as cost and estimated time to complete.
+
+The output of explain plan lists what is supposed to happen when the statement executes, not what actually does happen.
+explain plan for select statement
+select * from table(dbms_xplan.display_cursor())
+
+Case 1: The Lack of a Good Index
+
+-----------------------------------------------------------------------
+| Id | Operation | Name | A-Rows |
+-----------------------------------------------------------------------
+|* 32 | TABLE ACCESS BY INDEX ROWID | GL_ACCOUNT_INSTANCE | 606K|
+|* 33 | INDEX UNIQUE SCAN | GL_ACCOUNT_INSTANCE_PK | 3183K|
+
+The plan execution data provides you with a clear indication of when the index being used could benefit from having additional columns.
+
+Case 2: The Presence of Unidentified Data Skew
+
+By default, statistics are gathered assuming that all data values are uniformly distributed. If that is not the case, statistics must be gathered specifically to capture skew. Skew is captured by the creation of a histogram and is done using the METHOD_OPT parameter when gathering object statistics as follows:
+
+exec dbms_stats.gather_table_stats (user,'B',estimate_percent=>100, method_opt=>'for columns object_type');
+
+Case 3: SQL That Should Be Rewritten
+
+Often the best fix is to rewrite the SQL. Of course, if you can’t touch the code, you’ll have to find another way around, such as using stored outlines. 
+
+SELECT ATTR_FCTR, ATTR_FCTR_YR,
+	ATTR_FCTR_MO, PROJECT_CODE
+FROM PRJ_ATT_FACTORS A
+WHERE SIM_YR || SIM_MO =
+	(SELECT MAX(B.SIM_YR || B.SIM_MO)
+	FROM PRJ_ATT_FACTORS B
+	WHERE A.PROJECT_CODE = B.PROJECT_CODE);
+
+SELECT ATTR_FCTR, ATTR_FCTR_YR,
+ATTR_FCTR_MO, PROJECT_CODE, THE_YRMO
+FROM
+	( SELECT MAX(SIM_YR || SIM_MO)
+		OVER (PARTITION BY PROJECT_CODE) AS THE_MAX,
+		ATTR_FCTR,
+		ATTR_FCTR_YR,
+		ATTR_FCTR_MO,
+		PROJECT_CODE,
+		SIM_YR || SIM_MO AS THE_YRMO
+	FROM PRJ_ATT_FACTORS
+	) a
+WHERE a.THE_YRMO = THE_MAX ;
+
+Case 4: SQL That Unnecessarily Invokes PL/SQL
+
+select cust_no, order_no, get_ord_tot(order_no)
+from orders
+group by cust_no, order_no;
+
+select o.cust_no, o.order_no, sum(i.total_order_item_price)
+from orders o, items i
+where o.order_no = i.order_no
+group by o.cust_no, o.order_no;
+
+
+hints
+

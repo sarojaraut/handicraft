@@ -1,0 +1,64 @@
+We should group all exceptions into three categories: deliberate, unfortunate , and unexpected.
+In deliberate exceptions, the code deliberately raises an exception as part of its normal behavior. UTL_FILE.GET_LINE, which raises NO_DATA_FOUND when you read past the end of file, is a perfect example of a program that raises a deliberate exception.
+Unfortunate exceptions are those where an exception has been raised that may not constitute an error in your application logic. It might, for example, simply be a different data condition. NO_DATA_FOUND, raised by a SELECT INTO, is an unfortunate exception
+A "hard error" that was raised, that you did not expect, and that may indicate a serious problem in your application is an unexpected error. TOO_MANY_ROWS is a classic unexpected error; it indicates that you have duplicate values for a primary key or unique index.
+
+Deliberate : Redesign your program so that you can avoid placing application logic in the exception section. If you put application code inside a WHEN clause, other developers must know to look in this section for application logic. Because that is not the norm, this logic is often overlooked.
+
+Unexpected : The guideline for handling unexpected exceptions is straightforward. In general, you should log the error, along with any application-specific information that will help you understand what caused it. And then you should reraise the error to stop the outer block from continuing to execute.
+
+Unfortunate : Now let's discuss what to do about unfortunate exceptions such as NO_DATA_FOUND. As with the deliberate exception, the general rule is to avoid having to put application logic into the exception section. The way to do that with an unfortunate exception is to make it possible for the programmer to choose whether an exception should be raised.
+
+Many programmers don't take the time to properly bulletproof their programs.
+
+You write applications that often assume the best of all possible worlds, hoping that your programs are bug-free, that users will enter only the correct data in only the correct fashion, and that all systems (hardware and software) will always be a "go."
+
+The reality is clear: Either you spend the time up front to properly debug and bulletproof your programs, or you will fight an unending series of rear-guard battles
+
+This article, the first of two parts, will explore a set of best practices you should follow to incorporate high-quality, comprehensive error handling in your PL/SQL-based applications. 
+
+Validate Preconditions
+
+Every time you write a program, you make assumptions. Users of your program don't necessarily know about those assumptions. If you do not "code defensively" and make sure that your assumptions are not violated, your programs can break down in unpredictable ways.
+
+When conforming to the default exception-handling model of PL/SQL, executable sections are clean, simple, and easy to follow. You don't have to check for status after every program call. You simply include an exception section to trap and deal with crises as they arise.
+
+For handling exceptions, there are two main considerations:
+
+1. Deciding which errors should be handled and which can go unhandled in any given block of code.
+
+2. Constructing reusable code elements that allow the handling (and logging) of errors in consistent, useful ways.
+
+Handle Exceptions That Cannot Be Avoided
+If you are writing a program in which you can predict that a certain error will occur, you should include a handler in your code for that, allowing for a graceful and informative failure.
+
+Document Exceptions That Need Handling
+
+Yet the header of a program tells nothing about what errors it might raise and then send unhandled out of its exception section
+ 
+Suppose, for example, that I have built a package that calculates overdue fees on mortgages. The analyze_status procedure might raise the overdue.excessive_lateness or overdue.invalid_date_range exceptions. The count_by_borrower function could pass unhandled NO_DATA_FOUND or borrower.does_not_exist exceptions.
+
+L_process_stats    CLOB;
+
+https://uat1.riuat.com/webservices/storeorder.asmx 
+
+/apps/projects/cms/ts3/remote_data/in/web
+
+rlcmstd.hq.river-island.com
+
+lcmsud.wyn1346.ecs.hp.com
+
+lcmspd.wyn1346.ecs.hp.com
+
+cmsdev.ctl, cmstst.ctl, cmsts2.ctl, cmsts3.ctl, cmsts4.ctl, cmssp1.ctl
+ 
+begin
+    insert into temp values(1,1);
+    raise no_data_found;
+end;
+/
+
+select name, type, text, regexp_replace(text, '--(\$Revision:)?[ -]+([0-9.]+).*','\2')
+from user_source@orderactive_xe
+where regexp_like(text,  '--(\$Revision:){1}[ -]+([0-9.]+).*')
+

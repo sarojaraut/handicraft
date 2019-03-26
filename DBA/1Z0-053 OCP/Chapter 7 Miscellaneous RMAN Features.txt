@@ -1,0 +1,165 @@
+Chapter 7 Miscellaneous RMAN Features
+
+Creating a Duplicate Database Using RMAN
+You can use several methods to create a duplicate database, but they all use RMAN, either directly or indirectly.
+
+Here are the general steps to follow to create a duplicate database on another host:
+1. Create a password file for the auxiliary instance.
+2. Ensure network connectivity to the auxiliary instance.
+3. Create an initialization parameter file for the auxiliary instance.
+4. Start the auxiliary instance in NOMOUNT mode.
+5. Start the source database in MOUNT or OPEN mode.
+6. Create backups or copy existing backups and archived redo log files to a location accessible by the auxiliary instance unless you are using active database duplication.
+7. Allocate auxiliary channels if necessary.
+8. Run the RMAN DUPLICATE command.
+9. Open the auxiliary instance.
+
+First, you must create a password file for the auxiliary instance, because you are going to duplicate from an active database instead of backups.
+
+[oracle@srv04 ~]$ orapwd file=$ORACLE_HOME/dbs/orapwhrtest password=sysdbapwd entries=10
+[oracle@srv04 ~]$
+
+Establish Network Connectivity
+If the source database was on a different host, you would have to ensure network connectivity to the source server. In this scenario, the source and destination are the  same and no adjustments to the tnsnames.ora file are necessary. However, because the new instance is open in NOMOUNT mode, the process that registers the instance with the listener has not started yet. Thus you must manually add an entry such as the following and restart the listener:
+
+sid_list_listener =
+(sid_list =
+(sid_desc =
+(global_dbname=hrtest.world)
+(sid_name = hrtest)
+(oracle_home=/u01/app/oracle/product/11.1.0/db_1)
+)
+)
+
+Create an Initialization Parameter File
+The next step is to create an initialization parameter file for the auxiliary instance. Only DB_NAME must be specified; all other parameters are optional, depending on whether you use Oracle Managed Files or you want to specify an alternative location for one or more file destinations.
+
+DB_NAME=hrtest
+DB_BLOCK_SIZE=8192
+CONTROL_FILES=(/u01/app/oracle/oradata/hrtest/control01.ctl,
+/u01/app/oracle/oradata/hrtest/control02.ctl,
+/u01/app/oracle/oradata/hrtest/control03.ctl)
+DB_FILE_NAME_CONVERT=(/u01/app/oracle/oradata/hr/,
+/u01/app/oracle/oradata/hrtest/)
+
+
+Start the Auxiliary Instance in NOMOUNT Mode and Create an SPFILE
+Using the initialization parameter file you just created, start the instance in NOMOUNT mode and create an SPFILE:
+[oracle@srv04 ~]$ export ORACLE_SID=hrtest
+[oracle@srv04 ~]$ sqlplus / as sysdba
+SQL> startup nomount pfile='$ORACLE_HOME/dbs/inithrtest.ora'
+SQL> create spfile from pfile;
+
+Note that you are setting the environment variable ORACLE_SID to the new instance name. This has the desired effect of creating any missing instance directories automatically, such as the diagnostic directory structure:
+
+Start the Source Database in MOUNT or OPEN Mode
+[oracle@srv04 ~]$ export ORACLE_SID=hr
+[oracle@srv04 ~]$ sqlplus / as sysdba
+SQL> startup mount
+
+Create Backups for the DUPLICATE Command
+All datafile backups, including incremental backups and archived redo log files, must be available on a file system accessible by the auxiliary instance. In this scenario, you are performing an active database duplication; therefore, you do not have to create or copy backups for the operation.
+
+Allocate Auxiliary Channels if Necessary
+If you are using backups for the duplication process, you need to configure RMAN channels to be used on the auxiliary database instance. The channel on the auxiliary. instance restores the backups, so you need to specify the ALLOCATE command in the RUN block, as in this example:
+RMAN> run
+{ allocate auxiliary channel aux0 device type disk;
+allocate auxiliary channel aux1 device type disk;
+. . .
+duplicate target database . . .
+}
+
+Run the RMAN DUPLICATE Command
+
+[oracle@srv04 ~]$ rman target sys/syspw1@hr auxiliary sys/syspw2@hrtest
+
+Finally, run the DUPLICATE command with the ACTIVE DATABASE clause to
+perform the copy directly from the live datafiles:
+RMAN> duplicate target database
+2> to hrtest
+3> from active database
+4> ;
+
+In summary, here is what the DUPLICATE command does:
+■ Creates a control file for the duplicate database.
+■ Restores the target data files to the duplicate database or copies directly from the running database.
+■ Performs incomplete recovery up to the last archived redo log file.
+■ Shuts down and restarts the auxiliary instance.
+■ Opens the auxiliary database with the RESETLOGS option.
+■ Creates the online redo log files.
+■ Generates a new DBID for the auxiliary
+
+Using Enterprise Manager to Create a Duplicate Database
+
+Using a Duplicate Database
+A duplicate database can be used for many things, including the following:
+■ Test backup and recovery procedures without disrupting the production database.
+■ Test a database upgrade.
+■ Test the effect of application upgrades on database performance.
+■ Generate reports that would otherwise have a detrimental effect on the response time for an online transaction processing (OLTP) production system.
+■ Export a table from a duplicate database that was inadvertently dropped from the production database, and then import it back into the production database; this assumes that the table is static or read-only.
+
+Recover a Dropped Table Using a Cloned Database
+create directory DPXFER as '/tmp/DataPumpXfer';
+grant read, write on directory DPXFER to rjb;
+
+expdp rjb/rjb@hrtest directory=dpxfer dumpfile=jobhist.dmp tables=hr.job_history
+
+impdp rjb/rjb@hr directory=dpxfer dumpfile=jobhist.dmp
+
+Identify the Situations that Require TSPITR
+RMAN facilitates automatic TSPITR, making it easy to restore the contents of one or more tablespaces to a previous point in time without affecting other tablespaces or other objects in the database. TSPITR is a useful recovery tool for these scenarios:
+
+■ Corruption or deletion of rows in key tables that occurs in a logically-isolated tablespace; in other words, no indexes or parent/child relationships from objects in other tablespaces.
+■ Incorrect Data Definition Language (DDL) changes the structure of one or more tables in a tablespace, and therefore Flashback Table is not available to recover these tables.
+■ A table is dropped with the PURGE option.
+
+Flashback Database can perform the task, but this has two drawbacks: First, all objects in the database are rolled back (not just a tablespace you are trying to recover). Second, you must maintain flashback logs to use Flashback Database, whereas a tablespace’s TSPITR window extends back to the earliest recoverable backup for the tablespace.
+
+TSPITR is not a cure-all for all tablespace disasters. For example, you cannot use it to recover a dropped tablespace. You also cannot recover a renamed tablespace to a point in time before it was renamed.
+
+Perform Automated TSPITR
+In the following scenario, your HR database includes a tablespace BI containing a key table SALES_RESULTS_2008Q1. The table is accidentally dropped around 9:58 P.M. on 7/19/2008. You conclude that the table, its indexes, and any related tables all reside in the tablespace BI.
+
+Be sure to select the correct time for TSPITR. Once you recover the tablespace and bring it online, you can no longer use any previous backups unless you are using a recovery catalog.
+
+Verifying Tablespace Dependencies
+Other tablespaces may have objects with dependencies on objects in the tablespace
+to be recovered. Use the data dictionary view TS_PITR_CHECK to identify any
+dependencies, as in this example:
+SQL> select obj1_owner, obj1_name, ts1_name,
+2 obj2_owner, obj2_name, ts2_name
+3 from ts_pitr_check
+4 where (ts1_name = 'BI' and ts2_name != 'BI')
+5 or (ts1_name != 'BI' and ts2_name = 'BI')
+6 ;
+no rows selected
+
+Identifying Objects Lost after TSPITR
+In addition to resolving any dependencies with the tablespace to be recovered, you also need to identify any objects created after the target time that will be lost if you recover the tablespace. You can use the data dictionary view TS_PITR_OBJECTS_TO_BE_DROPPED to determine which objects you will lose after your target recovery time, as in this example: 
+
+SQL> select owner, name, tablespace_name,
+2 to_char(creation_time, 'yyyy-mm-dd:hh24:mi:ss') create_time
+3 from ts_pitr_objects_to_be_dropped
+4 where tablespace_name = 'BI'
+5 and creation_time >
+6 to_date('2008-07-19:21:55:00','yyyy-mm-dd:hh24:mi:ss')
+7 ;
+
+To resolve these issues, you can export individual objects before the recovery operation and then import them after recovery is complete.
+
+Performing Automated TSPITR
+The most straightforward method for running TSPITR is, not surprisingly, the RMAN fully automated method. In this case, you run two RMAN commands to back up and bring the recovered tablespace (and the table SALES_RESULTS_2008Q1) online. In this example, you will recover the BI tablespace to July 19, 2008, as of 9:55 P.M.:
+
+RMAN> connect target /
+RMAN> connect catalog rman/rman@rcat
+RMAN> recover tablespace bi
+2> until time '2008-07-19:21:55:00'
+3> auxiliary destination '/u01/app/oracle/oradata/auxinst'
+4> ;
+
+RMAN> backup as compressed backupset tablespace bi;
+. . .
+RMAN> sql "alter tablespace bi online";
+
+

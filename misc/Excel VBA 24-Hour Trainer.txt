@@ -1,0 +1,288 @@
+9. Press Alt+Q to return to the worksheet.
+10. Press Alt+F8 to display the Macro dialog box.
+
+Several types of modules exist:
+?? Standard Modules — These are the kind you have seen already, which hold macros you create
+from scratch on your own or from the Macro Recorder.
+?? UserForm Modules — These belong to a custom user interface object called a userform,
+which is covered in Lessons 18, 19, and 20.
+?? Class Modules — These contain the kind of VBA code that allows you to create your own
+objects programmatically. Creating your own classes is very cool, and you learn about that
+in Lesson 21.
+?? Worksheet Modules — These hold VBA code that looks and acts like macros, but to
+make things interesting Microsoft refers to that code as a procedure instead of as a macro.
+Worksheet-level procedures are tied to various actions called “events,” such as selecting a
+range or entering a value in a cell.
+?? Workbook Module — Not to be outdone, the workbook itself has its own module, named by
+default as ThisWorkbook, where code is maintained for handling workbook-level events.
+
+To see the Object Browser in the VBE, press the F2 key or click View ? Object Browser.
+
+Range(“A1:D8”).Select
+Selection.Clear
+Selection.Locked = False
+Selection.FormulaHidden = False
+Selection.Font.Bold = True
+Selection.Font.Italic = True
+
+same as
+
+With Range(“A1:D8”)
+.Clear
+.Locked = False
+.FormulaHidden = False
+.Font.Bold = True
+.Font.Italic = True
+End With
+
+deleting a macro >delete from code editor or delete during execution
+
+to rename amodule > select itand rename it in the property window
+
+locking code : tools > VBAProject Properties> protection > enter the password
+
+Sub Example()
+Range(“A1”).Value = “Hello”
+MsgBox “You just entered Hello in cell A1.”
+End Sub
+
+The Object Model
+
+For example, if you want to enter the word “Hello” in cell A1 of Sheet1 of the workbook you are currently working in, the line of code to handle that could be:
+Application.ActiveWorkbook.Worksheets(“Sheet1”).Range(“A1”).Value = “Hello”
+
+The preceding line of code can be shortened to:
+Worksheets(“Sheet1”).Range(“A1”).Value = “Hello”
+
+Properties
+This line of code would format the active cell’s Locked property:
+ActiveCell.Locked = True
+The Name property of the Worksheet object represents the worksheet’s tab name. For example, this expression in the Immediate window would return the name of the active worksheet:
+? ActiveSheet.Name
+
+Methods : Methods are actions that can be performed by objects.
+The Range object of A1:D10 can have its cells’ contents cleared with the ClearContents method:
+Range(“A1:D10”).ClearContents
+
+Workbooks and worksheets can be activated with the Activate method:
+Workbooks(“Book1.xlsx”).Activate
+Worksheets(“Sheet2”).Activate
+
+Suppose you have three pivot tables on Sheet1, and you only want to refresh the pivot table named PivotTable2. As far as VBA is concerned, what you really want to refresh is the PivotCache object of the PivotTable2 object of the Sheet1 worksheet object. This line of code would accomplish that, using the Refresh method:
+Worksheets(“Sheet1”).PivotTables(“PivotTable2”).PivotCache.Refresh
+
+All objects (except Application) have a Parent property that is the object within which they are contained. For example, if your active workbook object is Book2 but you want to refer to Sheet1 in Book1, you’d precede the Sheet1 object with its parent Book1object name, like this: 
+Workbooks(“Book1.xlsm”).Worksheets(“Sheet1”).Range(“A1”).Value = “Hello”
+
+Variables
+
+Dim myValue As Integer          'Variable declaration
+myValue = Range(“A1”).Value     'Variable assignment
+
+Data Types
+
+Data Type  : Description : Memory
+Boolean : True or False; 1 or 0; On or Off.  : 2 bytes
+Byte  : An integer from 0 to 255. : 1 byte
+Currency : A positive or negative number with up to 15 digits to the left of the decimal point and up to 4 digits to the right of it. : 8 bytes
+Date : A floating-point number with the date to the left of the decimal point and the time to the right of it. : 8 bytes
+Integer : An integer ranging from –32,768 to 32,767. : 2 bytes
+Long : An integer ranging from –2,147,483,648 to 2,147,483,647. : 4 bytes
+Object : A reference to an object, such as a range of cells, a chart, a pivot table, a workbook, a worksheet, or any one of the many other objects that are a part of the Excel application. : 4 bytes
+String : There are two kinds of strings: variable-length and fixedlength.
+A variable-length string can contain up to approximately 2 billion characters. : For a variable-length string, 10 bytes plus storage for the string
+A fixed-length string can contain 1 to approximately 64,000 characters. : For a fixed-length string, the storage for the string
+Variant : Data type for all variables that are not explicitly declared as some other type, which can contain any kind of data except fixed-length String data.
+For containing numbers, 16 bytes
+For containing characters, 22 bytes plus storage for the characters
+
+The Date data type is worth an extra look, You can assign values to a date variable by enclosing them in the # number sign character, with the value being recognizable to Excel as either a date or time. For example:
+myDate = #09 October 1958#
+or
+myDate = #October 9, 1958#
+or
+myTime = #9:10 PM#
+or
+myTime = #10/9/1958 9:10:00 PM#
+
+Declaring a Variable with the Proper Data Type
+
+Dim myValue1, myValue2, myValue3 as Integer
+If you do not specify a data type after a variable name, such as in the latter case with myValue1 and myValue2, VBA will assign the Variant data type. Only the Value3 variable has been specified the Integer data type. Variant is a catch-all data type that is the most memory-intensive, and the least helpful in understanding the purpose of its
+
+correct way may be Dim myValue1 as Integer, myValue2 as Integer, myValue3 as Integer
+or dealcring each variable in separate line.
+You can tell if variable declaration is being enforced by seeing if the statement Option Explicit is at the top of your module.
+
+The visibility of a variable or constant also depends on how it is declared. If declared within a macro, a variable can only be used by that macro. 
+if it is declared outside macro then all macroc following declaration can use the variable.
+Finally, you can declare the variables as Public, which will make them visible to all macros in all modules. You only need to place the statements at the top of one standard module, like so:
+Public intAdd As Integer
+Public intSum As Integer
+
+A constant is a value in your macro that does not change while the macro is running.
+Const myMonths as Integer = 12
+
+Objects and Collections
+Workbooks
+Application object represents the entire Excel program, whereas Workbook object represents an individual Excel file.
+The Workbooks collection contains the references to every Workbook object that is open in the same instance of Excel. You will need to call upon the Workbooks collection when you want to do some task in every open workbook, or when you want to activate a particular workbook whose name is not known.
+
+Here is an example. In VBA, this will add a new workbook:
+Workbooks.Add 'When this code line is executed, the active workbook becomes the new workbook you added,
+
+Sub AddWorkbooks()
+Dim WorkbookAdd1 As Workbook
+Dim WorkbookAdd2 As Workbook
+Set WorkbookAdd1 = Workbooks.Add
+Set WorkbookAdd2 = Workbooks.Add
+WorkbookAdd1.Activate
+End Sub
+
+Worksheets
+The Worksheets collection allows you to refer to the Worksheets objects’ names or index numbers. Referring to names tends to be a safer practice, but as you saw with workbooks, and as you will learn with looping techniques.
+
+This one-line macro will add a new worksheet, name it as you specify, and place it at the far right end of the worksheets, which is the highest worksheet index number based on the count of existing worksheets:
+
+Sub WorksheetTest1()
+Worksheets.Add(After:=Worksheets(Worksheets.Count)).Name = “Test1”
+End Sub
+
+You can place a worksheet relative to another worksheet’s name, this time adding a worksheet, and placing it before Sheet2:
+Sub WorksheetTest2()
+Worksheets.Add(Before:=Worksheets(“Sheet2”)).Name = “Test2”
+End Sub
+
+Cells and Ranges
+
+A range can be a single cell or a range of cells that spans any size area.
+A single cell is a range as far as VBA is concerned, and ActiveCell is the object name in VBA of the single active cell on the active worksheet. There is no such object as “ActiveRange” 
+
+If you were to select any range of cells, and execute this line of code, all cells in that selection would immediately contain the word “Hello”:
+Selection.Value = “Hello”
+
+Named ranges are fair game for VBA to refer to and manipulate. As an example, say you have previously named a range myRange. This line of code in a VBA macro would place the word “Hello” in all cells in your named range:
+
+Range(“myRange”).Value = “Hello”
+
+You do not need to select your range in order to work with it. For most operations on cells or ranges, you can refer to the range and its parent worksheet. The following line of code can be executed from any worksheet in your workbook, as an example of establishing a bold format for a range of cells on Sheet1.
+Worksheets(“Sheet1”).Range(“A1:D25”).Font.Bold = True
+
+Clearing the contents of the entire grid of worksheet cells can be expressed as Cells.ClearContents
+This line of code will copy the Sheet1 cells and paste them to Sheet2.
+Worksheets(“Sheet1”).Cells.Copy Worksheets(“Sheet2”).Cells
+
+Special Cells : there are sevaral types of special cells, e.g cells contaaining formula, comment, data validation etc.
+
+Say in range A1:A10 you have some cells that contain formulas, some cells that contain numbers you have manually entered, and some cells that contain nothing. If you want to select all individual cells in range A1:A10 that contain formulas, and not include in your selection any of the other cells in that range, this macro would do that:
+Sub FindFormulas()
+Range(“A1:A10”).SpecialCells(xlCellTypeFormulas).Select
+End Sub
+
+Logical Operat ors
+Range(“A1”).Value > 300 AND Range(“B1”).Value > 700
+Range(“A1”).Value > 300 OR Range(“B1”).Value >900
+For example, this line of code will toggle as on or off the display of gridlines on the active worksheet:
+ActiveWindow.DisplayGridlines = Not ActiveWindow.DisplayGridlines
+
+If Weekday(VBA.Date) = 6 Then
+MsgBox “Have a nice weekend!”, , “Today is Friday!”
+End If
+
+When evaluating for a single condition, and the conditional code is one task as shown in this example, you can write the entire If…Then statement as a single
+
+same as
+If Weekday(VBA.Date) = 6 Then MsgBox “Have a nice weekend!”, , “Today is Friday!”
+
+If Weekday(VBA.Date) = 6 Then
+MsgBox “Have a nice weekend!”, , “Today is Friday!”
+Else
+MsgBox “Alas, today is not Friday.”, , “Not Friday yet!”
+End If
+
+Sub WeekdayTest()
+‘Monday
+If Weekday(VBA.Date) = 2 Then
+MsgBox “Ugghhh - - Back to work.”, , “Today is Monday”
+‘Tuesday
+ElseIf Weekday(VBA.Date) = 3 Then
+MsgBox “At least it’s not Monday anymore!”, , “Today is Tuesday”
+‘Wednesday
+ElseIf Weekday(VBA.Date) = 4 Then
+MsgBox “Hey, we’re halfway through the work week!”, , “Today is Wednesday”
+‘Thursday
+ElseIf Weekday(VBA.Date) = 5 Then
+MsgBox “Looking forward to the weekend.”, , “Today is Thursday”
+‘Friday
+ElseIf Weekday(VBA.Date) = 6 Then
+MsgBox “Have a nice weekend!”, , “Today is Friday!”
+‘Saturday or Sunday
+ElseIf Weekday(VBA.Date) = 7 Or Weekday(VBA.Date) = 1 Then
+MsgBox “Hey, it’s currently the weekend!”, , “Today is a weekend day!”
+End If
+End Sub
+
+Sub WeekdayTestSelectCase()
+Select Case Weekday(VBA.Date)
+Case 2 ‘Monday
+MsgBox “Ugghhh - - Back to work.”, , “Today is Monday”
+Case 3 ‘Tuesday
+MsgBox “At least it’s not Monday anymore!”, , “Today is Tuesday”
+Case 4 ‘Wednesday
+MsgBox “Hey, we’re halfway through the work week!”, , “Today is Wednesday”
+Case 5 ‘Thursday
+MsgBox “Looking forward to the weekend.”, , “Today is Thursday”
+Case 6 ‘Friday
+MsgBox “Have a nice weekend!”, , “Today is Friday!”
+Case 1, 7 ‘Saturday or Sunday
+MsgBox “Hey, it’s currently the weekend!”, , “Today is a weekend day!”
+End Select
+End Sub
+
+Sub CurrentQuarter()
+Select Case Month(VBA.Date)
+Case 1 To 3: MsgBox “Quarter 1”
+Case 4 To 6: MsgBox “Quarter 2”
+Case 7 To 9: MsgBox “Quarter 3”
+Case 10 To 12: MsgBox “Quarter 4”
+End Select
+End Sub
+
+MSG Box
+
+Sub ConfirmExample()
+Select Case MsgBox( “Do you really want to copy this worksheet?”, vbYesNo + vbQuestion, “Please confirm...”)
+' first argument is the message to be displayed 
+' second argument is the combination of buttons other options are OKCancel, YesNoCancel, and AbortRetryIgnore.
+' third argument is the title of the message box
+
+Case vbNo
+MsgBox  "No problem, this worksheet will not be copied.", vbInformation, "You clicked No."
+Exit Sub
+Case vbYes
+MsgBox "Great - - click OK to run the macro.", vbInformation, "Thanks for confirming."
+ActiveSheet.Copy Before:=Sheets("Sheet1")
+End Select
+End Sub
+
+Input Boxes
+Sub InsertRows()
+'Declare the string variable for the InputBox entry.
+Dim CountInsertRows As String
+'Define the String variable as the InputBox entry.
+CountInsertRows = InputBox( "Enter the number of rows to be inserted:", "Insert how many rows below the active cell?")
+'second argument is the title of the msg box
+'Verify that a number was entered.
+'The Val function returns the numbers contained in a string as a numeric value.
+If CountInsertRows = "" Or Val(CountInsertRows) < 1 Then Exit Sub
+'Insert as many rows as the number that was entered.
+'The Resize property returns a Range object based on the number of rows
+'and columns in the new range. The number that was entered in the InputBox
+'represents how many rows shall be inserted. The count of columns, which is
+'the other optional argument for Resize, need not be specified because it is
+'only rows being inserted.
+Rows(ActiveCell.Row + 1).Resize(Val(CountInsertRows)).Insert
+End Sub
+
+
+

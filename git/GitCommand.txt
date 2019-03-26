@@ -1,0 +1,250 @@
+
+cd /c/saroj
+
+git clone git@github.com:sarojaraut/handicraft.git
+
+-----------------------------------
+
+Should we work from wip or prd?
+
+git clone git@github.com:River-Island/core-cms.git
+
+
+
+https://github.com/River-Island/shared-ords/pull/33
+
+adding_saroj_to_management
+
+git push origin adding_saroj_to_management
+
+git branch
+
+git commit -m "Adding Tom and Saroj to Management Group"
+
+git status
+
+git add .
+
+git diff
+
+git checkout -b fresh_branch_for_adding_saroj_tom_to_management
+
+git clone git@github.com:River-Island/core-infrastructure-terraform.git
+
+/providers/aws/iam/main.tf
+
+--rm -rf core-infrastructure-terraform
+
+-----------------------------------------------------
+
+Timezone changes for ORDS
+
+git clone git@github.com:River-Island/shared-ords.git
+
+git checkout -b character_set_change
+
+git diff
+
+git add .
+
+git status
+
+git commit -m "Changed timezone to UTC and other tidy up"
+
+git branch
+
+git push origin timezone_change
+
+-----------------------------------------------------
+
+ORDS Optisation Changes
+
+git clone git@github.com:River-Island/shared-ords.git
+
+git checkout -b optimisation_changes
+
+git diff
+
+git add .
+
+git status
+
+git commit -m "Optimisation Changes"
+
+git branch
+
+git push origin optimisation_changes
+
+-----------------------------------------------------
+
+git clone git@github.com:River-Island/shared-ords.git
+
+git checkout -b reduced_tomcat_memory_size
+
+git diff
+
+git add .
+
+git status
+
+git commit -m "CPU Shared reduced and Memory increased"
+
+git branch
+
+git push origin reduced_tomcat_memory_size
+
+-----------------------------------------------------
+
+
+https://github.com/River-Island/shared-ords.git
+
+git clone git@github.com:River-Island/shared-ords.git
+
+git checkout -b stg_prd_config_files
+
+git diff
+
+git add .
+
+git status
+
+git commit -m "Amended Config Files"
+
+git branch
+
+git push origin amended_config_files
+
+shasum -a 256 /Users/itsr/Downloads/apex.tar.gz
+dbe9975edf2f1c2beee0cf26f25f331a413b545f1d286e53ba38939dd833c290  /Users/itsr/Downloads/apex.tar.gz
+
+815fde18f8247573277e5029c263595b-15
+
+git checkout -f : throws away all changes made to the branch.
+
+--------
+<entry key="debug.printDebugToScreen">true</entry>
+
+git clone git@github.com:River-Island/shared-ords.git
+
+git checkout -b logging_ords_error_details
+
+git diff
+
+git add .
+
+git status
+
+git commit -m "Changed for logging full error stack in the event of error"
+
+git branch
+
+git push origin logging_ords_error_details
+--------
+
+git clone git@github.com:River-Island/shared-ords.git
+
+git checkout -b adding_new_omsuat_environment_details
+
+git diff
+
+git add .
+
+git status
+
+git commit -m "Modified url mapping"
+
+git branch
+
+git push origin adding_new_omsuat_environment_details
+---------
+git clone git@github.com:River-Island/shared-ords.git
+
+git checkout -b switching_omsuat_environments
+
+git diff
+
+git add .
+
+git status
+
+git commit -m "ORDS points to new OMSUAT environment"
+
+git branch
+
+git push origin switching_omsuat_environments
+
+------
+
+git clone git@github.com:River-Island/shared-ords.git
+
+git checkout -b wms_uat_server_upgrade
+
+git diff
+
+git add .
+
+git status
+
+git commit -m "Changed WMS UAT Server details"
+
+git branch
+
+git push origin wms_uat_server_upgrade
+
+
+
+
+
+git merge --abort
+
+Steps done today
+
+wwisdmac001:gitcode itsr$ git clone git@github.com:River-Island/shared-ords.git
+
+wwisdmac001:gitcode itsr$ cd shared-ords/
+
+wwisdmac001:shared-ords itsr$ git checkout -b stg_prd_config_files
+
+cd /Users/itsr/gitcode/shared-ords/ords-config
+
+mv dev local
+
+mv test dev
+
+mkdir staging
+
+mkdir prod
+
+cd /Users/itsr/Downloads/OrdsUATandPRD/uat
+
+find . -type f | xargs dos2unix
+
+find . -name .DS_Store | xargs rm
+
+cd /Users/itsr/gitcode/shared-ords/ords-config
+
+cp -r /Users/itsr/Downloads/OrdsUATandPRD/uat/* staging/
+
+cp -r /Users/itsr/Downloads/OrdsUATandPRD/prd/* prod/
+
+git add .
+
+git commit -m "Added STG and PRD Config Files also renamed config folders dev ->> local test ->> dev"
+
+git push origin stg_prd_config_files
+
+---------
+
+cp /Users/itsr/ords_config_bkp/users/itsr/gitcode/shared-ords/ords-config/test/DWH/* /Users/itsr/gitcode/shared-ords/ords-config/test/ords/conf/
+
+git add .
+
+git commit -m "Added new DWH Config Files"
+
+RIPB-3247 - Deploy ORDS infrastructure to AWS ECS for production
+
+Can we continue using the selfsigned certificate
+
+One option is using a certificate ssl3.0
+
+

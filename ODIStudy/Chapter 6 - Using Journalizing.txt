@@ -1,0 +1,90 @@
+Chapter - 6 Using Journalizing
+
+Changed Data Capture is performed by journalizing models. Journalizing a model consists of setting up the infrastructure to capture the changes (inserts, updates and deletes) made to the records of this model's datastores.
+
+Avoid processing unchanged data
+Reducing the source data flow to only changed data
+
+Oracle Data Integrator supports two journalizing modes:
+Simple Journalizing - tracks changes in individual datastores in a model. Each journalized datastore is treated separately when capturing the changes
+Consistent Set Journalizing - tracks changes to a group of the model's datastores, taking into account the referential integrity between these datastores. The group of datastores journalized in this mode is called a Consistent Set.
+
+The journalizing components are:
+Journals: Where changes are recorded. Journals only contain references to the changed records along with the type of changes (insert/update, delete).
+Capture processes: Journalizing captures the changes in the source datastores either by creating triggers on the data tables, or by using database-specific programs to retrieve log data from data server log files.
+Subscribers: CDC uses a publish/subscribe model. Subscribers are entities (applications, integration processes, etc.) that use the changes tracked on a datastore or on a consistent set. They subscribe to a model's CDC to have the changes tracked for them. Changes are captured only if there is at least one subscriber to the changes. When all subscribers have consumed the captured changes, these changes are discarded from the journals.
+Journalizing views: Provide access to the changes and the changed data captured. They are used by the user to view the changes captured, and by integration processes to retrieve the changed data.
+
+Setting up and Starting Journalizing
+¦ Set the CDC parameters in the data model
+¦ Add the datastores to the CDC
+¦ For consistent set journalizing, set the datastores order
+¦ Add subscribers
+¦ Start the journals
+
+Set the CDC parameters : Setting up the CDC parameters is performed on a data model. This consists of selecting or changing the journalizing mode and journalizing Knowledge Module used for the model.
+
+1. In the Models tree in the Designer Navigator, select the model that you want to journalize.
+2. Double-click this model to edit it. 
+3. In the Journalizing tab, select the journalizing mode you want to use: Consistent Set or Simple.
+4. Select the Journalizing Knowledge Module (JKM) you want to use for this model. Only Knowledge Modules suitable for the data model's technology and journalizing mode, and that have been previously imported into at least one of your projects will appear in the list.
+5. Set the Options for this KM. See the Connectivity and Knowledge Modules Guide for Oracle Data Integrator for more information about this KM and its options.
+6. From the File menu, select Save All.
+
+Note: If the model is already being journalized, it is recommended that you stop journalizing with the existing configuration before modifying the data model journalizing parameters.
+
+Add or remove datastores for the CDC: You must flag the datastores that you want to journalize within the journalized model. A change in the datastore flag is taken into account the next time the journals are (re)started. When flagging a model or a sub-model, all of the datastores contained in the model or sub-model are flagged.
+
+1. Right-click the model, sub-model or datastore that you want to add to/remove from the CDC in the Model tree in the Designer Navigator.
+2. Right-click then select Changed Data Capture > Add to CDC or Changed Data Capture > Remove from CDC to add to the CDC or remove from the CDC the selected datastore, or all datastores in the selected model/sub-model.
+
+The datastores added to CDC should now have a marker icon. The journal icon represents a small clock. It should be yellow, indicating that the journal infrastructure is not yet in place.
+
+Set the datastores order (consistent set journalizing only): You only need to arrange the datastores in order when using consistent set journalizing. You should arrange the datastores in the consistent set in an order which preserves referential integrity when using their changed data. e.g if ORDER_LINE has a foreign key constraint that references ORDER), and both are added to the CDC, the ORDER datastore should come before ORDER_LINE. If the PRODUCT datastore has references imported from both ORDER and ORDER_LINE (i.e. both ORDER and ORDER_LINE have foreign key constraints to the PRODUCT table), its order should be lower still.
+
+1. In the Models tree in the Designer Navigator, select the model journalized in consistent set mode.
+2. Double-click this model to edit it.
+3. Go to the Journalized Tables tab.
+4. If the datastores are not currently in any particular order, click the Reorganize button. This feature suggests an order for the journalized datastores based on the
+foreign keys defined in the model. Review the order suggested and edit the datastores order if needed.
+5. Select a datastore from the list, then use the Up and Down buttons to move it within the list. You can also directly edit the Order value for this datastore.
+6. Repeat the previous step until the datastores are ordered correctly. 
+7. From the File menu, select Save All.
+
+Note: Changes to the order of datastores are taken into account the next time the journals are (re)started.
+
+Add or remove subscribers: Each subscriber consumes in a separate thread changes that occur on individual datastores. Adding or removing a subscriber registers it to the CDC infrastructure in order to trap changes for it.
+
+1. In the Models tree in the Designer Navigator, select the journalized data model if using Consistent Set Journalizing or select a data model or an individual datastore
+if using Simple Journalizing.
+2. Right-click, then select Changed Data Capture > Subscriber > Subscribe. A window appears which lets you select your subscribers.
+3. Type a Subscriber name, then click the Add Subscriber button. Repeat the operation for each subscriber you want to add.
+4. Click OK.
+5. In the Execution window, select the execution parameters:
+¦ Select the Context into which the subscribed must be registered.
+¦ Select the Logical Agent that will run the journalizing tasks.
+6. Click OK.
+7. The Session Started Window appears.
+8. Click OK.
+
+You can review the journalizing tasks in the Operator Navigator. Removing a subscriber is a similar process. Select the Changed Data Capture > Subscriber > Unsubscribe option instead.
+
+Start/Drop the journals: Starting the journals creates the CDC infrastructure if it does not exist yet. It also validates the addition, removal and order changes for journalized datastores. Dropping the journals deletes the entire journalizing infrastructure.
+
+To start or drop the journals:
+1. In the Models tree in the Designer Navigator, select the journalized data model if using Consistent Set Journalizing or select a data model or an individual datastore
+if using Simple Journalizing.
+2. Right-click, then select Changed Data Capture > Start Journal if you want to start the journals, or Changed Data Capture > Drop Journal if you want to stop them.
+3. In the Execution window, select the execution parameters:
+¦ Select the Context into which the journals must be started or dropped.
+¦ Select the Logical Agent that will run the journalizing tasks.
+4. Click OK.
+5. The Session Started Window appears.
+6. Click OK.
+
+A session begins to start or drops the journals. You can review the journalizing tasks in the Operator Navigator.
+
+Automate journalizing setup:
+Page 100
+
+

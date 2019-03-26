@@ -1,0 +1,201 @@
+﻿Analytic Query
+
+With analytic functions you can retrieve data from more than one row at the same time without the need for a self join.
+
+
+What makes a function analytic?
+• Keyword OVER
+• Followed by set of parentheses
+----------
+What’s the difference? AGGREGATE OR ANALYTIC?
+
+SYNTAX : OUTPUT
+Aggregate (traditional) Query often includes the keywords GROUP BY : Output is a single row (or one row per group with GROUP BY)
+Analytic OVER ( some other stuff) : Does not change number of rows
+
+Analytic
+SELECT deptno, ename, sal
+, COUNT ( * ) OVER ()
+, SUM ( sal ) OVER ()
+FROM scott.emp;
+Aggregate : if you run the above query without OVER (), this will throw error : ORA-00937: not a single-group group function
+-----------
+THE ANALYTIC CLAUSE
+• Within the set of parentheses
+• Expressions telling the function to calculate differently
+• Three possible components • Partition • Order • Windowing
+• Some or all are optional, depending upon the function
+• Components must be in this order
+----------
+if you don't follow proper order like below, you will get error.
+SELECT deptno, empno, ename, sal
+, MIN ( sal ) OVER ( ORDER BY ename PARTITION BY deptno ) minsal
+FROM scott.emp;
+
+, MIN ( sal ) OVER ( ORDER BY ename PARTITION BY deptno ) minsal
+*
+ERROR at line 2:
+ORA-00907: missing right parenthesis
+----------------------------------------
+Analytic function calculated on a subset of the records, Can differ for each one
+
+SELECT deptno, ename, sal, job
+, COUNT ( * ) OVER ( PARTITION BY job ) jobcount
+, SUM ( sal ) OVER ( PARTITION BY deptno ) deptsum
+FROM scott.emp;
+
+same query in traditional way
+
+SELECT deptno, ename, sal, job
+,( SELECT COUNT ( * ) FROM scott.emp WHERE job = e.job ) jobcount
+,( SELECT SUM ( sal ) FROM scott.emp WHERE deptno = e.deptno ) deptsum
+FROM scott.emp e;
+
+explain plan - traditional way(corelated sub query makes 3 passes on emp table where as analytic version just 1 pass
+----
+• LAG
+• LEAD
+• Usage:  LAG ( field_name, num_recs ) OVER ( )
+• Return the value from a field when looking one record (or more) behind/ahead 
+• Using the order specified
+• ORDER BY is required
+• Does not have to be order in the main query
+
+LEAD (<sql_expr>, <offset>, <default>) OVER (<analytic_clause>)
+
+<sql_expr> is the expression to compute from the leading row.
+<offset> is the index of the leading row relative to the current row.
+<offset> is a positive integer with default 1.
+<default> is the value to return if the <offset> points to a row outside the partition range.
+
+SELECT deptno, ename, sal
+, LAG ( ename ) OVER ( ORDER BY ename ) f1 -- previous ename of the current record as if all records sorted by ename
+ , LAG ( ename , 2 ) OVER ( ORDER BY ename ) f2
+, LEAD ( ename ) OVER ( ORDER BY ename DESC) f3
+, LAG ( sal ) OVER ( ORDER BY ename ) f4
+FROM scott.emp
+
+-----
+
+• Ordering ( Ranking ) functions:
+• RANK
+• DENSE_RANK
+• ROW_NUMBER
+• Usage:  RANK ( ) OVER ( ORDER BY field_name )
+
+These functions are analytic only, All three functions return a number, Difference between functions is how they handle ties
+
+RANK and DENSE_RANK will assign the same number to multiple records  with the same sort value, ROW_NUMBER assigns a unique number to each record. The highest value assigned by  ROW_NUMBER will be equal to COUNT(*) 
+
+-------
+SELECT deptno, ename, sal
+, SUM ( sal ) OVER ( ) sum1
+, SUM ( sal ) OVER ( ORDER BY ename ) sum2
+, SUM ( sal ) OVER ( ORDER BY ename ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING ) sum3
+, SUM ( sal ) OVER ( ORDER BY ename ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW ) sum4
+FROM scott.emp
+WHERE deptno = 10;
+
+SUM 1 is the same as SUM3
+SUM 2 is the same as SUM4
+
+------
+WINDOWING CLAUSE COMPARISON
+
+Row windowing: Restricts window by records Based on ORDER BY
+ROWS BETWEEN 10 PRECEDING AND 10 FOLLOWING  -- Analytic function will include the 10 records just before this record and the 10 records after
+Range windowing: Restricts window by a period of time or a value References field used in ORDER BY
+RANGE BETWEEN INTERVAL '10' DAY PRECEDING AND INTERVAL '10' DAY FOLLOWING -- Analytic function will include all records within 10 days of the record in question
+
+SELECT empno, ename, hiredate
+, COUNT(*) OVER ( ORDER BY hiredate
+RANGE BETWEEN 
+INTERVAL '1 3' DAY TO HOUR FOLLOWING
+AND INTERVAL '1-6' YEAR TO MONTH FOLLOWING ) AS
+
+• This is just an extreme example: Window includes people hired from
+• One day and three hours after the current record, to
+• One year and six months after the current record
+• The real point on display here …How do you use intervals?
+------
+
+• These Interval fields are equivalent:
+SELECT INTERVAL '3' DAY AS interv_1
+, INTERVAL '3 00:00:00' DAY TO SECOND AS interv_2
+, INTERVAL '72' HOUR AS interv_3
+, INTERVAL '4320' MINUTE AS interv_4 
+FROM dual;
+
+All of these express the interval three days, ensure to enclose the values within single quote otherwise you will get weird errors
+---
+Show date of next order for customer
+• Here are five ways:
+	• LEAD
+	• LAG with reverse order
+	• MAX with ROWS current to 1 following
+	• MIN with ROWS 1 to unbounded following
+	• MIN or MAX with window only on 1 row following
+
+SELECT customer_id
+, TRUNC ( order_date ) AS order_date
+, order_total
+, LEAD ( TRUNC ( order_date ) ) OVER ( PARTITION BY customer_id ORDER BY order_date ) AS next_order_date
+FROM oe.orders
+WHERE customer_id IN (103, 105)
+ORDER BY 1, 2;
+
+LAG ( TRUNC ( order_date ) ) OVER ( PARTITION BY customer_id  ORDER BY order_date DESC )
+MAX ( TRUNC ( order_date ) ) OVER ( PARTITION BY customer_id ORDER BY order_date ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING )
+MIN ( TRUNC ( order_date ) ) OVER ( PARTITION BY customer_id ORDER BY order_date ROWS BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING )
+MIN ( TRUNC ( order_date ) ) OVER ( PARTITION BY customer_id ORDER BY order_date ROWS BETWEEN 1 FOLLOWING AND 1 FOLLOWING )
+
+---------
+FIRST VALUE and LAST VALUE function
+
+The FIRST_VALUE analytic function picks the first record from the partition after doing the ORDER BY. The <sql_expr> is computed on the columns of this first record and results are returned. The LAST_VALUE function is used in similar context except that it acts on the last record of the partition.
+
+---------
+FIRST and LAST function
+The FIRST function (or more properly KEEP FIRST function) is used in a very special situation. Suppose we rank a group of record and found several records in the first rank. Now we want to apply an aggregate function on the records of the first rank. KEEP FIRST enables that.
+
+Function( ) KEEP (DENSE_RANK FIRST ORDER BY <expr>) OVER (<partitioning_clause>)
+
+Please note that FIRST and LAST are the only functions that deviate from the general syntax of analytic functions. They do not have the ORDER BY inside the OVER clause. Neither do they support any <window> clause. The ranking done in FIRST and LAST is always DENSE_RANK. The query below shows the usage of FIRST function. The LAST function is used in similar context to perform computations on last ranked records.
+
+-- How each employee's salary compare with the average salary of the first
+-- year hires of their department?
+
+SELECT empno, deptno, TO_CHAR(hiredate,'YYYY') HIRE_YR, sal,
+TRUNC(
+AVG(sal) KEEP (DENSE_RANK FIRST ORDER BY TO_CHAR(hiredate,'YYYY') ) OVER (PARTITION BY deptno)) AVG_SAL_YR1_HIRE
+FROM emp
+WHERE deptno IN (20, 10)
+ORDER BY deptno, empno, HIRE_YR;
+
+     EMPNO     DEPTNO HIRE        SAL AVG_SAL_YR1_HIRE
+---------- ---------- ---- ---------- ----------------
+      7782         10 1981       2450             3725
+      7839         10 1981       5000             3725
+      7934         10 1982       1300             3725
+      7369         20 1980        800              800
+      7566         20 1981       2975              800
+      7788         20 1982       3000              800
+      7876         20 1983       1100              800
+      7902         20 1981       3000              800
+
+---------
+
+SELECT empno, deptno, sal, AVG(sal) OVER (PARTITION BY deptno) AS avg_dept_sal FROM   emp;
+
+Defining the PARTITOIN BY and ORDER BY clauses on indexed columns (ordered in accordance with the PARTITION CLAUSE and then the ORDER BY clause in analytic function) will provide optimum performance. 
+
+SELECT deptno
+,      ename
+,      hiredate
+,      LISTAGG(ename, ',')
+	WITHIN GROUP (ORDER BY hiredate)
+ 	OVER (PARTITION BY deptno) AS employees
+FROM   emp;
+
+--------------
+--------------

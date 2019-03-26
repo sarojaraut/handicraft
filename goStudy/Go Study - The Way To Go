@@ -1,0 +1,1157 @@
+-- are from Introducing Go.pdf
+-- go version
+-- godoc fmt Println
+
+mkdir -p /Users/itsr/mygocode/study/
+
+$ export GOPATH=$HOME/mygocode
+$ cd $GOPATH/study
+$ go build
+
+vi hello.go
+
+package main
+import "fmt"
+// this is a comment
+func main() {
+  fmt.Println("Hello, World")
+}
+
+go run hello.go // This will compile and run the Go program but it won’t produce an executable binary
+
+go build hello.go
+./hello
+
+g = compiler: makes object code from source code (program text)
+l = linker: transforms object code into executable binaries (machine code)
+
+Linker (object- ) files can have the extension .o
+An executable program has by default the extension .out on Unix and .exe on Windows.
+
+On the command-line: 
+gofmt –w program.go reformats program.go (without –w the changes areshown, but not saved). 
+gofmt –w *.go works on all go-files. 
+gofmt map1 works recursively on all .go files in the map1 directory and its subdirectories.
+
+go doc package : to get the ‘package comment’ documentation for package, ex.: go doc fmt
+go doc package/subpackage : to get the documentation for subpackage in package, ex: go doc container/list
+
+The _ itself is a special identifier, called the blank identifier. It can be used in declarations or variable assignments like any other identifier (and any type can be assigned to it), but its value is discarded, so it cannot be used anymore in the code that follows.
+
+This is the set of 25 keywords or reserved words used in Go-code:
+
+break default func interface select
+case defer go map struct
+chan else goto package switch
+const fallthrough if range type
+continue for import return var
+
+Apart from the keywords Go has a set of 36 predeclared identifiers:
+
+append bool byte cap close complex complex64 complex128 uint16
+copy false float32 float64 imag int int8 int16 uint32
+int32 int64 iota len make new nil panic uint64
+print println real recover string true uint uint8 uintptr
+
+Programs consist out of keywords, constants, variables, operators, types and functions.
+The following delimiters are used: parentheses ( ), brackets [ ] and braces { }.
+The following punctuation characters . , ; : and … are used.
+
+http://www.golangbootcamp.com/book/basics#cha-basics
+
+Fortunately in our project we have got some spare time to learn latest technological advances like GO, Docker, Terraform etc. Learning a new language can be challenging but I manage to find a best way to jump start learning GO language. My trick is  observe how Go-lang is the same as or different from PL/SQL. That guaranteed a faster adoption for me.
+
+If you are a PL/SQL developer and If you are very interested to learn GO then this approach might be helpful.
+
+Every go-file belongs to one (and only one) package (like a library or namespace in other languages). Many different .go files can belong to one package, you can make a number of smaller files each having package main as 1st code line. Each Go application contains one package called main.
+--Every Go program must start with a package name.
+
+Every piece of Go code exists inside a package, and every Go program must have
+a main package with a main() function which serves as the program’s entry point,
+that is, the function that is executed first. In fact, Go packages may also have
+init() functions that are executed before main(),
+
+To build a program, the packages, and the files within them, must be compiled in the correct order. Package dependencies determine the order in which to build packages. Within a package, the source files must all be compiled together. The package is compiled as a unit, and by convention each directory contains one package.
+
+If a package is changed and recompiled, all the client programs that use this package must be recompiled too!
+
+If A.go depends on B.go depends on C.go:
+- compile C.go, B.go, then A.go.
+- to compile A.go, compiler reads B.o not C.o.
+
+If multiple packages are needed, they can each be imported by a separate statement:
+import “fmt”
+import “os”
+
+or:
+import “fmt”; import “os”
+
+but a shorter and more elegant way (called factoring the keyword, also applicable to const, var and type) is available:
+
+import (
+  “fmt”
+  “os”
+  )
+
+(It can be even shorter: import (“fmt”; “os”) but gofmt enforces the distributed version)
+
+Only apply this when there is more than one entry; in that case it is also clearer to list the package
+names in alphabetical order.
+
+Packages expose their code-objects to code outside of the package according to the following rule,
+
+When the identifier ( of a constant, variable, type, function, struct field, …) starts with an uppercase letter, like Group1, then the ‘object’ with this identifier is visible in code outside the package (thus available to client-programs, ‘importers’ of the package). Identifiers which start with a lowercase letter are not visible outside the package.
+
+A package can, if this is useful (for shortening, name conflicts, …), also be given another name (an alias), like: import fm “fmt”.
+
+importing a package which is not used in the rest of the code is a build-error (for example: imported and not used: os) . This follows the Go-motto: “no unnecessary code! ”
+
+After the import statement 0 or more constants (const), variables (var), and types (type) can be declared; these are global (have package scope) and are known in all functions in the code
+
+Functions
+The simplest function declaration has the format: func functionName()
+A main function as starting is required (usually the first func), otherwise the build-error undefined: main.main occurs. main must have no parameters and no return type
+
+When the program executes, after initializations the first function called (the entry-point of the application) will be main.main() (like in C). The program exits—immediately and successfully—when main.main returns.
+
+The code in functions (the body) is enclosed between braces: { }
+The first { must be on the same line as the func-declaration: this is imposed by the compiler
+
+So schematically a general function looks like:
+func functionName(parameter_list) (return_value_list) {
+…
+}
+
+where parameter_list is of the form (param1 type1, param2 type2, …)
+and return_value_list is of the form (ret1 type1, ret2 type2, …)
+
+Function names only start with a capital letter when the function has to be used outside the package; then they follow PascalCasing, otherwise they follow camelCasing: every new wording the name starts with a capital letter.
+
+The execution of a function is stopped when the closing } is reached or when a return statement is encountered.
+
+The program exits normally with code 0 ( Program exited with code 0 ); a program that terminates abnormally exits with another integer code like 1; this can be used to test successful execution of he program from a script.
+
+Comments
+A one-line comment starts with //, at the beginning or somewhere in a line; this is mostly used. A multi-line or block-comment starts with /* and ends with */, nesting is not allowed;
+
+Types
+Variables (like constants) contain data, and data can be of different data types, or types for short. A declaration of a variable with var automatically initializes it to the zero-value defined for its type.
+
+Types can be elementary (or primitive), like int, float, bool, string,
+        or structured (or composite), like struct, array, slice, map, channel,
+        and interfaces, which only describe the behavior of a type.
+
+A structured type which has no real value (yet) has the value nil, which is also the default value for these types
+
+Use the keyword type for defining your own type. Then you probably want to define a struct-type, but it is also possible to define an alias for an existing type, like in:
+type IZ int
+and then we can declare variables like: var a IZ = 5
+
+The order of execution (program startup ) of a Go application is as follows:
+(1) all packages in package main are imported in the order as indicated, in every package:
+(2) if it imports packages, (1) is called for this package (recursively) but a certain package is imported only once
+(3) then for every package (in reverse order) all constants and variables are evaluated, and the init() if it contains this function.
+(4) at last in package main the same happens, and then main() starts executing.
+
+Conversions
+If necessary and possible a value can be converted (cast, coerced) into a value of another type. Go never does implicit (automatic) conversion, it must be done explicitly.
+
+valueOfTypeB = typeB(valueOfTypeA)
+
+About naming things in Go
+Clean, readable code and simplicity are a major goal for Go development. gofmt imposes the code-style.
+Names of things in Go should be short, concise, evocative. Long names with mixed caps and underscores which are often seen e.g. in Java or Python code often hinders readability.
+Names should not contain an indication of the package: the qualification with the package name is sufficient.
+A method or function which returns an object is named as a noun, no Get… is needed.
+To change an object, use SetName. If necessary, Go uses MixedCaps or mixedCaps rather than
+underscores to write multiword names.
+
+Constants
+A constant const contains data which does not change. This data can only be of type boolean, number (integer, float or complex) or string. Constants must be evaluated at compile time; a const can be defined as a calculation, but all the values necessary for the calculation must be available at compile time.
+
+It is defined as follows: const identifier [type] = value, for example: const Pi = 3.14159
+
+The type specifier [type] is optional, the compiler can implicitly derive the type from the value.
+Explicit typing example: const b string = “abc”
+Implicit typing example: const b = “abc”
+
+A value derived from an untyped constant becomes typed when it is used within a context that requires a typed value
+var n int
+f(n + 5) // untyped numeric constant “5” becomes typed as int
+
+Numeric constants have no size or sign, can be of arbitrary high precision and do no overflow:
+const Ln2= 0.693147180559945309417232121458\
+176568075500134360255254120680009
+
+As demonstrated \ can be used as a continuation character in a constant.
+
+Multiple assignment is allowed, like in:
+const beef, two, c = “meat”, 2, “veg”
+const Monday, Tuesday, Wednesday, Thursday, Friday, Saturday = 1, 2, 3, 4, 5, 6
+const (
+Monday, Tuesday, Wednesday = 1, 2, 3
+Thursday, Friday, Saturday = 4, 5, 6
+)
+
+There is a convention to name constant identifiers with all uppercase letters, like:
+const INCHTOwCM = 2.54;
+
+enumerations????
+
+Variables:
+The general form for declaring a variable uses the keyword var: var identifier type
+
+Important to note is that the type is written after the identifier of the variable, contrary to almost any other programming language. Why did the Go designers chose for this convention?
+
+First it removes some ambiguity which can exist in C declarations, e.g. in writing int* a, b; Only a is a pointer and b is not. In order to declare them both pointers, the asterisk must be repeated.
+
+However in Go, they can both be declared pointers as follows: var a, b *int
+Secondly it reads well from left to right and so is easier to understand.
+
+Some examples:
+  var a int
+  var b bool
+  var str string
+which also can be written as: This form is mainly used to declare variables globally.
+var (
+  a int
+  b bool
+  str string
+)
+
+When a variable is declared it contains automatically the default zero or null value for its type: 0 for int, 0.0 for float, false for bool, empty string (“”) for string, nil for pointer, zero-ed struct, etc.: all memory in Go is initialized.
+
+The naming of identifiers for variables follows the camelCasing rules (start with a small letter, every new part of the word starts with a capital letter), like: numShips, startDate But if the variable has to be exported, it must start with a capital letter
+
+Variables etc. declared outside of any function (in other words at the top level) have global (or package) scope: they are visible and available in all source files of the package.
+
+Variables declared in a function have local scope: they are only known in that function, the same goes for parameters and return-variables.
+
+Declaration and assignment(initialization) can of course be combined, in the general format:
+
+Examples:
+  var a int = 15
+  var i = 5
+  //Go-compiler is intelligent enough to derive the type of a variable from its value (dynamically, also called automatic type inference,
+  var b bool = false
+  var str string = “Go says hello to the world!”
+
+Value types and reference types
+Memory in a computer is used in programs as a enormous number of boxes (that’s how we will
+draw them), called words. All words have the same length of 32 bits (4 bytes) or 64 bits (8 bytes), according to the processor and the operating system; all words are identified by their memory address (represented as a hexadecimal number).
+All variables of elementary (primitive) types like int, float, bool, string, … are value types, they point directly to their value contained in memory:
+
+Printing
+The function Printf is visible outside the fmt-package because it starts with a P, and is used to print output to the console.
+
+func Printf(format string, list of variables to be printed)
+This format-string can contain one or more format-specifiers %.., where .. denotes the type of the value to be inserted, e.g. %s stands for a string-value. %v is the general default format specifier.
+
+The function fmt.Sprintf behaves in exactly the same way as Printf, but simply returns the
+formatted string:
+
+The functions fmt.Print and fmt.Println perform fully automatic formatting of their arguments using the format-specifier %v, adding spaces between arguments and the latter a newline at the end.
+
+Short form with the := assignment operator
+we may write in Go: a := 50 or b := false
+Again the types of a and b (int and bool) are inferred by the compiler. This is the preferred form, but it can only be used inside functions, not in package scope. The := operator effectively makes a new variable; it is also called an initializing declaration.
+
+Declaring a local variable, but not using it, is a compiler error; like variable a in the following
+main() function: func main() {
+  var a string = “abc”
+  fmt.Println(“hello, world”)
+}
+which gives the error: a declared and not used, Also setting the value of a is not enough, the value must be read in order to count as a use,
+
+Other convenient shortening forms are:
+Multiple declarations of variables of the same type on a single line,
+like: var a, b, c int
+( this is an important reason why the type is written after the identifier(s) )
+Multiple assignments of variables on a single line, like: a, b, c = 5, 7, “abc”
+This assumes that variables a, b and c where already declared, if not: a, b, c := 5, 7, “abc”
+The values from the right-hand side are assigned to the variables on the left-hand side in the same order, This is called parallel or simultaneous assignment.
+
+With two variables it can be used to perform a swap of the values: a, b = b, a
+(This removes the need for making a swap function in Go)
+
+The blank identifier _ can also be used to throw away values, like the value 5 in: _, b = 5, 7
+
+_ is in effect a write-only variable, you cannot ask for its value. It exists because a declared variable
+in Go must also be used, and sometimes you don’t need to use all return values from a function.
+
+Init-functions
+Apart from global declaration with initialization, variables can also be initialized in an init()-function. This is a special function with the name init() which cannot be called, but is executed automatically before the main() function in package main or at the start of the import of the package that contains it.
+
+Every source file can contain only 1 init()-function. Initialization is always single-threaded and package dependency guarantees correct execution order.
+
+Elementary types and operators
+The two values for a binary operator must be of the same type. Go does not implicitly convert the type of a value, if necessary this must be done by an explicit conversion. There is no operator overloading as in C and Java. An expression is by default evaluated from left to right.
+
+Boolean type bool
+An example: var b bool = true
+The possible values of this type are the predefined constants true and false.
+
+Equality operator: == This gives true if the values on both sides are the same (values), false otherwise.
+Not-equal operator: !=  This gives true if the values on both sides are different (values), false otherwise.
+
+The following are the logical operators:
+NOT operator: !
+AND operator: &&
+OR operator: ||
+
+The && and || operators behave in a shortcut way: when the value of the left side is known and it is sufficient to deduce the value of the whole expression (false with && and true with ||), then the right side is not computed anymore.
+
+A useful naming convention for important boolean values and functions is to let the name begin with is or Is, like isSorted, isFound, isFinished, isVisible, so code in if-statements reads as a normal sentence, e.g.: unicode.IsDigit(ch)
+
+Numerical types
+ints and floats
+There are types for integers, floating point numbers and there is also native support for complex numbers.
+
+Go has architecture dependent types such as int, uint, uintptr.
+An int is the default signed type: it takes 32 bit (4 bytes) on a 32 bit machine and 64 bit(8 bytes) on a 64 bit machine; the same goes for the unsigned uint.
+uintptr is an unsigned integer large enough to store a pointer value.
+
+The architecture independent types have a fixed size (in bits) indicated by their names:
+  For integers:
+  int8 (-128 -> 127)
+  int16 (-32768 -> 32767)
+  int32 (− 2,147,483,648 -> 2,147,483,647)
+  int64 (− 9,223,372,036,854,775,808 -> 9,223,372,036,854,775,807)
+For unsigned integers:
+  uint8 (with alias byte, 0 -> 255)
+  uint16 (0 -> 65,535)
+  uint32 (0 -> 4,294,967,295)
+  uint64 (0 -> 18,446,744,073,709,551,615)
+  For floats: float32 (+- 1O-45 -> +- 3.4 * 1038 )
+  (IEEE-754) float64 (+- 5 * 10-324 -> 1.7 * 10308 )
+
+A float32 is reliably accurate to about 7 decimal places, a float64 to about 15 decimal places. Due to the fact that perfect accuracy is not possible for floats comparing them with == or != must be done very carefully; if needed a test on the difference being smaller than a very small number (the accuracy limit) must be made.
+
+Because Go is strongly typed, mixing of types is not allowed, as in the following program. But constants are considered typeless in this respect, so with constants mixing is allowed.
+
+package main
+func main() {
+var a int
+var b int32
+a = 15
+b = a + a // compiler error
+b = b + 5 // ok: 5 is a constant
+}
+
+Format specifiers:
+In format-strings %d is used as a format specifier for integers (%x or %X can be used for a hexadecimal representation), %g is used for float types (%f gives a floating point, %e gives a scientific notation), %0nd shows an integer with n digits, and leading 0 is necessary.
+
+%n.mg represents the number with m digits after the decimal sign, and n before it, instead of g also e and f can be used, for example: the %5.2e formatting of the value 3.4 gives 3.40e+00
+
+Bit operators
+They work only on integer variables having bit-patterns of equal length:
+%b is the format-string for bit-representations.
+
+Arithmetic operators
+The common binary operators +, -, * and / exist for both integers and floats.
+
+/ for integers is integer division, for example: 9 / 4 -> 2.
+The modulus operator % is only defined for integers: 9 % 4 -> 1
+There are shortcuts for these operations: b = b + a can be shortened to b += a, and the same goes for -=, *=, /= and %=.
+
+As unary operators for integers and floats we have ++ (increment) and -- (decrement), but only after the number (postfix):
+i++ is short for i += 1 is short for i = i + 1
+i-- is short for i -= 1 is short for i = i – 1
+
+Moreover ++ and - - may only be used as statements, not expressions; so n = i++ is invalid
+No error is generated when an overflow occurs during an operation: high bits are simply discarded.
+
+Random numbers
+Some programs like games or statistical applications need random numbers. The package rand implements pseudo-random number generators.
+
+page-83 of the book not the pdf file.
+
+Operators and precedence
+The following table lists all operators and their precedence, top to bottom (7 -> 1) is highest to lowest:
+Precedence Operator(s)
+7           ^ !
+6           * / % << >> & &^
+5           + - | ^
+4           == != < <= >= >
+3           <-
+2           &&
+1           ||
+
+Character type
+Strictly speaking this is not a type in Go: characters are a special case of integers. The byte type is an alias for uint8,
+
+var ch byte = ‘A’ ; a character is surrounded by single quotes ‘ ’.
+
+In the ASCII-table the decimal value for A is 65, and the hexadecimal value is 41, so the following
+are also declarations for the character A:
+
+var ch byte = 65 or var ch byte = ‘\x41’
+
+To write a Unicode-character in code preface the hexadecimal value with \u or \U. Because they need at least 2 bytes we have to use the int16 or int type. If 4 bytes are needed for the
+character \U is used; \u is always followed by exactly 4 hexadecimal digits and \U by 8 .
+
+var ch int = ‘\u0041’
+var ch2 int = ‘\u03B2’
+var ch3 int = ‘\U00101234’
+fmt.Printf(“%d - %d - %d\n”, ch, ch2, ch3) // integer
+fmt.Printf(“%c - %c - %c\n”, ch, ch2, ch3) // character
+fmt.Printf(“%X - %X - %X\n”, ch, ch2, ch3) // UTF-8 bytes
+fmt.Printf(“%U - %U - %U”, ch, ch2, ch3) // UTF-8 code point
+
+In format-strings %c is used as a format specifier for characters: the character is shown, format-specifiers %v or %d show the integer representing the character;
+
+Strings
+Strings are a sequence of UTF-8 characters (the 1 byte ASCII-code is used when possible, a 2-4 byte UTF-8 code when necessary).
+Strings are value types and immutable: once created you cannot modify the contents of the string; formulated in another way: strings are immutable arrays of bytes.
+
+2 kinds of string literals exist:
+Interpreted strings: surrounded by ““(double quotes),
+  escape sequences are interpreted:
+  for example: \n represents a newline
+  \r represents a carriage return
+  \t represents a tab
+  \u or \U Unicode characters
+  the escape character \ can also be used to remove the special meaning of the
+  following character, so \” simply prints a “, and \’ is ‘, \\ prints a \
+Raw strings: surrounded by ` ` (back quotes: AltGr + £), they are not interpreted; they can span multiple lines. in `This is a raw string \n` \n is not interpreted but taken literally.
+
+The usual comparison operators (== != < <= >= >) work on strings by comparing byte by byte
+in memory. The length of a string str (the number of bytes) is given by the len() function: len(str)
+The contents of a string (the ‘raw’ bytes) is accessible via standard indexing methods, the index between [ ], with the index starting from 0:
+the first byte of a string str is given by: str[0]
+the i-th byte by: str[i]
+the last byte by: str[len(str)-1]
+
+However these translate only to real characters if only ASCII characters are used!
+
+Adding (concatenating) strings: +
+Two strings s1 and s2 can be made into one string s with: s := s1 + s2
+s2 is appended to s1 to form a new string s.
+Multi-line strings can be constructed as follows:
+str := “Beginning of the string “+
+“second part of the string”
+The + has to be on the first line, due to the insertion of ; by the compiler.
+
+The strings and strconv package
+Prefixes and suffixes:
+  HasPrefix tests whether the string s begins with prefix:
+  strings.HasPrefix(s, prefix string) bool
+  HasSuffix tests whether the string s end with suffix:
+  strings.HasSuffix(s, suffix string) bool
+Testing whether a string contains a substring:Replacing a substring:
+With strings.Replace(str, old, new, n) you can replace the first n occurrences of old in str by
+new. A copy of str is returned, and if n = -1 all occurrences are replaced.
+  Contains returns true if substr is within s: strings.Contains(s, substr string) bool
+Indicating at which position (index) a substring or character occurs in a string:
+Index returns the index of the first instance of str in s, or -1 if str is not present in s:
+  strings.Index(s, str string) int
+LastIndex returns the index of the last instance of str in s, or -1 if str is not present in s:
+  strings.LastIndex(s, str string) int
+
+Replacing a substring:
+With strings.Replace(str, old, new, n) you can replace the first n occurrences of old in str by new. A copy of str is returned, and if n = -1 all occurrences are replaced.
+Counting occurrences of a substring:
+Count the number of non-overlapping instances of substring str in s with: strings.Count(s, str string) int
+
+Repeating a string:
+Repeat returns a new string consisting of count copies of the string s: strings.Repeat(s, count int) string
+
+Changing the case of a string:
+ToLower returns a copy of the string s with all Unicode letters mapped to their lower case:
+strings.ToLower(s) string
+All uppercase is obtained with: strings.ToUpper(s) string
+
+Trimming a string:
+Here you can use strings.TrimSpace(s) to remove all leading and trailing whitespace; if you want to specify in a string cut which characters to remove, use strings.Trim(s, “cut”).
+Example: strings.Trim(s, “\r\n”) removes all leading and trailing \r and \n from the string s.
+If you want to remove only leading or only trailing characters or strings, use TrimLeft or TrimRight.
+
+Splitting a string:
+On whitespace: strings.Fields(s) splits the string s around each instance of one or more consecutive white space characters, returning a slice of substrings []string of s or an empty list if s contains only white space.
+On a separator sep: strings.Split(s, sep) : works the same as Fields, but splits around a separator
+character or string sep (e.g.: ; or, or -).
+Because both return a []string, they are often used within a for-range loop
+
+Joining over a slice:
+This results in a string with all the elements of the slice, separated by sep: Strings.Join(sl []string, sep string)
+
+Conversion to and from a string:
+This functionality is offered by the package strconv.
+strconv.Itoa(i int) string : returns the decimal string representation of i
+strconv.FormatFloat(f float64, fmt byte, prec int, bitSize int) string:
+converts the 64-bit floating-point number f to a string, according to the format
+fmt (can be ‘b’, ‘e’, ‘f’ or ‘g’),
+
+
+Times and dates
+The package time gives us a datatype time.Time (to be used as a value) and functionality for displaying and measuring time and dates.
+
+The current time is given by time.Now(), and the parts of a time can then be obtained as t.Day(), t.Minute(), etc. ; you can make your own time-formats as in: fmt.Printf(“%02d.%02d.%4d\n”, t.Day(), t.Month(), t.Year()) // e.g.: 21.07.2011
+
+The type Duration represents the elapsed time between two instants as an int64 nanosecond count. The type Location maps time instants to the zone in use at that time, UTC represents Universal Coordinated Time.
+
+Pointers
+Programs store values in memory, and each memory block (or word) has an address, which is usually represented as a hexadecimal number, like 0x6b0820 or 0xf84001d7f0.
+
+var i1 = 5
+fmt.Printf(“An integer: %d, it’s location in memory: %p\n”, i1, &i1)
+
+var intP *int
+Then the following is true: intP = &i1, intP points to i1.
+
+A pointer variable contains the memory address of another value: it points to that value in memory and it takes 4 bytes on 32 bit machines, and 8 bytes on 64 bit machines, regardless of the size of the value they point to.
+
+A newly declared pointer which has not been assigned to a variable has the nil value.
+
+for any variable var the following is true: var == *(&var)
+
+you cannot take the address of a literal or a constant, as the following code snippet shows:
+const i = 5
+ptr := &i //error: cannot take the address of i
+
+One advantage of pointers is that you can pass a reference to a variable (for example as a parameter to a function), instead of passing a copy of the variable. Pointers are cheap to pass, only 4 or 8 bytes.
+
+Chapter 5—Control structures
+
+if condition {
+  // do something
+} else {
+  // do something else
+}
+
+if condition1 {
+  // do something
+} else if condition2 {
+  // do something else
+} else {
+  // catch-all or default
+}
+
+The { } are mandatory, also when there is only one statement in the body. The { after the if and else must be on the same line. The else if and else keywords must be on the same line as the closing } of the previous part of the structure. Both of these rules are mandatory for the compiler.
+
+IDIOM
+if condition {
+return x
+}
+return y
+
+Don’t use if / else with a return in both branches, this won’t compile: “function ends without a return statement” (it’s a compiler bug or feature, but it strengthens the idiom above).
+
+Some useful examples:
+Checking if a string str is empty:
+  if str == “” { … } or: if len(str) == 0 { … }
+
+Checking on what operating system the Go-program runs:
+  if runtime.GOOS == “windows” {
+  …
+  } else { // Unix-like
+  …
+  }
+
+Testing for errors on functions with multiple return values
+
+Often functions in Go are defined so that they return 2 values with successful execution: the value and true, and with unsuccessful execution: a 0 (or nil value) and false (see § 4.4). Instead of true and false, an error-variable can be returned: in the case of successful execution, the error is nil, otherwise it contains the error-information ( an error in Go is a variable of type error: var err error, more on this in chapter 13 ).
+
+anInt, _ = strconv.Atoi(origStr)
+If origStr cannot be converted to an integer, the function returns 0 for anInt, and the _ absorbs the error; the program continues to run. This is not good:
+
+func main() {
+  var orig string = “ABC”
+  var an int
+  var err error
+  an, err = strconv.Atoi(orig)
+  if err != nil {
+    fmt.Printf(“orig %s is not an integer - exiting with error\n”, orig)
+    return
+  }
+...
+
+If we do want the program to stop in case of an error, we can use the function Exit from package os instead of return:
+
+if err != nil {
+  fmt.Printf(“Program stopping with error %v”, err)
+  os.Exit(1)
+}
+
+If you accidentally forget a parameter left of the = sign of a multi-return function call, as in the following snippet:
+
+func mySqrt(f float64) (v float64, ok bool) {
+if f < 0 { return } // error case
+return math.Sqrt(f),true
+}
+
+func main() {
+t := mySqrt(25.0)
+fmt.Println(t)
+}
+
+then you get the following compiler error: multiple-value mySqrt() in single-value context
+
+It must be: t, ok := mySqrt(25.0)
+if ok { fmt.Println(t) }
+
+The switch keyword
+Compared to the C, Java—languages, switch in Go is considerably more flexible. It takes the
+general form:
+
+switch var1 {
+case val1:
+…
+case val2:
+…
+default:
+…
+}
+
+where var1 is a variable which can be of any type, and val1, val2, … are possible values of var1; they don’t need to be constants or integers, but they must be of the same type, or expressions evaluating to that type. The opening { has to be on the same line as the switch.
+
+More than one value can be tested in a case, the values are presented in a comma separated list like: case val1, val2, val3:
+
+The first branch that is correct is executed and then the switch-statement is complete.
+
+So automatic fall-through is not the default behavior; if you want this, use the keyword fallthrough at the end of the branch.
+
+So switch i {
+  case 0: //empty case body, nothing is executed when i==0
+  case 1:
+    f() // f is not called when i==0!
+}
+And:
+switch i {
+  case 0: fallthrough
+  case 1:
+    f() // f is called when i==0!
+}
+
+After the case … : multiple statements can follow without them being surrounded by { }, but braces are allowed. When there is only 1 statement: it can be placed on the same line as case.
+
+The (optional) default branch is executed when no value is found to match var1 with,
+
+package main
+import “fmt”
+func main() {
+  var num1 int = 100
+  switch num1 {
+  case 98, 99:
+    fmt.Println(“It’s equal to 98”)
+  case 100:
+    fmt.Println(“It’s equal to 100”)
+  default:
+    fmt.Println(“It’s not equal to 98 or 100”)
+  }
+}
+
+func main() {
+  var num1 int = 7
+  switch {
+    case num1 < 0:
+      fmt.Println(“Number is negative”)
+    case num1 > 0 && num1 < 10:
+      fmt.Println(“Number is between 0 and 10”)
+    default:
+      fmt.Println(“Number is 10 or greater”)
+  }
+}
+
+k := 6
+switch k {
+case 4: fmt.Println(“was <= 4”); fallthrough;
+case 5: fmt.Println(“was <= 5”); fallthrough;
+case 6: fmt.Println(“was <= 6”); fallthrough;
+case 7: fmt.Println(“was <= 7”); fallthrough;
+case 8: fmt.Println(“was <= 8”); fallthrough;
+default: fmt.Println(“default case”)
+}
+
+The for construct
+Only the for statement exists for repeating a set of statements a number of times;
+Counter-controlled iteration
+The general format is: for init; condition; modif { }
+
+func main() {
+  for i := 0; i < 5; i++ {
+    // there are no ( ) surrounding the header: for (i = 0; i < 10; i++) { } is invalid code!
+    //The counter-variable ceases to exist after the } of the for;
+    //always use short names for it like i, j, z or ix.
+    fmt.Printf(“This is the %d iteration\n”, i)
+  }
+}
+
+More than 1 counter can also be used,
+
+Condition-controlled iteration
+The 2nd form contains no header and is used for condition-controlled iteration ( the while-loop in other languages ) with the general format: for condition { }
+
+
+break only exits from the loop, while return exits from the function in which the loop is coded!
+
+The for range construct
+This is the iterator construct in Go and you will find it useful in a lot of contexts. It is a very useful and elegant variation, used to make a loop over every item in a collection (like arrays and maps)
+
+The general format is: for ix, val := range coll { }
+
+Be careful: val is here a copy of the value at that index in the collection, so it can be used only for read-purposes, the real value in the collection cannot be modified through val (try this out!). A
+string is a collection of Unicode-characters (or runes), so it can be applied for strings too.
+
+package main
+import “fmt”
+func main() {
+  str := “Go is a beautiful language!”
+  for pos, char := range str {
+    fmt.Printf(“Character on position %d is: %c \n”, pos, char)
+  }
+  fmt.Println()
+
+  str2 := “Chinese: 日本語”
+  for pos, char := range str2 {
+    fmt.Printf(“character %c starts at byte position %d\n”, char, pos)
+  }
+  fmt.Println()
+
+  fmt.Println(“index int(rune) rune char bytes”)
+  for index, rune := range str2 {
+    fmt.Printf(“%-2d %d %U ‘%c’ % X\n”, index, rune, rune,  rune, []byte(string(rune)))
+  }
+}
+
+A break statement always breaks out of the innermost structure in which it occurs; it can be used in any kind of for-loop (counter, condition,etc.), but also in a switch, or a select-statement. Execution is continued after the ending } of that structure.
+
+The keyword continue skips the remaining part of the loop, but then continues with the next iteration of the loop after checking the condition.
+
+Use of labels with break and continue—goto
+A code line which starts a for, switch, or select statement can be decorated with a label of the form identifier:
+
+!! The use of labels and certainly goto is discouraged: it can quickly lead to bad program design, the code can almost always be written more readable without using them. !!
+
+Chapter 6—Functions
+Their main purpose is to break a large problem which requires many code lines into a number of smaller tasks (functions). Also the same task can be invoked several times, so a function promotes code reuse.
+
+DRY-principle, Don’t Repeat Yourself, meaning that the code which performs a certain task may only appear once in the program.
+
+There are 3 types of functions in Go:
+• Normal functions with an identifier
+• Anonymous or lambda functions
+• Methods
+
+A function call can have another function call as its argument, provided that this function has the same number and types of arguments in the correct order that the first function needs, e.g.: Suppose f1 needs 3 arguments f1(a, b, c int), and f2 returns 3 arguments: f2(a, b int) (int, int, int), then this can be a call to f1: f1(f2(a, b))
+
+Function overloading, is not allowed in go, The main reason is that overloading functions forces the runtime to do additional type matching which reduces performance; no overloading means only a simple function dispatch is needed.
+
+Parameters normally have names, but a function can be defined in which no parameter has a name, only a type, like: func f(int, int, float64)
+A function with no parameters is called a niladic function, like main.main().
+
+Call by value / Call by reference
+The default way in Go is to pass a variable as an argument to a function by value: a copy is made of that variable (and the data in it). The function works with and possibly changes the copy, the original value is not changed: Function(arg1).
+
+If you want Function to be able to change the value of arg1 itself (‘in place’), you have to pass the memory address of that variable with &, this is call (pass) by reference: Function(&arg1);
+
+Named return variables
+Named variables used as result parameters are automatically initialized to their zero-value, and once they receive their value, a simple (empty) return statement is sufficient; furthermore even when there is only 1 named return variable, it has to be put inside ( )
+
+package main
+import “fmt”
+var num int = 10
+var numx2, numx3 int
+func main() {
+  numx2, numx3 = getX2AndX3(num)
+  PrintValues()
+  numx2, numx3 = getX2AndX3_2(num)
+  PrintValues()
+}
+func PrintValues() {
+  fmt.Printf(“num = %d, 2x num = %d, 3x num = %d\n”, num, numx2, numx3)
+}
+func getX2AndX3(input int) (int, int) {
+  return 2 * input, 3 * input
+}
+func getX2AndX3_2(input int) (x2 int, x3 int) {
+  x2 = 2 * input
+  x3 = 3 * input
+  // return x2, x3
+  return
+}
+Output:
+num = 10, 2x num = 20, 3x num = 30
+num = 10, 2x num = 20, 3x num = 30
+
+Blank identifier
+The blank identifier _ can be used to discard values, effectively assigning the right-hand-side value to nothing.
+
+i1, _, f1 = ThreeValues()
+
+Changing an outside variable
+
+package main
+import (
+“fmt”
+)
+// this function changes reply:
+func Multiply(a, b int, reply *int) {
+  *reply = a * b
+}
+func main() {
+  n := 0
+  reply := &n
+  Multiply(10, 5, reply)
+  fmt.Println(“Multiply:”, *reply) // Multiply: 50
+}
+
+Passing a variable number of parameters
+Later study
+
+Defer and tracing
+The defer keyword allows us to postpone the execution of a statement or a function until the end of the enclosing (calling) function: it executes something (a function or an expression) when the enclosing function returns (after every return and even when an error occurred in the midst of executing the function, not only a return at the end of the function), but before the }
+
+defer resembles the finally-block in OO-languages as Java and C#; in most cases it also serves to free up allocated resources.
+
+package main
+import “fmt”
+func main() {
+  Function1()
+}
+func Function1() {
+  fmt.Printf(“In Function1 at the top\n”)
+  defer Function2()
+  fmt.Printf(“In Function1 at the bottom!\n”)
+}
+func Function2() {
+  fmt.Printf(“Function2: Deferred until the end of the calling function!”)
+}
+
+
+Output:
+In Function1 at the top
+In Function1 at the bottom!
+Function2: Deferred until the end of the calling function!
+
+If the defer has arguments they are evaluated at the line of the defer-statement; this is illustrated in the following snippet, where the defer will print 0:
+
+func a() {
+i := 0
+defer fmt.Println(i)
+i++
+return
+}
+
+When many defer’s are issued in the code, they are executed at the end of the function in the inverse order (like a stack or LIFO): the last defer is first executed, and so on.
+
+func f() {
+  for i := 0; i < 5; i++ {
+    defer fmt.Printf(“%d “, i)
+  }
+}
+Which prints out: 4 3 2 1 0
+
+defer allows us to guarantee that certain clean-up tasks are performed before we return from a function, for example:
+1) closing a file stream:
+  // open a file
+  defer file.Close()
+2) unlocking a locked resource (a mutex):
+  mu.Lock()
+  defer mu.Unlock()
+3) printing a footer in a report:
+  printHeader()
+  defer printFooter()
+4) closing a database connection:
+  // open a database connection
+  defer disconnectFromDB()
+
+Tracing with defer:
+A primitive but sometimes effective way of tracing the execution of a program is printing a message when entering and leaving certain functions. This can be done with the following 2 functions:
+
+package main
+import “fmt”
+func trace(s string) { fmt.Println(“entering:”, s) }
+func untrace(s string) { fmt.Println(“leaving:”, s) }
+func a() {
+  trace(“a”)
+  defer untrace(“a”)
+  fmt.Println(“in a”)
+}
+func b() {
+  trace(“b”)
+  defer untrace(“b”)
+  fmt.Println(“in b”)
+  a()
+}
+func main() {
+  b()
+}
+
+which outputs:
+  entering: b
+  in b
+  entering: a
+  win a
+  leaving: a
+  leaving: b
+
+This can be done more succinctly:
+package main
+import “fmt”
+func trace(s string) string {
+  fmt.Println(“entering:”, s)
+  return s
+}
+func un(s string) {
+  fmt.Println(“leaving:”, s)
+}
+func a() {
+  defer un(trace(“a”))
+  fmt.Println(“in a”)
+}
+func b() {
+  defer un(trace(“b”))
+  fmt.Println(“in b”)
+  a()
+}
+func main() {
+  b()
+}
+
+This is another possible use of defer which might come in handy while debugging:
+package main
+
+import (
+  “log”
+  “io”
+)
+
+func func1(s string) (n int, err error) {
+  defer func() {
+    log.Printf(“func1(%q) = %d, %v”, s, n, err)
+  }()
+  return 7, io.EOF
+}
+func main() {
+  func1(“Go”)
+}
+
+// Output: 2011/10/04 10:46:11 func1(“Go”) = 7, EOF
+
+Built-in functions
+These are predefined functions which can be used as such, without having to import a package to get access to them.
+
+close : Used in channel communication
+len, cap : len gives the length of a number of types (strings, arrays, slices, maps, channels); cap is the capacity, the maximum storage (only applicable to slices and maps)
+new, make : Both new and make are used for allocating memory: new for value types and user-defined types like structs, make for built-in reference types (slices, maps, channels)
+  They are used like functions with the type as its argument: new(type), make(type) new(T) allocates zeroed storage for a new item of type T and returns its address, so it returns a pointer to the type T It can be used with primitive types as well:
+  v := new(int) // v has type *int
+  make(T) returns an initialized variable of type T, so it does more work than new
+  !! new( ) is a function, don’t forget its parentheses !!
+
+copy, append :used resp. for copying and concatenating slices
+panic, recover: both are used in a mechanism for handling errors
+
+Functions as parameters
+Functions can be used as parameters in another function, the passed function can then be called within the body of that function, that is why it is commonly called a callback.
+
+package main
+import (
+“fmt”
+)
+func main() {
+  callback(1, Add)
+}
+func Add(a,b int) {
+  fmt.Printf(“The sum of %d and %d is: %d\n”, a, b, a + b)
+}
+func callback(y int, f func(int, int)) {
+  f(y, 2) // this becomes Add(1, 2)
+}
+
+// Output: The sum of 1 and 2 is: 3
+
+Closures (function literals)
+Sometimes we do not want to give a function a name, then we make an anonymous function (also
+known under the names of a lambda function, a function literal, or a closure), for example: func(x,
+y int) int { return x + y }
+Such a function cannot stand on its own, but it can be assigned to a variable which is a reference to that function: fplus := func(x, y int) int { return x + y } and then invoked as if fplus was the name of the function: fplus(3,4).
+
+Here is a call to a lambda function which calculates the sum of integer floats till 1 million, gofmt reformats a lambda function in this way:
+func() {
+  sum = 0.0
+  for i := 1; i<= 1e6; i++ {
+  sum += i
+  }
+}()
+
+package main
+import “fmt”
+func main() {
+  f()
+}
+func f() {
+  for i := 0; i < 4; i++ {
+    g := func(i int) { fmt.Printf(“%d “, i) }
+    g(i)
+    fmt.Printf(“ - g is of type %T and has value %v\n”, g, g)
+  }
+}
+
+Output:
+  0 - g is of type func(int) and has value 0x681a80
+  1 - g is of type func(int) and has value 0x681b00
+  2 - g is of type func(int) and has value 0x681ac0
+  3 - g is of type func(int) and has value 0x681400
+Timing a function
+Sometimes it is interesting to know how long a certain computation took, e.g. for comparing and benchmarking calculations.
+
+start := time.Now()
+longCalculation()
+end := time.Now()
+delta := end.Sub(start)
+fmt.Printf(“longCalculation took this amount of time: %s\n”, delta)
+
+Using memoization for performance
+When doing heavy computations one thing that can be done for increasing performance is not to repeat any calculation that has already been done and that must be reused. Instead cache the calculated value in memory, which is called memoization.
+
+package main
+import “fmt”
+func f() (ret int) {
+defer func() {
+ret++
+}()
+return 1
+}
+func main() {
+fmt.Println(f())
+}
+
+Chapter 7—Arrays and Slices
+An array is a numbered and fixed-length sequence of data items (elements) of the same single type (it is a homogeneous data structure);
+
+package main
+import “fmt”
+func main() {
+  var arr1 [5]int
+
+  for i:=0; i < len(arr1); i++ {
+    arr1[i] = i * 2
+  }
+
+  for i:=0; i < len(arr1); i++ {
+    fmt.Printf(“Array at index %d is %d\n”, i, arr1[i])
+  }
+}
+
+for i:=0; i < len(arr1); i++ {
+  arr1[i]= …
+}
+
+for i:= range arr1 {
+  …
+}
+
+when assigning an array to another, a distinct copy in memory of the array is made. So when an array is passed as an argument to a function like in func1(arr1), a copy of the array is made, and func1 cannot change the original array arr1. If you want this to be possible or you want a more efficient solution, then arr1 must be passed by reference with the &-operator, as in func1(&arr1),
+
+Array literals
+When the values (or some of them) of the items are known beforehand, a simpler initialization
+exists using the { , , } notation called array literals (or constructors), instead of initializing every item
+in the [ ]= way.
+
+var arrAge = [5]int{18, 20, 15, 22, 16}
+[10]int { 1, 2, 3 } : this is an array of 10 elements with the 1st three different from 0.
+
+var arrLazy = [...]int{5, 6, 7, 8, 22}
+... indicates the compiler has to count the number of items to obtain the length of the array.
+
+key: value syntax
+var arrKeyValue = [5]string{3: “Chris”, 4: “Ron”}
+Only the items with indexes (keys) 3 and 4 get a real value, the others are set to empty strings,
+
+package main
+import “fmt”
+  func fp(a *[3]int) { fmt.Println(a) }
+func main() {
+  for i := 0; i < 3; i++ {
+    fp(&[3]int{i, i * i, i * i * i})
+  }
+}
+Output:
+&[0 0 0]
+&[1 1 1]
+&[2 4 8]
+
+Multidimensional arrays
+Arrays are always 1-dimensional, but they may be composed to form multidimensional arrays, like:
+[3][5]int
+[2][2][2]float64
+
+Concept
+A slice is a reference to a contiguous segment(section) of an array (which we will call the underlying array, and which is usually anonymous), so a slice is a reference type
+
+The format of the declaration is: var identifier []type no length is needed.
+
+A slice that has not yet been initialized is set to nil by default, and has length 0.
+
+Format of initialization of a slice: var slice1 []type = arr1[start:end]
+
+This represents the subarray of arr1 (slicing the array, start:end is called a slice-expression) composed of the items from index start to index end-1. So slice1[0] == arr1[start] is a true statement. This can be defined even before the array arr1 is populated.
+
+var slice1 []type = arr1[:] means slice1 is equal to the complete array arr1 (so it is a shortcut for arr1[0:len(arr1)]). Another way to write this is: slice1 = &arr1.
+
+arr1[2:] is the same as arr1[2:len(arr1)] so contains all the items of the array from the 2nd till the last.
+
+arr1[:3] is the same as arr1[0:3], containing the array-items from the 1st till (not including) the 3rd .
+
+If you need to cut the last element from slice1, use: slice1 = slice1[:len(slice1)-1]
+
+For every slice (also for strings) the following is always true:
+s == s[:i] + s[i:] // i is an int: 0 <= i <= len(s)
+len(s) <= cap(s)
+
+A slice in memory is in fact a structure with 3 fields: a pointer to the underlying array, the length of the slice, and the capacity of the slice. This is illustrated in the following figure, where the slice y is of length 2 and capacity 4.
+
+y[0] = 3 and y[1] = 5. The slice y[0:4] contains the elements 3, 5, 7 and 11.
+
+x := []int{2,3,5,7,11} // len=5 and cap=5
+y := x[1:3] //len=2 and cap=4
+
+y[0] = 3 and y[1] = 5. The slice y[0:4] contains the elements 3, 5, 7 and 11.
+
+package main
+import “fmt”
+
+func main() {
+  var arr1 [6]int
+  var slice1 []int = arr1[2:5] // item at index 5 not included!
+  // load the array with integers: 0,1,2,3,4,5
+  for i := 0; i < len(arr1); i++ {
+    arr1[i] = i
+  }
+  // print the slice:
+  for i := 0; i < len(slice1); i++ {
+    fmt.Printf(“Slice at %d is %d\n”, i, slice1[i])
+  }
+  fmt.Printf(“The length of arr1 is %d\n”, len(arr1))
+  fmt.Printf(“The length of slice1 is %d\n”, len(slice1))
+  fmt.Printf(“The capacity of slice1 is %d\n”, cap(slice1))
+  // grow the slice:
+  slice1 = slice1[0:4]
+  for i := 0; i < len(slice1); i++ {
+    fmt.Printf(“Slice at %d is %d\n”, i, slice1[i])
+  }
+  fmt.Printf(“The length of slice1 is %d\n”, len(slice1))
+  fmt.Printf(“The capacity of slice1 is %d\n”, cap(slice1))
+  // grow the slice beyond capacity:
+  // slice1 = slice1[0:7 ] // panic: runtime error: slice bounds out of range
+}
+
+Output:
+  Slice at 0 is 2
+  Slice at 1 is 3
+  Slice at 2 is 4
+  The length of arr1 is 6
+  The length of slice1 is 3
+  The capacity of slice1 is 4
+  Slice at 0 is 2
+  Slice at 1 is 3
+  Slice at 2 is 4
+  Slice at 3 is 5
+  The length of slice1 is 4
+  The capacity of slice1 is 4
+
+Slices cannot be re-sliced below zero to access earlier elements in the array. Slices can only move forward: s2 = s2[-1:] results in a compile error.
+
+!! Never use a pointer to a slice. A slice is already a reference type, so it is a pointer !!

@@ -1,0 +1,71 @@
+IaaS : Infrastructure As A Service, A form of cloud computing that provides virtualized computing resources. You essentially use IaaS to replace physical resources, such as servers, with virtual resources hosted and managed by Amazon. 
+SaaS : Software As A Service, A software distribution service that lets you use applications without actually having the applications installed locally. Another term used to describe this service is software on demand. The host, Amazon, maintains the software, provides the required licenses, and does all the other work needed to make the software available.
+PaaS : Platform As A Service, A platform provides a complete solution for running software in an integrated manner on a particular piece of hardware. For example, Windows is a particular kind of platform. The virtual platform provided by PaaS allows a customer to develop, run, and manage applications of all sorts.
+
+Defining IaaS
+The simplest way to view IaaS is as a means of providing access to virtualized computer resources over an Internet connection. IaaS acts as one of three methods of sharing resources over the Internet, alongside SaaS and PaaS. AWS supports IaaS by providing access to virtualized hardware, software, servers, storage, and other infrastructure components. In short, you can use IaaS to replace every physical element in your computing setup except those required to establish and maintain Internet connectivity and those required to provide nonvirtualized services (such as printing).
+
+Comparing IaaS to SaaS : 
+SaaS is all about cloud-based applications. Products like online email and office suites are examples of cloud-based applications. A client typically accesses the application using a local application, such as a browser. The browser runs on local hardware, but the application runs on the host hardware. What a client sees is the application running in the browser as if it is working locally. SaaS typically keeps the host completely in control and doesn’t offer any sort of monitoring. Even though the host keeps the application updated and ensures data security, the client company administrators typically can’t access SaaS solutions in any meaningful way.
+
+Comparing IaaS to PaaS
+PaaS is more of a development solution than a production environment solution. A development team typically uses PaaS to create custom solutions or modify existing solutions. The development staff has full control over the application and can perform all development-related tasks, such as debugging and testing.
+
+Planning for too much capacity is better than for not enough, but getting the configuration as close as possible to what you need will always help financially.
+
+
+
+
+select ri_ut_run( i_package_name => 'ut_ords_valid_order', i_package_name => 'ITTR1') from dual
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+I had detailed discussion with my current sponsor for my resignation and It will be extremely difficult for me to resign before 31st March. The earliest I can join RI as a permanent employee is 1st April 2018. Not sure if the date is still acceptable by you, if not then do let me know at the earliest I'll go back to the damage control mode. I don't want to ruin the relationship with them
+
+I am really sorry for the incovinience, but this is the worst case scenario I've anticipated for.
+
+
+three months notice. 
+
+
+internal-transit-dev-ecs-1-1590837308.eu-west-1.elb.amazonaws.com
+internal-transit-dev-ecs-1-1590837308.eu-west-1.elb.amazonaws.com
+

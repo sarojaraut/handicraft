@@ -1,0 +1,26 @@
+http://wwisdlap002/ords/cms/w_ii_orgmstee
+One specific record
+http://wwisdlap002/ords/cms/w_ii_orgmstee/0
+Meta data of the table, column name and data type, primary key
+http://wwisdlap002/ords/cms/metadata-catalog/w_ii_orgmstee/item
+List of all objects enabled for this schema
+http://wwisdlap002/ords/cms/metadata-catalog/
+Table data using pagination
+http://wwisdlap002/ords/cms/w_ii_orgmstee/?offset=10&limit=5
+
+
+http://wwisdlap002/ords/cms/org/orgmst/
+http://wwisdlap002/ords/cms/org/orgmst/?org_lvl_number=9001
+http://wwisdlap002/ords/cms/org/orgmst/9001/
+http://wwisdlap002/ords/cms/org/store/SINGAPORE/
+http://wwisdlap002/ords/cms/org/storewithhier/SINGAPORE/
+
+
+curl -i -X POST --data-binary @orgmstee.csv -H "Content-Type: text/csv" --user org_user:org_user  http://wwisdlap002/ords/cms/org/orgmst/
+
+curl -i -X POST --data-binary @w_ii_orgmstee.csv -H "Content-Type: text/csv" http://wwisdlap002/ords/cms/w_ii_orgmstee/batchload?dateFormat="DD-MON-YYYY"
+
+curl -H "Content-Type: application/json" -d "{\"org_lvl_child\":0}" -X DELETE  http://wwisdlap002/ords/cms/org/orgmst/
+
+
+http://localhost/ords/cms/org/orgmst/

@@ -1,0 +1,422 @@
+Identifying Bottlenecks via Operating System Utilities
+
+The vmstat (virtual memory statistics) tool is intended to help you quickly identify bottlenecks on your server. The top utility provides a dynamic real-time view of system resource usage. These two utility are discussed in the next two subsections.
+
+$ vmstat
+procs -----------memory---------- ---swap-- -----io---- --system-- ----cpu----
+ r  b   swpd   free   buff  cache    si   so    bi    bo   in    cs us sy id wa
+14  0  52340  25272   3068 1662704    0    0    63    76    9    31 15  1 84  0
+
+Here are some general heuristics you can use when interpreting the output of vmstat:
+
+If the wa (time waiting for I/O) column is high, this is usually an indication that the storage subsystem is overloaded.
+If b (processes sleeping) is consistently greater than 0, then you may not have enough CPU processing power.
+If so (memory swapped out to disk) and si (memory swapped in from disk) are consistently greater than 0, you may have a memory bottleneck.
+
+By default, only one line of server statistics is displayed when running vmstat (without supplying any options). This one line of output displays average statistics calculated from the last time the system was rebooted. This is fine for a quick snapshot. However, if you want to gather metrics over a period of time, use vmstat with this syntax:
+vmstat <interval in seconds> <number of intervals>
+
+For example, if you wanted to report system statistics every two seconds for ten intervals, you'd issue this command:
+
+$ vmstat 2 10
+
+This example samples statistics every 5 seconds for a total of 60 reports and records the output in a file:
+
+$ vmstat 5 20 > vmout.perf
+
+Another useful way to use vmstat is with the watch tool. The watch command is used to execute another program on a periodic basis. This example uses watch to run the vmstat command every five seconds and to highlight on the screen any differences between each snapshot:
+
+$ watch –n 5 –d vmstat
+
+Every 5.0s: vmstat                                    Thu May  27 13:27:57 2013
+procs -----------memory---------- ---swap-- -----io---- --system-- ----cpu----
+ r  b   swpd   free   buff  cache  si   so    bi    bo   in    cs us sy id wa
+ 0  0    144  15900  64620 1655100  0     0     1     7   16     4  0  0 99  0
+
+Note that the default unit of measure for the memory columns of vmstat is in kilobytes. If you want to view memory statistics in megabytes, then use the -S m (statistics in megabytes) option:
+
+$ vmstat -S m
+
+details the meanings of the columns displayed in the default output of vmstat
+
+Column  Description 
+ 
+r  Number of processes waiting for runtime
+b  Number of processes in uninterruptible sleep
+swpd  Total virtual memory (swap) in use (KB)
+free  Total idle memory (KB)
+buff  Total memory used as buffers (KB)
+cache  Total memory used as cache (KB)
+si  Memory swapped in from disk (KB/s)
+so  Memory swapped out to disk (KB/s)
+bi  Blocks read in (blocks/s) from block device
+bo  Blocks written out (blocks/s) per second to block device
+in  Interrupts per second
+cs  Context switches per second
+us  User-level code time as a percentage of total CPU time
+sy  System level code time as a percentage of total CPU time
+id  Idle time as a percentage of total CPU time
+wa  Time waiting for I/O completion
+ 
+Using top
+Another tool for identifying resource-intensive processes is the top command. Use this utility to quickly identify which processes are the highest consumers of resources on the server. By default, top will repetitively refresh (every three seconds) information regarding the most CPU-intensive processes. 
+
+Here's a fragment of the output:
+
+top - 21:05:39 up 43 days, 23:45,  8 users,  load average: 1.10, 0.87, 0.72
+Tasks: 576 total,   2 running, 574 sleeping,   0 stopped,   0 zombie
+Cpu(s):  0.1%us,  0.2%sy,  0.0%ni, 98.8%id,  0.8%wa,  0.0%hi,  0.0%si,  0.0%st
+Mem:  16100352k total, 12480204k used,  3620148k free,    38016k buffers
+Swap: 18481144k total,   380072k used, 18101072k free,  8902940k cached
+
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+ 9236 mscd642   15   0 13000 1468  812 R  0.7  0.0   0:00.03 top
+ 3179 oracle    16   0 2122m 1.9g 1.9g S  0.3 12.3  97:54.00 oracle
+ 4116 oracle    16   0  618m 133m 124m S  0.3  0.8   0:08.62 oracle
+20763 mscd642   15   0  609m  91m  88m S  0.3  0.6   0:00.26 oracle
+    1 root      15   0 10344  684  572 S  0.0  0.0   0:25.98 init
+    2 root      RT  -5     0    0    0 S  0.0  0.0   0:16.01 migration/0
+    3 root      34  19     0    0    0 S  0.0  0.0   0:03.16 ksoftirqd/0
+
+Column  Description 
+ PID  Unique process identifier.
+ USER  OS username running the process.
+ PR  Priority of the process.
+ NI  Nice value or process. Negative value means high priority. Positive value means low priority.
+ VIRT  Total virtual memory used by process.
+ RES  Nonswapped physical memory used.
+ SHR  Shared memory used by process.
+ S  Process status.
+ %CPU  Processes percent of CPU consumption since last screen refresh.
+ %MEM  Percent of physical memory the process is consuming.
+ TIME  Total CPU time used by process.
+ TIME+  Total CPU time, showing hundredths of seconds.
+ COMMAND  Command line used to start a process.
+ 
+Commands to Interactively Change the top Output 
+Command  Function 
+ Spacebar Immediately refreshes the output.
+ < or >  Moves the sort column one to the left or to the right. By default, top sorts on the CPU column.
+ D  Changes the refresh time.
+ R  Reverses the sort order.
+ 
+Mapping an Operating System Process to a SQL Statement
+
+$ ps -e -o pcpu,pid,user,tty,args | sort -n -k 1 -r | head
+72.4 25922 mscd642  ?       oracleE64215 (DESCRIPTION=(LOCAL=YES)(ADDRESS=(PROTOCOL=beq)))
+ 2.1 32616 oradev   ?        oracleSBD11 (LOCAL=NO)
+ 1.5   623 root     ?        [kswapd0]
+ 0.9  8320 oradev   ?        ora_j000_SBD12
+ 0.8 14291 root     ?        /opt/perf/bin/perfd
+ 0.5  8332 oradev   ?        ora_j000_SBT11
+ 0.5 19364 oradev   ?        oracleSBD11 (LOCAL=NO)
+ 0.5 14088 root     ?        /opt/perf/bin/scopeux
+ 0.4  7685 oradev   ?        oracleSBD11 (LOCAL=NO)
+ 0.3 11928 root     ?        cmanicd
+ 0.1  9160 oradev   ?        ora_dia0_SBG11
+
+ From the output, the operating system session of 25922 is consuming the most CPU resources at 72.4 percent. In this example, the 25922 process is associated with the E64215 database. Next, log onto the appropriate database and use the following SQL statement to determine what type of program is associated with the operating system process of 25922:
+
+ 
+select
+  'USERNAME : ' || s.username|| chr(10) ||
+  'OSUSER   : ' || s.osuser  || chr(10) ||
+  'PROGRAM  : ' || s.program || chr(10) ||
+  'SPID     : ' || p.spid    || chr(10) ||
+  'SID      : ' || s.sid     || chr(10) ||
+  'SERIAL#  : ' || s.serial# || chr(10) ||
+  'MACHINE  : ' || s.machine || chr(10) ||
+  'TERMINAL : ' || s.terminal
+from v$session s,
+     v$process p
+where s.paddr = p.addr
+and   p.spid  = '&PID_FROM_OS';
+
+
+Finding Resource Intensive SQL Statements
+
+If you're using Oracle Database 11g, you can use the following query to select from the V$SQL_MONITOR to monitor the near real-time resource consumption of SQL queries:
+
+select * from (
+select
+ a.sid session_id
+,a.sql_id
+,a.status
+,a.cpu_time/1000000 cpu_sec
+,a.buffer_gets
+,a.disk_reads
+,b.sql_text sql_text
+from v$sql_monitor a
+    ,v$sql b
+where a.sql_id = b.sql_id
+order by a.cpu_time desc)
+where rownum <=20;
+
+You can modify the previous query to order by the statistic of your choice or modify it to display only the queries that are currently executing. For example, the next SQL statement monitors currently executing queries ordered by the number of disk reads:
+
+
+select * from (
+select
+ a.sid session_id
+,a.sql_id
+,a.status
+,a.cpu_time/1000000 cpu_sec
+,a.buffer_gets
+,a.disk_reads
+,substr(b.sql_text,1,15) sql_text
+from v$sql_monitor a
+    ,v$sql b
+where a.sql_id = b.sql_id
+and   a.status='EXECUTING'
+order by a.disk_reads desc)
+where rownum <=20;
+
+The statistics in V$SQL_MONITOR are updated every second so you can view resource consumption as it changes. These statistics are gathered by default if a SQL statement runs in parallel or consumes more than 5 seconds of CPU or I/O time.
+
+The V$SQL_MONITOR view includes a subset of statistics contained in the V$SQL, V$SQLAREA, and V$SQLSTATS views. The V$SQL_MONITOR view displays real-time statistics for each execution of a resource-intensive SQL statement, whereas V$SQL, V$SQLAREA, and V$SQLSTATATS contain cumulative sets of statistics over several executions of a SQL statement.
+
+Once the SQL statement execution ends, the run time statistics are not immediately flushed from V$SQL_MONITOR. Depending on activity in your database, the statistics can be available for some period of time. If you have a very active database, the statistics could potentially be flushed soon after the query finishes.
+
+Tip  You can uniquely identify an execution of a SQL statement in V$SQL_MONITOR from a combination of the following columns: SQL_ID, SQL_EXEC_START, SQL_EXEC_ID.
+ 
+Detecting and Resolving Locking Issues
+
+ set lines 80
+col blkg_user form a10
+col blkg_machine form a10
+col blkg_sid form 99999999
+col wait_user form a10
+col wait_machine form a10
+col wait_sid form 9999999
+col obj_own form a10
+col obj_name form a10
+col blkg_sql form a50
+col wait_sql form a50
+--
+select
+ s1.username    blkg_user
+,s1.machine     blkg_machine
+,s1.sid         blkg_sid
+,s1.serial#     blkg_serialnum
+,s1.process     blkg_OS_PID
+,substr(b1.sql_text,1,50) blkg_sql
+,chr(10)
+,s2.username    wait_user
+,s2.machine     wait_machine
+,s2.sid         wait_sid
+,s2.serial#     wait_serialnum
+,s2.process     wait_OS_PID
+,substr(w1.sql_text,1,50) wait_sql
+,lo.object_id   blkd_obj_id
+,do.owner       obj_own
+,do.object_name obj_name
+from v$lock          l1
+    ,v$session       s1
+    ,v$lock          l2
+    ,v$session       s2
+    ,v$locked_object lo
+    ,v$sqlarea       b1
+    ,v$sqlarea       w1
+    ,dba_objects     do
+where s1.sid = l1.sid
+and s2.sid = l2.sid
+and l1.id1 = l2.id1
+and s1.sid = lo.session_id
+and lo.object_id = do.object_id
+and l1.block = 1
+and s1.prev_sql_addr = b1.address
+and s2.sql_address = w1.address
+and l2.request > 0;
+
+
+alter system kill session '1084,265';
+
+Resolving Open Cursor Issues
+The OPEN_CURSORS initialization parameter determines the maximum number of cursors a session can have open. This setting is per each session. The default value of 50 is usually too low for any application. When an application exceeds the number of open cursors allowed, the following error is thrown:
+
+If the value is less than 300, consider setting it higher. I typically set this value to 1000 for busy OLTP systems. You can dynamically modify this value while your database is open as shown:
+
+alter system set open_cursors=1000;
+
+select * from (
+select
+  a.value
+ ,c.username
+ ,c.machine
+ ,c.sid
+ ,c.serial#
+from v$sesstat  a
+    ,v$statname b
+    ,v$session  c
+where a.statistic# = b.statistic#
+and   c.sid        = a.sid
+and   b.name       = 'opened cursors current'
+and   a.value     != 0
+and   c.username IS NOT NULL
+order by 1 desc,2)
+where rownum < 21;
+
+If a single session has over 1000 open cursors, there is probably something in the code that is not closing a cursor. When this limit is reached, somebody should inspect the application code to determine if a cursor is not being closed.
+
+Handling Temporary Tablespace Issues
+
+ORA-01652: unable to extend temp segment by 128 in tablespace TEMP
+
+select name, bytes/1024/1024 mb_alloc from v$tempfile;
+
+alter database tempfile '/ora03/DWREP/temp03.dbf' resize 12g;
+
+You can add a datafile to a temporary tablespace as follows:
+
+alter tablespace temp add tempfile '/ora04/DWREP/temp04.dbf' size 2g;
+
+
+To view the space a session is using in the temporary tablespace, run this query:
+
+ SELECT
+ s.sid
+,s.serial#
+,s.username
+,p.spid
+,s.module
+,p.program
+,SUM(su.blocks) * tbsp.block_size/1024/1024 mb_used
+,su.tablespace
+FROM v$sort_usage    su
+    ,v$session       s
+    ,dba_tablespaces tbsp
+    ,v$process       p
+WHERE su.session_addr = s.saddr
+AND   su.tablespace   = tbsp.tablespace_name
+AND   s.paddr         = p.addr
+GROUP BY
+ s.sid, s.serial#, s.username, s.osuser, p.spid, s.module,
+ p.program, tbsp.block_size, su.tablespace
+ORDER BY s.sid;
+
+Enabling Oracle Standard Auditing
+
+Oracle Standard Auditing allows you to audit nearly any type of SQL activity in the database. You can audit any type of insert, update, delete, or select on a tables. You can also audit any system privilege activity such as CREATE TABLE, DROP INDEX, and so on.
+
+You can enable auditing BY ACCESS or BY SESSION. Prior to Oracle Database 11g release 2, the BY SESSION would record just one record per session for an auditing action. With the current version of Oracle, the BY SESSION will record multiple records for the same auditing action.
+
+You can also enable auditing by WHENEVER SUCCESSFUL or WHENEVER NOT SUCCESSFUL. This allows you to audit specifically for the success or failure of a particular statement.
+
+Oracle's Standard Auditing feature is enabled through setting the AUDIT_TRAIL initialization parameter. I usually set the AUDIT_TRAIL parameter to DB, which specifies that Oracle will write audit records to an internal database table named AUD$.
+
+alter system set audit_trail=db scope=spfile;
+
+DB  :Enables auditing and sets the SYS.AUD$ table as the audit repository.
+DB_EXTENDED  :Enables auditing and sets the SYS.AUD$ table as the audit repository and includes the SQLTEXT and SQLBIND columns. This is useful for viewing the actual SQL statement that was issued. Be careful when using this option as it will consume much more space. In prior releases of Oracle, the parameter was specified as 'DB, EXTENDED'.
+OS  :Enables auditing and specifies that an operating system file will store auditing information.
+XML  :Enables auditing and writes audit records in XML format to an OS file.
+NONE  :Disables database auditing.
+ 
+You must stop and start your database for the AUDIT_TRAIL parameter to take effect:
+
+Tip  I typically set the AUDIT_TRAIL parameter to DB even if I'm not doing any auditing. This way when I want to enable auditing for a specific action, I can do so without having to stop and re-start the database.
+
+After you've set the AUDIT_TRAIL parameter, no actual auditing events are enabled. You have to use the AUDIT statement to control auditing for specific database events. 
+
+Tip  Set the database initialization parameter AUDIT_SYS_OPERATIONS to TRUE. This ensures that all SYS activities are logged to files in the directory specified by AUDIT_FILE_DEST (regardless of the setting of AUDIT_TRAIL). This provides you with a simple and effective method for auditing the SYS user.
+ 
+For example, the following statement enables auditing on all DML access to the EMP table owned by INV_MGMT:
+
+audit select, insert, update, delete on inv_mgmt.emp;
+
+From this point on, any DML access to the INV_MGMT.EMP table will be recorded in the SYS.AUD$ table. You can use a query such as this to report on DML access to a table:
+
+select
+  username
+ ,obj_name
+ ,timestamp
+ ,substr(ses_actions,4,1) del
+ ,substr(ses_actions,7,1) ins
+ ,substr(ses_actions,10,1) sel
+ ,substr(ses_actions,11,1) upd
+from dba_audit_object;
+
+In the prior SQL statement, notice the use of the SUBSTR function to reference the SES_ACTIONS column of the DBA_AUDIT_OBJECT view. That column contains a 16-character string in which each character means that a certain operation has occurred. The 16 characters represent the following operations in this order: ALTER, AUDIT, COMMENT, DELETE, GRANT, INDEX, INSERT, LOCK, RENAME, SELECT, UPDATE, REFERENCES, and EXECUTE. Positions 14, 15, and 16 are reserved by Oracle for future use. 
+The character of 
+S represents success, 
+F represents failure, 
+and B represents both success and failure.
+
+One basic security auditing technique is to record all user logon and logoff activity in the database. This allows the auditor to determine who was using the database and when. This information is critical when diagnosing security breaches and unauthorized actions.
+
+Use the BY ACCESS clause of AUDIT to enable auditing of logon and logoff activities, like so:
+
+audit create session by access;
+
+Now every user that logs on and logs off the database will result in a record being inserted into the AUD$ table. You can report on logon and logoff activity with a query such as this:
+
+select
+ username
+,action_name
+,to_char(timestamp,'dd-mon-yyyy hh24:mi:ss') event_time
+,to_char(logoff_time,'dd-mon-yyyy hh24:mi:ss') logoff_time
+from dba_audit_trail;
+
+You can enable logon and logoff access for a specific user by specifying the username:
+
+audit session by larry by access;
+
+You can disable logon/logoff auditing as shown:
+
+noaudit create session;
+
+To disable logon/logoff for individual sessions, specify the username:
+
+noaudit session by larry;
+
+Viewing Enabled Audit Actions
+There are several data dictionary views that allow you to view what auditing actions have been enabled. Use the following query to enabled auditing at the privilege level:
+
+select
+ user_name
+,privilege
+,success
+,failure
+from dba_priv_audit_opts;
+
+Run the following query to view statement level auditing actions:
+
+select
+ user_name
+,audit_option
+,success
+,failure
+from dba_stmt_audit_opts;
+
+The next query audits object level auditing actions. For this example, only a small subset of the columns available is selected (to keep the output on one page):
+
+select
+ owner
+,object_name
+,object_type
+,alt
+,del
+,upd
+from dba_obj_audit_opts;
+
+
+Purging the Audit Table and Files
+You should periodically purge the AUD$ table so that it doesn't consume inordinate amounts of space in your SYSTEM tablespace. (To move the AUD$ table out of the SYSTEM tablespace, see the next section.) The easiest way to purge audit records is to delete from or truncate the audit table. This example truncates the AUD$ table:
+
+truncate table aud$;
+delete from aud$ where timestamp# > sysdate + 21;
+
+Moving the Audit Table to a Non-System Tablespace
+If you're going to do an extensive amount of auditing, I recommend moving the AUD$ table to a non-SYSETM tablespace. You may want to do this so that auditing actions doesn't impact the space used in the SYSTEM tablespace or affect the performance of the SYSTEM tablespace.
+
+Use the DBMS_AUDIT_MGMT package to move the AUD$ table to a separate tablespace. This example moves the AUD$ table to a tablespace named AUD_TBSP:
+
+BEGIN
+  DBMS_AUDIT_MGMT.SET_AUDIT_TRAIL_LOCATION(
+  AUDIT_TRAIL_TYPE => DBMS_AUDIT_MGMT.AUDIT_TRAIL_AUD_STD,
+  AUDIT_TRAIL_LOCATION_VALUE => 'AUD_TBSP');
+END;
+/
+
+
+ 

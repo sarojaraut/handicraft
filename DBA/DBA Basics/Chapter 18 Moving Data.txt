@@ -1,0 +1,144 @@
+Moving Data
+
+Architecturally, SQL*Loader is a user process like any other: it connects to the database via a server process. To insert rows, it can use two techniques: conventional or direct path. A conventional insert, the SQL*Loader user process constructs an INSERT statement with bind variables in the VALUES clause and then reads its source data file to execute the INSERT once for each row to be inserted. This method uses the database buffer cache and generates undo and redo data: these are INSERT statements like any others, and normal commit processing makes them permanent.
+
+The direct path bypasses the database buffer cache. SQL*Loader reads the source data file and sends its contents to the server process. The server process then assembles blocks of table data in its PGA and writes them directly to the datafiles. The write is above the high water mark of the table and is known as a data save. The high water mark is a marker in the table segment above which no data has ever been written: the space above the high water mark is space allocated to the table that has not yet been used. Once the load is complete, SQL*Loader shifts the high water mark up to include the newly written blocks, and the rows within them are then immediately visible to other users. This is the equivalent of a commit; No undo is generated, and if you wish, you can switch off the generation of redo as well. For these reasons, direct path loading is extremely fast, and furthermore it should not impact on your end users, because interaction with the SGA is kept to a minimum.
+
+Direct path loads are very fast, but they do have drawbacks:
+■ Referential integrity constraints must be dropped or disabled for the duration of the operation.
+■ Insert triggers do not fire.
+■ The table will be locked against DML from other sessions.
+■ It is not possible to use direct path for clustered tables. These limitations are a result of the lack of interaction with the SGA while the load is in progress.
+
+The control file is a text file instructing SQL*Loader on how to process the input data files. It is possible to include the actual data to be loaded on the control file, but you would not normally do this; usually, you will create one control file and reuse it, on a regular basis, with different input data files.
+
+The input data files are the source data that it will upload into the DB.
+
+Log files summarize the success (or otherwise) of the job, with detail of any errors. Rows extracted from the input files may be rejected by SQL*Loader.
+
+A SQL*Loader control file to load this data is DEPTS.CTL:
+  load data                               -- Start a new load operation.
+  infile 'depts.txt'
+  badfile 'depts.bad'
+  discardfile 'depts.dsc'
+  append                                  -- Add rows to the table (rather than, for example, truncating it first).
+  into table dept
+  fields terminated by ','
+  trailing nullcols
+  (deptno integer external(2),
+  dname,
+  loc)
+  
+  To perform the load, from an operating system prompt run this command:
+sqlldr userid=scott/tiger control=depts.ctl direct=true
+
+Directory Objects
+In many applications it is necessary for a database session to read or write operating system files. The supplied PL/SQL package UTL_FILE has procedures for doing this.
+
+The operating system directories that can be accessed by UTL_FILE are only those listed in UTL_FILE_DIR instance parameter. This parameter defaults to NULL (meaning that no directories can be accessed) but would usually be set to
+
+a comma-separated list of all the directories where such access is necessary. It is possible to use a “*” wildcard, which means that every directory on the server will be
+accessible. 
+alter system set utl_file_dir='/tmp' scope = spfile;
+then any user with execute permission on the UTL_FILE package (which is everyone, because EXCUTE on UTL_FILE is by default granted to PUBLIC) will be able to work with files in the /tmp directory. 
+
+Oracle directories give a layer of abstraction between the user and the operating system: you as DBA create a directory within the database, which points to a physical
+path. Permissions on these Oracle directories can then be granted to individual users. This gives much more finely grained access control than the UTL_FILE_DIR
+parameter. At the operating system level, the Oracle user will need permissions against the operating system directories to which the Oracle directories refer.
+
+Directories are always owned by user SYS, but to create them you must have been granted the appropriate privilege.
+
+grant create any directory to scott;
+grant drop directory to scott;
+create directory temp_dir as '/temp';
+
+External Tables
+An external table exists as an object defined in the data dictionary, but not as a segment; the storage is an operating system file. External tables can be queried as any other table. It is not possible to execute DML operations against an external table, but it is possible to write to them with Data Pump. In all cases, access to external tables is through Oracle directories.
+
+create table new_dept
+(deptno number(2),
+dname varchar2(14),
+loc varchar2(13))
+organization external (
+type oracle_loader
+default directory scott_dir
+access parameters
+(records delimited by newline
+badfile 'depts.bad'
+discardfile 'depts.dsc'
+logfile 'depts.log'
+fields terminated by ','
+missing field values are null)
+location ('depts.txt'));
+
+External tables can be queried in exactly the same way as internal tables. They can be used in joins, views, and subqueries. They cannot have indexes, and (as they cannot be written to with DML commands) they do not have constraints or triggers.
+
+Data Pump and Export/Import
+
+Ordinary Export/Import suffer from the limitation of being client-server tools; they are just user processes, like any other. The Export utility connects to the database via a server process and issues SELECT statements: the data retrieved by the server process is passed back to the Export user process, where it is formatted and written out to a disk file. Similarly, the Import utility user process logs onto the instance via a server process; then it reads the disk file produced by Export and constructs DDL and insert statements to create tables and load the data into them. Release 10g introduced the Data Pump facility.
+
+Functionally, the results are the same as the old Export/Import utilities: But the implementation is totally different, and far superior. Note also that the Data Pump file format and the Export/Import file format are completely different: the old Import utility cannot read files generated with Data Pump, and Data Pump cannot read files generated by the old Export utility.
+
+There is one thing that Export/Import can do but Data Pump cannot do: write to the operating system of the user process. This is a critical architectural difference: Export/Import are user processes that use files local to the user; Data Pump is a server-side facility that uses files on the database server.
+
+The expdp or impdp user process establishes a session against the database through a normal server process. This session then issues commands to control and monitor Data Pump jobs. When a Data Pump job is launched, at least two processes are started: a Data Pump Master process (the DMnn) and one or more worker processes (named DWnn). If multiple Data Pump jobs are running concurrently, each will have its own DMnn process, and its own DWnn processes. 
+
+Two queues are created for each Data Pump job: a control queue and a status queue. The DMnn divides up the work to be done and places individual tasks that make up the job on the control queue. The worker processes pick up these tasks and execute them—perhaps making use of parallel execution servers. Messages are enqueued by the DMnn and dequeued by the worker that picks them up. The status queue is for monitoring purposes: the DMnn places messages on it describing the state of the job. This queue operates on a publish-and-subscribe model: any session (with appropriate privileges) can query the queue to monitor the job’s progress.
+
+The files generated by Data Pump come in three forms: SQL files, dump files, and log files. SQL files are DDL statements describing the objects included in the job. You can choose to generate them (without any data) as an easy way of getting this information out of the database, perhaps for documentation purposes or as a set of scripts to recreate the database. Dump files contain the exported data. This is formatted with XML tags. The log files describe the history of the job run. Lastly, there is the control table. This is created for you by the DMnn when you launch a job, and is used both to record the job’s progress and to describe it. It is included in the dump file as the final item of the job.
+
+Data Pump always uses Oracle directories. If a directory is not specified in the Data Pump command, there are defaults.
+Every 11g database will have an Oracle directory that can be used. This is named DATA_PUMP_DIR. If the environment variable ORACLE_BASE has been set at database creation time, the operating system directory will be the directory admin/database_name/dpdump beneath this. If ORACLE_BASE is not set, the directory will be admin/database_name/dpdump beneath the ORACLE_HOME directory (where database_name is the name of the database). To identify the location in your database, query the view DBA_DIRECTORIES.
+
+Specifying the directory (or directories) to use for a Data Pump job can be done at four levels. In decreasing order of precedence, these are
+
+■ A per-file setting within the Data Pump job
+■ A parameter applied to the whole Data Pump job
+■ The DATA_PUMP_DIR environment variable
+■ The DATA_PUMP_DIR directory object
+
+Data Pump has two methods for loading and unloading data: the direct path and the external table path. The direct path bypasses the database buffer cache. For a direct path export, Data Pump reads the datafiles directly from disk, extracts and formats the content, and writes it out as a dump file. For a direct path import, Data Pump reads the dump file, uses its content to assemble blocks of table data, and writes them directly to the datafiles. The write is above the “high water mark” of the table. No undo is generated, and if you wish, you can switch off the generation of redo as well. Direct path is therefore extremely fast, and furthermore it should not impact on your end users because interaction with the SGA is kept to a minimum.
+
+The external table path uses the database buffer cache. Even though Data Pump is manipulating files that are external to the database, it uses the database buffer cache as though it were reading and writing an internal table. For an export, Data Pump reads blocks from the datafiles into the cache through a normal SELECT process. From there, it formats the data for output to a dump file. During an import, Data Pump constructs standard insert statements from the content of the dump file and executes them by reading blocks from the datafiles into the cache, where the insert is carried out in the normal fashion. 
+
+So what determines whether Data Pump uses the direct path or the external table path? You as DBA have no control; Data Pump itself makes the decision based on the complexity of the objects.
+
+Using Data Pump with the Command-Line
+To export the entire database,
+expdp system/manager@orcl11g full=y
+parallel =4
+dumpfile=datadir1:full1_%U.dmp,
+datadir2:full2_%U.dmp,
+datadir3:full3_%U.dmp,
+datadir4:full4_%U.dmp,
+filesize=2G
+compression=all
+
+A corresponding import job (which assumes that the files generated by the export
+have all been placed in one directory) would be
+impdb system/manager@dev11g full=y
+directory=samba_dir
+parallel=4
+dumpfile=full1_%U.dmp,full2_%U.dmp,full3_%U.dmp,full4_%U.dmp
+
+This command makes a selective export of the PL/SQL objects belonging to two
+schemas:
+expdp system/manager schemas=hr,oe
+directory=code_archive
+dumpfile=hr_oe_code.dmp
+include=function,include=package,include=procedure,include=type
+
+This command will extract everything from a Data Pump export that was in the HR schema, and import it into the DEV schema:
+
+impdp system/manager
+directory=usr_data
+dumpfile=usr_dat.dmp
+schema=hr
+remap_schema=hr:dev
+
+This last example does a network mode import:
+impdp system/manager@orcl11g
+directory=db_dir
+schema=hr
+network_link=prod.ebs.ac.za
+

@@ -1,0 +1,22 @@
+Setting Up the Oracle Warehouse Builder 11g Release 2 Tutorial Environment
+
+http://www.oracle.com/webfolder/technetwork/tutorials/obe/db/11g/r2/prod/bidw/owb/setup/setting_owb_environment.htm
+
+alter user owbsys identified by owbsys account unlock;
+
+Workspace Owner's User Name 	eup_owner
+Workspace Owner's Password 	eup_owner
+Workspace Owner's Password Confirmation 	eup_owner
+Workspace Name 	my_workspace1
+
+
+Workspace Owner's User Name 	acmeowb
+Workspace Owner's Password 	acmeowb
+Workspace Owner's Password Confirmation 	acmeowb
+Workspace Name 	acme_ws
+
+
+create user acme_ws_orders identified by acme_ws_orders;
+
+grant connect, resource, create any view to acme_ws_orders
+/

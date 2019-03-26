@@ -1,0 +1,32 @@
+At the time of confirmming order how the stock has been checked at TCPL.
+store order does not follow the same process
+
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+   l_selection   VARCHAR2 (1) := 'C';
+   l_value       VARCHAR2 (100);
+BEGIN
+   l_value :=
+      CASE l_selection
+         WHEN 'A' THEN 'Apple'
+         WHEN 'B' THEN 'Banana'
+      END;
+    DBMS_OUTPUT.PUT_LINE('l_value:'||l_value);
+END;
+
+DECLARE
+   l_selection   VARCHAR2 (1) := 'C';
+   l_value       VARCHAR2 (100);
+BEGIN
+      CASE l_selection
+         WHEN 'A' THEN l_value:='Apple';
+         WHEN 'B' THEN l_value:='Banana';
+      END CASE;
+    DBMS_OUTPUT.PUT_LINE('l_value:'||l_value);
+END;
+
+
+Store Location APP
+

@@ -1,0 +1,278 @@
+XPath and XQuery
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="urn:DeliveryManager/services" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <ser:createAndAllocateConsignmentsWithBookingCode>
+            <consignments>
+                <item>
+                    <custom1>DC Loc Ref : 1 B</custom1>
+                    <custom2>Store No. : ^40</custom2>
+                    <custom3>Label Date: ^30 Dec 2016</custom3>
+                    <custom6>Cage Ref:</custom6>
+                    <custom8>@29/*/*-*/*/*-*</custom8>
+                    <orderNumber>-12345617</orderNumber>
+                    <parcelCount>1</parcelCount>
+                    <parcels soapenc:arrayType="ns2:Parcel[1]">
+                        <parcels>
+                            <cartonId>CG00000000270203</cartonId>
+                            <number>1</number>
+                            <parcelWeight>1.0</parcelWeight>
+                        </parcels>
+                    </parcels>
+                    <recipientAddress>
+                        <countryCode>GBR</countryCode>
+                        <line1>10-16 CHURCH STREET, </line1>
+                        <line2>LIVERPOOL</line2>
+                        <line3>MERSEYSIDE</line3>
+                        <line4/>
+                        <postCode>L1 1DA</postCode>
+                    </recipientAddress>
+                    <recipientContactPhone>0344 395 1007</recipientContactPhone>
+                    <recipientEmail/>
+                    <recipientName>LIVERPOOL CHURCH STREET</recipientName>
+                    <recipientNotificationType>E</recipientNotificationType>
+                    <recipientPhone>0344 395 1007</recipientPhone>
+                    <senderAddress>
+                        <companyName>River Island</companyName>
+                        <countryCode>GB</countryCode>
+                        <line1>Fen Farm</line1>
+                        <line2>Fen Street</line2>
+                        <line3>Milton Keynes</line3>
+                        <line4>Bucks</line4>
+                        <postCode>MK17 8EW</postCode>
+                    </senderAddress>
+                    <senderCode>candctote</senderCode>
+                    <senderName>River Island Clothing Co</senderName>
+                </item>
+            </consignments>
+            <bookingCode>@29/*/*-*/*/*-*</bookingCode>
+            <calculateTaxAndDuty>false</calculateTaxAndDuty>
+        </ser:createAndAllocateConsignmentsWithBookingCode>
+    </soapenv:Body>
+</soapenv:Envelope>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<friends>
+  <characters>
+    <character status="Lead" actorid="001">
+      <firstname>Ross</firstname>
+      <lastname>Geller</lastname>
+      <gender>Male</gender>
+      <birthdate>1967-10-18</birthdate>
+      <occupation>Palaeontologist</occupation>
+    </character>
+    <character status="Lead" actorid="002">
+      <firstname>Phoebe</firstname>
+      <lastname>Buffay</lastname>
+      <gender>Female</gender>
+      <birthdate>1965-02-16</birthdate>
+      <occupation>Masseuse</occupation>
+    </character>
+    <character status="Secondary" actorid="007">
+      <firstname>Janice</firstname>
+      <lastname>Goralnik</lastname>
+      <gender>Female</gender>
+    </character>
+  </characters>
+  <cast>
+    <actor id="001">
+      <firstname>David</firstname>
+      <lastname>Schwimmer</lastname>
+      <birthdate>1966-11-02</birthdate>
+    </actor>
+    <actor id="002">
+      <firstname>Lisa</firstname>
+      <lastname>Kudrow</lastname>
+      <birthdate>1962-07-30</birthdate>
+    </actor>
+    <actor id="007">
+      <firstname>Maggie</firstname>
+      <lastname>Wheeler</lastname>
+      <birthdate>1961-08-07</birthdate>
+    </actor>
+  </cast>
+</friends>
+
+In this document, <friends> is the root element node; 
+<character>, <lastname> and <birthdate> are some of the document’s element nodes; 
+and Ross, Male and Masseuse are examples of its atomic values. And finally, status is an attribute, as is actorid.
+
+So basically, XPath allows you query a document by zip-lining down its nodes and reporting on its atomic values. The next question, obviously, is how.
+
+Syntax
+/	Selects from the root node
+//	Selects matching nodes starting from the current
+node
+.	Selects the current node
+..	Selects the parent of the current node
+@	Selects an attribute
+
+Let’s start off by taking a look at the operators. They’re pretty much what you’d expect.
+
++	Addition
+–	Subtraction
+*	Multiplication
+div	Division
+=	Equal
+!=	Not equal
+<	Less than
+>	Greater than
+|	Computes two nodes.
+or	Or
+and	And
+
+And here are some of the more important functions that you probably need to know.
+
+last()	Returns the number of items in the node
+position()	Returns the position of the node that is being,processed
+contains(a,b)	Returns true if a contains b. Otherwise it returns false.
+starts-with(a,b)	Returns true if a starts with b (where both a and b are strings).,Otherwise it returns false.
+count(node-set)	Returns a count of nodes in the parameterised,node-set.
+current-date()	Returns the current date.
+text()	Returns the node of text type (or, put simply, returns the text value of an element).
+
+XPath predicates are pretty much the equivalent of the SQL where clause; they’re how you filter your resultset, weeding out the items you’re not interested in. XPath predicates are always encased in square brackets, and are expressions that can take advantage of the functions and operators that we’ve just been
+
+you wanted to find out who the first friend in our XML file is
+/friends/characters/character[1]/firstname
+
+But if you wanted to know their first name and their last name, you’ll need to make use of one of those operators we listed above.
+/friends/characters/character[1]/firstname|//lastname
+
+Let’s say we wanted to know the first two friends in our file.
+/friends/characters/character[position()<3]/firstname|//lastname
+
+Let’s find a way to complicate our predicate a little. If, for example, you wanted to find out the first secondary character in our XML file, you might write something like this:
+/friends/characters/character[@status = "Secondary" and position()=1]/firstname|//lastname
+
+As I’m sure you can now see, it doesn’t take much for XPath to begin to stretch out and become harder and harder to read. And that’s partly what sent the W3C guys back to the drawing board, leading to that announcement in 2007 and the birth of XQuery.
+
+XQuery, however, wasn’t a wholesale replacement of XPath: XPath is excellent at the things it does well; it’s an easily-learned, easily-read language for simple XML queries. It’d be a shame to get rid of it. And so what they did instead, was subsume XPath into XQuery, making all XPath syntax valid XQuery
+
+
+No, what they did with XQuery was introduce a syntax that was better suited for handling more complex queries, and one that is structured better for SQL people – database developers – to understand.
+
+Speaking about databases, you may have noticed how this article, so far, has made no mention of Oracle or of the role databases play in all of this. Strictly speaking, databases do not need to play any role when it comes to XPath and XQuery; they’re designed to read XML, and XML can live quite happily outside of a database. However, we can also load XML into our Oracle database and use XQuery to interrogate it. In the next article in this series, we’ll talk about how XPath and XQuery are implemented in Oracle.
+
+
+
+CREATE TABLE sitcoms
+(
+  id      NUMBER,
+  sitcom  VARCHAR2(30),
+  data    XMLTYPE
+);
+
+INSERT INTO sitcoms (id, sitcom, data)
+VALUES (1, 'Friends', xmltype (
+'<friends>
+<characters>
+<character status="Lead" actorid="001">
+<firstname>Ross</firstname>
+<lastname>Geller</lastname>
+<gender>Male</gender>
+<birthdate>1967-10-18</birthdate>
+<occupation>Palaeontologist</occupation>
+</character>
+</characters>
+</friends>')
+);
+
+INSERT INTO sitcoms (id, sitcom, data)
+VALUES (2, 'Episodes', xmltype (
+'<episodes>
+<characters>
+<character status="Lead" actorid="003">
+<firstname>Matt</firstname>
+<lastname>LeBlanc</lastname>
+<gender>Male</gender>
+<birthdate>1967-07-25</birthdate>
+<occupation>Actor</occupation>
+</character>
+</characters>
+</episodes>')
+);
+
+--truncate table sitcoms;
+
+commit;
+
+SELECT sitcom, 
+            XMLQUERY('//characters/character[@status="Lead"]/firstname' 
+                      PASSING data 
+                      RETURNING CONTENT
+                    )  character_name
+FROM sitcoms;
+
+SITCOM
+------------------------------
+CHARACTER_NAME
+-------------------------------
+Friends
+<firstname>Ross</firstname>
+
+Episodes
+<firstname>Matt</firstname>
+
+SELECT sitcom, 
+            XMLQUERY('//characters/character[@status="Lead"]/firstname/text()' 
+                      PASSING data 
+                      RETURNING CONTENT
+                    )  character_name
+FROM sitcoms;
+
+SITCOM
+------------------------------
+CHARACTER_NAME
+------------------------------
+Friends
+Ross
+
+Episodes
+Matt
+
+I’d also like to you to notice that, in the FROM clause, I called the sitcoms table right before I made the call to XMLTable. Without this, it would’ve failed. You need to make a call to the table with your XML right before you call XMLTable
+
+
+http://viralpatel.net/blogs/oracle-xmltable-tutorial/
+
+Heres a list of useful paths and expression that can be used to select any node/nodelist from a xml document.
+
+
+Expression	Description
+nodename	Selects all nodes with the name “nodename”
+/	Selects from the root node
+//	Selects nodes in the document from the current node that match the selection no matter where they are
+.	Selects the current node
+..	Selects the parent of the current node
+@	Selects attributes
+employee	Selects all nodes with the name “employee”
+employees/employee	Selects all employee elements that are children of employees
+//employee	Selects all employee elements no matter where they are in the document
+
+Below list of expressions are called Predicates. The Predicates are defined in square brackets [ ... ]. They are used to find a specific node or a node that contains a specific value.
+
+Path Expression	Result
+/employees/employee[1]	Selects the first employee element that is the child of the employees element.
+/employees/employee[last()]	Selects the last employee element that is the child of the employees element
+/employees/employee[last()-1]	Selects the last but one employee element that is the child of the employees element
+//employee[@type='admin']	Selects all the employee elements that have an attribute named type with a value of ‘admin’
+
+--print firstname and lastname of all employees 
+   SELECT t.id, x.*
+     FROM employees t,
+          XMLTABLE ('/Employees/Employee'
+                    PASSING t.data
+                    COLUMNS firstname VARCHAR2(30) PATH 'firstname', 
+                            lastname VARCHAR2(30) PATH 'lastname') x
+    WHERE t.id = 1;
+    
+XMLTable('<XQuery>' 
+         PASSING <xml column>
+         COLUMNS <new column name> <column type> PATH <XQuery path>)
+         
+The XMLTABLE function contains one row-generating XQuery expression and, in the COLUMNS clause, one or multiple column-generating expressions. In above query, the row-generating expression is the XPath /Employees/Employee. The passing clause defines that the emp.data refers to the XML column data of the table Employees emp.
+
+The COLUMNS clause is used to transform XML data into relational data. Each of the entries in this clause defines a column with a column name and a SQL data type. In above query we defined two columns firstname and lastname that points to PATH firstname and lastname or selected XML node.
+

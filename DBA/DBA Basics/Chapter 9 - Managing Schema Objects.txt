@@ -1,0 +1,484 @@
+Chapter 9: Managing Schema Objects
+
+Access to the database is granted to a database account known as a user. A user may exist in the database without owning any objects. However, if the user creates and owns objects in the database, those objects are part of a schema that has the same name as the database user. 
+
+When a user account is created, a schema is created too. A schema consists of the objects owned by the account. Initially, it will be empty. A schema is a container for tables, views, code, and other database objects. Many people use the terms “user,” “user account,” and “schema” interchangeably. In the Oracle environment, you can get away with this (though not necessarily with other database management systems).
+
+These object types all share the same namespace:
+¦ Tables
+¦ Views
+¦ Sequences
+¦ Private synonyms
+¦ Stand-alone procedures
+¦ Stand-alone stored functions
+¦ Packages
+¦ Materialized views
+¦ User-defined types
+
+These object types each have their own namespace:
+¦ Indexes
+¦ Constraints
+¦ Clusters
+¦ Database triggers
+¦ Private database links
+¦ Dimensions
+
+Thus it is possible (though perhaps not a very good idea) for an index to have the same name as a table, even within the same schema.
+
+It is not possible to drop or truncate the parent table in a foreign key relationship, even if there are no rows in the child table. This still applies if the ON DELETE SET NULL or ON DELETE CASCADE clauses were used.
+
+As many check constraints as you want can be applied to one column, but it is not possible to use a subquery to evaluate whether a value is permissible, or to use functions such as SYSDATE. The not null constraint is in fact implemented as a preconfigured check constraint.
+
+When defining constraints at table creation time, the constraint can be defined in line with the column to which it refers, or at the end of the table definition. There is more flexibility to using the latter technique. For example, it is impossible to define a foreign key constraint that refers to two columns or a check constraint that refers to any column other than that being constrained if the constraint is defined in line, but both these are possible if the constraint is defined at the end of the table.
+
+create table dept(
+deptno number(2,0) constraint dept_deptno_pk primary key constraint dept_deptno_ck check (deptno between 10 and 90),
+dname varchar2(20) constraint dept_dname_nn not null);
+
+At any time, every constraint is either enabled or disabled, and validated or not validated. Any combination of these is syntactically possible.
+
+By default, all constraints are IMMEDIATE and not deferrable. An alternative approach to the previous example would have been possible had the constraint been
+created as deferrable: 
+set constraint sa_nn1 deferred;
+insert into sales_archive select * from sales_current;
+update sales_archive set channel='NOT KNOWN’ where channel is null;
+commit;
+set constraint sa_nn1 immediate;
+
+Changing the status of a constraint between ENABLED/DISABLED and VALIDATE/ NOVALIDATE is an operation that will affect all sessions. The status is a data dictionary update. Switching a deferrable constraint between IMMEDIATE and DEFERRED is session specific, though the initial state will apply to all sessions.
+
+Index Type Options
+There are six commonly used options that can be applied when creating indexes:
+¦ Unique or non-unique
+¦ Reverse key
+¦ Compressed
+¦ Composite
+¦ Function based
+¦ Ascending or descending
+All these six variations apply to B*Tree indexes, but only the last three can be applied to bitmap indexes:
+
+A reverse key index is built on a version of the key column with its bytes reversed: rather than indexing “John,” it will index “nhoJ.” When a SELECT is done, Oracle will automatically reverse the value of the search string. This is a powerful technique for avoiding contention in multiuser systems. For instance, if many users are concurrently inserting rows with primary keys based on a sequentially increasing number, all their index inserts will concentrate on the high end of the index.
+
+In a reverse key index, the values are stored backward—for example, a value of 2201 is stored as 1022. If you use a standard index, consecutive values are stored near each other. In a reverse key index, consecutive values are not stored near each other. If your queries do not commonly perform range scans and you are concerned about I/O contention (in a RAC database environment) or concurrency contention (buffer busy waits statistic in ADDM) in your indexes, reverse key indexes may be a tuning solution to consider. 
+There is a downside to reverse key indexes, however: they need a high value for pctfree to allow for frequent inserts, and must be rebuilt often, more often than a standard B-tree index.
+
+When a table is dropped, all the indexes and constraints defined for the table are dropped as well. If an index was created implicitly by creating a constraint, then dropping the constraint will also drop the index. If the index had been created explicitly and the constraint created later, then if the constraint were dropped the index would survive.
+
+In many ways, a temporary table is similar to a permanent table. You can execute any DML or SELECT command against it. It can have indexes, constraints, and triggers defined. It can be referenced in views and synonyms, or joined to other tables. The difference is that the data is transient and private to the session, and that all SQL commands against it will be far faster than commands against permanent tables.
+
+The first reason for the speed is that temporary tables are not segments in permanent tablespaces. Ideally, they exist only in the PGAs of the sessions that are using them, so there is no disk activity or even database buffer cache activity involved.
+If the PGA cannot grow sufficiently to store the temporary table (which will be the case if millions of rows are being inserted—not unusual in complex report generation), then the table gets written out to a temporary segment in the user’s temporary tablespace. I/O on temporary tablespaces is much faster than I/O on
+permanent tablespaces, because it does not go via the database buffer cache; it is all performed directly on disk by the session’s server process.
+
+A second reason for speed is that DML against temporary tables does not generate redo. Since the data only persists for the duration of a session (perhaps only for the duration of a transaction), there is no purpose in generating redo. This gives the dual benefit of fast DML for the session working on the table.
+
+
+-------------------------------------------------------------------------------------
+¦Note For Oracle Database 11g and lower, 4,000 was the largest size allowed for a VARCHAR2 or NVARCHAR2 data type. In Oracle Database 12c and higher, you can specify up to 32,767 characters in a VARCHAR2 or NVARCHAR2 data type.
+
+Here is an example of creating a table with a virtual column:
+create table inv(
+inv_id number
+,inv_count number
+,inv_status generated always as (
+case when inv_count <= 100 then 'GETTING LOW'
+when inv_count > 100 then 'OKAY'
+end)
+);
+
+In the prior code listing, specifying GENERATED ALWAYS is optional. For example, this listing is equivalent to the previous one:
+create table inv(
+inv_id number
+,inv_count number
+,inv_status as (
+case when inv_count <= 100 then 'GETTING LOW'
+when inv_count > 100 then 'OKAY'
+end)
+);
+
+If you insert data into the table, nothing is stored in a column set to GENERATED ALWAYS AS. The virtual value is generated when you select from the table.
+
+you can change the definition of an existing virtual column:
+alter table inv modify inv_status generated always as(
+case when inv_count <= 50 then 'NEED MORE'
+when inv_count >50 and inv_count <=200 then 'GETTING LOW'
+when inv_count > 200 then 'OKAY'
+end);
+
+Implementing Invisible Columns
+Starting with Oracle Database 12c, you can create invisible columns. When a column is invisible, it cannot be viewed via
+• DESCRIBE command
+• SELECT * (to access all of a table’s columns)
+• %ROWTYPE (in PL/SQL)
+• Describes within an Oracle Call Interface (OCI)
+
+The main use for an invisible column is to ensure that adding a column to a table won’t disrupt any of the existing application code. If the application code doesn’t explicitly access the invisible column, then it appears to the application as if the column doesn’t exist.
+
+create table inv
+(inv_id number
+,inv_desc varchar2(30 char)
+,inv_profit number invisible);
+
+Making Read-Only Tables
+Starting with Oracle Database 11g, you can place individual tables in read-only mode. Doing so prevents any INSERT, UPDATE, or DELETE statements from running against a table.
+SQL> alter table inv read only;
+
+Creating a Table with an Autoincrementing (Identity) Column
+Starting with Oracle Database 12c, you can define a column that is automatically populated and incremented when inserting data. This feature is ideal for automatically populating primary key columns. Prior to Oracle Database 12c, you would have to create a sequence manually and then access the sequence when inserting into the table.
+
+create table inv(
+inv_id number generated as identity
+,inv_desc varchar2(30 char));
+--
+alter table inv add constraint inv_pk primary key (inv_id);
+Now, you can populate the table without having to specify the primary key value:
+insert into inv (inv_desc) values ('Book');
+insert into inv (inv_desc) values ('Table');
+
+you can’t directly specify a value for the identity column; for example, if you try this:
+insert into inv values(3,'Chair');
+you’ll receive an error:
+ORA-32795: cannot insert into a generated always identity column
+
+If, for some reason, you need to occasionally insert values into an identity column, then use the following syntax when creating:
+create table inv(
+inv_id number generated by default on null as identity
+,inv_desc varchar2(30 char));
+
+When you create an identity column, Oracle automatically creates a sequence and associates the sequence with the column. You can view the sequence information in USER_SEQUENCES:
+
+You can identify identity columns via this query:
+select table_name, identity_column
+from user_tab_columns
+where identity_column='YES';
+
+Because the underlying mechanism for populating an identity column is a sequence, you have some control over how the sequence is created (just like you would if you manually created a sequence).
+
+create table inv(
+inv_id number generated as identity (start with 50 increment by 2)
+,inv_desc varchar2(30 char));
+There are some caveats to be aware of when using autoincrementing (identity) columns:
+• Only one per table is allowed.
+• They must be numeric.
+• They can’t have default values.
+• NOT NULL and NOT DEFERRABLE constraints are implicitly applied.
+• CREATE TABLE ... AS SELECT will not inherit identity column properties.
+
+Compressing Table Data
+As your database grows, you may want to consider table level compression. Compressed data have the benefit of using less disk space and less memory and reduced I/O. Queries that read compressed data potentially run faster because there are fewer blocks to process. However, CPU usage increases as the data are compressed and uncompressed as writes and reads occur, so there is a tradeoff. Starting with Oracle Database 12c, there are four types of compression available:
+• Basic compression
+• Advanced row compression (in 11g this was referred to as OLTP compression)
+• Warehouse compression (hybrid columnar compression)
+• Archive compression (hybrid columnar compression)
+
+create table inv
+(inv_id number,
+inv_desc varchar2(300 char),
+create_dtt timestamp)
+compress basic;
+
+Avoiding Redo Creation
+When you’re creating a table, you have the option of specifying the NOLOGGING clause. The NOLOGGING feature can greatly reduce the amount of redo generation for certain types of operations. Sometimes, when you’re working with large amounts of data, it’s desirable, for performance reasons, to reduce the redo generation when you initially create and insert data into a table.
+
+The downside to eliminating redo generation is that you can’t recover the data created via NOLOGGING in the event a failure occurs after the data are loaded (and before you can back up the table). If you can tolerate some risk of data loss, then use NOLOGGING, but back up the table soon after the data are loaded. If your data are critical,then don’t use NOLOGGING. If your data can be easily recreated, then NOLOGGING is desirable when you’re trying to improve performance of large data loads.
+
+The NOLOGGING feature never affects redo generation for normal DML statements (regular INSERT, UPDATE, and DELETE).
+The NOLOGGING feature can significantly reduce redo generation for the following types of operations:
+• SQL*Loader direct-path load
+• Direct-path INSERT /*+ append */
+• CREATE TABLE AS SELECT
+• ALTER TABLE MOVE
+• Creating or rebuilding an index
+
+If your database is in FORCE LOGGING mode, then redo is generated for all operations, regardless of whether you specify NOLOGGING. Likewise, when you’re loading a table, if the table has a referential foreign key constraint defined, then redo is generated regardless of whether you specify NOLOGGING.
+
+Undropping a Table
+Suppose you accidentally drop a table, and you want to restore it. First, verify that the table you want to restore is in the recycle bin:
+SQL> show recyclebin;
+SQL> flashback table inv to before drop;
+
+Indexes
+An index is an optionally created database object used primarily to increase query performance. In addition to improving performance, Oracle uses indexes to help enforce enabled primary key and unique key constraints. Additionally, Oracle can better manage certain table-locking scenarios when indexes are placed on foreign key columns.
+
+Features to consider before you create an index:
+• Type of index
+• Initial space required and growth
+• Temporary tablespace usage while the index is being created (for large indexes)
+• Tablespace placement
+• Naming conventions
+• Which column(s) to include
+• Whether to use a single column or a combination of columns
+• Special features, such as the PARALLEL clause, NOLOGGING, compression, and invisible indexes
+• Uniqueness
+• Impact on performance of SELECT statements (improvement)
+• Impact on performance of INSERT, UPDATE, and DELETE statements
+
+Index : Type Usage
+B-tree : Default index; good for columns with high cardinality (i.e., high degree of distinct values). Use a normal B-tree index unless you have a concrete reason to use a different index type or feature.
+IOT : This index is efficient when most of the column values are included in the primary key. You access the index as if it were a table. The data are stored in a B-tree-like structure. 
+Unique : A form of B-tree index; used to enforce uniqueness in column values; often used with primary key and unique key constraints but can be created independently of constraints.
+Reverse key : A form of B-tree index; useful for balancing I/O in an index that has many sequential inserts.
+Key compressed : Good for concatenated indexes in which the leading column is often repeated; compresses leaf block entries; applies to B-tree and IOT indexes.
+Descending : A form of B-tree index; used with indexes in which corresponding column values are sorted in a descending order (the default order is ascending). You can’t specify descending for a reverse-key index, and Oracle ignores descending if the index type is bitmap.
+Bitmap : Excellent in data warehouse environments with low cardinality (i.e., low degree of distinct values) columns and SQL statements using many AND or OR operators in the WHERE clause. Bitmap indexes aren’t appropriate for OLTP databases in which rows are frequently updated. You can’t create a unique bitmap index. Bitmap join Useful in data warehouse environments for queries that use star schema structures that join
+fact and dimension tables. 
+Function based : Good for columns that have SQL functions applied to them; can be used with either a B-tree or bitmap index.
+Indexed virtual column : An index defined on a virtual column (of a table); useful for columns that have SQL functions applied to them; a viable alternative to a function-based index.
+Virtual : Allows you to create an index with no physical segment or extents via the NOSEGMENT clause of CREATE INDEX; useful in tuning SQL without consuming resources required to build the physical index. Any index type can be created as virtual.
+Invisible : The index is not visible to the query optimizer. However, the structure of the index is maintained as table data are modified. Useful for testing an index before making it visible to the application. Any index type can be created as invisible.
+Global partitioned: Global index across all partitions in a partitioned or regular table; can be a B-tree index type and can’t be a bitmap index type.
+Local partitioned : Local index based on individual partitions in a partitioned table; can be either a B-tree or bitmap index type.
+Domain : Specific for an application or cartridge.
+B-tree cluster : Used with clustered tables.
+Hash cluster : Used with hash clusters.
+
+Estimating the Size of an Index Before Creation
+If you don’t work with large databases, then you don’t need to worry about estimating the amount of space an index will initially consume. However, for large databases, you absolutely need an estimate on how much space it will take to create an index. If you have a large table in a data warehouse environment, a corresponding index could easily be hundreds of gigabytes in size. In this situation, you need to ensure that the database has adequate disk space available.
+
+The best way to predict the size of an index is to create it in a test environment that has a representative set of production data. If you can’t build a complete replica of production data, a subset of data can often be used to extrapolate the size required in production. If you don’t have the luxury of using a cut of production data, you can also estimate the size of an index using the DBMS_SPACE.CREATE_INDEX_COST procedure.
+
+CREATE TABLE cust
+(cust_id NUMBER
+,last_name VARCHAR2(30)
+,first_name VARCHAR2(30)
+) TABLESPACE users;
+
+Next, several thousand records are inserted into the prior table
+
+Here is the procedure for estimating the amount of space the index will initially consume:
+SQL> set serverout on
+SQL> exec dbms_stats.gather_table_stats(user,'CUST');
+SQL> variable used_bytes number
+SQL> variable alloc_bytes number
+SQL> exec dbms_space.create_index_cost( 'create index cust_idx1 on cust(last_name)', -
+:used_bytes, :alloc_bytes );
+SQL> print :used_bytes
+Here is some sample output for this example:
+USED_BYTES
+----------
+19800000
+SQL> print :alloc_bytes
+ALLOC_BYTES
+-----------
+33554432
+
+Next, go ahead and create the index.
+SQL> create index cust_idx1 on cust(last_name);
+The actual amount of space consumed is shown by this query:
+SQL> select bytes from user_segments where segment_name='CUST_IDX1';
+BYTES
+----------
+34603008
+The output indicates that the estimated amount of allocated bytes is in the ballpark of the amount of space actually consumed:
+
+
+The B-tree index has a hierarchical tree structure. When Oracle accesses the index, it starts with the top node, called the root (or header) block. Oracle uses this block to determine which second-level block (also called a branch block) to read next. The second-level block points to several third-level blocks (leaf nodes), which contain a ROWID and the name value.
+
+Oracle provides two types of views containing details about the structure of B-tree indexes:
+• INDEX_STATS
+• DBA/ALL/USER_INDEXES
+The INDEX_STATS view contains information regarding the HEIGHT (number of blocks from root to leaf blocks), LF_ROWS (number of index entries), and so on. The INDEX_STATS view is only populated after you analyze the structure of the index; for example,
+SQL> analyze index cust_idx1 validate structure;
+
+The DBA/ALL/USER_INDEXES views contain statistics, such as BLEVEL (number of blocks from root to branch blocks; this equals HEIGHT – 1); LEAF_BLOCKS (number of leaf blocks); and so on. The DBA/ALL/USER_INDEXES views are populated automatically when the index is created and refreshed via the DBMS_STATS package.
+
+In older versions of Oracle (circa version 8), the optimizer would use a concatenated index only if the leading-edge column (or columns) appeared in the WHERE clause. In modern versions the optimizer can use a concatenated index even if the leading-edge column (or columns) isn’t present in the WHERE clause. This ability to use an index without reference to leading-edge columns is known as the skip-scan feature.
+
+However, you should try to create concatenated indexes that use the leading column. If you’re consistently using only a lagging-edge column of a concatenated index, then consider creating a single-column index on the lagging column.
+
+Prior to Oracle Database 12c, you could not have multiple indexes defined on the exact same combination of columns in one table. This has changed in 12c. You can now have multiple indexes on the same set of columns. However, you can only do this if there is something physically different about the indexes, for example, one index is created as a B-tree index, and the second, as a bitmap index. Also, there can be only one visible index for the same combination of columns. Any other indexes created on that same set of columns must be declared invisible; for example,
+SQL> create index cust_idx2 on cust(first_name, last_name);
+SQL> create bitmap index cust_bmx1 on cust(first_name, last_name) invisible;
+
+Prior to Oracle Database 12c, if you attempted the previous operation, the second creation statement would throw
+an error such as ORA-01408: such column list already indexed.
+
+Implementing Function-Based Indexes
+select first_name from cust where UPPER(first_name) = 'JIM';
+create index cust_fnx1 on cust(upper(first_name));
+
+The index can be as simple as the preceding example, or it can be based on complex logic stored in a PL/SQL function. Any user-created SQL functions must be declared deterministic before they can be used in a function-based index. Deterministic means that for a given set of inputs, the function always returns the same results. You must use the keyword DETERMINISTIC when creating a user-defined function that you want to use in a function-based index.
+
+If you want to see the definition of a function-based index, select from the DBA/ALL/USER_IND_EXPRESSIONS
+
+When you create a B-tree index, you can also specify that the index be unique. Doing so ensures that non-NULL values are unique when you insert or update columns in a table.
+
+create unique index cust_uk1 on cust(first_name, last_name);
+
+Bitmap indexes are recommended for columns with a relatively low degree of distinct values (low cardinality). You shouldn’t use bitmap indexes in OLTP databases with high INSERT/UPDATE/DELETE activities, owing to locking issues; the structure of the bitmap index results in many rows’ potentially being locked during DML operations, which causes locking problems for high-transaction OLTP systems.
+
+Bitmap indexes are commonly used in data warehouse environments. A typical star schema structure consists of a large fact table and many small dimension (lookup) tables. In these scenarios it’s common to create bitmap indexes on fact table foreign key columns. The fact tables are typically inserted into on a daily basis and usually aren’t updated or deleted from.
+
+A bitmap index has a significantly different structure from a B-tree index in the leaf node of the index. It stores one string of bits for each possible value (the cardinality) of the column being indexed. The length of the string of bits is the same as the number of rows in the table being indexed.
+
+create table locations(
+location_id number
+,region varchar2(10));
+
+Now, insert the following rows into the table:
+insert into locations values(1,'NORTH');
+insert into locations values(2,'EAST');
+insert into locations values(3,'NORTH');
+insert into locations values(4,'WEST');
+insert into locations values(5,'EAST');
+insert into locations values(6,'NORTH');
+insert into locations values(7,'NORTH');
+
+SQL> create bitmap index locations_bmx1 on locations(region);
+
+Structure of the LOCATIONS_BMX1 Bitmap Index
+Value/Row Row 1 Row 2 Row 3 Row 4 Row 5 Row 6 Row 7
+EAST 0 1 0 0 1 0 0
+NORTH 1 0 1 0 0 1 1
+WEST 0 0 0 1 0 0 0
+
+Creating Bitmap Join Indexes
+Bitmap join indexes store the results of a join between two tables in an index. Bitmap join indexes are beneficial because they avoid joining tables to retrieve results. The syntax for a bitmap join index differs from that of a regular bitmap index in that it contains FROM and WHERE clauses. Here is the basic syntax for creating a bitmap join index:
+create bitmap index <index_name>
+on <fact_table> (<dimension_table.dimension_column>)
+from <fact_table>, <dimension_table>
+where <fact_table>.<foreign_key_column> = <dimension_table>.<primary_key_column>;
+
+Bitmap join indexes are appropriate in situations in which you’re joining two tables, using the foreign key column (or columns) in one table relating to the primary key column (or columns) in the other table. For example, suppose you typically retrieve the FIRST_NAME and LAST_NAME from the CUST dimension table while joining to a large
+F_SHIPMENTS fact table. This next example creates a bitmap join index between the F_SHIPMENTS and CUST tables:
+
+create bitmap index f_shipments_bmx1
+on f_shipments(cust.first_name, cust.last_name)
+from f_shipments, cust
+where f_shipments.cust_id = cust.cust_id;
+
+Now, consider a query such as this:
+select c.first_name, c.last_name
+from f_shipments s, cust c
+where s.cust_id = c.cust_id
+and c.first_name = 'JIM'
+and c.last_name = 'STARK';
+
+Implementing Reverse-Key Indexes
+Reverse-key indexes are similar to B-tree indexes, except that the bytes of the index key are reversed when an index entry is created. For example, if the index values are 201, 202, and 203, the reverse-key index values are 102, 202, and 302:
+
+Reverse-key indexes can perform better in scenarios in which you need a way to evenly distribute index data that would otherwise have similar values clustered together. Thus, when using a reverse-key index, you avoid having I/O concentrated in one physical disk location within the index during large inserts of sequential values. Use the REVERSE clause to create a reverse-key index:
+SQL> create index cust_idx1 on cust(cust_id) reverse;
+
+SQL> select index_name, index_type from user_indexes;
+Here is some sample output, showing that the CUST_IDX1 index is reverse key:
+INDEX_NAME INDEX_TYPE
+-------------------- ---------------------------
+CUST_IDX1 NORMAL/REV
+
+Implementing Invisible Indexes
+In Oracle Database 11g and higher, you have the option of making an index invisible to the optimizer. Oracle still maintains an invisible index (as DML occurs on the table) but doesn’t make it available for use by the optimizer.
+
+Invisible indexes have a couple of interesting uses:
+• Altering an index to be invisible before dropping it allows you to quickly recover if you later determine that the index is required.
+• You can add an invisible index to a third-party application without affecting existing code or support agreements.
+
+SQL> create index cust_idx2 on cust(first_name) invisible;
+SQL> alter index cust_idx1 invisible;
+
+SQL> alter index cust_idx1 rename to cust_index1;
+SQL> select dbms_metadata.get_ddl('INDEX','CUST_IDX1') from dual;
+
+Rebuilding an Index
+There are a couple of good reasons to rebuild an index:
+• Modifying storage characteristics, such as changing the tablespace.
+• Rebuilding an index that was previously marked unusable to make it usable again.
+
+SQL> alter index cust_idx1 rebuild;
+
+Oracle attempts to acquire a lock on the table and rebuild the index online. If there are any active transactions that haven’t committed, Oracle won’t be able to obtain a lock, and the following error will be thrown:
+ORA-00054: resource busy and acquire with NOWAIT specified or timeout expired
+In this scenario, you can either wait until there is little activity in the database or try setting the DDL_LOCK_TIMEOUT parameter. The DDL_LOCK_TIMEOUT initialization parameter is available in Oracle Database 11g and higher. It instructs Oracle to repeatedly attempt to obtain a lock (for 15 seconds, in this case).
+
+SQL> alter session set ddl_lock_timeout=15;
+SQL> alter index cust_idx1 rebuild tablespace reporting_index;
+SQL> alter index cust_idx1 rebuild parallel nologging;
+
+The advantage of marking the index UNUSABLE (rather than dropping it) is that if you later determine that the index is being used, you can alter it to a USABLE state and rebuild it without needing the DDL on hand to recreate it. Another common scenario for marking indexes UNUSABLE is that you’re performing a large data load. When you want to maximize table-loading performance, you can mark the indexes UNUSABLE before performing the load. After you’ve loaded the table, you must rebuild the indexes to make them usable again.Here is an example of marking an index UNUSABLE:
+SQL> alter index cust_idx1 unusable;
+
+SQL> alter index cust_idx1 rebuild;
+
+Foreign key constraints ensure that when inserting into a child table, a corresponding parent table record exists.
+
+Unlike primary key and unique key constraints, Oracle doesn’t automatically create indexes on foreign key columns. Therefore, you must create a foreign key index manually, based on the columns defined as the foreign key constraint. In most scenarios, you should create indexes on columns associated with a foreign key. Here are two good reasons:
+• Oracle can often make use of an index on foreign key columns to improve the performance of queries that join a parent table and child table (using the foreign key columns).
+• If no B-tree index exists on the foreign key columns, when you insert or delete a record from a child table, all rows in the parent table are locked. For applications that actively modify both the parent and child tables, this will cause locking and deadlock issues (see the section “Determining if Foreign Key Columns Are Indexed,” later in this chapter, for an example of this locking issue).
+
+Determining if Foreign Key Columns Are Indexed
+
+SELECT DISTINCT
+a.owner owner
+,a.constraint_name cons_name
+,a.table_name tab_name
+,b.column_name cons_column
+,NVL(c.column_name,'***Check index****') ind_column
+FROM dba_constraints a
+,dba_cons_columns b
+,dba_ind_columns c
+WHERE constraint_type = 'R'
+AND a.owner = UPPER('&&user_name')
+AND a.owner = b.owner
+AND a.constraint_name = b.constraint_name
+AND b.column_name = c.column_name(+)
+AND b.table_name = c.table_name(+)
+AND b.position = c.column_position(+)
+ORDER BY tab_name, ind_column;
+
+This query, while simple and easy to understand, doesn’t correctly report on unindexed foreign keys for all situations. For example, in the case of multicolumn foreign keys, it doesn’t matter if the constraint is defined in an order different from that of the index columns, as long as the columns defined in the constraint are in the leading edge of the index. In other words, if the constraint is defined as COL1 and then COL2, then it’s okay to have a B-tree index defined on leading-edge COL2 and then COL1.
+
+
+Views, Synonyms, and Sequences
+
+create or replace view sales_rockies as
+select sales_id, amnt, state
+from sales
+where state in ('CO','UT','WY','ID','AZ')
+with check option;
+
+create or replace view sales_rockies as
+select sales_id, amnt, state
+from sales
+where state in ('CO','UT','WY','ID','AZ')
+with read only;
+
+Creating One Sequence or Many
+One question that comes up is whether you should use 20 different sequences to populate the primary key and foreign key columns for each table or just 1 sequence.
+I recommend using just 1 sequence; 1 sequence is easier to manage than multiple sequences, and it means less DDL code to manage and fewer places to investigate when there are issues.
+Sometimes, developers raise issues such as
+• performance problems with only 1 sequence
+• sequence numbers that become too high
+
+If you cache the sequence values, usually there are no performance issues with accessing sequences. The maximum number for a sequence is 10^28–1, so if the sequence is incrementing by one, you’ll never reach the maximum value (at least, not in this lifetime).
+
+However, in scenarios in which you’re generating surrogate keys for the primary and child tables, it’s sometimes convenient to use more than 1 sequence. In these situations multiple sequences per application may be warranted.
+
+Resetting a Sequence
+SQL> alter sequence myseq increment by -1000;
+SQL> select myseq.nextval from dual;
+SQL> alter sequence myseq increment by 1;
+
+-----------------------
+Data Dictionary Fundamentals
+
+Prior to Oracle Database 12c, there were only three levels of static views:
+• USER
+• ALL
+• DBA
+Starting with Oracle Database 12c, there is a fourth level that is applicable when using the container/pluggable database feature:
+• CDB
+
+To access the DBA views, a DBA role or SELECT_CATALOG_ROLE must be granted to the current user. The CDB-level views are only applicable if you’re using the pluggable database feature. The static views are based on internal Oracle tables, such as USER$, TAB$, and IND$.
+
+Dynamic Performance Views
+These views are constantly updated by Oracle and reflect the current condition of the instance and database. Dynamic views are critical for diagnosing real-time performance issues. 
+
+At the top layer, the V$ views are actually synonyms that point to underlying SYS.V_$ views. 
+At the next layer down, the SYS.V_$ objects are views created on top of another layer of SYS.V$ views. 
+The SYS.V$ views in turn are based on the SYS.GV$ views. 
+At the bottom layer, the SYS.GV$ views are based on the X$ memory structures.
+The top-level V$ synonyms and SYS.V_$ views are created when you run the catalog.sql script, which you usually do after the database is initially created. 
+
+If you work with Oracle RAC, you should be familiar with the GV$ global views. These views provide global dynamic performance information regarding all instances in a cluster (whereas the V$ views are instance specific). The GV$ views contain an INST_ID column for identifying specific instances in a clustered environment.
+
+----------- DBA Hand book

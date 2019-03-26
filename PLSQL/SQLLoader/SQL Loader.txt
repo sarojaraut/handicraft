@@ -1,0 +1,596 @@
+SQL*Loader’s Capabilities
+
+• SQL*Loader can read from multiple input files in a single load session.
+• SQL*Loader can handle files with fixed-length records, variable-length records, and stream-oriented data.
+• SQL*Loader supports a number of different datatypes, including text, numeric, zoned decimal, packed decimal, and various machine-specific binary types.
+• Not only can SQL*Loader read from multiple input files, but it can load that data into several different database tables, all in the same load session.
+• SQL*Loader allows you to use Oracle’s built-in SQL functions to manipulate the data being read from the input file.
+• SQL*Loader includes functionality for dealing with whitespace, delimiters, and null data.
+• In addition to standard relational tables, SQL*Loader can load data into object tables, varying arrays (VARRAYs), and nested tables.
+• SQL*Loader can load data into large object (LOB) columns.
+• SQL*Loader can handle character set translation between the input data file and the database.
+
+SQL*Loader can be invoked in one of three ways:
+sqlldr
+sqlldr keyword=value [keyword=value ...]
+sqlldr value [value ...]
+
+For example, the following two SQL*Loader commands yield identical results:
+
+sqlldr system/manager profile.ctl profile.log
+sqlldr userid=system/manager control=profile.ctl log=profile.log
+
+You can even mix the positional and keyword methods of passing command-line parameters. The one rule when doing this is that all positional parameters must come first. Once you start using keywords, you must continue to do so. For example: 
+
+sqlldr system/manager control=profile.ctl log=profile.ctl
+
+Parameters on the command line may be separated by spaces, by commas, or by both spaces and commas. All three of the following commands for example, are legitimate:
+sqlldr system/manager,control=product.ctl,log=product.log
+sqlldr system/manager, control=product.ctl, log=product.log
+sqlldr system/manager control=product.ctl log=product.log
+
+Spaces are acceptable as well, on either side of the equals sign (=), in keyword/ value pairs.
+
+When you do use special characters in an option value, you must enclose that value within quotes.
+
+sqlldr 'sys/password AS SYSDBA' control=product.ctl (Windows)
+And for Unix:
+sqlldr \'sys/password AS SYSDBA\' control=product.ctl (Unix)
+
+Most SQL*Loader command-line parameters can actually be specified in three different places:
+• On the command line
+• In a parameter file, which is then referenced using the PARFILE parameter
+• In the control file
+
+Parameters on the command line, including those read in from a parameter file, will always override values specified in the control file. In the case of the bad and discard file names, though, the control file syntax allows for each distinct input file to have its own bad file and discard files. The command line syntax does not allow for this, so bad file and discard file names specified on the command line only apply to the first input file. For any other input files, you need to specify these bad and discard file names in the control file or accept the defaults. 
+
+However, when you specify the FILE parameter on the command line, it does override any and all FILE values specified in the control file.
+
+Parameters read from a parameter file as a result of using the PARFILE parameter may override those specified on the command line. SQL*Loader processes parameters from left to right, and the last setting for a given parameter is the one that SQL*Loader uses.
+
+Command-line parameters are usually keyword/value pairs, and may be any combination of the following:
+
+USERID={username[/password][@net_service_name]|/}
+CONTROL=control_file_name
+LOG=path_file_name
+BAD=path_file_name
+DATA=path_file_name
+DISCARD=path_file_name
+DISCARDMAX=logical_record_count
+SKIP=logical_record_count
+SKIP_INDEX_MAINTENANCE={TRUE | FALSE}
+SKIP_UNUSABLE_INDEXES={TRUE | FALSE}
+LOAD=logical_record_count
+ERRORS=insert_error_count
+ROWS=rows_in_bind_array
+BINDSIZE=bytes_in_bind_array
+SILENT=[(]keyword[,keyword...][)]
+DIRECT={TRUE | FALSE}
+PARFILE=path_file_name
+PARALLEL={TRUE | FALSE}
+READSIZE=bytes_in_read_buffer
+FILE=database_datafile_name
+
+CONTROL = control_file_name
+Specifies the name, which may include the path, of the control file. The default extension is .ctl.
+
+LOG = path_file_name
+Specifies the name of the log file to generate for a load session. You may include a path as well. By default, the log file takes on the name of the control file, but  with a .log extension, and is written to the same directory as the control file.
+
+BAD=path_file_name
+DATA=path_file_name
+DISCARD=path_file_name
+Same behaviour as log file with extensions as .bad, .dat and .dis respectively.
+
+DISCARDMAX = logical_record_count
+When the number of discarded records becomes equal to the value specified for DISCARDMAX, the load will terminate.
+
+SKIP = logical_record_count
+Allows you to continue an interrupted load by skipping the specified number of logical records. If you are continuing a multiple table direct path load, you may need to use the CONTINUE_LOAD clause in the control file rather than the SKIP parameter on the command line. CONTINUE_LOAD allows you to specify a different number of rows to skip for each table that you are loading.
+
+SKIP_INDEX_MAINTENANCE = {TRUE | FALSE}
+This parameter does not apply to conventional path loads. A value of TRUE causes index maintenance to be skipped. Any index segments (partitions) that should have been updated will be marked as unusable. A value of FALSE causes indexes to be maintained as they normally would be. The default is FALSE.
+
+LOAD = logical_record_count
+Specifies a limit on the number of logical records to load. The default is to load all records. Since LOAD only accepts numeric values, it is not possible to explicitly specify the default behavior.
+
+ERRORS = insert_error_count
+Specifies a limit on the number of errors to tolerate before the load is aborted. The default is to abort a load when the error count exceeds 50.
+
+ROWS = rows_in_bind_array
+If you are doing a conventional load, then you can use this parameter to control the number of rows in the bind array. This represents the number of rows that SQL*Loader loads with each INSERT statement, and also represents the commit frequency. The default is 64 rows. If you are doing a direct path load, then ROWS specifies the number of rows to read from the input file before saving the data to the database. SQL*Loader will round up the ROWS value to coincide with an even number of database blocks. A data save in a direct path load is analogous to a commit in a conventional path load. The default, when a direct path load is done, is to do one save at the end of the load.
+
+BINDSIZE = bytes_in_bind_array
+Specifies the maximum size, in bytes, of the bind array. This parameter overrides any bind array size computed as a result of using the ROWS parameter. The default bind array size is 65,536 bytes, or 64K.
+
+SILENT = [(]keyword [,keyword... ] [)]
+Allows you to suppress various header and feedback messages that SQL*Loader normally displays during a load session. Table 1-2 describes the effect of each of the keywords.
+SILENT = ALL | DISCARDS | ERRORS | FEEDBACK | HEADER | PARTITIONS
+
+DIRECT = {TRUE | FALSE}
+Determines the data path used for the load. A value of FALSE results in a conventional path load. A value of TRUE results in a direct path load. The default is FALSE.
+
+PARFILE = path_file_name
+Tells SQL*Loader to read command-line parameter values from a text file. This text file is referred to as a parameter file, and contains keyword/value pairs. Usually, the keyword/value pairs are separated by line breaks. Use of the PARFILE parameter can save a lot of typing if you need to perform the same load several times, because you won’t need to retype all the command-line parameters each time. There is no default extension for parameter files.
+
+PARALLEL = {TRUE | FALSE}
+Indicates whether or not you are doing a direct path parallel load. If you are loading the same object from multiple direct path load sessions, then set this to TRUE. Otherwise, set it to FALSE. The default is FALSE. 
+
+READSIZE = bytes_in_read_buffer
+Specifies the size of the buffer used by SQL*Loader when reading data from the input file. The default value is 65,536 bytes, or 64K. The values of the READSIZE and  BINDSIZE parameters should match. If you supply values for these two parameters that do not match, SQL*Loader will adjust them.
+
+FILE = database_datafile_name
+Specifies the database data file from which to allocate extents. Use this parameter when doing parallel loads, to ensure that each load session is using a different disk. If you are not doing a direct path load, this parameter will be ignored.
+
+
+---------- Control File
+The LOAD Statement
+
+LOAD statements are made up of the following components:
+• The LOAD keyword that begins the statement
+• One or more INFILE clauses to identify the input data files
+• One or more INTO TABLE clauses to identify the target database tables
+• Optionally, a CONCATENATE clause to specify the rules for concatenating multiple physical records into one logical record
+• Other miscellaneous clauses
+
+LOAD DATA Syntax : The following diagram shows the basic syntax of the LOAD statement:
+
+[UNRECOVERABLE | RECOVERABLE] {LOAD | CONTINUE_LOAD} [DATA]
+[CHARACTERSET character_set] [BYTEORDER]
+[INFILE clause [INFILE clause...]]
+[MAXRECORDSIZE bytes
+[READBUFFERS integer]
+[INSERT | APPEND | REPLACE | TRUNCATE]
+[concatenate_rules]
+[PRESERVE BLANKS]
+INTO TABLE clause [INTO TABLE clause...]
+[BEGINDATA]
+
+UNRECOVERABLE : Specifies that the load not be recorded in the database redo log. This improves performance. This option is only applicable to direct path loads.
+RECOVERABLE : Specifies that the load be recorded in the database redo log. This option is applicable only to direct path loads, and it represents the default behavior.
+LOAD [DATA] : Marks the beginning of a LOAD statement. The DATA keyword is optional. Either LOAD or LOAD DATA may be used.
+CONTINUE_LOAD [DATA] : Replaces LOAD when you have a direct path load that has failed and that you want to restart from the point of failure. 
+
+[INSERT | APPEND | REPLACE | TRUNCATE] : Specifies at a global level what is to be done to any existing data in the tables that you are loading. Generally, you’ll find it better to specify these options at the table level (using the INFILE clause) rather than globally. The default setting is INSERT. Descriptions of possible settings follow:
+INSERT : Requires that all tables being loaded be empty to begin with. If any table is not empty, SQL*Loader will abort the load with an error.
+APPEND : Preserves any existing data in the tables being loaded.
+REPLACE : Uses a SQL DELETE statement to delete all existing data from the tables being loaded.
+TRUNCATE : Uses a SQL TRUNCATE statement to delete all existing data from the tables being loaded.
+
+INTO TABLE clause : Identifies a table that you are loading. You may specify multiple occurrences of the INTO TABLE clause if you need to distribute the data that you are 
+
+loading over multiple tables.
+LOAD DATA
+INFILE 'mi_deci.'
+INFILE 'mn_deci.'
+INFILE 'ak_deci.'
+TRUNCATE
+INTO TABLE GNIS.GFN_GNIS_FEATURE_NAMES
+(
+gfn_state_abbr CHAR
+TERMINATED BY "," ENCLOSED BY '"',
+gfn_feature_name CHAR
+TERMINATED BY "," ENCLOSED BY '"',
+gfn_feature_type CHAR
+TERMINATED BY "," ENCLOSED BY '"',
+gfn_county_name
+CHAR TERMINATED BY "," ENCLOSED BY '"'
+)
+
+The input file name is mi_deci. The trailing period in the name tells SQL*Loader that there is no extension.
+When you load data from multiple files, the data format in each file must be the same. SQL*Loader opens each file in the order listed, reads through it, loads the data, and moves on to the next file. In essence, SQL*Loader concatenates all the input files to create one large, logical file.
+
+Discard file and bad file names are specific to each input file. In the previous example, SQL*Loader will create three bad files using the default names mi_deci.bad, mn_deci.bad, and ak_deci.bad. No discard files will be created, because no discard file names were specified. You can, however, specify these filenames as in this example:
+LOAD DATA
+INFILE 'mi_deci.'
+	BADFILE 'mi_deci.bad'
+	DISCARDFILE 'mi_deci.dis
+INFILE 'mn_deci.'
+	BADFILE 'mn_deci.bad'
+	DISCARDFILE 'mn_deci.dis
+
+Specifying the Target Tables
+You specify the target table(s) for a load using one or more INTO TABLE clauses. Here is the complete syntax for that clause:
+
+INTO TABLE table_name
+[{PARTITION | SUBPARTITION} (partition_name)]
+{INSERT | REPLACE | TRUNCATE | APPEND}
+[SORTED [INDEXES] (index_list)] [SINGLEROW]
+[{INSERT | REPLACE | TRUNCATE | APPEND}]
+[OPTIONS (FILE=database_filename)]
+[REENABLE [DISABLED_CONSTRAINTS][EXCEPTIONS exception_table_name]]
+[WHEN field_conditions]
+[{OID(fieldname)|SID(fieldname)}]
+[FIELDS [delimiter_description]]
+[TRAILING [NULLCOLS]
+[SKIP skip_count]
+(field_list)
+
+
+Loading delimited data into multiple tables
+If the data you are loading needs to be spread across two or more tables, you can accomplish that by writing an INTO TABLE clause for each table that you want to load. Whether the data is delimited or not has an effect on how you write those clauses. The following example loads county names into the gc_gnis_county table, and it loads feature names into the gfn_gnis_ feature_names table. The load method—REPLACE is specified globally and applies to both tables: Replace key ward could be placed after into clause to make it local.
+
+LOAD DATA
+INFILE 'mi_deci.'
+REPLACE
+INTO TABLE gc_gnis_county
+(
+gc_state_abbr CHAR TERMINATED BY "," ENCLOSED BY '"',
+gc_feature_name FILLER CHAR TERMINATED BY "," ENCLOSED BY '"',
+gc_feature_type FILLER CHAR TERMINATED BY "," ENCLOSED BY '"',
+gc_county_name CHAR TERMINATED BY "," ENCLOSED BY '"'
+)
+INTO TABLE gfn_gnis_feature_names
+(
+gfn_state_abbr POSITION(1) CHAR TERMINATED BY "," ENCLOSED BY '"',
+gfn_feature_name CHAR TERMINATED BY "," ENCLOSED BY '"',
+gfn_feature_type CHAR TERMINATED BY "," ENCLOSED BY '"',
+gfn_county_name CHAR TERMINATED BY "," ENCLOSED BY '"'
+)
+
+From each record it will extract county information and insert a new row into the gc_gnis_county table. Again, the two filler fields in the first INTO TABLE clause are not loaded. SQL*Loader will then extract feature name information and insert a new row with that information into the gfn_gnis_feature_names table.
+
+Notice the use of POSITION(1) in the gfn_state_abbr field description in the second INTO TABLE clause. That’s very important. When SQL*Loader processes delimited data, it takes fields from the input record in the order in which they occur. This order transcends INTO TABLE clauses. Thus, without POSITION(1) in this example, SQL*Loader would expect a second state abbreviation to follow the county name.
+
+Loading a table partition
+LOAD DATA
+INFILE 'mi_deci.'
+REPLACE
+INTO TABLE gc_gnis_county PARTITION (gc_gnis_county_mi)
+
+Command-Line Parameters in the Control File
+
+OPTIONS (SILENT=ALL, ERRORS=999999)
+
+Placing Data in the Control File
+This is sometimes useful when you have data to distribute to multiple sites, because it minimizes the number of files that you need to pass around. Instead of sending separate data and control files, you can place everything into one control file and send that. We prefer to keep data in its own file, separate from the control file. In our experience, that ultimately provides for more flexibility.
+
+In order to place data into your control file, you must do the following:
+• Place the BEGINDATA keyword at the end of your LOAD statement.
+• Start your data on the line following BEGINDATA.
+• Use INFILE * to tell SQL*Loader to read data from the control file.
+
+If you use BEGINDATA in your control file, but do not use INFILE * for your first INFILE clause, SQL*Loader will return an error.
+
+Fields and Datatypes
+
+INTO TABLE table_name
+(
+field_specification,
+field_specification,
+field_specification,
+...
+)
+
+Field specifications typically describe fields to be extracted from records in a data file, but they can also describe values that you want SQL*Loader to generate for you. SQL*Loader supports the following five field types:
+• Scalar fields
+• Filler fields
+• Generated fields
+• Collection fields
+• Column object fields
+
+column_name : The name of the database column into which you want data for the field to be loaded. This is only the column name. The INTO TABLE clause identifies the table.
+datatype : A datatype specification for the field. This may include information about delimiters and enclosing characters.
+
+
+POSITION(1) : Tells SQL*Loader that the city name field begins with the first byte of the record.
+POSITION(*) : Tells SQL*Loader that the ZIP Code field follows immediately after the previous field in the list.
+POSITION(*+1) : Tells SQL*Loader that the state abbreviation field is separated from the previous field by one byte. In other words, the value 1 is added to the position indicated by the *.
+
+Filler Fields
+
+field_name : The name that you want to use to refer to the filler field. This name is only valid in the SQL*Loader control file. It does not correspond to any database column. 
+FILLER  : The keyword that tells SQL*Loader that the field is not one to be loaded into the destination database table.
+
+Generated Fields
+
+column_name {RECNUM
+|SYSDATE
+|CONSTANT {string | "string"}
+|SEQUENCE [({COUNT | MAX|integer}[,increment])]
+}
+
+SEQUENCE : Causes SQL*Loader to generate a unique sequence number for each row that is loaded.
+
+The following LOAD statement contains two generated fields, and will load the same geographic feature name data that you saw in the previous section:
+
+LOAD DATA
+INFILE 'filler_test.dat'
+REPLACE INTO TABLE constant_test (
+gfn_state_abbr CHAR TERMINATED BY "," ENCLOSED BY '"',
+gfn_feature_name CHAR TERMINATED BY "," ENCLOSED BY '"',
+feature_type FILLER CHAR TERMINATED BY "," ENCLOSED BY '"',
+gfn_county_name CHAR TERMINATED BY "," ENCLOSED BY '"',
+gfn_data_source CONSTANT "United States Geological Survey",
+gfn_timestamp SYSDATE
+)
+
+Datatypes
+The SQL*Loader datatypes do not need to correspond at all to the database datatypes of the columns that you are loading. SQL*Loader interprets input data using the SQL*Loader datatypes you specify. It then converts each value to the appropriate database datatype. You never have to tell SQL*Loader the database datatype, because SQL*Loader derives that information directly from the Oracle data dictionary.
+
+Sample CHAR Field Descriptions
+Sample Data CHAR Clause
+Munising Junctionxxx...  CHAR(17)
+Munising Junction,xxx,... CHAR DELIMITED BY ','
+"Munising Junction","xxx",... CHAR DELIMITED BY ',' ENCLOSED BY '"'
+Munising Junction,xxx,... CHAR DELIMITED BY ',' OPTIONALLY ENCLOSED BY '"'
+
+Sample Data DATE Clause
+11/15/1961 DATE "mm/dd/yyyy"
+11/15/61 DATE "mm/dd/yy"
+15-Nov-1961 DATE "dd-mon-yyyy"
+"Nov 15, 1961",... DATE "mon dd, yyyy" TERMINATED BY "," ENCLOSED BY QUOTES
+19611115,... DATE "yyyymmdd" TERMINATED BY ","
+
+visit_date DATE 'dd-mon-yyyy' NULLIF = blanks,
+
+The date mask tells SQL*Loader how to interpret the date, but as a side effect you’ll get errors whenever a record contains a blank date field. The NULLIF clause prevents those errors, and instead causes blank date fields to be set to null.
+
+NULLIF
+The NULLIF clause allows you to specify a condition under which a field should be interpreted as a null. NULLIF is part of the field specification clause. Consider the following data:
+
+elevation POSITION(49) INTEGER EXTERNAL(4) NULLIF elevation = ' 0',
+
+LOAD DATA
+INFILE 'data03.dat'
+REPLACE INTO TABLE michigan_features
+FIELDS TERMINATED BY '**'
+
+Dealing with Short Records - TRAILING NULLCOLS
+Skipping Fields You Don’t Want to Load - Using the FILLER clause
+
+
+Handling Rejected Records
+While loading data from an input data file into an Oracle database, SQL*Loader may encounter records that cause errors, and that consequently cannot be loaded. There are many reasons why a given record might cause an error. Some of the more common reasons include the following:
+• The fields in the record may not match the field descriptions in the LOAD statement.
+• The record may cause a database integrity constraint to be violated. 
+• An Oracle server error might occur due to lack of free space or some other problem.
+• An insert trigger may fire on the table being loaded, and that trigger may raise an application error, causing the record to be rejected.
+
+Regardless of the underlying cause, SQL*Loader cannot load a record that causes an error. When a record causes an error, SQL*Loader does two things. It records the error in the log file, and it writes a copy of the record causing the error to the bad file. It will then continue with the load process.
+
+SQL*Loader can create two types of output data files during a load: the bad file and the discard file. The bad file is where SQL*Loader writes input records that cause errors. The discard file is where SQL*Loader writes records that do not match conditions that you specify in your LOAD statement.
+
+Selectively Loading Data
+WHEN [(]condition[)] [AND [(]condition[)]...]
+condition := {field_name|position} {= | <> | !=} {'string'
+| X'hex_digits'
+| BLANKS}
+position := POSITION({start[{: | -}end])
+
+BLANKS : A keyword that allows you to test the input data to see if it is composed entirely of space characters.
+
+LOAD DATA
+INFILE 'michigan_feature_names.dat'
+BADFILE 'michigan.bad'
+DISCARDFILE 'michigan_not_falls.dsc'
+APPEND INTO TABLE features
+WHEN (feature_type='falls') AND (county='Alger')
+(
+state CHAR TERMINATED BY ',' ENCLOSED BY '"',
+feature_name CHAR TERMINATED BY ',' ENCLOSED BY '"',
+feature_type CHAR TERMINATED BY ',' ENCLOSED BY '"',
+county CHAR TERMINATED BY ',' ENCLOSED BY '"'
+)
+
+LOAD DATA
+INFILE 'michigan_feature_names.dat'
+BADFILE 'michigan.bad'
+DISCARDFILE 'michigan.dsc'
+INFILE 'wisconsin_feature_names.dat'
+BADFILE 'wisconsin.bad'
+DISCARDFILE 'wisconsin.dsc'
+APPEND INTO TABLE school
+WHEN (feature_type='school')
+(
+state CHAR TERMINATED BY ',' ENCLOSED BY '"',
+feature_name CHAR TERMINATED BY ',' ENCLOSED BY '"',
+feature_type CHAR TERMINATED BY ',' ENCLOSED BY '"',
+county CHAR TERMINATED BY ',' ENCLOSED BY '"'
+)
+INTO TABLE airport
+WHEN (feature_type='airport')
+(
+state POSITION(1) CHAR TERMINATED BY ',' ENCLOSED BY '"',
+feature_name CHAR TERMINATED BY ',' ENCLOSED BY '"',
+feature_type CHAR TERMINATED BY ',' ENCLOSED BY '"',
+county CHAR TERMINATED BY ',' ENCLOSED BY '"'
+)
+
+Using Oracle’s Built-in SQL Functions
+One of the most powerful capabilities at your disposal when using SQL*Loader is the ability to define a SQL expression that operates on a field being loaded. Instead of loading the contents of the field, SQL*Loader loads the results of the expression.
+
+column_name [POSITION({start | *[+offset]}[{: | -}end])]
+[datatype] [PIECED]
+[NULLIF condition [AND condition...]]
+[DEFAULTIF condition [AND condition...]]
+["sql_expression"]
+
+The sql_expression piece of this syntax is what we are concerned with now. It may be any expression that is valid in a SQL INSERT statement. You can use all the standard arithmetic operators supported by SQL. To refer to a SQL*Loader field in a SQL expression, use the field name preceded by a colon. For example, the following field description could be used for the book price field:
+
+price POSITION(37:40) "TO_NUMBER(:book_price)/100"
+
+The are several things to notice about this field description:
+• The SQL expression is enclosed within double quotes. You must use double quotes for this purpose. You’ll get an error if you try to enclose an expression within single quotes. 
+• The SQL expression uses :book_price to refer to the book_price field.
+• No datatype is given for the field.
+
+CREATE TABLE book (
+book_id NUMBER,
+book_title VARCHAR2(35),
+book_price NUMBER,
+book_pages NUMBER,
+CONSTRAINT book_pk
+PRIMARY KEY (book_id)
+);
+CREATE SEQUENCE book_seq
+START WITH 1
+INCREMENT BY 1
+NOMAXVALUE
+NOCYCLE;
+
+The data to be loaded resides in an operating system data file, and consists of the book title, price, and page count arranged in the following columnar format:
+
+Oracle Essentials 3495 355
+SQL*Plus: The Definitive Guide 3995 502
+Oracle PL/SQL Programming 4495 987
+Oracle8 Design Tips 1495 115
+
+LOAD DATA
+INFILE 'book_prices.dat'
+REPLACE INTO TABLE book
+(
+book_title POSITION(1) CHAR(35),
+book_price POSITION(37) "GREATEST(TO_NUMBER(:book_price)/100,TO_NUMBER(:book_pages*0.10))",
+book_pages POSITION(42) INTEGER EXTERNAL(3),
+book_id "book_seq.nextval"
+)
+
+Commit Frequency and Load Performance
+
+SQL*Loader reads multiple records from your input data files, parses out the fields in those records according to your field specifications, and places the resulting data into the bind array. When the bind array becomes full, all the data in it is inserted into the database in one transaction. You can use the following three command-line parameters to control the size of the bind array:
+
+READSIZE
+BINDSIZE
+ROWS
+
+READSIZE : The READSIZE parameter specifies the size of the buffer used by SQL*Loader when reading data from the input data file. The default size of this buffer is 64K, or 65,536 bytes. It is subject to a platform-specific limit. For Windows NT and most Unix platforms, the maximum value possible for the READSIZE parameter is 20,971,520 bytes, which works out to 20 MB. If you specify a value larger than the upper limit supported by your platform, SQL*Loader will generate an error as shown in the following
+example, which can be misleading. 
+
+SQL*Loader-500: Unable to open file (seller2.dat)
+SQL*Loader-555: unrecognized processing option
+
+BINDSIZE : The BINDSIZE parameter specifies the maximum size of the bind array. The default value for the BINDSIZE parameter is 65,536, or 64 KB (256 KB in Oracle9i). The BINDSIZE value is specified in bytes. BINDSIZE too has platform specific limits like READSIZE. 
+If you specify different values for READSIZE and READSIZE parameters,SQL*Loader will adjust them in such a way that the higher of the two values will be used for both parameters.
+
+ROWS : The ROWS parameter specifies the number of rows in the bind array. This represents the number of rows that SQL*Loader loads with each INSERT statement and,
+therefore, represents the commit frequency. The default value for the ROWS parameter is 64.
+
+It’s best to think of BINDSIZE as specifying the maximum amount of memory to allocate for the bind array. The amount of memory actually allocated will be the amount required to accommodate the number of rows of data specified by the ROWS parameter. If you specify too large a value for ROWS, BINDSIZE will not be increased to accommodate that value. Instead, ROWS will be decreased to a value that can be accommodated by the BINDSIZE. If you specify a BINDSIZE value far larger than that required for the number of rows specified by ROWS, SQL*Loader will not waste memory.
+
+• It is general practice to set READSIZE and BINDSIZE to the same value. There is no point in setting these to different values, because SQL*Loader changes the settings to use the higher of the two values for both the parameters. Some people set only BINDSIZE and allow SQL*Loader to automatically adjust the READSIZE value to match.
+
+Performance Improvement Guidelines
+Drop indexes before loading: After the load is complete, you can recreate the indexes.
+Use TRUNCATE instead of REPLACE
+Use a larger bind array: Oracle recommends that you use a bind array that’s at least large enough to accommodate 100 rows. Our own experience has been that bind arrays large enough to accommodate 1000 to 5000 rows yield the best performance.
+Avoid use of CONTINUEIF and CONCATENATE
+Load fixed-width data instead of delimited data if at all possible
+Avoid unnecessary NULLIF and DEFAULTIF clauses
+Perform direct path loads
+
+
+A direct path load works differently. Rather than load data using a series of INSERT statements, a direct path load results in data being written directly into the database datafiles.  
+
+sqlldr USER=smishra@testdb DIRECT=TRUE CONTROL=waterfalls.ctl
+
+OPTIONS (DIRECT=TRUE) can be added to control file. 
+
+Any DIRECT option that you specify on the command line will override any value that you specify in the control file. With respect to this example, specifying DIRECT=FALSE on the command line would cause a conventional path load to be performed even though the control file specified DIRECT=TRUE.
+
+A direct path load prepares data blocks from the input data and writes those data blocks directly into the database datafiles, bypassing the SQL statement processing layer and the database buffer cache. When doing this, SQL*Loader writes the new blocks above the current high-water mark of the table (or tables) being loaded. By adding data blocks above the HWM, SQL*Loader eliminates the processing needed to scan the table and find partially filled blocks. The HWM is adjusted to a new value after the load.
+
+Since a direct path load adds data blocks above the high-water mark, it can’t use any existing space under the HWM. Therefore, you need to consider two important space management issues when performing direct path loads:
+
+• The initial extent of a table can never be used.
+• Free space below the high-water mark will not be used.
+
+Direct path loads insert data into new extents, and do not use any existing extents. Therefore, the initial extent of a table can never be used by a direct path load. Sometimes, especially in data warehouse environments, you may have tables that are populated solely through direct path loads. If you have such a table, you should consider creating it with a very small INITIAL extent size, and a larger NEXT extent size. The INITIAL extent will never be used, so you want to keep it small in order to save space.
+
+During a direct path load, new index keys for the new rows are written to a temporary segment. SQL*Loader will create one temporary segment for each index on the table being loaded. At the end of the load, each temporary segment is sorted, and then merged with the corresponding old index in order to create a new index. After the new indexes are created, the old indexes and the temporary segments are removed. Merging all the new index entries at once like this usually requires less processing overhead than would be required to insert each new index entry one at a time.
+
+Unusable index state
+During a direct path load, any indexes on the table being loaded are not usable by user applications. When a direct path load starts saving data into the destination table, it marks the indexes on that table as unusable to indicate that the index data is out of date with respect to the data in the table.
+
+Unfortunately, there are some situations that prevent SQL*Loader from bringing an index back to a valid state. Any of the following situations will cause an index to remain unusable:
+• The SQL*Loader process fails or is killed while the index is being rebuilt.
+• An instance failure occurs while the index is being rebuilt.
+• SQL*Loader runs out of space while rebuilding the index.
+• The index is a unique index, and some of the data that was loaded violates that constraint.
+• The data being loaded is not in the order specified by the SORTED INDEXES clause.
+
+Direct Path Loads and Database Triggers
+Database triggers are never executed during a direct path load. At the beginning of a direct path load, SQL*Loader disables all database triggers on the table or tables being loaded. SQL*Loader also writes a list of these disabled triggers to the log file. At the end of the load, all of the disabled triggers are automatically reenabled, and SQL*Loader again generates log entries.
+
+If you are loading a table that has triggers defined on it, you need to think through how you are going to deal with the fact that those triggers won’t fire during a direct path load. Here are a few approaches to consider:
+• If you use triggers to enforce data integrity, consider replacing your triggers with integrity constraints if it’s at all possible to do that.
+• Create an UPDATE trigger that duplicates the effect of the INSERT trigger, and execute an UPDATE statement modifing each of the new rows you loaded.
+• Create a stored procedure that duplicates the effect of the INSERT trigger, and execute the stored procedure for the new rows loaded.
+• Preprocess the data that you are loading to obviate the need for the triggers to fire in the first place.
+
+UNRECOVERABLE Loads
+By default, all data loads performed by SQL*Loader, whether conventional path or direct path, are recoverable. This means that the load operations are recorded in the redo log files of the database, and in the event of a media failure, standard Oracle recovery procedures can be used to recover any lost data.
+When performing a direct path load, you have the option of performing an unrecoverable load. An unrecoverable load is one that will not be recorded in the database redo log files. The advantage is that you save redo log space and the time required to write the redo log data, thereby speeding up the load appreciably. The disadvantage is that data loaded in an unrecoverable load can’t be recovered in the event of a media failure.
+
+Because data loaded via an unrecoverable load can’t be recovered in the event of a media failure, we recommend that you take a backup after the load has finished. There is no need to take a full database backup unless you aren’t running in ARCHIVELOG mode. As long as you are running in ARCHIVELOG mode, you can protect yourself by backing up only the data files affected by the load. If you can’t take a backup immediately after the load, try to take a backup at the earliest possible opportunity.
+
+OPTIONS (DIRECT=TRUE)
+UNRECOVERABLE LOAD DATA
+INFILE waterfalls.dat
+INSERT INTO TABLE waterfalls
+SORTED INDEXES (waterfalls_pk)
+SINGLEROW
+REENABLE DISABLED_CONSTRAINTS
+FIELDS TERMINATED BY ','
+(falls_name, falls_county, falls_state)
+
+Preparing for Parallel Data Loading
+Performing a parallel data load requires some work on your part. SQL*Loader doesn’t divide the work up automatically. In preparation for a parallel data load, you need to do the following:
+
+1. Create multiple input data files.
+2. Create a SQL*Loader control file for each input data file.
+3. Initiate multiple SQL*Loader sessions, one for each control file and data file pair.
+To initiate concurrent data loading sessions, you execute the sqlldr command multiple times. For example, the following commands could be used to initiate a load performed in parallel by four different sessions:
+
+SQLLOAD scott/tiger CONTROL=part1.ctl
+SQLLOAD scott/tiger CONTROL=part2.ctl
+SQLLOAD scott/tiger CONTROL=part3.ctl
+SQLLOAD scott/tiger CONTROL=part4.ctl
+
+Note that the commands here should be executed from four different operating system sessions. The intent is to get four SQL*Loader sessions going at once, not to run four sessions one after another.
+
+
+------------- Hands on--------
+DESC EMP;
+ Name                                      Null?    Type
+----------------------------------------- -------- --------------
+EMPNO                                     NOT NULL NUMBER(4)
+ENAME                                              VARCHAR2(10)
+JOB                                                VARCHAR2(9)
+MGR                                                NUMBER(4)
+HIREDATE                                           DATE
+SAL                                                NUMBER(7,2)
+COMM                                               NUMBER(7,2)
+DEPTNO                                             NUMBER(2)
+
+SQL> DESC DEPT;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- --------------
+ DEPTNO                                    NOT NULL NUMBER(2)
+ DNAME                                              VARCHAR2(14)
+ LOC                                                VARCHAR2(13)
+
+ sample data
+ 
+ 
+7369,"SMITH","CLERK",7902,17/12/1980,800,,20
+7499,"ALLEN","SALESMAN",7698,20/02/1981,1600,300,30
+7521,"WARD","SALESMAN",7698,22/02/1981,1250,500,30
+7566,"JONES","MANAGER",7839,02/04/1981,2975,,20
+7654,"MARTIN","SALESMAN",7698,28/09/1981,1250,1400,30
+7698,"BLAKE","MANAGER",7839,01/05/1981,2850,,30
+7782,"CLARK","MANAGER",7839,09/06/1981,2450,,10
+7788,"SCOTT","ANALYST",7566,19/04/1987,3000,,20
+7839,"KING","PRESIDENT",,17/11/1981,5000,,10
+7844,"TURNER","SALESMAN",7698,08/09/1981,1500,0,30
+7876,"ADAMS","CLERK",7788,23/05/1987,1100,,20
+7900,"JAMES","CLERK",7698,03/12/1981,950,,30
+7902,"FORD","ANALYST",7566,03/12/1981,3000,,20
+7934,"MILLER","CLERK",7782,23/01/1982,1300,,10
+
+
+10,"ACCOUNTING","NEW YORK"
+20,"RESEARCH","DALLAS"
+30,"SALES","CHICAGO"
+40,"OPERATIONS","BOSTON"
+

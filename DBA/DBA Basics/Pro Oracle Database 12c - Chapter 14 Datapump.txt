@@ -1,0 +1,590 @@
+﻿Pro Oracle Database 12c - Chapter 14 Data pump
+
+You can use Data Pump in a variety of ways:
+• Perform point-in-time logical backups of the entire database or subsets of data
+• Replicate entire databases or subsets of data for testing or development
+• Quickly generate DDL required to recreate objects
+• Upgrade a database by exporting from the old version and importing into the new version
+
+Data Pump consists of the following components:
+• expdp (Data Pump export utility)
+• impdp (Data Pump import utility)
+• DBMS_DATAPUMP PL/SQL package (Data Pump application programming interface [API])
+• DBMS_METADATA PL/SQL package (Data Pump Metadata API)
+
+When you start a Data Pump export or import job, a master OS process is initiated on the database server. This master process name has the format ora_dmNN_<SID>.
+
+$ ps -ef | grep -v grep | grep ora_dm
+oracle 14602 1 4 08:59 ? 00:00:03 ora_dm00_o12c
+
+Depending on the degree of parallelism and the work specified, a number of worker processes are also started. If no parallelism is specified, then only one worker process is started. The master process coordinates the work between master and worker processes. The worker process names have the format ora_dwNN_<SID>.
+
+Also, when a user starts an export or import job, a database status table is created (owned by the user that starts the job). This table exists only for the duration of the Data Pump job. The name of the status table is dependent on what type of job you’re running. The table is named with the format SYS_<OPERATION>_<JOB_MODE>_NN, where OPERATION is either EXPORT or IMPORT. JOB_MODE can be one of the following types:
+• FULL • SCHEMA • TABLE • TABLESPACE • TRANSPORTABLE
+For example, if you’re exporting a schema, a table is created in your account with the name SYS_EXPORT_SCHEMA_NN, where NN is a number that makes the table name unique in the user’s schema.
+
+When Data Pump runs, it uses a database directory object to determine where to write and read dump files and log files. Usually, you specify which directory object you want Data Pump to use. If you don’t specify a directory object, a default directory is used. The default directory path is defined by a data directory object named DATA_PUMP_DIR. This directory object is automatically created when the database is first created. On Linux/Unix systems this directory object maps to the ORACLE_HOME/rdbms/log directory.
+
+A Data Pump export creates an export file and a log file. The export file contains the objects being exported. The log file contains a record of the job activities.
+
+A small amount of setup is required when you run a Data Pump export job. Here are the steps:
+1. Create a database directory object that points to an OS directory that you want to write/read Data Pump files to/from.
+2. Grant read and write privileges on the directory object to the database user running the export.
+3. From the OS prompt, run the expdp utility.
+
+create directory dp_dir as '/oradump';
+Keep in mind that the directory path specified has to physically exist on the database server. Furthermore, the directory has to be one that the oracle OS user has read/write access to.
+
+grant read, write on directory dp_dir to mv_maint;
+ 
+$expdp mv_maint/foo directory=dp_dir tables=inv dumpfile=exp.dmp logfile=exp.log
+
+If you don’t specify a dump file name, Data Pump creates a file named expdat.dmp. If a file named expdat.dmp already exists in the directory, then Data Pump throws an error. If you don’t specify a log file name, then Data Pump creates one named export.log. If a log file named export.log already exists, then Data Pump overwrites it.
+
+Although it’s possible to execute Data Pump as the SYS user, I don’t recommend it for couple of reasons. First, SYS is required to connect to the database with the AS SYSDBA clause. This requires a Data Pump parameter file with the USERID parameter and quotes around the associated connect string. This is unwieldy. Second, most tables owned by SYS cannot be exported (there are a few exceptions, such as AUD$). If you attempt to export a table owned by SYS, Data Pump will throw an ORA-39166 error and indicate that the table doesn’t exist. This is confusing.
+
+Importing a Table
+One of the key reasons to export data is so that you can recreate database objects. You may want to do this as part of a backup strategy or to replicate data to a different database. Data Pump import uses an export dump file as its input and recreates database objects contained in the export file. The procedure for importing is similar to exporting:
+1. Create a database directory object that points to an OS directory that you want to read/write Data Pump files from.
+2. Grant read and write privileges on the directory object to the database user running the export or import.
+3. From the OS prompt, run the impdp command.
+Steps 1 and 2 were covered in the previous section.
+
+$ impdp mv_maint/foo directory=dp_dir dumpfile=exp.dmp logfile=imp.log
+
+Using a Parameter File
+Instead of typing commands on the command line, in many situations it’s better to store the commands in a file and then reference the file when executing Data Pump export or import. Using parameter files makes tasks more repeatable and less prone to error
+
+Place the following commands in the exp.par file:
+userid=mv_maint/foo
+directory=dp_dir
+dumpfile=exp.dmp
+logfile=exp.log
+tables=inv
+reuse_dumpfiles=y
+
+Next, the export operation references the parameter file via the PARFILE command line option:
+$ expdp parfile=exp.par
+
+Exporting and Importing an Entire Database
+When you export an entire database, this is sometimes referred to as a full export. In this mode the resultant export file contains everything required to make a copy of your database. A full export consists of
+• all DDL required to recreate tablespaces, users, user tables, indexes, constraints, triggers, sequences, stored PL/SQL, and so on.
+• all table data (except the SYS user’s tables)
+A full export is initiated with the FULL parameter set to Y and must be done with a user that has DBA privileges or that has the DATAPUMP_EXP_FULL_DATABASE role granted to it.
+
+Be aware that a full export doesn’t export everything in the database:
+• The contents of the SYS schema are not exported (there are a few exceptions to this, such as the AUD$ table). Consider what would happen if you could export the contents of the SYS schema from one database and import them into another. The SYS schema contents would overwrite internal data dictionary tables/views and thus corrupt the database. Therefore, Data Pump never exports objects owned by SYS.
+• Index data are not exported, but rather, the index DDL that contains the SQL required to recreate the indexes during a subsequent import.
+
+Once you have a full export, you can use its contents to either recreate objects in the original database (e.g., in the event a table is accidentally dropped) or replicate the entire database or subsets of users/tables to a different database. This next example assumes that the dump file has been copied to a different database server and is now used to import all objects into the destination database:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=full.dmp logfile=fullimp.log full=y
+
+To initiate a full database import, you must have DBA privileges or be assigned the DATAPUMP_IMP_FULL_DATABASE role.
+
+Running a full-import database job has some implications to be aware of:
+• The import job will first attempt to recreate any tablespaces. If a tablespace already exists, or if the directory path a tablespace depends on doesn’t exist, then the tablespace creation statements will fail, and the import job will move on to the next task.
+• Next, the import job will alter the SYS and SYSTEM user accounts to contain the same password that was exported. Therefore, after you import from a production system, it’s prudent to change the passwords for SYS and SYSTEM, to reflect the new environment.
+• Additionally, the import job will then attempt to create any users in the export file. If a user already exists, an error is thrown, and the import job moves on to the next task.
+• Users will be imported with the same passwords that were taken from the original database. Depending on your security standards, you may want to change the passwords.
+• Tables will be recreated. If a table already exists and contains data, you must specify how you want the import job to handle this. You can have the import job either skip, append, replace, or truncate the table.
+• After each table is created and populated, associated indexes are created.
+• The import job will also try to import statistics if available. Furthermore, object grants are instantiated.
+
+Schema Level
+When you initiate an export, unless otherwise specified, Data Pump starts a schema-level export for the user running the export job. User-level exports are frequently used to copy a schema or set of schemas from one environment to another. The following command starts a schema-level export for the MV_MAINT user:
+$ expdp mv_maint/foo directory=dp_dir dumpfile=mv_maint.dmp logfile=mv_maint.log
+
+The following command shows a schema-level export for multiple users:
+$ expdp mv_maint/foo directory=dp_dir dumpfile=user.dmp schemas=heera,chaya
+
+You can initiate a schema-level import by referencing a dump file that was taken with a schema-level export:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=user.dmp
+
+When you initiate a schema-level import, there are some details to be aware of:
+• No tablespaces are included in a schema-level export.
+• The import job attempts to recreate any users in the dump file. If a user already exists, an error is thrown, and the import job continues.
+• The import job will reset the users’ passwords, based on the password that was exported.
+• Tables owned by the users will be imported and populated. If a table already exists, you must instruct Data Pump on how to handle this with the TABLE_EXISTS_ACTION parameter.
+
+You can also initiate a schema-level import when using a full-export dump file. To do this, specify which schemas you want extracted from the full export:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=full.dmp schemas=heera,chaya
+
+Table Level
+You can instruct Data Pump to operate on specific tables via the TABLES parameter. For example, say you want to export
+$ expdp mv_maint/foo directory=dp_dir dumpfile=tab.dmp tables=heera.inv,heera.inv_items
+
+Similarly, you can initiate a table-level import by specifying a table-level-created dump file:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=tab.dmp
+
+You can also initiate a table-level import when using a full-export dump file or a schema-level export. To do this, specify which tables you want extracted from the full- or schema-level export:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=full.dmp tables=heera.inv
+
+Tablespace Level
+A tablespace-level export/import operates on objects contained within specific tablespaces. This example exports all objects contained in the USERS tablespace:
+$ expdp mv_maint/foo directory=dp_dir dumpfile=tbsp.dmp tablespaces=users
+
+You can initiate a tablespace-level import by specifying an export file that was created with a tablespace-level export:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=tbsp.dmp
+You can also initiate a tablespace-level import by using a full export, but specifying the TABLESPACES parameter:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=full.dmp tablespaces=users
+
+A tablespace-level import will attempt to create any tables and indexes within the tablespace. The import doesn’t try to recreate the tablespaces themselves.
+
+Transferring Data
+One of the main uses of Data Pump is the copying of data from one database to another. Often, source and destination databases are located in data centers thousands of miles apart. Data Pump offers several powerful features for efficiently copying data:
+• Network link - Allows you to take an export and import it into the destination database without having to create a dump file. 
+• Copying data files (transportable tablespaces) - Lets you copy the data files from a source database to the destination and then use Data Pump to transfer the associated metadata. 
+• External tables (see Chapter 14)
+
+Example:
+• Make a copy of the production database on the Solaris box.
+• Import the copy into the testing database on the Linux server.
+• Change the names of the schemas when importing so as to meet the testing database standards for names.
+
+For this example, the production database users are STAR2, CIA_APP, and CIA_SEL. You want to move these users into a testing database and rename them STAR_JUL, CIA_APP_JUL, and CIA_SEL_JUL. This task requires the following steps:
+
+1. Create users in the test database to be imported into. Here is a sample script that creates the users in the testing database:
+
+define star_user=star_jul
+define star_user_pwd=star_jul_pwd
+define cia_app_user=cia_app_jul
+define cia_app_user_pwd=cia_app_jul_pwd
+define cia_sel_user=cia_sel_jul
+define cia_sel_user_pwd=cia_sel_jul_pwd
+--
+create user &&star_user identified by &&star_user_pwd;
+grant connect,resource to &&star_user;
+alter user &&star_user default tablespace dim_data;
+--
+create user &&cia_app_user identified by &&cia_app_user_pwd;
+grant connect,resource to &&cia_app_user;
+alter user &&cia_app_user default tablespace cia_data;
+--
+create user &&cia_sel_user identified by &&cia_app_user_pwd;
+grant connect,resource to &&cia_app_user;
+alter user &&cia_sel_user default tablespace cia_data;
+
+2. In your testing database, create a database link that points to your production database. The remote user referenced in the CREATE DATABASE LINK statement must have the DBA role granted to it in the production database. Here is a sample CREATE DATABASE LINK script:
+
+create database link dk connect to darl identified by foobar using 'dwdb1:1522/dwrep1';
+
+3. In your testing database, create a directory object that points to the location where you want your log file to go:
+SQL> create or replace directory engdev as '/orahome/oracle/ddl/engdev';
+
+4. Run the import command on the testing box. This command references the remote database via the NETWORK_LINK parameter. The command also instructs Data Pump to map the production database user names to the newly created users in the testing database.
+
+$ impdp darl/engdev directory=engdev network_link=dk \
+schemas='STAR2,CIA_APP,CIA_SEL' \
+remap_schema=STAR2:STAR_JUL,CIA_APP:CIA_APP_JUL,CIA_SEL:CIA_SEL_JUL
+
+Copying Data Files
+Oracle provides a mechanism for copying data files from one database to another, in conjunction with using Data Pump to transport the associated metadata. This is known as the transportable tablespace feature. The amount of time this task requires depends on how long it takes you to copy the data files to the destination server. This technique is appropriate for moving data in DSS and data warehouse environments.
+
+Follow these steps to transport tablespaces:
+1. Ensure that the tablespace is self-contained. These are some common violations of the self-contained rule:
+• An index in one tablespace can’t point to a table in another tablespace that isn’t in the set of tablespaces being transported.
+• A foreign key constraint is defined on a table in a tablespace that references a primary key constraint on a table in a tablespace that isn’t in the set of tablespaces being transported.
+
+Run the following check to see if the set of tablespaces being transported violates any of the self-contained rules:
+SQL> exec dbms_tts.transport_set_check('INV_DATA,INV_INDEX', TRUE);
+Now, see if Oracle detected any violations:
+SQL> select * from transport_set_violations;
+If you don’t have any violations, you should see this: no rows selected
+
+If you do have violations, such as an index that is built on a table that exists in a tablespace not being transported, then you’ll have to rebuild the index in a tablespace that is being transported.
+
+2. Make the tablespaces being transported read-only:
+SQL> alter tablespace inv_data read only;
+SQL> alter tablespace inv_index read only;
+
+3. Use Data Pump to export the metadata for the tablespaces being transported:
+$ expdp mv_maint/foo directory=dp_dir dumpfile=trans.dmp transport_tablespaces=INV_DATA,INV_INDEX
+
+4. Copy the Data Pump export dump file to the destination server.
+
+5. Copy the data file(s) to the destination database. Place the files in the directory where you want them in the destination database server. The file name and directory path must match the import command used in the next step.
+
+6. Import the metadata into the destination database. Use the following parameter file to import the metadata for the data files being transported:
+
+userid=mv_maint/foo
+directory=dp_dir
+dumpfile=trans.dmp
+transport_datafiles=/ora01/dbfile/rcat/inv_data01.dbf,
+/ora01/dbfile/rcat/inv_index01.dbf
+
+If everything goes well, you should see some output indicating success:
+Job "MV_MAINT"."SYS_IMPORT_TRANSPORTABLE_01" successfully completed...
+
+Features for Manipulating Storage
+
+Exporting Tablespace Metadata
+
+you can use Data Pump to
+pull out just the DDL required to recreate the tablespaces for an environment:
+$ expdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp full=y include=tablespace
+
+The FULL parameter instructs Data Pump to export everything in the database. However, when used with INCLUDE, Data Pump exports only the objects specified with that command. In this combination only metadata regarding tablespaces are exported; no data within the data files are included with the export. You could add the parameter and value of CONTENT=METADATA_ONLY to the INCLUDE command, but this would be redundant.
+
+Now, you can use the SQLFILE parameter to view the DDL associated with the tablespaces that were exported:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp sqlfile=tbsp.sql
+
+When you use the SQLFILE parameter, nothing is imported. In this example the prior command only creates a file named tbsp.sql, containing SQL statements pertaining to tablespaces. You can modify the DDL and run it in the destination database environment; or, if nothing needs to change, you can directly use the dump file by importing tablespaces into the destination database.
+
+Specifying Different Data File Paths and Names
+
+What happens if you want to use the dump file to create tablespaces on a separate database server that has different directory structures? Data Pump allows you to change the data file directory paths and file names in the import step with the REMAP_DATAFILE parameter.
+For example, say the source data files existed on a mount point named /ora03, but on the database being imported to, the mount points are named with /ora01. Here is a parameter file that specifies that only tablespaces beginning with the string INV should be imported and that their corresponding data files names be changed to reflect
+the new environment:
+
+userid=mv_maint/foo
+directory=dp_dir
+dumpfile=inv.dmp
+full=y
+include=tablespace:"like 'INV%'"
+remap_datafile="'/ora03/dbfile/O12C/inv_data01.dbf':'/ora01/dbfile/O12C/tb1.dbf'"
+remap_datafile="'/ora03/dbfile/O12C/inv_index01.dbf':'/ora01/dbfile/O12C/tb2.dbf'"
+
+Importing into a Tablespace Different from the Original
+
+This example remaps the user as well as the tablespace. The original user and tablespaces are HEERA and INV_DATA. This command imports the INV table into the CHAYA user and the DIM_DATA tablespace:
+
+$ impdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp remap_schema=HEERA:CHAYA \
+remap_tablespace=INV_DATA:DIM_DATA tables=heera.inv
+
+Filtering Data and Objects
+Data Pump has a vast array of mechanisms for filtering data and metadata. You can influence what is excluded or included in a Data Pump export or import in the following ways:
+• Use the QUERY parameter to export or import subsets of data.
+• Use the SAMPLE parameter to export a percentage of the rows in a table.
+• Use the CONTENT parameter to exclude or include data and metadata.
+• Use the EXCLUDE parameter to specifically name items to be excluded.
+• Use the INCLUDE parameter to name the items to be included (thereby excluding other nondependent items not included in the list).
+• Use parameters such as SCHEMAS to specify that you only want a subset of the database’s objects (those that belong to the specified user or users).
+
+This example uses a parameter file and limits the rows exported for two tables. Here is the parameter file used when exporting:
+Keep in mind that this technique is unaware of any foreign key constraints that may be in place, so you can’t blindly restrict the data sets without considering parent–child relationships.
+
+userid=mv_maint/foo
+directory=dp_dir
+dumpfile=inv.dmp
+tables=inv,reg
+query=inv:"WHERE inv_desc='Book'"
+query=reg:"WHERE reg_id <=20"
+
+You can also specify a query when importing data. Here is a parameter file that limits the rows imported into the INV table, based on the INV_ID column:
+userid=mv_maint/foo
+directory=dp_dir
+dumpfile=inv.dmp
+tables=inv,reg
+query=inv:"WHERE inv_id > 10"
+
+Exporting a Percentage of the Data
+When exporting, the SAMPLE parameter instructs Data Pump to retrieve a certain percentage of rows, based on a number you provide. Data Pump doesn’t keep track of parent–child relationships when exporting. Therefore, this approach doesn’t work well when you have tables linked via foreign key constraints and you’re trying to select a percentage of rows randomly.
+
+$ expdp mv_maint/foo directory=dp_dir tables=inv,reg sample=reg:30 dumpfile=inv.dmp
+
+Note The SAMPLE parameter is only valid for exports.
+
+Excluding Objects from the Export File
+
+Export a table but want to exclude the indexes and grants:
+$ expdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp tables=inv exclude=index,grant
+
+To exclude indexes that have names that start with the string “INV,” you use the following command:
+exclude=index:"LIKE 'INV%'"
+
+Excluding Statistics
+By default, when you export a table object, any statistics are also exported. You can prevent statistics from being imported via the EXCLUDE parameter.
+exclude=statistics
+
+
+The following example exports only the procedures and functions that a user owns:
+$ expdp mv_maint/foo dumpfile=proc.dmp directory=dp_dir include=procedure,function
+
+exporting only specific PL/SQL objects,
+directory=dp_dir
+dumpfile=ss.dmp
+include=function:"='ISDATE'",procedure:"='DEPTREE_FILL'"
+
+Suppose you want to export the DDL associated with tables, indexes, constraints, and triggers in your database. To do this, use the FULL export mode, specify CONTENT=METADATA_ONLY, and only include tables:
+$ expdp mv_maint/foo directory=dp_dir dumpfile=ddl.dmp content=metadata_only full=y include=table
+
+You can use the INCLUDE parameter to reduce what is imported. Suppose you have a schema from which you want to import tables that begin with the letter A. Here is the parameter file:
+
+userid=mv_maint/foo
+directory=dp_dir
+dumpfile=inv.dmp
+schemas=HEERA
+include=table:"like 'A%'"
+
+Common Data Pump Tasks
+
+Estimating the Size of Export Jobs
+
+To estimate the size, use the ESTIMATE_ONLY parameter. This example estimates the size of the export file for an entire database:
+$ expdp mv_maint/foo estimate_only=y full=y logfile=n
+Here is a snippet of the output:
+Estimate in progress using BLOCKS method...
+Total estimation using BLOCKS method: 6.75 GB
+Similarly, you can specify a schema name to get an estimate of the size required to export a user:
+$ expdp mv_maint/foo estimate_only=y schemas=star2 logfile=n
+
+Listing the Contents of Dump Files
+
+Use the SQLFILE option of Data Pump import to list the contents of a Data Pump export file. This example creates a file named expfull.sql, containing the SQL statements that the import process calls (the file is placed in the directory defined by the DPUMP_DIR2 directory object):
+$ impdp hr/hr DIRECTORY=dpump_dir1 DUMPFILE=expfull.dmp \
+SQLFILE=dpump_dir2:expfull.sql
+If you don’t specify a separate directory (such as dpump_dir2, in the previous example), then the SQL file is written to the location specified in the DIRECTORY option.
+
+You must run the previous command as a user with DBA privileges or the schema that performed the Data Pump export. Otherwise, you get an empty SQL file without the expected SQL statements in it.
+
+Cloning a User
+Suppose you need to move a user’s objects and data to a new database. As part of the migration, you want to rename the user. First, create a schema-level export file that contains the user you want to clone. In this example the user name is INV:
+$ expdp mv_maint/foo directory=dp_dir schemas=inv dumpfile=inv.dmp
+
+$ impdp mv_maint/foo directory=dp_dir remap_schema=inv:inv_dw dumpfile=inv.dmp
+
+Creating a Consistent Export
+A consistent export means that all data in the export file are consistent as of a time or an SCN. When you’re exporting an active database with many parent-child tables, you should ensure that you get a consistent snapshot of the data.
+
+You create a consistent export by using either the FLASHBACK_SCN or FLASHBACK_TIME parameter.
+
+SQL> select current_scn from v$database;
+Here is some typical output:
+CURRENT_SCN
+-----------
+5715397
+The following command takes a consistent full export of the database, using the FLASHBACK_SCN parameter:
+$ expdp mv_maint/foo directory=dp_dir full=y flashback_scn=5715397 dumpfile=full.dmp
+
+This means that any transactions committed after the specified SCN aren’t included in the export file.
+
+You can also use FLASHBACK_TIME to specify that the export file should be created with consistent committed transactions as of a specified time. When using FLASHBACK_TIME, Oracle determines the SCN that most closely matches the time specified and uses that to produce an export consistent with that SCN.
+
+directory=dp_dir
+content=metadata_only
+dumpfile=inv.dmp
+flashback_time="to_timestamp('24-jan-2013 07:03:00','dd-mon-yyyy hh24:mi:ss')"
+
+You can’t specify both FLASHBACK_SCN and FLASHBACK_TIME when taking an export; these two parameters are mutually exclusive.
+
+Importing When Objects Already Exist
+When exporting and importing data, you often import into schemas in which the objects have been created (tables, indexes, and so on). In this situation, you should import the data but instruct Data Pump to try not to create already existing object.
+
+You can achieve this with the TABLE_EXISTS_ACTION and CONTENT parameters. The default for the TABLE_EXISTS_ACTION parameter is SKIP, unless you also specify the parameter CONTENT=DATA_ONLY. If you use CONTENT=DATA_ONLY, then the default for TABLE_EXISTS_ACTION is APPEND.
+
+The TABLE_EXISTS_ACTION parameter takes the following options:
+• SKIP (default if not combined with CONTENT=DATA_ONLY)
+• APPEND (default if combined with CONTENT=DATA_ONLY)
+• REPLACE
+• TRUNCATE
+The SKIP option tells Data Pump not to process the object if it exists. The APPEND option instructs Data Pump not to delete existing data, but rather, to add data to the table without modifying any existing data. The REPLACE option instructs Data Pump to drop and recreate objects; this parameter isn’t valid when the CONTENT parameter is used with the DATA_ONLY option. The TRUNCATE parameter tells Data Pump to delete rows from tables via a TRUNCATE statement.
+
+The CONTENT parameter takes the following options:
+• ALL (default)
+• DATA_ONLY
+• METADATA_ONLY
+The ALL option instructs Data Pump to load both data and metadata contained in the dump file; this is the default behavior. The DATA_ONLY option tells Data Pump to load only table data into existing tables; no database objects are created. The METADATA_ONLY option only creates objects; no data are loaded.
+
+The next example instructs Data Pump to append data in any tables that already exist via the TABLE_EXISTS_ACTION=APPEND option. Also used is the CONTENT=DATA_ONLY option, which instructs Data Pump not to run any DDL to create objects (only to load data):
+$ impdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp table_exists_action=append content=data_only
+
+You may wonder what happens if you just use the TABLE_EXISTS_ACTION option and don’t combine it with the CONTENT option:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp table_exists_action=append
+
+The only difference is that Data Pump attempts to run DDL commands to create objects if they exist. This doesn’t stop the job from running, but you see an error message in the output, indicating that the object already exists. Here is a snippet of the output for the previous command:
+Table "MV_MAINT"."INV" exists. Data will be appended ...
+
+
+Renaming a Table
+Starting with Oracle Database 11g, you have the option of renaming a table during import operations. There are many reasons you may want to rename a table when importing it. For instance, you may have a table in the target schema that has the same name as the table you want to import. You can rename a table when importing by using the REMAP_TABLE parameter. This example imports the table from the HEERA user INV table to the HEERA user INVEN table:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp tables=heera.inv remap_table=heera.inv:inven
+
+Note that this syntax doesn’t allow you to rename a table into a different schema. If you’re not careful, you may attempt to do the following (thinking that you’re moving a table and renaming it in one operation):
+$ impdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp tables=heera.inv remap_table=heera.inv:scott.inven
+
+In the prior example, you end up with a table in the HEERA schema named SCOTT. That can be confusing.
+
+Remapping Data
+Starting with Oracle Database 11g, when either exporting or importing, you can apply a PL/SQL function to alter a column value. For example, you may have an auditor who needs to look at the data, and one requirement is that you apply a simple obfuscation function to sensitive columns. The data don’t need to be encrypted; they just need to be changed enough that the auditor can’t readily determine the value of the LAST_NAME column in the CUSTOMERS table.
+
+create or replace package obfus is
+function obf(clear_string varchar2) return varchar2;
+function unobf(obs_string varchar2) return varchar2;
+end obfus;
+/
+--
+create or replace package body obfus is
+fromstr varchar2(62) := '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ' ||
+'abcdefghijklmnopqrstuvwxyz';
+tostr varchar2(62) := 'defghijklmnopqrstuvwxyzabc3456789012' ||
+'KLMNOPQRSTUVWXYZABCDEFGHIJ';
+--
+function obf(clear_string varchar2) return varchar2 is
+begin
+return translate(clear_string, fromstr, tostr);
+end obf;
+--
+function unobf(obs_string varchar2) return varchar2 is
+begin
+return translate(obs_string, tostr, fromstr);
+end unobf;
+end obfus;
+/
+Now, when you import the data into the database, you apply the obfuscation function to the LAST_NAME column of the CUSTOMERS table:
+$ impdp mv_maint/foo directory=dp_dir dumpfile=cust.dmp tables=customers remap_data=customers.last_name:obfus.obf
+
+Selecting LAST_NAME from CUSTOMERS shows that it has been imported in an obfuscated manner.
+You can manually apply the package’s UNOBF function to see the real values of the column:
+SQL> select obfus.unobf(last_name) from customers;
+
+Suppressing a Log File
+By default, Data Pump creates a log file when generating an export or an import. If you know that you don’t want a log file generated, you can suppress it by specifying the NOLOGFILE parameter. Here is an example:
+$ expdp mv_maint/foo directory=dp_dir tables=inv nologfile=y
+
+Using Parallelism
+Use the PARALLEL parameter to parallelize a Data Pump job. For instance, if you know you have four CPUs on a box, and you want to set the degree of parallelism to 4, use PARALLEL as follows:
+$ expdp mv_maint/foo parallel=4 dumpfile=exp.dmp directory=dp_dir full=y
+
+To take full advantage of the parallel feature, ensure that you specify multiple files when exporting. The following example creates one file for each thread of parallelism:
+$ expdp mv_maint/foo parallel=4 dumpfile=exp1.dmp,exp2.dmp,exp3.dmp,exp4.dmp
+You can also use the %U substitution variable to instruct Data Pump to create dump files automatically to match the degree of parallelism. The %U variable starts at the value 01 and increments as additional dump files are allocated.
+This example uses the %U variable:
+$ expdp mv_maint/foo parallel=4 dumpfile=exp%U.dmp
+Now, say you need to import from the dump files created from an export. You can either individually specify the dump files or, if the dump files were created with the %U variable, use that on import:
+$ impdp mv_maint/foo parallel=4 dumpfile=exp%U.dmp
+
+Specifying Additional Dump Files
+If you run out of space in the primary data pump location, then you can specify additional data pump locations on the fly. Use the ADD_FILE command from the interactive command prompt. Here is the basic syntax for adding additional files:
+
+Export> add_file=alt2.dmp
+You can also specify a separate database directory object:
+Export> add_file=alt_dir:alt3.dmp
+
+Reusing Output File Names
+By default, Data Pump doesn’t overwrite an existing dump file. For example, the first time you run this job, it will run fine because there is no dump file named inv.dmp in the directory being used:
+$ expdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp
+If you attempt to run the previous command again with the same directory and the same data pump name, this error is thrown: ORA-31641: unable to create dump file "/oradump/inv.dmp"
+
+You can either specify a new data pump name for the export job or use the REUSE_DUMPFILES parameter to direct Data Pump to overwrite an existing dump file; for example,
+$ expdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp reuse_dumpfiles=y
+
+Encrypting Data
+One potential security issue with Data Pump dump files is that anybody with OS access to the output file can search for strings in the file. On Linux/Unix systems, you can do this with the strings command:
+$ strings inv.dmp | grep -i secret
+
+This command allows you to view the contents of the dump file because the data are in regular text and not encrypted. If you require that the data be secured, you can use Data Pump’s encryption features. This example uses the ENCRYPTION parameter to secure all data and metadata in the output:
+
+$ expdp mv_maint/foo encryption=all directory=dp_dir dumpfile=inv.dmp
+
+For this command to work, your database must have an encryption wallet in place and open. See the Oracle Advanced Security Administrator’s Guide, available for download from the Technology Network area of the Oracle web site (http://otn.oracle.com), for more details on how to create and open a wallet.
+
+Disabling Logging of Redo on Import
+Starting with Oracle Database 12c, you can specify that objects be loaded with nologging of redo. This is achieved via the DISABLE_ARCHIVE_LOGGING parameter:
+
+$ impdp mv_maint/foo directory=dp_dir dumpfile=inv.dmp transform=disable_archive_logging:Y
+
+Interactive Command Mode
+Data Pump provides an interactive command mode that allows you to monitor the status of a Data Pump job and modify on the fly a number of job characteristics. The interactive command mode is most useful for long-running Data Pump operations. In this mode, you can also stop, restart, or terminate a currently running job.
+
+There are two ways to access the interactive command mode prompt:
+• Press Ctrl+C in a Data Pump job that you started via expdp or impdp.
+• Use the ATTACH parameter to attach to a currently running job.
+
+You can press Ctrl+C for either an export or an import job. For an import job the interactive command mode prompt is Import> or else it's export>
+
+Export Interactive Commands
+Command : Description
+ADD_FILE : Adds files to the export dump set
+CONTINUE_CLIENT : Continues with interactive client mode
+EXIT_CLIENT : Exits the client session and returns to the OS prompt; leaves the current job running
+FILESIZE : Defines file size for any subsequently created dump files
+HELP : Displays interactive export commands
+KILL_JOB : Terminates the current job
+PARALLEL : Increases or decreases the degree of parallelism
+REUSE_DUMPFILES : Overwrites the dump file if it exists (default is N)
+START_JOB : Restarts the attached job
+STATUS : Displays the status of the currently attached job
+STOP_JOB [=IMMEDIATE] : Stops a job from processing (you can later restart it). Using the IMMEDIATE parameter quickly stops the job, but there may be some incomplete tasks.
+
+Import Interactive Commands
+CONTINUE_CLIENT : Continues with interactive logging mode
+EXIT_CLIENT : Exits the client session and returns to the OS prompt. Leaves the current job running
+HELP : Displays the available interactive commands
+KILL_JOB : Terminates the job currently connected to in the client
+PARALLEL : Increases or decreases the degree of parallelism
+START_JOB : Restarts a previously stopped job. START_JOB=SKIP_CURRENT restarts the job and skips any operations that were active when the job was stopped
+STATUS : Specifies the frequency at which the job status is monitored. Default mode is 0; the client reports job status changes whenever available in this mode.
+STOP_JOB [=IMMEDIATE] : Stops a job from processing (you can later restart it). Using the IMMEDIATE parameter quickly stops the job, but there may be some incomplete tasks.
+
+Attaching to a Running Job
+One powerful feature of Data Pump is that you can attach to a currently running job and view its progress and status. If you have DBA privileges, you can even attach to a job if you aren’t the owner. You can attach to either an import or an export job via the ATTACH parameter.
+SQL> select owner_name, operation, job_name, state from dba_datapump_jobs;
+
+$ expdp system/foobar attach=mv_maint.sys_export_schema_01
+
+Now, you can stop the job, using the STOP_JOB parameter:
+Import> stop_job
+You should see this output:
+Are you sure you wish to stop this job ([yes]/no):
+
+Type YES to proceed with stopping the job. You can also specify that the job be stopped immediately:
+Import> stop_job=immediate
+When you stop a job with the IMMEDIATE option, there may be some incomplete tasks associated with the job. To restart a job, attach to interactive command mode, and issue the START_JOB command:
+Import> start_job
+If you want to resume logging job output to your terminal, issue the CONTINUE_CLIENT command:
+Import> continue_client
+
+You can instruct Data Pump to permanently kill an export or import job. First, attach to the job in interactive command mode, and then issue the KILL_JOB command:
+Import> kill_job
+You should be prompted with the following output:
+Are you sure you wish to stop this job ([yes]/no):
+Type YES to permanently kill the job. Data Pump unceremoniously kills the job and drops the associated status table from the user running the export or import.
+
+Monitoring Data Pump Jobs
+The most obvious way to monitor a job is to view the status that Data Pump displays on the screen as the job is running. If you’ve disconnected from the command mode, then the status is no longer displayed on your screen.
+
+$ impdp mv_maint/foo directory=dp_dir dumpfile=archive.dmp logfile=archive.log
+
+The log file contains the same information you see displayed interactively on your screen when running a Data Pump job.
+
+select job_name, operation, job_mode, state from dba_datapump_jobs;
+
+You can also query the DBA_DATAPUMP_SESSIONS view for session information via the following query:
+select sid, serial#, username, process, program
+from v$session s, dba_datapump_sessions d
+where s.saddr = d.saddr;
+
+Database Alert Log
+If a job is taking much longer than you expected, look in the database alert log for any messages similar to this:
+statement in resumable session 'SYS_IMPORT_SCHEMA_02.1' was suspended due to
+ORA-01652: unable to extend temp segment by 64 in tablespace REG_TBSP_3
+
+Status Table
+Every time you start a Data Pump job, a status table is automatically created in the account of the user running the job. For export jobs the table name depends on what type of export job you’re running. The table is named with the format SYS_<OPERATION>_<JOB_MODE>_NN, where OPERATION is either EXPORT or IMPORT. JOB_MODE can be FULL, SCHEMA, TABLE, TABLESPACE, and so on.
+Here is an example of querying the status table for particulars about a currently running job:
+select name, object_name, total_bytes/1024/1024 t_m_bytes
+,job_mode
+,state ,to_char(last_update, 'dd-mon-yy hh24:mi')
+from SYS_EXPORT_TABLE_01
+where state='EXECUTING';
+
+OS Utilities
+You can use the ps OS utility to display jobs running on the server. For example, you can search for master and worker processes, as follows:
+$ ps -ef | egrep 'ora_dm|ora_dw' | grep -v egrep
+
+Data Pump Legacy Mode
+Data Pump allows you to use the old exp and imp utility parameters when invoking a Data Pump job. This is known as legacy mode, and it’s a great feature. As soon as Data Pump detects a legacy parameter, it attempts to process the parameter as if it were from the old exp/imp utilities. You can even mix and match old legacy parameters with newer parameters; for example,
+$ expdp mv_maint/foo consistent=y tables=inv directory=dp_dir
+In the output, Data Pump indicates that it has encountered legacy parameters and gives you the syntax for what it translated the legacy parameter to in Data Pump syntax. For the previous command, here is the output from the Data Pump session that shows what the consistent=y parameter was translated into:
+Legacy Mode Parameter: "consistent=TRUE" Location: Command Line,
+Replaced with:
+"flashback_time=TO_TIMESTAMP('2013-01-25 19:31:54', 'YYYY-MM-DD HH24:MI:SS')"
+
+----------- Hands on
+impdp scott/tiger directory=expdp_dir dumpfile=scott.dmp remap_schema=scott:scott_test remap_table=emp_new:emp_scott
+
+IMPDP directory=ABC dumpfile=exp_pdco1mob00_full_1_12232013.dmp,
+exp_pdco1mob00_full_2_12232013.dmp,
+exp_pdco1mob00_full_3_12232013.dmp,
+exp_pdco1mob00_full_4_12232013.dmp 
+logfile=IMPORT_DUMP full=y

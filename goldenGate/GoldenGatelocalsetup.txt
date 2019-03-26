@@ -1,0 +1,713 @@
+GoldenGate Local setup
+
+C:\app\Aarush\product\12.1.2\oggcore_1 - software location
+
+C:\app\oracle\product\12.1.0\dbhome_1 - database location
+
+7809 - Manager port
+
+
+C:\app\Aarush\product\12.1.2\oggcore_2 - software location
+
+C:\app\oracle\product\12.1.0\dbhome_1 - database location
+
+7810 - Manager port
+
+create user C##GGADMIN identified by ggadmin;
+
+execute dbms_goldengate_auth.grant_admin_privilege('C##GGADMIN',container=>'all');
+
+grant sysdba to C##GGADMIN;
+
+grant connect,resource to C##GGADMIN;
+grant select any dictionary, select any table to C##GGADMIN;
+grant create table to C##GGADMIN;
+grant flashback any table to C##GGADMIN;
+grant execute on dbms_flashback to C##GGADMIN;
+grant execute on utl_file to C##GGADMIN;
+
+/*
+grant connect,resource to hr;
+grant select any dictionary, select any table to hr;
+grant create table to hr;
+grant flashback any table to hr;
+grant execute on dbms_flashback to hr;
+grant execute on utl_file to hr;
+
+grant connect,resource to hrd;
+grant select any dictionary, select any table to hrd;
+grant create table to hrd;
+grant flashback any table to hrd;
+grant execute on dbms_flashback to hrd;
+grant execute on utl_file to hrd;
+*/
+
+21 06 82 - tuna b day
+47.99
+
+--------------------------------------------
+Local GoldenGate Replication Environment
+Configuration Item 							Valueggs_admin
+GoldenGate software location  				C:\app\Aarush\product\12.1.2\oggcore_1, C:\app\Aarush\product\12.1.2\oggcore_2
+GoldenGate OS user ID/password              gguser/userpw
+GoldenGate database user ID/password        ggs_admin/ggs_admin
+Source server name                          localhost
+Source manager port                         7809
+Source server OS/release                    Windows
+Source database name                        orcl
+Source database vendor/release              Oracle 12.1
+Source schema                               HR
+Target server name                          localhost
+Target manager port                         7810
+Target server OS/release                    Windows
+Target database vendor/release              Oracle 12.1
+Target database name                        orcl
+Target schema                               HRD
+Local extract name                          LHREMD1
+Data pump name                              PHREMD1
+Replicat name                               RHREMD1
+Local trail file                            l1
+Remote trail file                           l2
+
+
+ggsci
+dblogin userid ggs_admin@pdborcl password ggs_admin
+
+
+
+
+start manager
+
+info manager
+
+local
+dblogin userid ggs_admin password ggs_admin
+
+Remote
+
+dblogin userid ggsr_admin password ggsr_admin
+ADD CHECKPOINTTABLE CKPTAB
+
+ EDIT PARAMS ./GLOBALS
+
+GGSCHEMA ggsr_admin
+CHECKPOINTTABLE ggsr_admin.CKPTAB
+
+
+
+
+--------------------------------------------
+
+cmd
+cd C:\GoldenGate\ggsl
+ggsci
+create subdirs
+exit
+
+
+cd C:\GoldenGate\ggsr
+ggsci
+create subdirs
+exit
+
+sqlplus / as sysdba
+
+create user ggs_admin identified by ggs_admin;
+grant dba to ggs_admin;
+
+
+
+
+
+
+SELECT SUPPLEMENTAL_LOG_DATA_MIN FROM V$DATABASE;
+
+ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+
+Remember, for Oracle 9i, SUPPLEMENTAL_LOG_DATA must be YES. For Oracle 10g and later, SUPPLEMENTAL_LOG_DATA must be YES or IMPLICIT.
+
+ggsci
+dblogin userid ggs_admin password ggs_admin
+
+add trandata hr.employees
+
+ADD TRANDATA performs different database commands in the background depending on the database. Behind the scenes, the ADD TRANDATA command is equivalent to the following command in an Oracle database:
+
+ALTER TABLE HR.EMPLOYEES ADD SUPPLEMENTAL LOG GROUP GGS_EMPLOYEES_19387 (EMPLOYEE_ID) ALWAYS;
+
+select owner, log_group_name, table_name from dba_log_groups where owner = 'HR';
+
+edit params MGR
+-------------------------------------------------------------------
+-- GoldenGate Manager
+-------------------------------------------------------------------
+port 7840
+
+edit params LHREMD1
+
+Extract LHREMD1
+-------------------------------------------------------------------
+-- Local extract for HR schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.AL32UTF8)
+USERID ggs_admin@ocp11g, PASSWORD ggs_admin
+ExtTrail dirdat/l1
+Table HR.EMPLOYEES;
+
+
+ADD EXTRACT LHREMD1, TRANLOG, BEGIN NOW
+ADD EXTTRAIL dirdat/l1, EXTRACT LHREMD1, MEGABYTES 50
+
+START EXTRACT LHREMD1
+info extract LHREMD1
+info ext LHREMD1, detail
+stats ext LHREMD1
+
+Configuring the Data Pump
+edit params PHREMD1
+
+Extract PHREMD1
+-------------------------------------------------------------------
+-- Data Pump extract for HR schema
+-------------------------------------------------------------------
+PassThru
+RmtHost localhost, MgrPort 7850
+RmtTrail dirdat/l2
+Table HR.EMPLOYEES ;
+
+ADD EXTRACT PHREMD1, EXTTRAILSOURCE dirdat/l1
+ADD RMTTRAIL dirdat/l2, EXTRACT PHREMD1, MEGABYTES 50
+
+START EXTRACT PHREMD1
+
+Replicat RHREMD1
+-------------------------------------------------------------------
+-- Replicat for HR Schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.AL32UTF8)
+USERID gs_admin@ocp11g, PASSWORD ggs_admin
+HandleCollisions
+AssumeTargetDefs
+Map HR.*, Target HRD.* ;
+
+
+
+stop EXTRACT *
+
+stop REPLICAT *
+
+Configuring the Initial-Load Extract - Oracle direct-load Extract
+
+edit params IHREMD1
+
+Extract IHREMD1
+-------------------------------------------------------------------
+-- Initial Load extract for HR schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.AL32UTF8)
+USERID ggs_admin@ocp11g, PASSWORD ggs_admin
+RmtHost localhost, mgrport 7850
+RmtTask Replicat, Group DHREMD1
+Table HR.EMPLOYEES;
+
+Adding the Initial-Load Extract
+
+ADD EXTRACT IHREMD1, SOURCEISTABLE
+
+dblogin userid ggs_admin password ggs_admin
+DELETE EXTRACT IHREMD1
+
+Notice that adding the initial-load Extract is similar to adding the Local and data-pump Extracts. One difference is that you need to specify the SOURCEISTABLE option. SOURCEISTABLE tells GoldenGate that this Extract is used only for initial loading and to capture all the records from the source database for loading into the target database.
+
+
+Configuring the Initial-Load Replicat
+
+edit params DHREMD1
+
+Replicat DHREMD1
+-------------------------------------------------------------------
+-- Initial load replicat for HR schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.AL32UTF8)
+USERID gs_admin@ocp11g, PASSWORD ggs_admin
+AssumeTargetDefs
+Map HR.*, Target HRD.* ;
+
+Adding the Initial-Load Replicat
+ADD REPLICAT DHREMD1, SPECIALRUN
+
+Starting the GoldenGate Initial Load
+START EXTRACT IHREMD1
+
+------------------
+
+Advanced Features
+
+In addition to the standard reports, you can add parameters to instruct the Extract or Replicat to periodically add more information to the reports. As shown in the example, add the following parameters to your Extracts and Replicats to enhance the default reporting:
+
+ReportCount Every 30 Minutes, Rate
+Report at 01:00
+ReportRollover at 01:15
+
+In the example, you request a record count every 30 minutes. Here is an example of what the reporting output looks like:
+
+1000 records processed as of 2010-01-28 11:30:40 (rate 154,delta 215)
+
+Rate = # of records processed since startup / total time since startup
+Delta = # of records since last report / time since last report
+
+You can use the REPORTCOUNT parameter to have the Extract or Replicat automatically add a count of the records GoldenGate has processed since startup. You can compare the rate over time to see if it changes. Changes in rate could be due to more or less processing volume or perhaps performance issues with your Extract or Replicat or even the database itself.
+
+REPORT : You can use the REPORT parameter to have the Extract or Replicat insert runtime statistics into your report, such as the following: The example told the Extract or Replicat to generate statistics every day at 1 a.m. You can also pick a specific day of the week and generate statistics only once a week.
+
+You can also manually add runtime statistics to your report using the SEND EXTRACT xxx REPORT or SEND REPLICAT xxx REPORT, where xxx is your Extract or Replicat name. Remember to update your parameter file if you want to see the statistics reported permanently.
+
+REPORTROLLOVER: If an Extract or Replicat runs continuously for a long period, you may notice that the report file becomes rather large. To control the size of the report file, you can have GoldenGate automatically roll over the reports on a daily or weekly basis. The example rolls over the report file once a day at 1:15 a.m. Note that the report statistics continue to accumulate even after the reports are rolled over unless you specifically tell GoldenGate to reset them using the STATOPTIONS parameter with the RESETREPORTSTATS option.
+
+Reporting Discarded Records
+By default, GoldenGate won’t produce a discard file to show you which records have been discarded. If you want to see the discards, you can instruct GoldenGate to write them out to a file using the DISCARDFILE parameter.
+
+To keep the discard file from getting too large, you roll it over every Sunday at 2 a.m. with the DISCARDROLLOVER parameter:
+
+DiscardFile dirrpt/LHREMD1.dsc, Append
+DiscardRollover at 02:00 ON SUNDAY
+
+You can choose to have GoldenGate report on discards for your local Extract, data-pump Extract, and Replicat.
+
+Purging Old Trail Files
+You can instruct GoldenGate to automatically purge your old trail files after they have been processed using the PURGEOLDEXTRACTS parameter. Although you can add this parameter to individual Extracts and Replicats, it’s best to add it to your Manager parameter file so purging can be managed centrally for all Extracts and Replicats.
+Here is an example of the parameter you can add to your Manager parameter file to purge old trail files:
+
+PurgeOldExtracts dirdat/*, UseCheckpoints, MinKeepDays 2
+
+First you tell GoldenGate to purge the extracts in your dirdat directory where the trail files are stored
+
+The USECHECKPOINTS option tells GoldenGate to only delete the trail files after they have been fully processed by the Extracts and Replicats according to the checkpoint file.
+
+You should almost always specify the USECHECKPOINTS option along with PURGEOLDEXTRACTS because otherwise your trail files may be deleted before they’re processed. Finally, you keep the trail files for a minimum of two days after they have been processed per the MINKEEPDAYS option.
+
+Adding Automatic Process Startup and Restart Now you can add a couple of parameters to the Manager parameter file to try to avoid downtime for the Extracts and Replicats. The AUTOSTART parameter, as shown in the following example, automatically starts all the Extracts and Replicats when the Manager starts.
+
+AutoStart ER *
+
+
+
+GLOBALS file is used to specify GoldenGate parameters that apply to the entire GoldenGate instance, such as CHECKPOINTTABLE. The GLOBALS file is located in the GoldenGate software installation directory. This is different from the Extract and Replicat parameter files, which are located in the dirprm subdirectory. If the GLOBALS file doesn’t exist, you may need to create it the first time you use it.
+
+Adding a Checkpoint Table
+By default, GoldenGate maintains a checkpoint file on disk to keep track of transaction processing. In addition, you can create a checkpoint table in your target database. Doing so lets the Replicat include the checkpoint itself as part of the transaction processing and allows for better recoverability in certain circumstances.
+
+First you need to add an entry to your GLOBALS file to tell GoldenGate the checkpoint file name.By adding this entry to the GLOBALS file, you tell GoldenGate to use the same checkpoint table for all of your Replicats.
+
+CheckPointTable gger.chkpt
+
+GGSCI (targetserver) 1> dblogin userid gger password userpw 
+Successfully logged into database.
+
+GGSCI (targetserver) 2> add checkpointtable
+
+No checkpoint table specified, using GLOBALS specification (gger.chkpt)...
+Successfully created checkpoint table GGER.CHKPT.
+
+Now run another checkpoint command to verify that the checkpoint table exists:
+GGSCI (targetserver) 1> info checkpointtable gger.chkpt
+Checkpoint table GGER.CHKPT created 2011-01-30 22:02:03.
+
+Here are the basic Extract and Replicat parameter files along with the changes you’ve introduced in this section, shown in italics. First let’s look at the enhanced Extract parameter file:
+GGSCI (sourceserver) 1> edit params LHREMD1
+Extract LHREMD1
+-------------------------------------------------------------------
+-- Local extract for HR schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.AL32UTF8)
+USERID GGER@SourceDB, PASSWORD userpw
+ReportCount Every 30 Minutes, Rate
+Report at 01:00
+ReportRollover at 01:15
+DiscardFile dirrpt/LHREMD1.dsc, Append
+DiscardRollover at 02:00 ON SUNDAY
+ExtTrail dirdat/l1
+Table HR.*;
+
+Next is the enhanced Replicat parameter file:
+GGSCI (targetserver) 1> edit params RHREMD1
+Replicat RHREMD1
+-------------------------------------------------------------------
+-- Replicat for HR Schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.AL32UTF8)
+USERID GGER@TargetDB, PASSWORD userpw
+AssumeTargetDefs
+ReportCount Every 30 Minutes, Rate
+Report at 01:00
+ReportRollover at 01:15
+DiscardFile dirrpt/RHREMD1.dsc, Append
+DiscardRollover at 02:00 ON SUNDAY
+Map HR.*, Target HR.* ;
+Finally, the enhanced Manager parameter file is shown here:
+GGSCI (server) 1> edit params MGR
+-------------------------------------------------------------------
+-- GoldenGate Manager
+-------------------------------------------------------------------
+port 7840
+AutoStart ER *
+AutoRestart ER *
+PurgeOldExtracts /gger/ggs/dirdat/*, UseCheckpoints, MinKeepDays 2
+
+Next is the enhanced Replicat parameter file:
+GGSCI (targetserver) 1> edit params RHREMD1
+Replicat RHREMD1
+-------------------------------------------------------------------
+-- Replicat for HR Schema
+-------------------------------------------------------------------
+SETENV (NLS_LANG = AMERICAN_AMERICA.AL32UTF8)
+USERID GGER@TargetDB, PASSWORD userpw
+AssumeTargetDefs
+ReportCount Every 30 Minutes, Rate
+Report at 01:00
+ReportRollover at 01:15
+DiscardFile dirrpt/RHREMD1.dsc, Append
+DiscardRollover at 02:00 ON SUNDAY
+Map HR.*, Target HR.* ;
+Finally, the enhanced Manager parameter file is shown here:
+GGSCI (server) 1> edit params MGR
+-------------------------------------------------------------------
+-- GoldenGate Manager
+-------------------------------------------------------------------
+port 7840
+AutoStart ER *
+AutoRestart ER *
+PurgeOldExtracts /gger/ggs/dirdat/*, UseCheckpoints, MinKeepDays 2
+
+----------------------------
+
+Tuning
+
+Defining the Performance Requirements
+The key to successfully meeting the performance expectations of your business users is to properly define the performance requirements. Without performance requirements, you never know if you’ve successfully met the users’ expectations. When you have the requirements defined and agreed on, you can focus your tuning efforts on areas that don’t conform to the requirements.
+
+The most important performance requirement for replication is the amount of lag the application can tolerate.
+
+The following two areas relate specifically to performance and tuning of replication:
+Data volume: How much data needs to be replicated? How often is it updated?
+Data currency: How quickly and how often does the data need to be updated? Can any lag in the data replication be tolerated?
+
+The first example is for an important high-volume Online Transaction Processing (OLTP) database involved in an active-active replication topology. It’s critical to the business that the source and target databases be kept nearly synchronized all the time.
+
+The replication lag must be less than 1 minute at least 80 percent of the time. If the replication lag exceeds 1 minute, a warning should be issued and the replication
+should be closely monitored. If the replication lag exceeds 5 minutes, a critical alert should be issued and the problem needs to be addressed immediately.
+
+Another example of replication that isn’t as critical. In this example, you’re running replication from an OLTP database to a reporting database. The reporting database is running on another highly utilized server with only limited server resources available to make the replication perform properly. The reporting is used for offline analytical purposes, and it isn’t as critical to the business that the data is kept up to date.
+
+The replication lag from the OLTP database to the reporting database must be less than 1 hour at least 80 percent of the time. If the replication lag exceeds 8 hours, a warning should be issued. If the replication lag exceeds 24 hours, a critical alert should be issued and the problem needs to be addressed within the following day.
+
+Creating a Performance Baseline
+You should capture a baseline of the performance of your replication environment as soon as possibleafter your environment goes live. A baseline is simply a set of performance metrics you can capture when your replication is running under normal conditions.
+
+After you’ve captured the baseline, you can use the baseline metrics for comparison purposes to identify possible performance problems. You should also capture new baselines periodically, particularly when there are major changes in your environment. For example, if a new server is added to your database cluster, you should capture new baseline metrics because the old metrics are no longer valid.
+
+Let’s look at a sample of the metrics you should collect for your performance baseline:
+
+Server statistics: For the servers where you have replication running, you should collect CPU utilization, disk utilization, and memory usage. How you collect these statistics varies by platform. For example, on Linux you may use SAR or IOSTAT,
+
+Extract and Replicat statistics: For each Extract and Replicat, you should capture the following metrics:
+• Name and status of each processing group: You can capture the output of the GoldenGate Software Command Interface (GGSCI) info * command.
+• Processing statistics: You can use the stats command and get an aggregate processing rate for your Extracts and Replicats using a command such as
+STATS RHREMD1, TOTALSONLY *, REPORTRATE MIN. You can use this command, for example, to get the total operations per minute processed by the Replicat.
+• Processing rate: Chapter 5 showed how to add reporting parameters to the Extract and Replicat to automatically report performance statistics. You can now view the report file for each Extract and Replicat and record the statistics. From the report file, you can record the number of records processed, the rate, and the delta.
+• Processing lag: You can get the approximate lag from the info command and also the specific lag by running the lag command for each Extract and Replicat.
+• Server process statistics: You can collect server statistics, such as memory and CPU usage, specifically for the Extract and Replicat processes. For example, on Linux, if you have the top command available, you can use a command like top –U gger to monitor just the GoldenGate gger operating system user processes.
+
+Database performance statistics: As part of your baseline, you should include statistical reports on the source and target database usage, such as an Oracle AWR report or a SQL Server dashboard report. This gives you an indication of how much database activity is happening during your normal baseline. Network performance statistics: You should capture some statistics to indicate the network throughput and utilization. You can use tools such as the Windows System Monitor or the netstat command on Linux to gather these statistics.
+
+Extract and Replicat Performance Statistics
+Statistics Baseline Current
+Source CPU % Utilization 12 15
+Target CPU % Utilization 17 73
+Source Disk Reads/sec 2.1 2.9
+Source Disk Writes/sec 10.1 10.6
+Source Disk Service Time 3.4 3.2
+Target Disk Reads/sec 2.1 2.8
+Target Disk Writes/sec 10.1 10.9
+Target Disk Service Time 3.4 3.2
+Local Extract LHREMD1 Status RUNNING RUNNING
+Data Pump PHREMD1 Status RUNNING RUNNING
+Replicat RHREMD1 Status RUNNING RUNNING
+Local Extract LHREMD1 Rate/Delta 20/21 20/19
+Data Pump PHREMD1 Rate/Delta 20/21 20/19
+Replicat RHREMD1 Rate/Delta 15/16 9/6
+Replicat RHREMD1 Operations/Min 1948 1232
+Local Extract LHREMD1 Secs Lag 12 11
+Data Pump PHREMD1 Sec Lag 8 9
+Replicat RHREMD1 Secs Lag 15 127
+
+In the example, you can see that the CPU utilization on the target server is significantly higher. You can also see that the Replicat processing rate has dropped and the lag has increased significantly. This points you in the direction of a possible problem with the Replicat, but it could be something on the target database or the server or even something else.
+
+Conduct a short meeting with the stakeholders to determine their perspective on what the current performance problems are and establish their expectations for tuning results. It’s important to understand what they believe is their most significant problem. You can also share the initial findings from your comparison of baseline to current performance statistics. Here are some examples of questions you should ask during the meeting:
+
+• What are the most significant performance problems?
+• What business processes are being impacted?
+• What time of day does the performance problem occur, or is it constant?
+• Does the performance problem affect only one user or all users?
+• Is the performance problem related to any specific database table or all tables?
+• Is the performance problem the result of increased workload or a system change?
+• Can the problem be consistently reproduced in a testing environment?
+
+Drill down on the GoldenGate processes that appear to be running slowly. View the GoldenGate reports in the dirrpt directory, and compare the processing rates to try to determine when the problem began. Look at the rate and delta values and see when they started to decrease,
+
+Review the GoldenGate ggserr.log file, and look for any errors or warnings. Sometimes a warning message may be triggered that you may not be aware could be negatively impacting performance.
+Review the server system logs for any error messages that could be contributing to the slow performance, such as a bad disk drive.
+Review the built-in database performance reports (such as AWR for Oracle or the SQL Server dashboard), and compare them to the reports from the baseline period. See if there are any significant changes that could be causing poor performance.
+
+One common strategy for tuning GoldenGate is to create multiple parallel Extract or Replicat processing groups to balance the workload. GoldenGate supports up to 300 processing groups per GoldenGate Manager.
+
+
+--------- pluggable database
+One Extract group can capture from multiple pluggable databases to a single trail.
+
+SOURCECATALOG pdb1
+TABLE schema*.tab*;
+SEQUENCE schema*.seq*;
+SOURCECATALOG pdb2
+TABLE schema*.tab*;
+SEQUENCE schema*.seq*;
+
+
+Replicat can only connect and apply to one pluggable database. To specify the correct one, use a SQL*Net connect string for the database user that you specify with the USERID or USERIDALIAS parameter. For example: GGADMIN@FINANCE. In the parameter file, specify only the schema.object in the TARGET portion of the MAP statements.
+
+identify source objects captured from more than one pluggable database with their three-part names or use the SOURCECATALOG parameter with two-part names. The following is an example of this configuration.
+
+
+SOURCECATALOG pdb1
+MAP schema*.tab*, TARGET *1.*;
+MAP schema*.seq*, TARGET *1.*;
+SOURCECATALOG pdb2
+MAP schema*.tab*, TARGET *2.*;
+MAP schema*.seq*, TARGET *2.*;
+
+The following is an example without the use of SOURCECATALOG to identify the source pluggable database. In this case, the source objects are specified with their three-part names.
+
+MAP pdb1.schema*.tab*, TARGET *1.*;
+MAP pdb1.schema*.seq*, TARGET *1.*;
+
+Other Requirements for Multitenant Container Databases
+
+All of the pluggable databases in the multitenant container database must have the same attributes, such as character set, locale, and case-sensitivity
+Extract must operate in integrated capture mode.
+Extract must connect to the root container (cdb$root) as a common user in order to interact with the logmining server.
+The dbms_goldengate_auth.grant_admin_privilege package grants the appropriate privileges for capture and apply within a multitenant container database. This includes the container parameter, which must be set to ALL, as shown in the following example:
+
+dbms_goldengate_auth.grant_admin_privilege('C##GGADMIN',container=>all)
+
+Configuring Capture in Integrated Mode
+
+Basic parameters for Extract where the source database is the mining database and is a regular database
+
+EXTRACT financep
+USERIDALIAS tiger1
+LOGALLSUPCOLS
+UPDATERECORDFORMAT COMPACT
+DDL INCLUDE MAPPED
+ENCRYPTTRAIL AES192
+EXTTRAIL /ggs/dirdat/lt
+SEQUENCE hr.employees_seq;
+TABLE hr.*;
+
+
+Basic parameters for Extract where the source database is the mining database and is a multitenant container database
+
+EXTRACT financep
+USERIDALIAS tiger1
+LOGALLSUPCOLS
+UPDATERECORDFORMAT COMPACT
+DDL INCLUDE MAPPED SOURCECATALOG pdb1 INCLUDE MAPPED SOURCECATALOG pdb2
+ENCRYPTTRAIL AES192
+EXTTRAIL /ggs/dirdat/lt
+TABLE test.ogg.tab1;
+SOURCECATALOG pdb1
+SEQUENCE hr.employees_seq;
+TABLE hr.*;
+SOURCECATALOG pdb2
+TABLE sales.*;
+TABLE acct.*;
+
+Basic parameters for Extract where the mining database is a downstream database and is a regular database
+
+EXTRACT financep
+USERIDALIAS tiger1
+TRANLOGOPTIONS MININGUSERALIAS tiger2
+TRANLOGOPTIONS INTEGRATEDPARAMS (MAX_SGA_SIZE 164, &
+	DOWNSTREAM_REAL_TIME_MINE y)
+LOGALLSUPCOLS
+UPDATERECORDFORMAT COMPACT
+DDL INCLUDE MAPPED
+ENCRYPTTRAIL AES192
+EXTTRAIL /ggs/dirdat/lt
+SEQUENCE hr.employees_seq;
+TABLE hr.*;
+
+Basic parameters for the primary Extract where the mining database is a downstream database and is a multitenant container database
+
+EXTRACT financep
+USERIDALIAS tiger1
+TRANLOGOPTIONS MININGUSERALIAS tiger2
+TRANLOGOPTIONS INTEGRATEDPARAMS (MAX_SGA_SIZE 164, &
+	DOWNSTREAM_REAL_TIME_MINE y)
+LOGALLSUPCOLS
+UPDATERECORDFORMAT COMPACT
+DDL INCLUDE MAPPED SOURCECATALOG pdb1 INCLUDE MAPPED SOURCECATALOG pdb2
+ENCRYPTTRAIL AES192
+EXTTRAIL /ggs/dirdat/lt
+TABLE test.ogg.tab1;
+SOURCECATALOG pdb1
+SEQUENCE hr.employees_seq;
+TABLE hr.*;
+SOURCECATALOG pdb2
+TABLE sales.*;
+TABLE acct.*;
+
+
+USERIDALIAS alias Specifies the alias of the database login credential of the user that is assigned to Extract. This credential must exist in the Oracle GoldenGate credential store.
+
+LOGALLSUPCOLS Writes all supplementally logged columns to the trail, including those required for conflict detection and resolution and the scheduling columns
+required to support integrated Replicat. (Scheduling columns are primary key, unique index, and foreign key columns.)
+
+Use MININGUSERALIAS only if the database logmining server is in a different database from the source database; otherwise just use USERIDALIAS. When using MININGUSERALIAS, use it in addition to USERIDALIAS, because credentials are required for both databases.
+
+TRANLOGOPTIONS[INTEGRATEDPARAMS (parameter[,...])] Optional, passes parameters to the Oracle database that contains the database logmining server. Use only to change logmining server parameters from their default settings.
+
+DDL include_clause Required if replicating DDL operations.
+
+SOURCECATALOG container Use this parameter when the source database is a multitenant container database. Specifies the name of a pluggable database that is to be used as the default container for all subsequent TABLE and SEQUENCE parameters that contain two-part names.
+
+(TABLE | SEQUENCE} [container.]schema.object; Specifies the database object for which to capture data
+
+Terminate the parameter statement with a semi-colon.
+To exclude a name from a wildcard specification, use the CATALOGEXCLUDE, SCHEMAEXCLUDE, TABLEEXCLUDE, and EXCLUDEWILDCARDOBJECTSONLY parameters as appropriate.
+
+Configuring the Data Pump Extract
+
+Basic parameters for the data-pump Extract group using two-part object names:
+
+EXTRACT extpump
+USERIDALIAS tiger1
+RMTHOST fin1, MGRPORT 7809 ENCRYPT AES192, KEYNAME securekey2
+RMTTRAIL /ggs/dirdat/rt
+SEQUENCE hr.employees_seq;
+TABLE hr.*;
+
+
+Basic parameters for the data-pump Extract group using three-part object names (including a pluggable database):
+
+EXTRACT extpump
+USERIDALIAS tiger1
+RMTHOST fin1, MGRPORT 7809 ENCRYPT AES192, KEYNAME securekey2
+RMTTRAIL /ggs/dirdat/rt
+TABLE test.ogg.tab1;
+SOURCECATALOG pdb1
+SEQUENCE hr.employees_seq;
+TABLE hr.*;
+SOURCECATALOG pdb2
+TABLE sales.*;
+TABLE acct.*;
+
+
+Creating a Checkpoint Table (Nonintegrated Replicat Only) - The checkpoint table is a required component of nonintegrated Replicat. It is not required for integrated Replicat and is ignored if one is used. A nonintegrated Replicat maintains its recovery checkpoints in the checkpoint table, which is stored in the target database. Checkpoints are written to the checkpoint table within the Replicat transaction. Because a checkpoint either succeeds or fails with the transaction, Replicat ensures that a transaction is only applied once, even if there is a failure of the process or the database.
+
+
+Adding the Checkpoint Table to the Target Database
+
+DBLOGIN USERIDALIAS alias
+ADD CHECKPOINTTABLE [container.]schema.table
+
+Specifying the Checkpoint Table in the Oracle GoldenGate Configuration
+EDIT PARAMS ./GLOBALS
+CHECKPOINTTABLE [container.]schema.table
+
+When the configuration of a nonintegrated Replicat group does not include a checkpoint table, the checkpoints are maintained in a file on disk. In this case, Replicat uses COMMIT with WAIT to prevent inconsistencies in the event of a database failure that causes the state of the transaction, as in the checkpoint file, to be different than its state after the recovery.
+
+When a nonintegrated Replicat uses a checkpoint table, it uses an asynchronous COMMIT with the NOWAIT option to improve performance. Replicat can continue processing immediately after applying this COMMIT, while the database logs the transaction in the background.
+
+Configuring Replicat
+
+EDIT PARAMS name
+
+Basic parameters for the Replicat group in nonintegrated mode:
+
+REPLICAT financer
+USERIDALIAS tiger2
+ASSUMETARGETDEFS
+MAP hr.*, TARGET hr2.*;
+
+Basic parameters for the Replicat group in integrated Replicat mode:
+
+REPLICAT financer
+DBOPTIONS INTEGRATEDPARAMS(parallelism 6)
+USERIDALIAS tiger2
+ASSUMETARGETDEFS
+MAP hr.*, TARGET hr2.*;
+
+
+REPLICAT group name group name is the name of the Replicat group.
+
+DBOPTIONS DEFERREFCONST Applies to Replicat in nonintegrated mode. DEFERREFCONST sets constraints to DEFERRABLE to delay the enforcement of cascade constraints by the target database until the Replicat transaction is committed.
+
+DBOPTIONS INTEGRATEDPARAMS (parameter[, ...]) This parameter specification applies to Replicat in integrated mode. It specifies optional parameters for the inbound server.
+
+ASSUMETARGETDEFS Specifies how to interpret data definitions. ASSUMETARGETDEFS assumes the source and target tables have identical definitions, including semantics. (This procedure assume identical definitions.) Use the alternative SOURCEDEFS if the source and target tables have different definitions, and create a source data-definitions file with DEFGEN.
+
+MAP [container.]schema.object, TARGET schema.object; Specifies the relationship between a source table or sequence, or multiple objects, and the corresponding target object or objects.
+■ MAP specifies the source table or sequence, or a wildcarded set of objects.
+■ TARGET specifies the target table or sequence or a wildcarded set of objects. 
+
+Terminate this parameter statement with a semi-colon.
+
+Additional Oracle GoldenGate Configuration Considerations
+
+Ensuring Row Uniqueness in Source and Target Tables
+Oracle GoldenGate selects a row identifier to use in the following order of priority, depending on the number and type of constraints that were logged
+
+1. Primary key if it does not contain any extended (32K) VARCHAR2/NVARCHAR2 columns.
+2. Unique key. In the case of a nonintegrated Replicat, the selection of the unique key is as follows:
+
+■ First unique key alphanumerically with no virtual columns, no UDTs, no function-based columns, no nullable columns, and no extended (32K) VARCHAR2/NVARCHAR2 columns. To support a key that contains columns that are part of an invisible index, you must use the ALLOWINVISIBLEINDEXKEYS parameter in the Oracle GoldenGate GLOBALS file.
+■ First unique key alphanumerically with no virtual columns, no UDTs, no extended (32K) VARCHAR2/NVARCHAR2 columns, or no function-based columns, but can include nullable columns.
+
+3. If none of the preceding key types exist (even though there might be other types of  keys defined on the table) Oracle GoldenGate constructs a pseudo key of all columns that the database allows to be used in a unique key, excluding virtual columns, UDTs, function-based columns, extended (32K) VARCHAR2/NVARCHAR2 columns, and any columns that are explicitly excluded from the Oracle GoldenGate configuration by an Oracle GoldenGate user.
+
+If a table does not have an appropriate key, or if you prefer the existing key(s) not to be used, you can define a substitute key if the table has columns that always contain unique values. You define this substitute key by including a KEYCOLS clause within the Extract TABLE parameter and the Replicat MAP parameter. The specified key will override any existing primary or unique key that Oracle GoldenGate finds.
+
+To Install Oracle Sequence Objects
+CREATE USER DDLuser IDENTIFIED BY password;
+GRANT CONNECT, RESOURCE, DBA TO DDLuser;
+
+In GGSCI, issue the following command on each system.
+EDIT PARAMS ./GLOBALS
+In each GLOBALS file, enter the GGSCHEMA parameter and specify the schema of the DDL user that you created earlier in this procedure.
+GGSCHEMA schema
+
+In SQL*Plus on both systems, run the sequence.sql script from the root of the Oracle GoldenGate installation directory. This script creates some procedures for use by Oracle GoldenGate processes. (Do not run them yourself.) You are prompted for the user information that you created in the first step.
+
+@sequence.sql
+
+In SQL*Plus on the source system, grant EXECUTE privilege on the updateSequence procedure to a database user that can be used to issue the DBLOGIN command. Remember or record this user. You use DBLOGIN to log into the database prior to issuing the FLUSH SEQUENCE command, which calls the procedure.
+GRANT EXECUTE on DDLuser.updateSequence TO DBLOGINuser;
+
+In SQL*Plus on the target system, grant EXECUTE privilege on the replicateSequence procedure to the Replicat database user.
+GRANT EXECUTE on DDLuser.replicateSequence TO Replicatuser;
+
+In SQL*Plus on the source system, issue the following statement in SQL*Plus.
+ALTER TABLE sys.seq$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
+
+
+Excluding Replicat Transactions
+
+When Extract is in integrated mode (Replicat can be in either integrated or nonintegrated mode), use the following parameters:
+■ Use DBOPTIONS with the SETTAG option in the Replicat parameter file. The inbound server tags the transactions of that Replicat with the specified value, which identifies those transactions in the redo stream. The default value for SETTAG is 00.
+■ Use the TRANLOGOPTIONS parameter with the EXCLUDETAG option in the Extract parameter file. The logmining server associated with that Extract excludes redo that is tagged with the SETTAG value. Multiple EXCLUDETAG statements can be used to exclude different tag values, if desired.
+
+When Extract is in classic capture mode, use the Extract TRANLOGOPTIONS parameter with the EXCLUDEUSER or EXCLUDEUSERID option to ignore Replicat transactions based on its user name or ID. Multiple EXCLUDEUSER statements can be used. The specified user is subject to the rules of the GETREPLICATES or IGNOREREPLICATES parameter.
+
+
+
+

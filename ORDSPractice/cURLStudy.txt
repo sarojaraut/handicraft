@@ -1,0 +1,109 @@
+The -i option tells cURL to display the HTTP headers returned by the server.
+
+cURL http://wwisdlap002/ords/itsr1/ims_shipment_hdr/
+
+cURL -O http://wwisdlap002/ords/itsr1/ims_shipment_hdr
+
+cURL -o ims_shipment_hdr http://wwisdlap002/ords/itsr1/ims_shipment_hdr/
+
+-o (lowercase o) the result will be saved in the filename provided in the command line
+-O (uppercase O) the filename in the URL will be taken and it will be used as the filename to store the result. this does not work with rest apis as api has to end with a back slash
+
+Fetch Multiple Files at a time
+
+curl -O URL1 -O URL2
+
+Follow HTTP Location Headers with -L option
+
+By default CURL doesn’t follow the HTTP Location headers. It is also termed as Redirects. When a requested web page is moved to another place, then an HTTP Location header will be sent as a Response and it will have where the actual web page is located.
+
+curl http://www.google.com
+
+<TITLE>302 Moved</TITLE>
+<H1>302 Moved</H1>
+The document has moved
+<A HREF="http://www.google.co.in/">here</A>
+
+We can insists curl to follow the redirection using -L option, as shown below. Now it will download the google.co.in’s html source code.
+
+$ curl -L http://www.google.com
+
+Limit the Rate of Data Transfer
+
+curl --limit-rate 1000B -o ims_shipment_hdr http://wwisdlap002/ords/itsr1/ims_shipment_hdr/
+
+Pass HTTP Authentication in cURL
+
+curl -u username:password URL
+
+   HTTP offers many different methods of authentication and curl supports
+   several: Basic, Digest, NTLM and Negotiate (SPNEGO). Without telling which
+   method to use, curl defaults to Basic. You can also ask curl to pick the
+   most secure ones out of the ones that the server accepts for the given URL,
+   by using --anyauth.
+
+Note: By default curl uses Basic HTTP Authentication. We can specify other authentication method using –ntlm | –digest.
+
+Download Files from FTP server
+
+curl -u ftpuser:ftppass -O ftp://ftp_server/public_html/xss.php
+
+Upload Files to FTP Server
+
+ curl -u ftpuser:ftppass -T myfile.txt ftp://ftp.testserver.com
+ 
+Send Mail using SMTP Protocol
+
+curl --mail-from blah@test.com --mail-rcpt foo@test.com smtp://mailserver.com
+
+
+curl -i -X PUT --data-binary @/tmp/update-payload.json -H "Content-Type: application/json" http://ol7-121.localdomain:8080/ords/pdb1/testuser1/testmodule7/emp/
+
+curl -i -k --user emp_user:Password1 https://ol7-121.localdomain:8443/ords/pdb1/testuser1/testmodule1/emp/7788
+
+Insert Table Row
+
+{"org_lvl_child":0, "org_lvl_parent":0, "org_lvl_id":0, "org_name_full":0, "org_name_short":0, "org_lvl_number":0, "curr_code":0, "org_is_store":0, "web_store_ind":0}
+
+curl -i -X POST --data-binary @update-payload.json -H "Content-Type: application/json" http://wwisdlap002/ords/cms/orgmstee_bkp/
+
+curl -H "Content-Type: application/json" -d "{\"org_lvl_child\":0, \"org_lvl_parent\":0, \"org_lvl_id\":0, \"org_name_full\":0, \"org_name_short\":0, \"org_lvl_number\":0, \"curr_code\":0, \"org_is_store\":0, \"web_store_ind\":0}" -X POST http://wwisdlap002/ords/cms/orgmstee_bkp/
+
+Update/Insert Table Row
+
+curl -i -X PUT --data-binary @update-payload.json -H "Content-Type: application/json" http://wwisdlap002/ords/cms/orgmstee_bkp/0
+
+curl -H "Content-Type: application/json" -d "{\"org_lvl_child\":0, \"org_lvl_parent\":1, \"org_lvl_id\":0, \"org_name_full\":0, \"org_name_short\":0, \"org_lvl_number\":0, \"curr_code\":0, \"org_is_store\":0, \"web_store_ind\":0}" -X PUT http://wwisdlap002/ords/cms/orgmstee_bkp/0
+
+Delete Using Filter
+
+curl -i -X DELETE http://wwisdlap002/ords/cms/orgmstee_bkp/?q=%7B%22org_lvl_child%22%3A11%7D
+
+%7B {
+%7D }
+%3A :
+%22 "
+%22 "
+
+Post by Batch Load
+
+curl -i -X POST --data-binary @data.csv -H "Content-Type: text/csv" http://wwisdlap002/ords/cms/orgmstee_bkp/batchload?dateFormat="DD-MON-YYYY"
+ 
+ORG_LVL_CHILD,ORG_LVL_PARENT,ORG_LVL_ID,ORG_NAME_FULL,ORG_NAME_SHORT,ORG_LVL_NUMBER,CURR_CODE,ORG_IS_STORE,WEB_STORE_IND
+0,0,0,0,0,0,0
+0,0,0,0,0,0,0
+
+curl -i -k --user 3NvJRo_a0UwGKx7Q-kivtA..:F5WVwyrWxXj3ykmhSONldQ.. --data "grant_type=client_credentials" https://ol7-121.localdomain:8443/ords/pdb1/testuser1/oauth/token
+
+curl -i -k -H"Authorization: Bearer -zYl-sFyB2iLicAHw2TsRA.." https://ol7-121.localdomain:8443/ords/pdb1/testuser1/testmodule1/emp/7788
+
+OPTIONS
+
+-#, --progress-bar : Make curl display progress as a simple progress bar instead of the standard, more informational, meter.
+
+--crlf : Convert LF to CRLF in upload
+
+https://curl.haxx.se/docs/manpage.html
+
+
+

@@ -1,0 +1,787 @@
+http://www.oracle.com/technetwork/issue-archive/index-087690.html
+
+Steven Feuerstein Series from Oracle Magazine
+
+Unnecessary Static Objects in Schema table, GTT, Record Type etc - You have created a database object that is not needed: unnecessary “noise” in your schema. Finally, this could create substantial confusion in the future when other developers need to work with this package and try to figure out where and how this table is used besides this one process.
+
+Without doubt, the general strategy that Oracle Database developers should follow is to do everything they can in SQL. What they cannot do in SQL, they should do in PL/SQL. And what they cannot do in PL/SQL, they should do in whatever language they are using to build their user interfaces. (This is a “mantra” created by Tom Kyte and to which I wholeheartedly subscribe.)
+
+Comments have their place in code, and they should certainly be used to explain complex algorithms. I always prefer, however, to let the code speak for itself—tell its own story—and the subtype can play an oversize role (compared to the simplicity of the feature itself) in this storytelling.
+
+“Use the right tool for the right job. We programmers are paid to solve problems, not to come up with the most elegant SQL statement or the coolest PL/SQL algorithm.”
+
+SQL is an incredibly powerful and efficient data manipulation language, and it is also optimized to move data in and out of relational tables, providing full ACID (atomicity, consistency, isolation, durability) support. You should take full advantage of SQL, but also recognize that there is a price to be paid for all that functionality. If you have a requirement that does not need the full power of SQL, such as manipulation of data that is created and discarded entirely within your session, PL/SQL offers alternatives that are faster. 
+
+
+PACKAGE BODY meme_tracker
+IS
+   SUBTYPE meme_target_t IS VARCHAR2(100);
+   SUBTYPE meme_t IS VARCHAR2(1000);
+   c_was_processed CONSTANT BOOLEAN := TRUE;
+
+   TYPE memes_for_target_t IS TABLE OF BOOLEAN INDEX BY meme_t;
+   TYPE processed_memes_t IS TABLE OF memes_for_target_t INDEX BY meme_target_t;
+   g_processed_memes processed_memes_t;
+
+   PROCEDURE reset_memes
+   IS
+   BEGIN
+      g_processed_memes.DELETE;
+   END;
+
+   FUNCTION already_saw_meme (
+         meme_target_in VARCHAR2, meme_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN g_processed_memes 
+               (meme_target_in)
+                   (meme_in) = c_was_processed;
+   EXCEPTION 
+      /* PL/SQL raises NDF if you try to "read" a collection
+         element that does not exist */
+      WHEN NO_DATA_FOUND THEN RETURN FALSE;
+   END;
+
+   PROCEDURE add_meme (
+      meme_target_in VARCHAR2, meme_in IN VARCHAR2)
+   IS
+   BEGIN
+      g_processed_memes (meme_target_in)(meme_in) 
+         := c_was_processed;   
+   END;
+END;
+
+Working with Records
+
+This article explores how you declare records, populate them with rows from a table, and even insert or change an entire row in a table by using a record. It also takes a look at user-defined record types, which enable you to work with records that are not necessarily related to a relational table.
+
+Declare a Record with %ROWTYPE
+Declare records that have the same structure as a table, a view, or the result set of a cursor by offering the %ROWTYPE attribute.
+
+CREATE PROCEDURE process_employee (
+  employee_id_in IN 
+     omag_employees.employee_id%TYPE)
+IS
+  l_employee   omag_employees%ROWTYPE;
+BEGIN
+  SELECT *
+    INTO l_employee
+    FROM omag_employees
+   WHERE employee_id = employee_id_in;
+    
+DBMS_OUTPUT.put_line (l_employee.last_name);
+l_employee.last_name := 'Picasso';
+
+DECLARE
+   l_employee1 omag_employees%ROWTYPE;
+   l_employee2 omag_employees%ROWTYPE;
+BEGIN
+   l_employee1 := l_employee2;
+   l_employee2 := NULL;
+END;
+
+
+END;
+
+DECLARE
+  l_employee  omag_employees%ROWTYPE;
+BEGIN
+  EXECUTE IMMEDIATE
+     'SELECT * FROM omag_employees'
+     INTO l_employee;
+END;
+
+DECLARE
+   CURSOR no_ids_cur
+   IS
+      SELECT last_name, salary
+        FROM omag_employees;
+   l_employee   no_ids_cur%ROWTYPE;
+
+Cursor FOR Loops and Implicitly Declared Records
+
+FOR index IN ( SELECT_statement )
+LOOP
+   loop_body_statements
+END LOOP;
+
+Passing Records as Parameters
+
+CREATE PROCEDURE show_employee (
+   employee_in IN 
+      omag_employees%ROWTYPE)
+IS
+BEGIN
+   DBMS_OUTPUT.put_line (
+         employee_in.employee_id
+      || '-'
+      || employee_in.last_name
+      || '-'
+      || employee_in.salary);
+END;
+/
+
+Inserting and Updating with Records
+
+DECLARE
+   l_employee   omag_employees%ROWTYPE;
+BEGIN
+   l_employee.employee_id := 500;
+   l_employee.last_name := ‘Mondrian’;
+   l_employee.salary := 2000;
+
+   INSERT
+     INTO omag_employees 
+   VALUES l_employee;
+END;
+/
+
+So if you ever find yourself typing what feels like an endless list of variables in the VALUES clause of your INSERT statement, try using a record instead.
+
+For updates, use SET ROW to update all the columns in a row from the record:
+
+DECLARE
+  l_employee  omag_employees%ROWTYPE;
+BEGIN
+  l_employee.employee_id := 500;
+  l_employee.last_name := 'Mondrian';
+  l_employee.salary := 2000;
+
+  UPDATE omag_employees
+     SET ROW = l_employee
+   WHERE employee_id = 100;
+END;
+
+Remember: this UPDATE sets the value of every column in the table, including your primary key, so you should use the SET ROW syntax with great care.
+
+User-Defined Record Types
+
+DECLARE
+   TYPE customer_info_rt IS RECORD
+   (
+      name           VARCHAR2 (100),
+      total_sales    NUMBER,
+      deliver_pref   VARCHAR2 (10)
+   );
+
+   l_customer1   customer_info_rt;
+   l_customer2   customer_info_rt;
+
+Another excellent time to use the TYPE . . . RECORD statement to create your own record type is when a field of your record needs to be a PL/SQL-specific type, such as BOOLEAN. If you use %ROWTYPE, the datatypes of all the fields will be constrained to SQL types.
+
+DECLARE
+  TYPE user_preferences_rt IS RECORD
+  (
+     show_full_name   BOOLEAN,
+     autologin        BOOLEAN
+  );
+
+
+  DECLARE
+   TYPE phone_rt IS RECORD
+   (
+      area_code    PLS_INTEGER,
+      exchange     PLS_INTEGER,
+      phn_number   PLS_INTEGER,
+      extension    PLS_INTEGER
+   );
+
+   TYPE contact_rt IS RECORD
+   (
+      day_phone#    phone_rt,
+      eve_phone#    phone_rt,
+      cell_phone#   phone_rt
+   );
+
+   l_sales_rep contact_rt;
+
+PL/SQL’s support for records, one of several composite datatypes, enables you to write code that is simple, clean, and easy to maintain.
+
+Sparse. A collection is sparse if there is at least one index value between the lowest and highest defined index values that is not defined. For example, a sparse collection has an element assigned to index value 1 and another to index value 10 but nothing in between. The opposite of a sparse collection is a dense one.
+
+Method. A collection method is a procedure or function that either provides information about the collection or changes the contents of the collection. Methods are attached to the collection variable with dot notation (object-oriented syntax), as in my_collection.FIRST.
+
+Types of Collections
+There are now three types of collections to choose from, each with its own set of characteristics and each best suited to a different circumstance.
+
+Associative array. The first type of collection available in PL/SQL, this was originally called a “PL/SQL table” and can be used only in PL/SQL blocks. Associative arrays can be sparse or dense and can be indexed by integer or string.
+
+Nested table. Added in Oracle8 Database, the nested table can be used in PL/SQL blocks, in SQL statements, and as the datatype of columns in tables. Nested tables can be sparse but are almost always dense. They can be indexed only by integer. You can use the MULTISET operator to perform set operations and to perform equality comparisons on nested tables.
+
+Varray. Added in Oracle8 Database, the varray (variable-size array) can be used in PL/SQL blocks, in SQL statements, and as the datatype of columns in tables. Varrays are always dense and indexed by integer. When a varray type is defined, you must specify the maximum number of elements allowed in a collection declared with that type.
+
+You will rarely encounter a need for a varray (How many times do you know in advance the maximum number of elements you will define in your collection?). The associative array is the most commonly used collection type, but nested tables have some powerful, unique features (such as MULTISET operators) that can simplify the code you need to write to use your collection.
+
+----------------
+Only in PL/SQL: Associative Array
+Can also use in SQL: Nested Table, VARRAY
+
+The difference between creating a type in SQL and declaring a type in PL/SQL.
+
+Collections are part of the SQL language in Oracle, so you use them without even going into PL/SQL:
+-------------------------
+CREATE TYPE VARCHAR2_TT AS TABLE OF VARCHAR2(100)
+/
+
+Type created.
+
+SELECT column_value AS val
+FROM   TABLE(VARCHAR2_TT('Apple','Banana','Apricot'))
+WHERE  column_value NOT LIKE 'A%';
+
+VAL
+--------------------
+Banana
+
+GRANT EXECUTE ON VARCHAR2_TT TO other_account; -- if needs to be referred by other users.
+--------------------------
+CREATE OR REPLACE TYPE T_EMP_REC AS OBJECT 
+(EMPNO  NUMBER(5)
+,NAME VARCHAR2(100)
+);
+/
+CREATE OR REPLACE TYPE T_EMP_REC_TAB IS TABLE OF T_EMP_REC;
+/
+
+SELECT EMPNO, NAME FROM   TABLE(T_EMP_REC_TAB(T_EMP_REC(1,'SAROJ'),T_EMP_REC(2,'RANJAN'),T_EMP_REC(3,'RAUT')));
+----------------
+
+
+Nested Table Example
+ 
+DECLARE
+	TYPE list_of_names_t IS TABLE OF VARCHAR2 (100);
+
+	happyfamily   list_of_names_t := list_of_names_t ();
+	children      list_of_names_t := list_of_names_t ();
+	parents       list_of_names_t := list_of_names_t ();
+BEGIN
+	happyfamily.EXTEND (4);
+	happyfamily (1) := ‘Veva’;
+	happyfamily (2) := ‘Chris’;
+	happyfamily (3) := ‘Eli’;
+	happyfamily (4) := ‘Steven’;
+
+	children.EXTEND;
+	children (children.LAST) := ‘Chris’;
+	children.EXTEND;
+	children (children.LAST) := ‘Eli’;
+
+	parents := happyfamily MULTISET EXCEPT children;
+
+	FOR l_row IN 1 .. parents.COUNT
+	LOOP
+		DBMS_OUTPUT.put_line (parents (l_row));
+	END LOOP;
+END;
+
+Declare Collection Types and Variables
+Oracle Database predefines several collection types in supplied packages such as DBMS_SQL and DBMS_UTILITY. So if you need, for example, to declare an associative array of strings whose maximum length is 32767, you could write the following:
+
+l_names DBMS_UTILITY.maxname_array;
+
+Declare an associative array of numbers, indexed by integer: 
+TYPE numbers_aat IS TABLE OF NUMBER INDEX BY PLS_INTEGER; 
+
+Declare an associative array of numbers, indexed by string: 
+TYPE numbers_aat IS TABLE OF NUMBER INDEX BY VARCHAR2(100);
+
+Declare a nested table of numbers: 
+TYPE numbers_nt IS TABLE OF NUMBER;
+
+Declare a varray of numbers: 
+TYPE numbers_vat IS VARRAY(10) OF NUMBER; 
+
+Note: I use the suffixes _aat, _nt, and _vat, for associative array type, nested table type, and varray type, respectively.
+
+Only the associative array offers a choice of indexing datatypes. Nested tables as well as varrays are always indexed by integer.
+
+Initializing Collections
+
+When you work with nested tables and varrays, you must initialize the collection variable before you can use it. You do this by calling the constructor function for that type. This function is created automatically by Oracle Database when you declare the type. The constructor function constructs an instance of the type associated with the function.
+
+DECLARE
+   TYPE numbers_nt IS TABLE OF NUMBER; 
+   l_numbers numbers_nt;
+BEGIN
+   l_numbers := numbers_nt (1, 2, 3);
+END;
+
+If you neglect to initialize your collection, Oracle Database will raise an error when you try to use that collection:
+ 
+SQL> DECLARE
+  2    TYPE numbers_nt IS TABLE OF NUMBER;
+  3    l_numbers numbers_nt;
+  4  BEGIN
+  5    l_numbers.EXTEND;
+  6    l_numbers(1) := 1;
+  7  END;
+  8  /
+DECLARE
+*
+ERROR at line 1:
+ORA-06531: Reference to uninitialized collection
+ORA-06512: at line 5
+
+You do not need to initialize an associative array before assigning values to it.
+
+Populating Collections
+
+You can assign values to elements in a collection in a variety of ways:
+Call a constructor function (for nested tables and varrays).
+Use the assignment operator, for single elements as well as entire collections.
+Pass the collection to a subprogram as an OUT or IN OUT parameter, and then assign the value inside the subprogram.
+Use a BULK COLLECT query.
+
+Note that with an associative array, it is not necessary to use EXTEND or start with index value 1. 
+ 
+DECLARE
+   TYPE numbers_aat IS TABLE OF NUMBER
+      INDEX BY PLS_INTEGER; 
+   l_numbers numbers_aat;
+
+BEGIN
+   l_numbers (100) := 12345;
+END;
+
+Assign one collection to another. As long as both collections are declared with the same type, you can perform collection-level assignments. 
+ 
+DECLARE
+   TYPE numbers_aat IS TABLE OF NUMBER
+      INDEX BY PLS_INTEGER; 
+   l_numbers1 numbers_aat;
+   l_numbers2 numbers_aat;
+BEGIN
+   l_numbers1 (100) := 12345;
+   l_numbers2       := l_numbers1;
+END;
+
+Pass a collection as an IN OUT argument, and remove all the elements from that collection:
+
+DECLARE
+   TYPE numbers_aat IS TABLE OF NUMBER
+      INDEX BY PLS_INTEGER;
+   l_numbers   numbers_aat;
+
+   PROCEDURE empty_collection (
+      numbers_io IN OUT numbers_aat)
+   IS
+   BEGIN
+      numbers_io.delete;
+   END;
+BEGIN
+   l_numbers (100) := 123;
+   empty_collection (l_numbers);
+END;
+
+Fill a collection directly from a query with BULK COLLECT (covered in more detail in the next article in this series):
+
+DECLARE
+   TYPE numbers_aat IS TABLE OF NUMBER
+      INDEX BY PLS_INTEGER;
+
+   l_numbers   numbers_aat;
+BEGIN
+     SELECT employee_id
+       BULK COLLECT INTO l_numbers
+       FROM employees
+   ORDER BY last_name;
+END;
+
+Iterating Through Collections
+
+A very common collection operation is to iterate through all of a collection’s elements. Reasons to perform a “full collection scan” include displaying information in the collection, executing a data manipulation language (DML) statement with data in the element, and searching for specific data.
+
+The kind of code you write to iterate through a collection is determined by the type of collection with which you are working and how it was populated. Generally, you will choose between a numeric FOR loop and a WHILE loop.
+
+Use a numeric FOR loop when
+Your collection is densely filled (every index value between the lowest and the highest is defined)
+You want to scan the entire collection, not terminating your scan if some condition is met
+Conversely, use a WHILE loop when Your collection may be sparse
+You might terminate the loop before you have iterated through all the elements in the collection
+You should use a numeric FOR loop with dense collections to avoid a NO_DATA_FOUND exception. Oracle Database will also raise this exception, however, if you try to “read” an element in a collection at an undefined index value. 
+
+
+The following block, for example, raises a NO_DATA_FOUND exception:
+
+DECLARE
+  TYPE numbers_aat IS TABLE OF NUMBER
+      INDEX BY PLS_INTEGER; 
+  l_numbers numbers_aat;
+BEGIN
+  DBMS_OUTPUT.PUT_LINE (l_numbers (100));
+END;
+
+When, however, you know for certain that your collection is—and will always be—densely filled, the FOR loop offers the simplest code for getting the job done. The procedure in Listing 2, for example, displays all the strings found in a collection whose type is defined in the DBMS_UTILITY package.
+
+DECLARE
+   l_names   DBMS_UTILITY.maxname_array;
+BEGIN
+   l_names (100) := ‘Picasso’;
+   l_names (101) := ‘O’’Keefe’; 
+   l_names (102) := ‘Dali’;
+FOR indx IN names_in.FIRST .. names_in.LAST
+LOOP
+  DBMS_OUTPUT.put_line (names_in (indx));
+END LOOP;
+-- note that the index values do not need to start at 1 as long as they are dense foor loop will work fine
+
+If your collection may be sparse or you want to terminate the loop conditionally, a WHILE loop will be the best fit. The procedure in Listing 3 shows this approach.
+
+CREATE OR REPLACE PROCEDURE show_contents (
+   names_in IN DBMS_UTILITY.maxname_array)
+IS
+   l_index   PLS_INTEGER := names_in.FIRST;
+BEGIN
+   WHILE (l_index IS NOT NULL)
+   LOOP
+      DBMS_OUTPUT.put_line (names_in (l_index));
+      l_index := names_in.NEXT (l_index);
+   END LOOP;
+END;
+/
+
+
+I can also scan the contents of a collection in reverse, starting with LAST and using the PRIOR method, as shown in Listing 4.
+
+CREATE OR REPLACE PROCEDURE show_contents (
+   names_in IN DBMS_UTILITY.maxname_array)
+IS
+   l_index   PLS_INTEGER := names_in.LAST;
+BEGIN
+   WHILE (l_index IS NOT NULL)
+   LOOP
+      DBMS_OUTPUT.put_line (names_in (l_index));
+      l_index := names_in.PRIOR (l_index);
+   END LOOP;
+END;
+/
+
+Collection Exception Raised when... 
+COLLECTION_IS_NULL : you try to operate on an atomically null collection. 
+NO_DATA_FOUND : a subscript designates an element that was deleted, or a nonexistent element of an associative array. 
+SUBSCRIPT_BEYOND_COUNT : a subscript exceeds the number of elements in a collection. 
+SUBSCRIPT_OUTSIDE_LIMIT : a subscript is outside the allowed range. 
+VALUE_ERROR : a subscript is null or not convertible to the key type. This exception might occur if the key is defined as a PLS_INTEGER range, and the subscript is outside this range. 
+
+BULK COLLECT: SELECT statements that retrieve multiple rows with a single fetch, improving the speed of data retrieval
+FORALL: INSERTs, UPDATEs, and DELETEs that use collections to change multiple rows of data very quickly
+
+CREATE OR REPLACE PROCEDURE increase_salary (
+ department_id_in   IN employees.department_id%TYPE,
+ increase_pct_in    IN NUMBER)
+IS
+ TYPE employee_ids_t IS TABLE OF employees.employee_id%TYPE INDEX BY PLS_INTEGER; 
+ l_employee_ids   employee_ids_t;
+ l_eligible_ids   employee_ids_t;
+
+ l_eligible       BOOLEAN;
+BEGIN
+ SELECT employee_id
+   BULK COLLECT INTO l_employee_ids
+   FROM employees
+  WHERE department_id = increase_salary.department_id_in;
+
+ FOR indx IN 1 .. l_employee_ids.COUNT
+ LOOP
+	check_eligibility (l_employee_ids (indx),
+					   increase_pct_in,
+					   l_eligible);
+
+	IF l_eligible
+	THEN
+	   l_eligible_ids (l_eligible_ids.COUNT + 1) :=
+		  l_employee_ids (indx);
+	END IF;
+ END LOOP;
+
+ FORALL indx IN 1 .. l_eligible_ids.COUNT
+	UPDATE employees emp
+	   SET emp.salary =
+				emp.salary
+			  + emp.salary * increase_salary.increase_pct_in
+	 WHERE emp.employee_id = l_eligible_ids (indx);
+END increase_salary;.
+
+Fetch rows with BULK COLLECT into one or more collections. A single context switch is needed for this step.
+
+Rather than move back and forth between the PL/SQL and SQL engines to update each row, FORALL “bundles up” all the updates and passes them to the SQL engine with a single context switch. The result is an extraordinary boost in performance. 
+
+If you are fetching lots of rows, the collection that is being filled could consume too much session memory and raise an error. To help you avoid such errors, Oracle Database offers a LIMIT clause for BULK COLLECT. 
+
+OPEN employees_cur;
+LOOP
+  FETCH employees_cur
+  BULK COLLECT INTO l_employee_ids
+  LIMIT c_limit;
+
+  EXIT WHEN l_employee_ids.COUNT = 0;
+END LOOP;
+
+Here are some things to know about FORALL:
+
+Each FORALL statement may contain just a single DML statement. If your loop contains two updates and a delete, then you will need to write three FORALL statements.
+PL/SQL declares the FORALL iterator as an integer, just as it does with a FOR loop. You do not need to—and you should not—declare a variable with this same name.
+In at least one place in the DML statement, you need to reference a collection and use the FORALL iterator as the index value in that collection.
+When using the IN low_value . . . high_value syntax in the FORALL header, the collections referenced inside the FORALL statement must be densely filled. That is, every index value between the low_value and high_value must be defined.
+If your collection is not densely filled, you should use the INDICES OF or VALUES OF syntax in your FORALL header. 
+
+FORALL and DML Errors
+
+Suppose that I’ve written a program that is supposed to insert 10,000 rows into a table. After inserting 9,000 of those rows, the 9,001st insert fails with a DUP_VAL_ON_INDEX error (a unique index violation). The SQL engine passes that error back to the PL/SQL engine, and if the FORALL statement is written like the one in Listed above, PL/SQL will terminate the FORALL statement. The remaining 999 rows will not be inserted.
+
+If you want the PL/SQL engine to execute as many of the DML statements as possible, even if errors are raised along the way, add the SAVE EXCEPTIONS clause to the FORALL header. Then, if the SQL engine raises an error, the PL/SQL engine will save that information in a pseudocollection named SQL%BULK_EXCEPTIONS, and continue executing statements. When all statements have been attempted, PL/SQL then raises the ORA-24381 error.
+
+You can—and should—trap that error in the exception section and then iterate through the contents of SQL%BULK_EXCEPTIONS to find out which errors have occurred. You can then write error information to a log table and/or attempt recovery of the DML statement.
+
+Below is an example of using SAVE EXCEPTIONS in a FORALL statement; in this case, I simply display on the screen the index in the l_eligible_ids collection on which the error occurred, and the error code that was raised by the SQL engine.
+
+Code Listing 7: Using SAVE EXCEPTIONS with FORALL 
+BEGIN
+   FORALL indx IN 1 .. l_eligible_ids.COUNT SAVE EXCEPTIONS
+      UPDATE employees emp
+         SET emp.salary =
+                emp.salary + emp.salary * increase_pct_in
+       WHERE emp.employee_id = l_eligible_ids (indx);
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      IF SQLCODE = -24381
+      THEN
+         FOR indx IN 1 .. SQL%BULK_EXCEPTIONS.COUNT
+         LOOP
+            DBMS_OUTPUT.put_line (
+                  SQL%BULK_EXCEPTIONS (indx).ERROR_INDEX
+               || ‘: ‘
+               || SQL%BULK_EXCEPTIONS (indx).ERROR_CODE);
+         END LOOP;
+      ELSE
+         RAISE;
+      END IF;
+END increase_salary;
+
+
+FORALL with Sparse Collections
+
+FOR indx IN 1 .. l_employee_ids.COUNT
+LOOP
+  check_eligibility (l_employee_ids (indx),
+					 increase_pct_in,
+					 l_eligible);
+
+  IF NOT l_eligible
+  THEN
+	 l_employee_ids.delete (indx);
+  END IF;
+END LOOP;
+
+FORALL indx IN INDICES OF l_employee_ids
+   UPDATE employees emp
+      SET emp.salary =
+               emp.salary
+             + emp.salary * 
+                increase_salary.increase_pct_in
+    WHERE emp.employee_id = 
+      l_employee_ids (indx);
+
+PLSQL Related Datadictionary
+USER_ARGUMENTS : The arguments (parameters) in all the procedures and functions in your schema.
+USER_DEPENDENCIES : The dependencies to and from objects you own. This view is used mostly by Oracle Database to invalidate the status of database objects when an object on which they depend changes.
+USER_ERRORS  : The current set of compilation errors for all stored objects (including triggers) you own. This view is accessed by the SHOW ERRORS SQL*Plus command. You can, however, write your own queries against it as well.
+USER_IDENTIFIERS : Introduced in Oracle Database 11g and populated by the PL/Scope compiler utility. Once populated, this view provides you with information about all the identifiers—program names, variables, and so on—in your code base.
+USER_OBJECT_SIZE : The size of the objects you own. Actually, this view shows you the source, parsed, and compile sizes for your code. Although it is used mainly by the compiler and runtime engine, you can use it to identify the large programs in your environment.
+USER_OBJECTS : The objects you own. You can, for instance, use this view to see if an object is marked INVALID, find all the packages that have EMP in their names, and so on.
+USER_PROCEDURES : Information about stored programs, such as the AUTHID setting, whether the program was defined as DETERMINISTIC, and so on.
+USER_SOURCE : The text source code for all objects you own (in Oracle9i Database and above, including database triggers and Java source). This is a very handy view, because you can run all sorts of analyses of the source code against it with SQL and, in particular, Oracle Text.
+USER_TRIGGERS and USER_TRIGGER_COLS : The database triggers you own (including the source code and a description of the triggering event) and any columns identified with the triggers, respectively. You can write programs against USER_TRIGGERS to enable or disable triggers for a particular table.
+
+Passing Cursor Variables
+CREATE OR REPLACE FUNCTION names_for (
+        name_type_in IN VARCHAR2)
+     RETURN SYS_REFCURSOR
+  IS
+     l_return   SYS_REFCURSOR;
+  BEGIN
+     CASE name_type_in
+        WHEN 'EMP'
+        THEN
+   OPEN l_return FOR
+		SELECT last_name
+		  FROM employees
+	  ORDER BY employee_id;
+WHEN 'DEPT'
+THEN
+   OPEN l_return FOR
+		SELECT department_name
+		  FROM departments
+	  ORDER BY department_id;
+END CASE;
+
+RETURN l_return;
+END names_for;
+
+Here is a block that uses the names_for function to display all the names in the departments table: 
+
+DECLARE
+   l_names   SYS_REFCURSOR;
+   l_name    VARCHAR2 (32767);
+BEGIN
+   l_names := names_for ('DEPT');
+
+   LOOP
+      FETCH l_names INTO l_name;
+
+      EXIT WHEN l_names%NOTFOUND;
+      DBMS_OUTPUT.put_line (l_name);
+   END LOOP;
+
+   CLOSE l_names;
+END;
+
+
+As of Oracle Database 12c, all PL/SQL program units have an optional ACCESSIBLE BY clause that enables you to specify a whitelist of other PL/SQL units that can access the PL/SQL unit you are creating or altering.
+
+I create the specification of my “private” package. The package is private in the sense that I want to make sure that it can be invoked only from within the public package (public_pkg). So I add the ACCESSIBLE_BY clause: 
+
+CREATE OR REPLACE PACKAGE private_pkg   
+   ACCESSIBLE BY (public_pkg)
+IS
+   PROCEDURE do_this;
+
+   PROCEDURE do_that;
+END;
+/
+
+Grant Roles to Program Units
+GRANT hr_departments TO PROCEDURE remove_emps_in_dept;
+Instead if you grant privileges to users then procedure or function can't make use of the privileges granted through role.
+
+DECLARE
+	TYPE names_t IS TABLE OF VARCHAR2 (100) INDEX BY PLS_INTEGER;
+   l_names   names_pkg.names_t;
+BEGIN
+   l_names (1) := 'Loey';
+   l_names (2) := 'Dylan';
+   l_names (3) := 'Indigo';
+   l_names (4) := 'Saul';
+   l_names (5) := 'Sally';
+
+   EXECUTE IMMEDIATE
+      'BEGIN names_pkg.display_names (:names); END;'
+      USING l_names;
+
+   FOR rec
+      IN (SELECT * FROM TABLE (l_names))
+   LOOP
+      DBMS_OUTPUT.put_line (
+         rec.COLUMN_VALUE);
+   END LOOP;
+END;
+/ 
+
+Before Oracle 12c this was possibe only with nested tables not with associative array.
+
+Prior to Oracle Database 12c, if your view executed a function, it was always run under the privileges of the view’s owner, not the privileges of the function’s owner. So if the function was defined as invoker’s rights, the behavior could be quite different from what you would have expected.
+ 
+Oracle Database 12c adds the BEQUEATH clause for views, so you can define a view that will accommodate invoker’s rights functions referenced in a view.
+
+
+
+--------------
+CREATE OR REPLACE PACKAGE meme_tracker
+   IS
+      PROCEDURE reset_memes;
+
+      FUNCTION already_saw_meme (
+            meme_target_in VARCHAR2, meme_in IN VARCHAR2)
+         RETURN BOOLEAN;
+
+      PROCEDURE add_meme (
+         meme_target_in VARCHAR2, meme_in IN VARCHAR2);
+	procedure print_array;
+END; 
+/
+
+CREATE OR REPLACE PACKAGE BODY meme_tracker
+IS
+   SUBTYPE meme_target_t IS VARCHAR2(100);
+   SUBTYPE meme_t IS VARCHAR2(1000);
+   c_was_processed CONSTANT BOOLEAN := TRUE;
+
+   TYPE memes_for_target_t IS TABLE OF BOOLEAN INDEX BY meme_t;
+   TYPE processed_memes_t IS TABLE OF memes_for_target_t INDEX BY meme_target_t;
+   g_processed_memes processed_memes_t;
+
+   PROCEDURE reset_memes
+   IS
+   BEGIN
+      g_processed_memes.DELETE;
+   END;
+
+   FUNCTION already_saw_meme (
+         meme_target_in VARCHAR2, meme_in IN VARCHAR2)
+      RETURN BOOLEAN
+   IS
+   BEGIN
+      RETURN g_processed_memes 
+               (meme_target_in)
+                   (meme_in) = c_was_processed;
+   EXCEPTION 
+      /* PL/SQL raises NDF if you try to "read" a collection
+         element that does not exist */
+      WHEN NO_DATA_FOUND THEN RETURN FALSE;
+   END;
+
+   PROCEDURE add_meme (
+      meme_target_in VARCHAR2, meme_in IN VARCHAR2)
+   IS
+   BEGIN
+      g_processed_memes (meme_target_in)(meme_in) 
+         := c_was_processed;   
+   END;
+   
+   procedure print_array
+   is
+   l_index   varchar2(1000);
+   l_index2   varchar2(1000);
+   begin
+	l_index := g_processed_memes.first;
+	while (l_index is not null)
+	loop
+		DBMS_OUTPUT.put_line('l_index-'||l_index);
+		l_index2 := g_processed_memes(l_index).first;
+		
+		while (l_index2 is not null)
+		loop
+			DBMS_OUTPUT.put_line('l_index2-'||l_index2);
+			l_index2 := g_processed_memes(l_index).next(l_index2);
+		end loop;
+		l_index := g_processed_memes.next(l_index);
+	end loop;
+   end;
+   
+END;
+/
+
+BEGIN
+	meme_tracker.reset_memes;
+	meme_tracker.add_meme ('DOG', 'CAT');
+	meme_tracker.add_meme ('HUMAN', 'CAT VIDEO');
+	meme_tracker.add_meme ('HUMAN', 'HONEY BOO BOO');
+
+	IF meme_tracker.already_saw_meme ('DOG', 'CAT')
+	THEN
+	  DBMS_OUTPUT.PUT_LINE ('DOG-CAT-FOUND');
+	END IF;
+
+	IF NOT meme_tracker.already_saw_meme ('DOG', 'CAT VIDEO')
+	THEN
+	  DBMS_OUTPUT.PUT_LINE ('DOG-CAT VIDEO-NOT FOUND');
+	END IF;
+	meme_tracker.print_array;
+	
+END;
+/
+
+DROP PACKAGE MEME_TRACKER;

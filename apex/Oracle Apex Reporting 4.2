@@ -1,0 +1,403 @@
+Point For further analysis - APEX_ERROR
+
+
+APEX configurations
+Apex needs a web server to fulfill web requests. Apex can be configured using DAD or listner.
+
+
+
+APEX configuration using DAD
+Under this section we will check out two configurations (external and internal mod_plsql) of apex DAD.
+ 
+DAD is Database Access Descriptor. DADs are the means of transporting HTTP requests to the database. DADs have the authority to run under the privileges of a schema configured at the time of their creation. Once authorized, a DAD becomes the king of his fort and can execute any procedure in his kingdom. DADs can be created by using mod_plsql. mod_plsql, formerly known as Oracle PL/SQL Cartridge or Oracle Web Agent (OWA), has been the heart of APEX systems. mod_plsql, an extension module of Apache HTTP server, converts the HTTP request to database queries and vice versa. mod_plsql has a database connection pool which helps better performance.
+ 
+The mod_plsql configurations are of two types:
+ 
+Internal mod_plsql – This configuration is internal to the Oracle database and mod_plsql is a part of Embedded PLSQL Gateway (EPG)
+External mod_plsql – This configuration of mod_plsql is external to the database and can be done only using Apache-based web servers such as native Apache, OHS, and OAS
+ 
+The Oracle 11g installation, by default, creates a DAD called apex. The preinstalled APEX in 11g is an internal mod_plsql configuration which uses, out of the box, the embedded PL/SQL gateway and the ANONYMOUS schema. This DAD is authorized to execute any procedure on which the ANONYMOUS schema has the execute privileges.
+ 
+Internal mod_plsql configuration
+When a user opens the APEX URL, a HTTP/HTTPS request is sent to the XML DB HTTP server which is a part of XMLDB. This request then flows through EPG to mod_plsql. mod_plsql authorizes the request using the wwv_flow_epg_include_modules.authorize procedure. The APEX engine, in combination with the OWA web toolkit and user-defined stored procedures and functions, generates the response HTML. Calls to the user-defined functions and procedures are coded by the developer in the APEX application. Once the response HTML has been generated, mod_plsql gives the response back to the user using XMLDB HTTP server.
+
+Process to configure the XML DB HTTP server (also called XMLDB protocol server), bundled with database, to work on port 8080.
+begin
+DBMS_XDB.sethttpport(8080);
+end;
+/
+
+The account status of the XDB schema should be OPEN. SELECT account_status FROM dba_users WHERE username = 'XDB';
+
+Enter your XDB schema password (the XDB schema is created with database installation) after opening the URL: http://<hostname>:8080. You should be able to see the index of page.
+
+
+http://<hostname>:<port>/dad_name/f?p=app_id:page_no:session_id:Request:Debug:ClearCache:Params:ParamValues:PrinterFriendly
+
+Every button in the application can set the value of Request to its own name. So, when the user navigates from one page to another on the click of a button, this part of the URL will hold the name of the clicked button. The value of Request can be retrieved using any of the following:
+
+•Substitution string: &REQUEST
+•PL/SQL: V('REQUEST')
+•Bind variable: :REQUEST
+
+There are many functions in APEX's JavaScript API which set Request, for example, apex.submit(pRequest) and apex.confirm(pMessage, pRequest). The following function call submits the page, sets the value of REQUEST to NEW, and sets the value of P1_ITEM to 555:
+
+apex.submit({
+request:"NEW",
+set:{"P1_ITEM":555}});
+
+G_REQUEST is a global variable in the APEX_APPLICATION package which holds the most recent value.
+
+TKPROF
+
+Consider the following link:
+
+http://localhost:7003/apex_weblogic/f?p=105:1:416650869240101&p_trace=YES
+
+Add &p_trace=YES at the end of a page request to generate the trace for the request. APEX drops the DB connection once a page request is fulfilled and then takes an existing or a fresh connection to furnish a fresh page request. Adding &p_tracle=YES turns on 10046 level trace and does it only for the page request with which it is associated.
+
+Cache management
+http://<hostname>:<port>/dad_name/f?p=app_id:page_no:session_id: Request:Debug:ClearCache:Params:ParamValues:PrinterFriendly
+
+• Put the name of an item in this part of the URL if you want to clear the value of a particular item in the requested page.
+• Put the page number in this part of the URL if you want to clear the state of all items and any stateful process on a single page.
+• Put a comma-separated list of pages in this part of the URL if you want to clear the cache for a set of pages. The comma-separated list can include collection names to be reset.
+• Keyword RP resets regional pagination on the requested page.
+• Keyword APP is a tsunami. It clears all pages and application level items of an application.
+• Keyword SESSION is apocalypse. It clears items associated with all applications which have been used in the current session.
+
+Params is a comma-separated list of item names whose values have to be set and ParamValues is a comma-separated list of values of the corresponding item names. Colons are a part of the URL and hold special meaning in the URL. Hence the values themselves cannot contain colons. If there is a possibility of item values containing colons, then we should use translate or replace functions to encrypt the string so that colons are removed from the values. We can then decrypt the encrypted string at the destination page. If a value contains comma, then enclose the value within two backward slashes. For example, \1,234\.
+
+Decoding the APEX page submissions
+
+APEX creates an HTML form for any APEX page created by us. APEX items defined by us become the various elements of the HTML form. The name of the APEX items become the IDs of the HTML elements and these HTML elements are given any name between p_t01 to p_t200 inclusive. 
+
+APEX creates an HTML form for any APEX page created by us. APEX items defined by us become the various elements of the HTML form. The name of the APEX items become the IDs of the HTML elements and these HTML elements are given any name between p_t01 to p_t200 inclusive.
+
+<input type="text" id="P2_REPORT_SEARCH" name="p_t01" value="" size="30" maxlength="2000" onkeypress="return submitEnter(this,event)" class="text_field" />
+
+The p_t01 to p_t200 range is reserved for page items excluding shuttles and multiselects. Other APEX objects have other ranges of names. Now the big question is, why couldn't APEX assign the names of items as the names of HTML elements? The answer lies in the way in which APEX submits its pages.
+
+The p_t01 to p_t200 range is reserved for page items excluding shuttles and multiselects. Other APEX objects have other ranges of names. Now the big question is, why couldn't APEX assign the names of items as the names of HTML elements? The answer lies in the way in which APEX submits its pages. 
+
+wwv_flow is package in apex schema and the accept procedure in that package. The body of this package is wrapped but you can still check out its specification. Now, every argument in the signature of wwv_flow.accept is directly fed from the HTML form. The HTML name directly maps to the name of the arguments in this procedure. So APEX has to assign the names of the arguments of this procedure as the names of the elements in the HTML form (an APEX page), otherwise the values submitted on the page cannot pass to the APEX engine. Hence, the names of the APEX items cannot be assigned as the names of the HTML elements generated for the items. The HTML element names have to be the names of the arguments of the wwv_flow.accept procedure. This is the entry point of all foreign values that get passed using forms. Let me show you the beginning of a typical HTML form generated by APEX:
+
+<form action="wwv_flow.accept" method="post" name="wwv_flow" id="wwvFlowForm">
+
+Now, wwv_flow.accept is invoked, just the way procedure f of f?p is called from the apex DAD/Web context. The Wwv_flow.accept is also a procedure just like f and is called in a similar fashion. Both these functions are called using the apex DAD / web context but in case of f, its argument, that is, p is passed in the URL (passing argument in the URL is called the HTTP GET method) and in case of wwv_flow.accept, the arguments are passed from the form using the HTTP POST method. Arguments passed using the HTTP POST method do not appear in the URL.
+
+A typical APEX URL is: http://<host_name>:<port>/<dad_or_web_context>/f?p=blah,blah,blah
+
+When you submit this APEX page, the HTML form in it is submitted and the resource called is: http://<host_name>:<port>/<dad_or_web_context>/wwv_flow.accept
+
+The URL has wwv_flow.accept in the end because wwv_flow accept is the value of form action in an APEX page.
+
+Chapter 2. Conventional Reporting in APEX
+
+Displaying the CGI environment variables
+begin owa_util.print_cgi_env();end;
+We can see the output of this code in the preceding screenshot. This anonymous block uses owa_util.print_cgi_env to display the CGI environment variables. The list of variables is displayed as name-value pairs. If we feel that one of the variables can be used in our code then we can capture the value of that variable using owa_util.get_cgi_env('variable_name').
+
+javascript:apex.submit({set:{'P5_EMPLOYEE_ID':#EMPLOYEE_ID#},showWait:true});
+
+Auto feeding one APEX item based on another
+We will now see the method of extracting a value for one item based on the value entered in another. Have a look at onChange="javascript:setFileName(this.value);" in the HTML Form Element Attributes textbox of P5_FILEOBJECT. Any change of value in the P5_FILEOBJECT item triggers setFileName. Have a look at the definition of the setFileName function from the JavaScript section in the page definition of page 5 of reference application. The following code is pasted for your convenience:
+
+function setFileName(p_big_file_name) {$x('P5_FILE_NAME').value = p_big_file_name.substring(p_big_file_name.lastIndexOf('\\')+1);}
+The setFileName function has a single line of code which gets the value of the P5_FILE_NAME textbox and sets the part of the string after the last backslash as the value of P5_FILE_NAME. The user however has the freedom to update the P5_FILE_NAME textbox if required.
+
+
+Note that we use \\ to find the last backslash. We need two backslashes because \ is used as an escape character in JavaScript, and hence an extra backslash is used as an escape for the other backslash. Instead of using $x().value, we can also use $s to assign a value to a page item.
+
+
+---- CSS code samples
+<span style="color:red">My Third Region</span>
+<span style="background-color:yellow; color:red;">#EMPLOYEE_STATUS#</span> -- Can be used in HTML expression of report columns
+<span style="font-size:150%;font-weight:bold">#ENAME#</span>
+
+---HTML code Samples
+
+<ul>
+<li><a href="https://docs.oracle.com/cd/E59726_01/doc.50/e39147/toc.htm">      APEX Application Builder Guide </a></li>
+<li><a href="http://asktom.oracle.com/pls/apex/f?p=100:1">      Ask Tom: An Oracle Help Site </a></li>
+<li><a href="f?p=&APP_ID.:2:&APP_SESSION.">      The Region Practice page</a></li>
+</ul>
+
+--
+--
+<div align=center><a href="f?p=&APP_ID.:3:&APP_SESSION."><img src="&APP_IMAGES.employees.jpg"></a><br>Employees</div>
+Displays an image with hyperlink to navigate a different page.
+
+--- Java script Code Samples
+
+
+------ Understanding Oracle APEX 5 Application Development, Second Edition 
+
+The regions in a position are organized in a grid; each region is assigned to a row and column of that grid. APEX positions the regions according to their sequence number. The first region is placed in the first column of the first row of the grid. Each subsequent region is then placed in one of the following ways:
+ ?in the same row and column as the previous region (in which case it is displayed beneath the previous region);
+ ?in the next column of the current row;
+ ?in the first column of a new row
+
+The Parent Region and Position properties provide two different ways to specify the region’s location on the page. Only one of these two properties can have a value.
+
+The set of possible region positions is determined by the page’s template. When a page is created, it is assigned the default template defined by the application’s theme. For example, the default page template for the Universal theme is called Standard.
+
+The Column property specifies the offset of the region within its row. APEX divides the width of a position into 12 “grid points”; the value of Column is a number from 1 to 12, denoting one of those points. A value of 1 specifies that the region begins at the far left of the position; a value of 7 specifies that the region begins in the position’s center. The Column Span property specifies the width of the column. Its value is also a number from 1 to 12, denoting the width in grid points.
+
+The grid layout gives you a visual approximation of the layout of the rendered page, while you are designing it. When you change the Position and Grid property values of a region, the grid layout will change accordingly.
+
+<p><b>DEPT</b>(<u>DeptNo</u>, DName, Loc)</p>
+<p><table border=0><tr>      <td><b>EMP</b>(</td>      <td><u>EmpNo</u>, EName, Job, Mgr, HireDate, </td></tr><tr>     <td> </td>      <td>Sal, Comm, <i>DeptNo</i>, Offsite) </td></tr></table></p>
+<ul><li> The underlined fields DeptNo and EmpNo are keys.<li> The italicized field DeptNo is a foreign key of DEPT.</ul>
+
+The APEX server has several built-in variables that hold information of interest. (like APP_USER, APP_ID, SESSION_ID). To refer to the value of a variable from within HTML text, you prepend the character & and append the period character (.) to the variable name. Such an expression is called a substitution string. In other words, the substitution string for a variable named X is written "&X.". When the APEX server renders a page, it textually replaces the substitution string by the value of its variable.
+
+To display your image file using an HTML <img> tag, you must specify its location on the server. However, APEX will not tell you where it stored your image files; instead, it provides you with built-in variables. There are two variables, WORKSPACE_IMAGES and APP_IMAGES, whose values hold the path to the location in which your workspace images and application images are stored. You use substitution strings to access the value of these variables. For example, I uploaded the employee photograph to a file named employees.jpg and saved it in APEX as an application file. You should do the same with a picture of your choice. The HTML tag to display this file is this:
+
+<img src="&APP_IMAGES.employees.jpg">
+
+<div align=center><a href="f?p=&APP_ID.:3:&APP_SESSION."><img src="&APP_IMAGES.employees.jpg"></a><br>Employees</div>
+You can see that the region uses the <img> tag to display the employees.jpg image, and then uses <a> and </a> tags to wrap this image in a link. Consequently, clicking the image takes the user to page 3 of the application (which means that the link will be nonfunctional until the next section, in which page 3 is created).
+
+Formatting classic Reports
+
+If dept name needs to be display where as deptno is selected in the underlying query. Change the column type to "Plain Text (based on List of Values)". When this type is selected, the property editor displays a List of Values section in which you can enter the SQL query. Figure 3-23 shows the relevant properties for the formatted DEPTNO column. ou can also get the dept name by using join in the query.
+
+In this case, it is hard to say which of these two approaches is better than the other. The list of values approach requires that APEX search the list of values for each row of the report, which is potentially more expensive than simply doing the join in one shot. On the other hand, the list of values approach is simpler, and more directly conveys the intent of the designer.
+
+The rule of thumb is that the source query should specify what you want displayed, whereas the column properties should specify how you want them displayed. In some cases (such as hidden columns), this distinction is clear. In others (such as using a list of values), it is less so.
+
+To get the mask for the SAL column, you may chose the currency format from the format list, which produced the mask FML999G999G999G999G990D00. However, because the database stores salary values in whole dollars, I did not want to display the decimal point and the two digits to its right. So you may removed the D00 from the end of the mask.
+
+Wrapping Values in HTML Expressions
+Consider, for example, the formatting for ENAME in Figure 3-20. The values are bold and in a large font. The HTML expression for the employee named ADAMS is the following:
+<span style="font-size:150%;font-weight:bold">#ENAME#</span> -- assign this expression to the column’s HTML Expression property
+
+The HTML Expression property can do more than simply format the column value. You can also use it to add text to a value or to combine multiple values. For example, Figure 3-24 shows a modification to the Formatted Report region in which the ENAME and JOB values have been combined. Two steps are needed to perform the modification: set the type of JOB to Hidden Column, and then set the HTML expression of ENAME to this:
+
+<span style="font-size:150%;font-weight:bold">#ENAME#</span> the #JOB#
+
+Conditional Formatting
+ 
+select e.*,     
+case when e.Sal>2500 then 'red' else 'black' end as SalColor,     
+case when e.Offsite = 'Y' then 'checkgreen.jpg' else 'checkred.jpg' end as OffsiteImage
+from EMP e
+
+You can then format the SAL column by assigning the following code to its HTML Expression property:  <span style="color:#SALCOLOR#">#SAL#</span>
+The value of the HTML Expression property for the OFFSITE column can then be written as follows:  <img src="&APP_IMAGES.#OFFSITEIMAGE#">
+
+Values as Links
+HTML expression like below would work. Note that the second argument to the <a> tag is target="_blank". This argument causes the target page to open in a new browser tab, which in this case seems reasonable.
+<a href="http://www.infoplease.com/year/#HIREYEAR#.html" target="_blank">#HIREDATE#</a>
+
+Although HTML expession technique works, a better way to format a column as a link is to set its Type property to Link. 
+Target = URL
+link Text  = #HIREDATE#
+Link Attribute = target="_blank"
+
+When developing a report, one issue to keep in mind is that APEX examines pagination properties only once per session. This means that if you run a page containing a classic report, then change a pagination value from the property editor, and then re-run the page, the pagination changes will not be reflected in the report. In order to see pagination changes, you must either start a new session or tell APEX to “reset pagination”. One way to start a new session is to log out of APEX and log back in again. Another way is to run the page by entering a URL with a session ID of 0. For example: apex.oracle.com/pls/apex/f?p=87059:3:0
+
+To tell APEX to reset pagination without changing the session, you pass the current session ID as the third argument to the URL, and pass the value RP as the sixth argument. For example: apex.oracle.com/pls/apex/f?p=87059:3:102741688116062:::RP
+
+
+Chart Regions
+A chart is a visual way to display data points. A data point consists of two values: the X-coordinate, called the label, and the Y-coordinate, called the value
+
+The pie chart consists of five data points, one for each job. The label of each point is the name of the job, and the value is the number of employees having that job. That chart displays a section of the pie for each label in proportion to its value. For example, two of the fourteen employees are analysts, so the size of the ANALYST section is two-fourteenth the size of the pie.
+
+The column chart consists of ten data points, giving the minimum and maximum salaries of employees at each job. These points are organized into two series of five points each.
+
+Chart has three kinds of properties: 
+The type-independent properties (denoted by the chart name),
+The chart-specific properties (denoted by Attributes), 
+And the properties specific to each series (denoted by Series). By default, a chart is created with one series (named New), but you can rename the series and add others.
+
+A Chart’s Source Query
+ 
+The source of a chart needs to specify its data points, and an SQL query works well for this purpose. Each type of chart has slightly different needs, so the structures of their source queries vary slightly.
+
+A pie chart can have only one series, so its source query must have three columns.
+select null, Job, count(*) as EmpCount from EMP group by Job order by EmpCount desc
+
+Ignoring the first column for the moment, the query has one row for each job, with that row containing the name of the job and the number of employees having that job. The job names form the labels along the X-axis of the chart, and the counts form the corresponding Y-axis values.
+
+If a column chart has N series, then its source query will have N+2 columns. For example, the Max and Min Salary per Job chart has two series, so its source query has four columns. The second column specifies the X-axis labels, which again are the various jobs; and the third and fourth columns specify the two series of Y-axis values, which are the minimum and maximum salary per job. The source query is as follows:
+
+select null, Job, min(Sal) as MinSal, max(Sal) as MaxSal
+from EMP group by Job order by MinSal
+
+The first column for both these queries is null. In general, however, it is a URL, and its purpose is to enable a user to “drill down” through the chart. When a user clicks on the chart, APEX redirects to the URL associated with that label. For example, clicking a segment of the pie chart would redirect to the URL associated with that segment, which might display a report listing those employees having the specified job.
+
+
+select
+  ,"Deal Code"
+  ,abs(TOTAL_AMOUNT)
+  ,"Deal Code"||' Total Amount: '||to_char(TOTAL_AMOUNT,'FML999G999G999G999G990D00') description
+from MVAMS_CUBE_CHECKLIST_DATA 
+where "Deal Code" is not null 
+and reporting_period ='2013-12'
+and cube_name='DATACUBE_EVM_MAIN_NEW'
+
+Good Colour Shades
+
+CHAPTER 4 - Navigation
+
+CHAPTER 5 - Items
+
+Three important properties common to all text-based items are Width, Format Mask (in the Appearance section), and Maximum Length (in the Validation section). The Width property specifies the size of the input box in characters. In Figure 5-1, the items labeled Emp No and Salary have widths of 6, Job and Favorite Color have widths of 8, and Hire Date has the default width of 30.
+
+The Maximum Length property specifies the maximum number of characters that a user can type into the input box. If a user enters a value that is larger than the width of the input box, then APEX will scroll the value within the box.
+
+The various text–based item types
+Text Fields : Text Field is the simplest item type, in that there is no restriction on what values can be entered in the input box.
+Number Fields : it differs from a text field in that its value can only be numeric. The Settings section of a number field item has several number-specific properties. In particular, the Minimum Value and Maximum Value properties allow you to restrict the allowable item values in the obvious way. The Number Alignment property allows you to specify the alignment of the number within the input box.
+Password Items : Its value is not displayed on the page. Instead, its characters are replaced by circles 
+Text Fields with Autocomplete : A text field with autocomplete is a text field with an associated list of suggested values. As a user types a value into the input box, the page displays a menu of matching values. If the user clicks a displayed value, that value is entered into the input box automatically.
+Autocomplete fields make it easy for a user to enter the most common values, but do not require the user to pick from those values. Even after selecting a suggested value from the list, the user is free to alter that value via continued typing.
+
+There are two ways to specify the list. 1. SQL query. The query contains one column 2. static expression. In APEX, a static expression consists of STATIC: followed by a comma-separated list of values. STATIC:CLERK,ANALYST,SALESMAN,MANAGER. If you want the values displayed in the order in which they appear in the expression, use STATIC2 instead of STATIC.
+
+Another relevant autocompletion property is Search, which appears in the Settings section. Case sensitive or not and exact or contains.
+
+List-Based Items
+ 
+Unlike a text-based item, a list-based item does not have an input box. Instead, a list-based item presents the user with a list of possibilities to choose from. The item presents a list of display values to the user; when the user selects a display value, a corresponding result value is assigned to the item. The values can either be specified dynamically, via an SQL query, or statically, via explicit values.
+
+Dynamic List–Based Items
+ 
+An SQL query to specify the correspondence between display values and result values must have two columns: the first column gives the display values, and the second column gives the result values.
+
+Suppose that the display values and result values of an item are the same.
+select DeptNo as DisplayVal, DeptNo as ResultVal from DEPT order by DisplayVal
+
+select d.DName || ' (' || count(e.EmpNo) || ' employees)' as DisplayVal,       d.DeptNo as ResultVal
+from DEPT d left join EMP e on d.DeptNo = e.DeptNo
+group by d.DeptNo, d.DName
+order by DisplayVal
+
+Static List–Based Items
+Recall that the values of a STATIC expression are displayed in alphabetical order, whereas the values of a STATIC2 expression are displayed in the order given.
+
+STATIC:ACCOUNTING;10,OPERATIONS;40,RESEARCH;20,SALES;30
+
+The Settings section for a radio button item also has the property Number of Columns. This property determines the placement of the radio buttons on the page.
+
+Multi-Value List Items
+Multi-value list items are configured the same way as single-value items. In particular, they use an SQL query or static expression to indicate their display values and result values. APEX uses the convention that the value of a multi-value item is a string that contains the selected result values separated by colons. If no display values are selected, the item’s value is null.
+
+To specify that the select list item to be a multi-value select list, you set its Allow Multi Selection property (in the Settings section) to Yes. The value of its Height property (in the Appearance section) determines how many menu rows to display. All other properties are configured the same. Note that the two kinds of select list look and behave differently. The multi-value select list displays the entire menu on the page at all times, instead of on demand. A user can choose additional menu items by holding the control or command key while clicking, depending on the operating system.
+
+The second item in the region is a checkbox group. Checkbox properties are configured exactly the same as for radio groups. Checkboxes behave differently from radio groups in that multiple checkboxes can be selected, and clicking a box toggles its value.
+
+The third item is a shuttle list, which is very similar to a multi-value select list and is configured the same way. The difference between them is that a multi-value select list denotes selected values by highlighting them, whereas a shuttle has separate menus for the selected and unselected values. A user can double-click a value to move it between the two menus.
+
+The fourth item is a list manager, which is a cross between an autocompletion text box and a pop-up list. Similar to autocompletion, a user can enter any value into the input box and click the Add button to add it to the selected-value list. Alternatively, the user can click the pop-up arrow to bring up a menu of values to choose from, with the selected value getting added to the input box. It is important to note, however, that although the pop-up list shows display values, it places result values in the input box. 
+
+Yes/No Items
+
+Use item type Yes/No. It appears as a select list on desktop applications and a toggle on mobile applications. By default, its display and result values are set to Yes and No. You can change these defaults by going to the Settings property (in the Settings section) and selecting the value Custom.
+
+Item checkbox can be used. The checkbox belongs to a checkbox group having just one member and does not have a visible display value. Its list of values can be defined by the static expression - STATIC:;Yes
+
+This expression specifies that there is one member in the list, which has an empty display value and the result value Yes. The value of the item is thus Yes if the box is selected and (as with all multi-value items) it is null if not selected.
+
+The third item is a radio group. Its values are defined by the static expression STATIC:No,Yes. Its display and result values are identical to the Yes/No item.
+
+A display-only item has a label and a textual value, similar to a text field; the difference is that the value is not in an input box and is not editable.
+
+A hidden item is not visible, and users have no idea that they exist. They are typically used to hold the value of one operation, so that another operation can use it.
+
+Initial Item Values
+The three common choices are Null (which is the default), Static Value, and SQL Query (return single value). 
+The Used property specifies when the source expression is applicable. use the session state if it is not null, is to always use the source expression.
+
+You can set the action of the select list to be Redirect and Set Value. There is no need for it to submit because the ARF process executes during page rendering.
+
+process to clear items - process type "clear session state"
+
+Form Pagination process ->  The page-pagination process looks at the value of the primary key item, calculates the key values of the previous and next records in the specified navigation order, and places those values in the Previous Primary Key and Next Primary Keyitems. That is, its job is to calculate the key values of the previous and next records, but it does not change the current record. The responsibility for moving to the previous or next record lies with the buttons. The Previous Record button simply needs to redirect, placing the value of the Previous Primary Key item into the Primary Key item.
+
+validations : regexp_like(:p20_sal, '^\d{0,5}\.{0,1}\d{0,2}$')
+
+conditional validation, if page contains more regions.
+foreign key validations by type = Rows returned
+
+Wizard progress bar - New employee Creation Implementation
+Create a list called New Employee Wizard >> Basi info, select manager, select hiredate, confirm , linked to pages 31, 32, 33, 34
+Create four blank pages 31, 32, 33, 34
+create list region in each page set the list template to Wizard Progress and set region template to wizard container.
+Now create region in each page to hold the itema and buttons, set the template to blank with attributes
+if required create a process to guide the items on other pages
+
+Tabular Form
+
+You can create a row selector column by right-clicking the Columns folder in the rendering tree(Row selector option is only available for tabular forms). The row selector column will be named CHECK$01.
+
+
+
+Security
+Authentication, which identifies the legal users, Authorization, which specifies what information each legal user is allowed to see.
+Each time you create a new authentication scheme, APEX makes it the current scheme.
+
+Sample Authentication function
+
+function alwaysTrue(p_username in varchar2, p_password in varchar2) return boolean is begin return true; end;
+
+Each report column has the property Escape special characters in its Security section. By default, it is set to Yes. As soon as you set a column‘s Escape special charactersproperty to No, you open yourself up to a cross-site scripting attack.
+
+Reject Inappropriate Data : Use the property Restricted Characters, found in an item‘s Security section. This property lets you specify which characters are allowed in the input.
+
+APEX provides a function calledAPEX_ESCAPE.HTML, which takes any input string and turns it into a visibly identical string that contains no HTML characters.
+
+declare 
+v_LocEscaped varchar2(100);
+begin 
+v_LocEscaped := APEX_ESCAPE.HTML(:P44_LOC); 
+if :P44_LOC = v_LocEscaped 
+then 
+return 
+true; 
+else 
+return false; 
+end if; 
+end;
+
+GET vs. POST
+Requests that a browser makes to a web server can be of different types. The two most common types are GET and POST, which differ in how they pass information to the server. A POST request places the information in a specific area within the request packet. A GET request, on the other hand, passes information to the server via its URL.
+
+In APEX, POST requests are made by submit operations.
+On the other hand, redirect operations in APEX make GET requests. Redirection can be performed by several kinds of components, such as buttons, list-based items, column links, and branches. As part of the redirection, APEX lets you assign values to specified items in the session state.
+
+Because the structure of an APEX URL is well known, it is possible for an authenticated user to construct a URL that accesses the application in a way the application developer did not intend.
+
+Guarding Against Item Modification
+Application's home screen > Edit Application Properties button > Security tab. The property is in the Session State Protection section.
+Go to the page properties for the page > The Page Access Protection property is in the Security section; select the option Arguments Must Have Checksum.
+
+There is one additional complication: if you want page access protection, you will need to enable it for every page of your application because a URL for one page can set the items for another.
+
+
+
+
+
+
+
+
+5 units of electricity
+20 unit of gas per day
+
+saroj.temp
+babuna21
+
+Current Plan (Per Day) - Price Fix February 2017
+Electricity Per day = 10.96 + 5 * 14.42 = 83.06
+Gas Per Day = 12.34 + 20 * 3.983 = 92
+Total Per day= 175.06
+
+New Plan (Per Day) - Price Fix June 2017
+
+Electricity Per day = 13.25 + 5 * 12.831 = 77.405
+Gas Per Day = 11.48 + 20 * 3.603 = 83.54
+Total Per day= 160.945
+

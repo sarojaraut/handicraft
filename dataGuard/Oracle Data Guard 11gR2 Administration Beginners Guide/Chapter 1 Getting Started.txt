@@ -1,0 +1,223 @@
+Oracle Data Guard 11gR2 Administration Beginner's Guide
+
+Oracle Data Guard ensures high availability, data protection, and disaster recovery for enterprise data.
+
+The basic function of Oracle Data Guard is to keep a synchronized copy of a database as standby, in order to make provision, in case the primary database is inaccessible to end users. These cases are hardware errors, natural disasters, and so on.
+
+Using Oracle Data Guard, it's possible to direct user connections to a Data Guard standby database automatically with no data loss, in case of an outage in the primary database. 
+Data Guard also offers taking advantage of the standby database for reporting, test, and backup offloading. 
+Corruptions on the primary database may be fixed automatically by using the non-corrupted data blocks on the standby database. 
+There will be minimal outages (seconds to minutes) on the primary database in planned maintenances such as patching and hardware changes by using the switch over feature of Data Guard, which changes the roles of the primary and standby databases. All of these features are available with Data Guard, which doesn't require an installation but a cloning and configuration of the Oracle database.
+
+A Data Guard configuration consists of two main components: primary database and standby database. The primary database is the database for which we want to take precaution for its inaccessibility. Fundamentally, changes on the data of the primary database are passed through the standby database and these changes are applied to the standby database in order to keep it synchronized. 
+
+Standby database
+It is possible to configure a standby database simply by copying, cloning, or restoring a primary database to a different server. Then the Data Guard configurations are made on the databases in order to start the transfer of redo information from primary to standby and also to start the apply process on the standby database. Data Guard keeps the primary and standby databases synchronized by using redo information. 
+
+In a Data Guard environment, the primary database must be in the ARCHIVELOG mode. Primary and standby databases may exist on the same server; however, this kind of configuration should only be used for testing. In a production environment, the primary and standby database servers are generally preferred to be on separate data centers.
+
+In Data Guard, transfer of the changed data from the primary to standby database is achieved by redo with no alternative. However, the apply process of the redo content to the standby database may vary. The different methods on the apply process reveal different type of standby databases.
+
+There were two kinds of standby databases before Oracle database Version 11g, which were: physical standby database and logical standby database. Within Version 11g we should mention a third type of standby database which is snapshot standby. Let's look at the properties of these standby database types.
+
+Physical standby database
+The Physical standby database is a block-based copy of the primary database. In a physical standby environment, in addition to containing the same database objects and same data, the primary and standby databases are identical on a block-for-block basis. Physical standby databases use Redo Apply method to apply changes. Redo Apply uses Managed recovery process (MRP) in order to manage application of the change in information on redo. In Version 11g, a physical standby database can be accessible in read-only mode while Redo Apply is working, which is called Active Data Guard. Using the Active Data Guard feature, we can offload report jobs from the primary to physical standby database.
+
+Logical standby database
+Logical standby database is a feature introduced in Version 9iR2. In this configuration, redo data is first converted into SQL statements and then applied to the standby database. This process is called SQL Apply. This method makes it possible to access the standby database permanently and allows read/write while the replication of data is active. Thus, you're also able to create database objects on the standby database that don't exist on the primary database. So a logical standby database can be used for many other purposes along with high availability and disaster recovery.
+
+One discouraging aspect of the logical standby database is the unsupported data types, objects, and DDLs. The following data types are not supported to be replicated in a logical standby environment:
+ BFILE
+ Collections (including VARRAYS and nested tables)
+ Multimedia data types (including Spatial, Image, and Oracle Text)
+ ROWID and UROWID
+ User-defined types
+
+Snapshot standby database
+Principally, a snapshot standby database is a special condition of a physical standby database. Snapshot standby is a feature that is available with Oracle Database Version 11g. When you convert a Physical standby database into a snapshot standby database, it becomes accessible for read/write. You can run tests on this database and change the data. When you're finished with the snapshot standby database, it's possible to reverse all the changes made to the database and turn it back to a physical standby again. An important point here is that a snapshot standby database can't run Redo Apply. Redo transfer continues but standby is not able to apply redo.
+
+Like a physical or logical standby database, a snapshot standby database receives and archives redo data from a primary database. Unlike a physical or logical standby database, a snapshot standby database does not apply the redo data that it receives. The redo data received by a snapshot standby database is not applied until the snapshot standby is converted back into a physical standby database, after first discarding any local updates made to the snapshot standby database.
+
+A snapshot standby database is best used in scenarios that require a temporary, updatable snapshot of a physical standby database. Note that because redo data received by a snapshot standby database is not applied until it is converted back into a physical standby, the time needed to recover from a primary database failure is directly proportional to the amount of redo data that needs to be applied.
+
+
+Oracle Data Guard architecture
+The main architecture of Oracle Data Guard 11gR2 includes a primary database, up to 30 standby databases, the redo transport services, (which automatically ship the redo log data from the primary to standby server), and Apply Services (which applies the changes in redo on the standby database). There are of course some background processes special to a Data Guard configuration, which run the services in question.
+
+In a Data Guard configuration, the switchover and failover concepts are also very important. By performing a switchover, it's possible to change the roles of the primary and standby databases and change the direction of the redo shipping. Failover is the option that we must use to open a standby database to user connection in read/write mode, when the primary database is inaccessible.
+
+Data Guard services
+These services are the vital points of a Data Guard configuration. Database administrators should decide and use the proper configuration to supply the business needs and tune these services to comply with SLAs.
+
+Redo transport services
+It's possible to configure Data Guard for sending the redo data to standby databases from the log buffer as the transactions are committed (by LGWR process) or from the online redo logfiles when they're being archived (by ARCn processes). Shipping redo data with ARCH will result in more data loss in the case of primary database failure because the data change information in the current online log of primary will be lost.
+
+Here are the important properties of the log transport with the ARCH attribute:
+ Logs are sent by the ARCH process; the LNS process is not in use
+ Standby redo logs are not mandatory on the standby database
+ Data in the unarchived online redo log will be lost in a failover
+
+If LGWR is used for the redo transportation, it's possible to guarantee zero data loss failovers by creating a Data Guard configuration in which the primary database waits for confirmation from the standby database that redo has been received, before it informs that the commit is completed. This configuration is called Synchronous redo transport (SYNC). However, this may affect the performance of the primary database.
+
+ Redo is read and sent to the standby database directly from the log buffer by the LNS process
+ Acknowledgment needed from the standby database (RFS to LNS and LNS to LGWR) to send COMMIT ACK to the database user
+ It's mandatory to use standby redo logs
+ Zero data loss in failover can be guaranteed with this configuration
+ There maybe slower response times on the primary database
+ The primary database stops giving service in a network disruption incident between primary and standby
+
+The other option is to use the Asynchronous redo transport (ASYNC) method, which avoids the impact to primary database performance. In this method, the primary database never waits for any acknowledgment from the standby database in order to complete the commit. In the ASYNC redo transport method we have the performance gain; however, this method does not guarantee zero data loss failovers because it does not guarantee all the committed transactions being received by the standby database at any moment.
+
+Protection modes
+Data Guard offers three data protection modes, which serve different business needs in terms of data protection and performance.
+
+Mode : Redo transport Action with no standby database connection : Risk of data loss
+Maximum Protection : SYNC and LGWR : The primary database needs to write redo to at least one standby database. Otherwise it will shut down. Zero data loss is guaranteed.
+Maximum Availability: SYNC and LGWR :Normally works with SYNC redo transport. If the primary database cannot write redo to any of its standby databases, it continues processing transactions as in ASYNC mode. : Zero data loss in normal operation, but not guaranteed. This protection mode ensures zero data loss except in the case of certain double faults, such as failure of a primary database after failure of the standby database.
+Maximum Performance : ASYNC and LGWR/ARCH: Never expects acknowledgment from the standby database. : Potential for minimal data loss in a normal operation.
+
+Apply services
+Data Guard automatically transfers redo data from the primary to standby database and applies it on the standby database. Redo transport services work independent of apply services and never wait for Redo Apply but if there's a problem on redo transportation, apply services normally stop and wait for the new redo to arrive.
+
+By default, the standby database writes received redo data into the standby redo logfiles and apply services do not apply redo until the standby redo log is archived as an archived redo log. If we use the real-time apply feature, which became available with 10g, the apply services don't wait for the archival operation and apply the redo data as it's received and written into the standby redo logs.
+
+It's also possible to specify a delay value to keep the standby database behind the primary database with the specified minutes. This may be chosen to prevent human error operations on the primary database to be applied to standby immediately. However, after the support of flashback database, there's no need to define a delay in Data Guard configuration.
+
+Redo Apply (physical standby databases)
+Redo Apply keeps a block-by-block copy of the primary database. By default, Redo Apply automatically runs a parallel apply processes, which is equal to the number of CPUs of the standby database server minus one.
+
+Redo Apply has the following benefits for its users:
+ There are no unsupported data types, objects, and DDLs
+ Redo Apply has higher performance when compared with SQL Apply or any other replication solutions
+ It offers simple management by keeping the database structure exactly the same as the primary database with its fully automated architecture
+ It's possible to take advantages of Active Data Guard and snapshot standby for reporting and testing
+ Backups taken from physical standby databases are ready to be restored to primary. So we can offload the backup from primary
+ Redo Apply offers a strong corruption detection and prevention mechanism.
+ It's possible to use physical standby databases for the rolling upgrades of the database software, which is known as transient logical standby
+ The real-time apply feature applies the redo as it's received. This feature makes it possible to query real-time or near real-time data from the standby database
+
+By offering these features, Redo Apply (physical standby database) has become a very popular and widely used-technology for the high availability and disaster recovery of Oracle databases.
+
+Monitoring Redo Apply
+While Redo Apply runs on the standby database, administrators need to monitor the status of the apply process and check if it's working in accordance with the selected configuration. As mentioned, the MRP process is responsible from the Redo Apply process and monitoring the status of this process will give us valuable information on what's going on with Redo Aapply. 
+
+SQL Apply (logical standby databases)
+The SQL Apply technology resides on mining the standby redo logs, building SQL transactions that apply the changes in question, and finally, executing the SQL on the standby database, which is read/write accessible. This process is more expensive in terms of hardware resource usage as a matter of course. The LSP process manages the application of changes to a logical standby database.
+The general purpose of building a logical standby database is reporting the needs with read/write access requirement. SQL Apply is not suitable for disaster recovery and high availability as much as Redo Apply because of the unsupported data types and logically different database infrastructure.
+
+Role transitions
+Role transitions basically enable users to change the roles of the databases in a Data Guard configuration. There are two role transition options in Data Guard, which are switchover and failover.
+
+Switchover
+In a basic Data Guard configuration with one primary and one standby database, a switchover operation changes the roles of these databases, and so the direction of the redo shipping. In a correctly designed configuration, archived log shipping in the opposite direction starts immediately after switchover and clients do not need to change their connection descriptions in order to connect the new primary database.
+
+If there is more than one standby database in a Data Guard configuration, it's possible to perform switchover between the primary and any of the standby databases. After the switchover, the new primary database can continue to send redo to all of the standby databases in the configuration.
+
+Regardless of the configuration of Data Guard, a switchover operation always guarantees zero data loss. This brings high reliability to switchover and thus it's widely used for planned maintenance operations, such as hardware or operating system upgrades, database software rolling upgrade, and other infrastructure maintenances. Switchover reduces the downtime for these maintenance operations by a significant amount of time.
+
+Failover
+Failover is the operation of converting a standby database to a primary database, because of a failure in the original primary database. If the flashback database is disabled on the primary database, failover is an operation with no return. In other words, we have to flashback the failed primary database to a state before failover in order to re-establish the configuration.
+
+Fast-start failover
+This property of automating the failover operation can only be used in Data Guard broker enabled configuration. The observer process which runs on a different server from the primary and standby databases, continuously monitors the accessibility of the primary database. If both the observer and the standby database cannot reach the primary database for a predefined length of time, a fully-automated failover process is started. With 11gRelease 2, we call it fully automated, because this process includes changing the role of the standby as primary, starting the database services on the new primary database, disconnecting the client from the failed primary database, and redirecting them to the new primary database.
+
+If the observer establishes the connection with the original primary database again after the failover, it informs the database that the failover was performed and it will automatically reinstate the database using flashback. In order to configure fast-start failover, we need to specify the fast recovery area and enable flashback on the primary and standby databases. Keep in mind that in Version 11g, Data Guard must be on Maximum Availability or Maximum Performance mode in order to use fast-start failover. In 10g Release 2, only Maximum Availability mode is supported for fast-start failover.
+
+User interfaces for administering Data Guard
+There are three options for a database administrator to manage a Data Guard environment, which are SQL*Plus command-line interface, Oracle Enterprise Manager, and Data Guard broker command-line interface (DGMGRL). In almost every IT infrastructure management interface, command-line tools offer great flexibility and detailed options and the graphical interfaces are user friendly, simple, and automated.
+
+SQL*Plus
+SQL*Plus provides all kinds of administration and monitoring operations for the administrators, but you'll need to access each server in the Data Guard configuration and do the operations separately. It's also sometimes painful to have easy readable outputs from SQL*Plus.
+
+DGMGRL
+Data Guard broker command-line interface (DGMGRL) is the Data Guard broker tool that automates and centralizes Data Guard management. Using DGMGRL we can run some consecutive operations such as switchover and failover with just one command. Also, the status of the Data Guard configuration can be queried with special Data Guard broker
+commands via DGMGRL. Outputs are designed to be easily readable.
+
+■ Simplify switchovers and failovers by allowing you to invoke them using either a single key click in Oracle Enterprise Manager or a single command in the DGMGRL command-line interface.
+■ Enable fast-start failover to fail over automatically when the primary database becomes unavailable. When fast-start failover is enabled, the Data Guard broker determines if a failover is necessary and initiates the failover to the specified target standby database automatically, with no need for DBA intervention.
+
+Enterprise Manager
+Enterprise Manager offers an integrated graphical user interface for Data Guard broker enabled Data Guard configurations. It's possible to graphically monitor the general configuration information, performance, synchronization status of Data Guard, and also perform administration tasks such as switchover, failover, adding, and removing standby database from configuration.
+
+Data Guard background processes
+
+ MRP0 (Managed Standby Recovery Process) coordinates the read and apply process of redo in a physical standby database.
+ RFS (Remote File Server) is responsible for receiving the redo data, which is sent by the primary database to the standby database.
+ LSP0 (Logical Standby Process - Coordinator) coordinates the SQL Apply processes, which are the mining processes and apply processes.
+ LSP1 (Logical Standby Process - Dictionary Build) is used on the logical standby databases when a switchover or failover is in action.
+ LSP2 (Logical Standby Process - Set Guard) is used to operate Database Guard settings. Database Guard specifies which objects will be protected for modification in a logical standby database.
+ NSAn (Redo Transport NSA1 Process) is used on the primary database to ship redo data to the standby database when ASYNC mode is being used. There may be multiple NSA processes such as NSA1 and NSA2.
+ NSSn (Redo Transport NSA1 Process) is also used on the primary database to ship redo data to the standby database. However, only when the SYNC mode is being used.
+ DMON (Data Guard Broker Monitor Process) runs on every instance in a Data Guard broker configuration. It communicates with local database and DMON processes of the remote databases. The broker-related requests and the monitoring information are transferred on this communication channel.
+ FSFP (Data Guard broker fast-start failover pinger process) is used for the management of fast-start failover status.
+
+■■ LNS The LogWriter Network Service (LNS) reads the redo being flushed from the redo buffers by the LGWR and performs a network send of the redo to the standby site. The main purpose of the LNS process is to alleviate the LGWR process from performing the redo transport role.
+
+Summary of Data Guard Benefits
+■ Disaster recovery, data protection, and high availability : Data Guard provides an efficient and comprehensive disaster recovery and high availability solution.
+■ Complete data protection : Data Guard can ensure zero data loss, even in the face of unforeseen disasters. Because the redo data received from a primary database is validated at a standby database, storage level physical corruptions on the primary database do not propagate to the standby database.
+■ Efficient use of system resources : Stand by database can be used for other tasks such as backups, reporting, thereby reducing the primary database workload.
+■ Automatic gap detection and resolution : If connectivity is lost between the primary and one or more standby databases (for example, due to network problems), redo data being generated on the primary database cannot be sent to those standby databases. Once a connection is re-established, the missing archived redo log files (referred to as a gap) are automatically detected by Data Guard and shipped to the stand by database.
+■ Centralized and simple management: The Data Guard broker provides a graphical user interface and a command-line interface to automate management and operational tasks across multiple databases in a Data Guard configuration.
+■ Integration with Oracle Database : Data Guard is a feature of Oracle Database Enterprise Edition and does not require separate installation.
+■ Automatic role transitions : When fast-start failover is enabled, the Data Guard broker automatically fails over to a synchronized standby site in the event of a disaster at the primary site, requiring no intervention by the DBA.
+
+Other replication solutions and Data Guard
+There are many options to replicate an Oracle database data to a remote system. In the scope of disaster recovery, Oracle Data Guard and storage-based replication solutions such as EMC Symmetrix Remote Data Facility (SRDF), HP Continuous Access, Hitachi Universal Replicator and TrueCopy, IBM Global Mirror, and Metro Mirror are the main players in the market. When talking about Oracle database replication we also have to mention Oracle's well-known replication technologies GoldenGate and Streams. However, these products were not developed for disaster recovery fundamentally. Their primary aim is replication for ETL and data warehouse.
+
+GoldenGate and Streams
+GoldenGate is a data replication and integration tool for heterogeneous environments. It provides real-time capture, transformation, routing, and delivery of database transactions across heterogeneous systems. 
+On the other hand, Streams is a built-in feature of the Oracle database that was first announced with database Version 9.2 and allows information sharing within an Oracle database or between Oracle databases.
+
+Oracle announced that Oracle Streams will continue to be supported, but will not be actively enhanced and the best elements of Oracle Streams will be evaluated for inclusion with Oracle GoldenGate. It was also indicated that GoldenGate is the strategic product of Oracle on data distribution and data integration.
+
+Oracle recommends Data Guard for full Oracle database protection with the high availability and disaster recovery purpose and recommends GoldenGate for information distribution and consolidation, application upgrades, changes, and also applications desiring flexible high availability needs.
+
+An important feature of GoldenGate that makes the product different from its counterparts is the bidirectional replication capability, which is also called active-active replication. With this feature the primary and standby concepts are replaced by two active primary sites. Updates on site A are replicated to site B, and updates on site B are replicated to site A. The main challenges here are conflict handling and loop detection.
+
+important features Comparison
+
+Feature : Hardware independency
+Data Guard  : Supported. Possible to choose different server/ storage vendors for primary and standby.
+Storage-based replication : Not Supported. Must use the same storage vendor on both sides.
+GoldenGate : Supported. Possible to choose different server/ storage vendors for primary and standby.
+
+Feature : Software independency
+Data Guard  : Not supported. Only Oracle database replication.
+Storage-based replication : Supported. All kinds of database and application data can be replicated.
+GoldenGate : Limited support. Different database products can be replicated.
+
+Feature : Zero data loss capability
+Data Guard  : Supported with Maximum Protection mode.
+Storage-based replication : Limited support with synchronous replication (distance limitation about 300 km).
+GoldenGate : Not supported.
+
+Feature : Corruption detection and prevention
+Data Guard  : Supported.
+Storage-based replication : Not Supported.
+GoldenGate : Not Supported.
+
+Feature : Bidirectional replication within one database
+Data Guard  : Not Supported.
+Storage-based replication : Not Supported.
+GoldenGate : Supported.
+
+Feature : Query standby data
+Data Guard  : Supported with Active Data Guard and Snapshot standby features.
+Storage-based replication : Not supported.
+GoldenGate : Supported with continuously read/ write accessible target databases.
+
+Feature : Automatic database failover
+Data Guard  : Supported with fast-start failover feature.
+Storage-based replication : Not supported.
+GoldenGate : Not supported.
+
+Feature : License
+Data Guard  : License required only for Active Data Guard. Otherwise no extra license required.
+Storage-based replication : License required.
+GoldenGate : License required.
+
+After reviewing the comparison table, it's obvious that Data Guard has better properties for high availability and disaster recovery purposed Oracle database replication.
+
+We can see that GoldenGate was positioned especially for ETL and data integration requirements and it has great flexibility in this field. However, it also cannot reach Data Guard standards on data protection and disaster recovery.
+

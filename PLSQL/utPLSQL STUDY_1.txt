@@ -1,0 +1,1048 @@
+Run all unit tests in my current schema
+Run all unit tests in my current schema
+exec ut.run();
+
+Run all unit tests in specific schema
+exec ut.run ('ITSR');
+
+Run all unit tests in specific package of current schema
+exec ut.run ('tst_ords_demoapi_all_envs');
+
+Run all unit tests in specific schema.package
+exec ut.run ('itsr.tst_ords_demoapi_all_envs');
+
+Run one specific test only
+exec ut.run ('itsr.tst_ords_demoapi_all_envs.cmsts3_server_listening');
+
+Run several items
+exec ut.run(ut_varchar2_list('itsr.tst_ords_demoapi_all_envs.cmsts3_server_listening','itsr.tst_ords_demoapi_all_envs.cmsts3_end_url_available'));
+
+Run test using suitepath
+exec ut.run (': com.my _or g.m y_p roj ect');
+
+Run the tests as a select statement
+select * from table( ut.r un ());
+
+Color output
+exec ut.run(a_color_console=>true);
+
+XUnit reporter
+exec ut.run(ut_xunit_reporter());
+
+Coverage html reporter
+exec ut.run(ut_coverage_html_reporter());
+
+
+
+Run the tests as a select statement
+select * from table( ut.r un ());
+
+Color output
+exec ut.run(a_color_console=>true);
+
+XUnit reporter
+exec ut.run(ut_xunit_reporter());
+
+Coverage html reporter
+exec ut.run(ut_coverage_html_reporter());
+
+Annota tions are sinlgl e-line comments starting with a % sign.
+Needed in package specif ication only (documentation)
+
+
+
+A open source unit testing framework for the Oracle PL/SQL Language.
+Follows industry standards and best patterns of modern Unit Testing frameworks like JUnit and Rspec.
+Test cases identified and configured by annotations. - Declarative test configuration, Automatic Test detection
+Multiple ways to compare data with matchers/assertions. - Assertion Library, Extendable assertions
+Native comparison of complex types (objects/collections/cursors).
+Hierarchies of test suites configured with annotations. - Organizing Suites into hierarchies
+Supports easy integration with SonarQube, Coveralls, Jenkins and Teamcity with Travis.
+Flexible and simple test invocation.
+
+Test Skeleton Generation - On roadmap
+
+
+Annotations are specially formatted comments in your package specification. This enables declarative test configuration that is coupled with the source code.
+
+Whenever a change is detected, this tool automatically compiles and tests your application. If something goes wrong, the tool immediately notifies the developers so that they can fix the issue immediately.
+
+Automatically monitoring code quality and code coverage metrics,
+
+CI can also act as a communication tool, publishing a clear picture of the current state of development efforts.
+
+In essence, Continuous Integration is about reducing risk by providing faster feedback. First and foremost, it is designed to help identify and fix integration and regression issues faster, resulting in smoother, quicker delivery, and fewer bugs.
+
+I want to keep my tests separate from my Application Code.
+Initially at least, my tests need to be written to support User Stories ( i.e. application functionality)
+The tests themselves need to be independently runnable – i.e. a test should not depend on the successful execution of a previous test to ensure successful execution of itself.
+
+Running a single test from a package
+
+here’s a quick re-cap of the Application we’ll be testing.
+It’s Sprint 1 and our User Stories are :
+
+The Test Helper Package
+
+As mentioned previously, I’ll be using a “library” package to hold code to assist test setup, teardown and validation.
+
+Whilst utPLSQL seems to encourage certain practices in terms of writing tests, it remains flexible enough to be useful, whichever approach you decide to take.
+It offers a wide variety of assertions which you can utilise. Equally, the basic assertions can be used in conjunction with application specific “helper” functions to provide comprehensive test coverage.
+
+UTPLSQL Is inspired by xUnit
+Automation testing on database has additional challanges compared to Go or JAVA
+Concern of Automation
+Doing a full blown automation testing?
+Agile and TDD with ideas of smaller and frequent delivery
+Cost of manual testing
+Overall cost may be smaller
+FDD - Fear driven Develoment
+New feature similar to existing one, we just duplicate the code because manual testing could be too costly, code base becomes large and less modular and maintenance over head of extra duplicate code
+
+http://aprogrammerwrites.eu/?p=1545#.WU5TPevyuM-
+
+http://stevenfeuerstein.com/learn/building-code-analysis/p2
+
+https://mikesmithers.wordpress.com/2016/09/25/utplsql-were-building-the-unit-tests/
+
+https://mikesmithers.wordpress.com/2016/07/31/test-driven-development-and-plsql-the-odyssey-begins/
+
+https://github.com/utPLSQL/utPLSQL
+
+cd C:\Saroj\Software\utPLSQL3.0\utPLSQL3.0.1\utPLSQL\source
+sqlplus sys/oracle@xe as sysdba @@install_headless.sql
+
+Connected to:
+Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
+
+SP2-0310: unable to open file "myorclinstall_headless.sql"
+
+sqlplus sys/oracle@xe as sysdba @create_utPLSQL_owner.sql ut3 ut3 users
+
+sqlplus sys/oracle@xe as sysdba @install.sql ut3 
+
+sqlplus sys/oracle@xe as sysdba @create_synonyms_and_grants_for_public.sql ut3
+
+UTPLSQL Installation
+sqlplus sys/oracle@xe as sysdba @@install_headless.sql  
+sqlplus sys/oracle@xe as sysdba @@uninstall.sql
+@install.sql ut3
+
+@create_synonyms_and_grants_for_public.sql ut3
+
+GRANT CREATE SESSION TO UT3;
+GRANT CREATE PROCEDURE TO UT3;
+GRANT CREATE TYPE TO UT3;
+GRANT CREATE TABLE TO UT3;
+GRANT CREATE VIEW TO UT3;
+GRANT CREATE SYNONYM TO UT3;
+GRANT ALTER SESSION TO UT3;
+GRANT CONNECT TO UT3;
+GRANT resource TO UT3;
+
+-- TEST
+
+http://localhost/ords/itsr/demo-api/dbdetails
+
+--Create a test package
+create or replace package tst_demo as
+
+-- %suite(Hello World)
+
+end;
+/
+
+set serveroutput on;
+begin ut.run('tst_demo'); end;
+-- Output
+Hello World
+Finished in .001 seconds
+0 tests, 0 failed, 0 errored, 0 disabled, 0 warning(s)
+
+-- executes all test suites
+set serveroutput on;
+begin ut.run(); end;
+/
+
+--Define specification for test
+
+create or replace package tst_demoapi as
+
+-- %suite(ORDS Module demoapi)
+
+-- %test(Rest API invocation)
+procedure basic_invocation;
+
+end;
+/
+
+-- Define body of first test
+
+begin ut.run('tst_demoapi'); end;
+
+CREATE OR REPLACE PACKAGE tst_ords_demoapi AS
+
+    -- %suite(ORDS Demo Rest End Point)
+
+    -- %beforeall
+    PROCEDURE global_setup;
+
+    -- %test(Server Availability Check)
+    PROCEDURE check_server_listening;
+
+    -- %test(REST End Point Availability Check)
+    PROCEDURE check_end_url_available;
+
+    -- %test(DB Environment Correctness Check)
+    PROCEDURE check_db_env;
+
+    -- %test(APP Module Correctness Check)
+    PROCEDURE check_module;
+
+    -- %test(Session Correctness Check)
+    PROCEDURE check_valid_session;
+
+    -- %afterall
+    PROCEDURE global_cleanup;
+
+    --Global Variables
+    G_clob              CLOB;
+    G_db_name           VARCHAR2(100);
+    G_module            VARCHAR2(100);
+    G_current_user      VARCHAR2(100);
+    G_sessionid         VARCHAR2(100);
+    G_session_user      VARCHAR2(100);
+    G_rest_end_url      VARCHAR2(32767) := 'http://localhost/ords/itsr/demo-api/dbdetails';
+    l_item_count        NUMBER;
+
+END tst_ords_demoapi;
+/
+
+CREATE OR REPLACE PACKAGE BODY tst_ords_demoapi AS
+
+    G_scope_prefix     CONSTANT VARCHAR2(100) := LOWER($$plsql_unit) || '.';
+    --
+    -- UNIT:        global_setup
+    -- DESCRIPTION: Invokes the rest end point and set globa values
+    --
+    PROCEDURE global_setup 
+    IS
+        L_params             logger.tab_param;
+        L_scope              VARCHAR2(100) := G_scope_prefix||'global_setup';    
+    BEGIN
+        -- Call web service and get the reponse JSON
+        G_clob := APEX_WEB_SERVICE.make_rest_request(
+        p_url          => G_rest_end_url, 
+        p_http_method  => 'GET'
+        );
+
+        -- Parse the JSON
+        APEX_JSON.parse(G_clob);
+
+        -- Loop through the JSON items.
+        l_item_count := APEX_JSON.get_count(p_path => 'items');
+
+        G_db_name        := APEX_JSON.get_varchar2(p_path => 'items[%d].db_name', p0 => 1);
+        G_module         := APEX_JSON.get_varchar2(p_path => 'items[%d].module', p0 => 1);
+        G_sessionid      := APEX_JSON.get_varchar2(p_path => 'items[%d].sessionid', p0 => 1);
+        G_session_user   := APEX_JSON.get_varchar2(p_path => 'items[%d].session_user', p0 => 1);
+
+    EXCEPTION
+        WHEN OTHERS THEN
+            logger.log_error (
+                p_text   => 'Error invoking Demo Rest End Point',
+                p_scope  => L_scope,
+                p_params => l_params
+                );
+    END;
+    --
+    -- UNIT:        check_server_listening
+    -- DESCRIPTION: G_clob is not null means server is sending response
+    --
+    PROCEDURE check_server_listening 
+    IS
+    BEGIN
+        ut.expect(G_clob).to_be_not_null();    
+    END;
+    --
+    -- UNIT:        check_end_url_available
+    -- DESCRIPTION: G_clob is a JSON means it's available
+    --
+    PROCEDURE check_end_url_available 
+    IS
+    BEGIN
+        ut.expect(G_clob).to_be_like( '{"items":[%', '#' ); 
+    END;
+    --
+    -- UNIT:        check_db_env
+    -- DESCRIPTION: G_db_name is same as sys context value
+    --
+    PROCEDURE check_db_env 
+    IS
+        l_actual_db_env     VARCHAR2(30);
+    BEGIN
+        ut.expect(UPPER(sys_context ('userenv','DB_NAME'))).to_equal(upper(G_db_name)); 
+    END;
+    --
+    -- UNIT:        check_module
+    -- DESCRIPTION: G_db_name is same as sys context value
+    --
+    PROCEDURE check_module 
+    IS
+        l_actual_module     VARCHAR2(30) := 'APEX Listener';
+    BEGIN
+        ut.expect(l_actual_module).to_equal(G_module); 
+    END;
+    --
+    -- UNIT:        check_valid_session
+    -- DESCRIPTION: Session not null
+    --
+    PROCEDURE check_valid_session 
+    IS
+        l_actual_module     VARCHAR2(30) := 'APEX Listener';
+    BEGIN
+        ut.expect(G_sessionid).to_be_not_null();
+    END;
+    --
+    -- UNIT:        global_setup
+    -- DESCRIPTION: Invokes the rest end point and set globa values
+    --
+    PROCEDURE global_cleanup 
+    IS
+        L_params             logger.tab_param;
+        L_scope              VARCHAR2(100) := G_scope_prefix||'global_cleanup';    
+    BEGIN
+
+        G_clob           := NULL;
+        G_db_name        := NULL;
+        G_module         := NULL;
+        G_sessionid      := NULL;
+        G_session_user   := NULL;
+    END;
+
+END tst_ords_demoapi;
+/
+
+begin ut.run('tst_ords_demoapi'); end;
+
+ORDS Demo Rest End Point
+Demo API End point Availability Check
+Finished in .373 seconds
+1 tests, 0 failed, 0 errored, 0 disabled, 0 warning(s)
+
+
+I AM TRYING TO LIST DOWN MY LEARNINGS ESPECIALLY THE TECHNICAL LEARNINGS HERE. IT WILL DEFINITELY HELP IN KEEPING MY LEARNINGS TOGETHER AND REFRESHING THEM WHEN NEEDED. ALSO IT MAY BENEFIT OTHERS HAVING SIMILAR ISSUES.
+
+utPLSQL is unit testing tool with no fancy GUI available and is similar to JUnit in Java in many aspects while Code Tester for Oracle comes up with a sophisticated UI.
+utPLSQL has building blocks required to create Unit test cases for PLSQL blocks with minimum to no extra assistance for the developer/tester in creating the test cases. On the other hand, Code Tester for Oracle performs heuristic analysis of the deployed database schema beforehand and provides lots of assistance during preparation of the test cases.
+utPLSQL test cases can be executed from the SQL prompt or some similar means while code tester supports both command line and GUI options.
+utPLSQL presents the test results in plain format in test running console while Code Tester has beautiful Test Results UI with RED & GREEN dots.
+in utPLSQL, a tester/developer has to code each and every test related steps using utPLSQL components while in Code Tester For Oracle, a tester/developer can feed the input/output data and test case might be done(so simple). Also code Tester For Oracle provide hookup points in the generated test case to embed any extra custom logic which is not supported by Code Tester for Oracle GUI.
+Thus it seems like Code Tester for Oracle is a trivial choice as a PLSQL code testing. Lets look at the other side of the comparison.
+
+utPLSQL is a free tool while Code Tester for Oracle is a commercial product from Quest, which means you need to spend initial money for Code Tester for Oracle. Therefore before opting for Code Tester for Oracle, one need to carry out the cost vs. value analysis first.
+Since utPLSQL comes with building blocks only, it gives you full control on your testing logic while we need to find ways in Code Tester for Oracle to perform certain kind of test operations.
+utPLSQL test case code is much cleaner as compared to test code generated from Code Tester from Oracle as it consist of several lines of codes related to GUI of the Code tester for Oracle. This means test case code prepared through utPLSQL is more maintainable then the test case code generated through Code Tester for Oracle.
+Since test code generated from Code Tester from Oracle has code related to the GUI, it becomes difficult to manage through command line though it supports command line operations through certain extent.
+Again because of the GUI tied with the code tester, it becomes little tricky to integrate test cases/test suited created through Code Tester for Oracle as part of regular build environment such as Cruise Control or Hudson.
+
+Any use of tool to support testing / reduce manual work.
+All features testable 
+to execute tests and then determine whether the actual outcomes and the predicted outcomes are the same. 
+Also an organized test framework helps in avoiding duplication of test cases
+automated across the application. 
+
+The main problem with modular frameworks is that the test script have
+test data embedded in them. So when the test data needs to be updated
+we need to change the code of the script. This becomes a big problem
+when the test script is large. 
+
+For this purpose, data- driven testing frameworks have been
+introduced. 
+
+Data driven testing is where the test input and the expected output results
+are stored in a separate data file (normally in a tabular format) so that a
+single driver script can execute all the test cases with multiple sets of
+data. 
+
+This framework reduces the number of overall test scripts needed to
+implement all the test cases.
+• Less amount of code is required to generate all the test cases. 
+
+ Offers greater flexibility when it comes to maintenance and fixing of bugs.
+• The test data can be created before test implementation is ready or even
+before the system to be tested is ready. 
+
+The test cases created are similar and creating new kind of tests requires
+creating new driver scripts that understand different data. Thus the test data
+and driver scripts are strongly related that changing either requires changing
+the other. 
+
+Keyword- Driven Testing Framework
+ Keyword driven testing is an application independent framework utilizing
+data tables and self explanatory keywords to explain the actions to be
+performed on the application under test.
+ Not only is the test data kept in the file but even the directives telling
+what to do which is in the test scripts is put in external input data file.
+ These directives are called keywords. The keyword based testing is an
+extension to the data driven testing.
+K
+
+ Keywords are reused across multiple test cases. 
+
+The main problem is that this requires a more complicated framework than
+the data driven framework.
+ With the keyword driven approach the test cases get longer and complex
+and this is due to the greater flexibility that this approach offers.
+ So in order to combine the strengths of all the frameworks and mitigate
+their weaknesses we use the hybrid testing framework.
+
+Hence it is required to start test automation early in the software
+development life cycle.
+
+Test driven development is a technique of using automated unit tests to
+drive the design of software and force decoupling of dependencies. 
+
+Why TDD?
+ To avoid wasting time on debugging.
+ To improve the quality of code.
+ To increase confidence. 
+
+-------------------------------------------------------------------------------------------------------------------------- 
+Installation - Old Version
+
+create user utp identified by utp default tablespace
+  users temporary tablespace temp;
+
+grant create session, create table, create procedure,
+  create sequence, create view, create public synonym,
+  drop public synonym to utp;
+
+alter user utp quota unlimited on users;
+
+grant execute on DBMS_PIPE to utp;
+
+grant create any synonym to utp;
+
+grant execute on UTL_FILE to utp;
+
+cd C:\Saroj\Software\utplsql-2-3-1\code
+
+sqlplus ut/utp@xe
+
+@ut_i_do install
+
+@ut_i_do uninstall
+
+Test
+
+CREATE OR REPLACE FUNCTION betwnStr (
+   string_in IN VARCHAR2,
+   start_in  IN INTEGER,
+   end_in    IN INTEGER
+)
+RETURN VARCHAR2
+IS
+BEGIN
+   RETURN (
+      SUBSTR (
+         string_in,
+         start_in,
+         end_in - start_in + 1
+      )
+   );
+END;
+/
+
+CREATE OR REPLACE PACKAGE ut_betwnstr
+IS
+   PROCEDURE ut_setup;
+   PROCEDURE ut_teardown;
+   
+   PROCEDURE ut_betwnstr;
+END ut_betwnstr;
+/
+
+CREATE OR REPLACE PACKAGE BODY ut_betwnstr
+IS
+   PROCEDURE ut_setup IS
+   BEGIN
+      NULL;
+   END;
+   
+   PROCEDURE ut_teardown
+   IS
+   BEGIN
+      NULL;
+   END;
+   
+    PROCEDURE ut_betwnstr IS
+    BEGIN
+    
+    utAssert.eq (
+      'Typical valid usage',
+      BETWNSTR(
+         STRING_IN => 'abcdefg',
+         START_IN => 3,
+         END_IN => 5
+      ),
+      'cde'
+    );
+      utAssert.isnull (
+         'NULL start',
+         BETWNSTR(
+            STRING_IN => 'abcdefg',
+            START_IN => NULL,
+            END_IN => 5
+         )
+      );
+      
+      utAssert.isnull (
+         'NULL end',
+         BETWNSTR(
+            STRING_IN => 'abcdefg',
+            START_IN => 2,
+            END_IN => NULL
+         )
+      );
+      
+      utAssert.isnull (
+         'End smaller than start',
+         BETWNSTR(
+            STRING_IN => 'abcdefg',
+            START_IN => 5,
+            END_IN => 2
+         )
+      );
+      
+      utAssert.eq (
+         'End larger than string length',
+         BETWNSTR(
+            STRING_IN => 'abcdefg',
+            START_IN => 3,
+            END_IN => 200
+         ),
+         'cdefg'
+      );
+
+   END ut_BETWNSTR;
+
+END ut_betwnstr;
+/
+
+set Serveroutput on;
+set timing on;
+exec utplsql.test ('betwnstr', recompile_in => FALSE);
+
+It doesn't matter which schema owns utPLSQL itself, so long as other users have access to it.
+The test packages should go in the same schema as the code that is being tested.
+You should connect as the user who owns the test packages (and hence the tested code) when running the tests
+
+Example ut_setup procedure
+
+PROCEDURE ut_setup
+IS
+BEGIN
+   ut_teardown;
+
+   EXECUTE IMMEDIATE 'CREATE TABLE ut_employee AS
+         SELECT * FROM employee';
+
+   EXECUTE IMMEDIATE 'CREATE TABLE ut_DEL1 AS
+         SELECT * FROM employee';
+
+   EXECUTE IMMEDIATE 'CREATE TABLE ut_DELBY_EMP_DEPT_LOOKUP AS
+         SELECT * FROM employee';
+END;
+
+PROCEDURE teardown
+IS
+BEGIN
+   mycollection.DELETE;
+   EXECUTE IMMEDIATE 'TRUNCATE TABLE ' || workspace_tab;
+   DBMS_SESSION.FREE_UNUSED_USER_MEMORY;
+END;
+
+The body of your unit test procedure is, well, mostly yours to figure out, since we don't know what you are testing and how you need to test it.
+
+Generate Skeleton Test Packages
+
+The utGen contains a procedure that allows you to generate a starting point for a unit test package.
+
+   PROCEDURE utGen.testpkg (
+      package_in IN VARCHAR2,
+      program_in IN VARCHAR2 := '%',
+      samepackage_in IN BOOLEAN := FALSE,
+      prefix_in IN VARCHAR2 := NULL,
+      schema_in IN VARCHAR2 := NULL,
+      output_type_in IN PLS_INTEGER := c_screen,
+      dir_in IN VARCHAR2 := NULL,
+      delim_in IN VARCHAR2 := c_delim
+   );
+
+package_in	The name of the package or stand-alone program for which a test package is to be generated.
+program_in	The filter to be applied to the list of programs for which unit test procedures will be generated. So if you only wanted to generate unit tests for programs that start with "UPD", you would pass 'UPD%' for this argument.
+samepackage_in	TRUE if you plan to insert the generated code into the source package, FALSE if you want a stand-alone test package.
+prefix_in	The prefix to be used for the test package and/or unit test procedures. See section " Organizing Your Test Code" for details.
+schema_in	The schema that owns the package or program specified by package_in. The default is the currently connected schema.
+
+dir_in	The location of the file containing the generated code. Used only if you specify utGen.c_file for the output type.
+delim_in	The delimiter used to separate lines of generated code. Used only if you specify utGen.c_string for the output type.
+
+Generate to the screen unit test code for all programs whose names contain "STR" to be embedded inside the STR package,.
+exec utGen.testpkg ('betwnStr', '%STR%', samepackage_in => FALSE);
+
+file:///C:/Saroj/Software/utplsql-2-3-1/doc/testapi.html
+
+utPLSQL STUDY
+
+utPLSQL - a unit testing framework for the Oracle PL/SQL Language. A new test package needs to be developed for automating the unit testing of any procedure/function or package.
+
+By default every test package will start with ut_ and then the name of db objact to be tested. The test package must contain a setup procedure called ut_setup and a teardown procedure called ut_teardown, neither of which take any arguments. The test package should have a separate procedure for each program to be tested in this package. 
+ut_setup is the procedure which will be called before any other procedures of the test package. So this can be used for doing the data setup or any pre-requisites before running thr actual test.
+ut_teardown is the last procedure to be called among all the procedures of the test package. This can be used for any type of clean up activity.
+If a test pcakage contains many procedures to be tested then all the other ut_<procedurename> procedures will be called in a order sorted by the names. If you have specific requirements to follow a certain order name them accordingly. 
+
+Define the test cases and translate those sets of data inputs and results into calls to programs in the utAssert package.
+
+The utAssert provides a set of assertion routines ("assert that the following condition is true") that you will use to register the outcome of a test case. You must call a utAssert assertion program after (or containing) a test case so that the results of that test can be recorded and then reported.
+
+utAssert.this : Generic "Assert This" Procedure 
+utAssert.isnull, utAssert.isnotnull  : Check for NULL and NOT NULL values 
+utAssert.eq : Check Equality of Scalar Values 
+utAssert.eqtable : Check Equality of Database Tables 
+utAssert.eqtabcount : Check Equality of Table Counts 
+utAssert.eqquery : Check Equality of Queries 
+utAssert.eqqueryvalue : Check Equality of Query against single value 
+utAssert.eqfile : Check Equality of Files 
+utAssert.eqpipe : Check Equality of Database Pipes 
+utAssert.eqcoll, utAssert.eqcollapi : Check Equality of Collections 
+utAssert.throws : Check a procedure or function throws an exception 
+utAssert.previous_passed, utAssert.previous_failed :  Check if the previous assertion passed or failed  
+utAssert.eqoutput : Check Equality of DBMS_OUTPUT Collections 
+utAssert.objexists, utAssert.objnotexists : Check for existence of database objects 
+utAssert.eq_refc_query : Check Equality of RefCursor and Query 
+utAssert.eq_refc_table : Check Equality of RefCursor and Database Table 
+
+Each type of assertion routine accepts different kinds of data, but there are lots of similarities between the assertions, as well. Here is an explanation of the common assertion parameters: 
+
+msg_in  : A message to be displayed if the assertion fails. This is the first argument and is mandatory, because the tests need to be self documenting.  
+check_this_in  : The value to be checked.. If a Boolean expression, this will usually include the invocation of the method being tested, resulting in a single line of code for the entire test case.  
+against_this_in  : For assert_eq, the assertion routine will check the check_this_in value against the against_this_in value. This parameter should be the certifiably correct value.  
+null_ok_in  : TRUE if a NULL value should be interpreted as a successful test, FALSE if NULL indicates failure.  
+raise_exc_in  : TRUE if it is OK for the assertion routine to allow an exception to be propagated out unhandled. 
+
+If you need to compare two dates or two strings or two numbers or two Booleans, use the utAssert.eq assertion program. 
+PROCEDURE utAssert.eq (
+   msg_in          IN VARCHAR2,
+   check_this_in   IN VARCHAR2|BOOLEAN|DATE|NUMBER,
+   against_this_in IN VARCHAR2|BOOLEAN|DATE|NUMBER,
+   null_ok_in      IN BOOLEAN := FALSE,
+   raise_exc_in    IN BOOLEAN := FALSE
+);
+
+If your test performs DML operations (update, insert or delete), you will need to check your results in a database table. You could do this by querying the results into local variables and then calling utAssert.eq to check those values against your expected data. That can be a very laborious process, so utAssert offers the eqtable and equerry assertion routines to streamline the process. Both these procedures use the MINUS SQL operator to essentially "subtract" the contents of one table (query) from the other.
+
+PROCEDURE utAssert.eqtable (
+   msg_in           IN VARCHAR2,
+   check_this_in    IN VARCHAR2,
+   against_this_in  IN VARCHAR2,
+   check_where_in   IN VARCHAR2 := NULL,
+   against_where_in IN VARCHAR2 := NULL,
+   raise_exc_in     IN BOOLEAN := FALSE
+);
+
+PROCEDURE utAssert.eqtabcount (
+   msg_in           IN VARCHAR2,
+   check_this_in    IN VARCHAR2,
+   against_this_in  IN VARCHAR2,
+   check_where_in   IN VARCHAR2 := NULL,
+   against_where_in IN VARCHAR2 := NULL,
+   raise_exc_in     IN BOOLEAN := FALSE
+);
+
+The utAssert.eqquery allows you to compare the data returned by two queries (strings that are contained in the check_this_in and against_this_in parameters). In this case, you specify the full SELECT statements for each query as the parameters. By using equery, you may be able to avoid constructing a separate table with preset data. 
+
+PROCEDURE utAssert.eqquery (
+   msg_in          IN VARCHAR2,
+   check_this_in   IN VARCHAR2,
+   against_this_in IN VARCHAR2,
+   raise_exc_in    IN BOOLEAN := FALSE
+);
+
+Run your test
+exec utplsql.test ('betwnstr', recompile_in => FALSE)
+
+Run a test suite 
+exec utPLSQL.testsuite ('TEST_SUITE', recompile_in => FALSE);
+
+select utPLSQL.version from dual
+
+BEGIN
+    utSuite.add (
+       name_in          => 'TEST_SUITE',
+       desc_in          => 'TEST_SUITE_DESC',
+       rem_if_exists_in =>  TRUE -- Default TRUE
+    );
+END;
+/
+
+exec utSuite.rem (name_in => 'TEST_SUITE');
+
+PROCEDURE utPackage.add (
+   suite_in          IN VARCHAR2,
+   package_in        IN VARCHAR2,
+   samepackage_in    IN BOOLEAN := FALSE,
+   prefix_in         IN VARCHAR2 := NULL,
+   dir_in            IN VARCHAR2 := NULL,
+   seq_in            IN PLS_INTEGER := NULL,
+   owner_in          IN VARCHAR2 := NULL,
+   add_tests_in      IN BOOLEAN := FALSE,
+   test_overloads_in IN BOOLEAN := FALSE
+);
+
+BEGIN
+    utPackage.add (
+       suite_in       => 'TEST_SUITE',
+       package_in     => 'betwnstr'
+       );
+END;
+/
+
+exec utPLSQL.testsuite ('TEST_SUITE', recompile_in => FALSE);
+
+If the test does not find any errors it will show success or else failure with the details of testcase failed.
+
+Getting Started
+
+----------
+
+create user orderactive identified by orderactive;
+grant dba to orderactive;
+grant create session to orderactive;
+alter user orderactive quota unlimited on users;
+alter user orderactive default tablespace users;
+
+conn orderactive/orderactive@xe
+
+create database link orderactive_omsdev
+connect to orderactive identified by orderactive
+using '(DESCRIPTION = (ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = rlomstd)(PORT = 1573))) (CONNECT_DATA = (SERVICE_NAME = OMSDEV)))';
+
+set timing on;
+
+create table OMS_CAGE_TYPE as select * from OMS_CAGE_TYPE@orderactive_omsdev where rownum <=5000;
+create table OMS_CARRIER as select * from OMS_CARRIER@orderactive_omsdev where rownum <=5000;
+create table OMS_WAREHOUSE as select * from OMS_WAREHOUSE@orderactive_omsdev where rownum <=5000;
+create table OMS_ERR_LOG as select * from OMS_ERR_LOG@orderactive_omsdev where rownum <=5000;
+create table S_INFO_LOG as select * from S_INFO_LOG@orderactive_omsdev where rownum <=5000;
+create table STORE_LOCATION as select * from STORE_LOCATION@orderactive_omsdev where rownum <=5000;
+create table OMS_METAPACK_CONFIG as select * from OMS_METAPACK_CONFIG@orderactive_omsdev where rownum <=5000;
+create table OMS_PACKAGE as select * from OMS_PACKAGE@orderactive_omsdev where rownum <=5000;
+create table OMS_CAGE as select * from OMS_CAGE@orderactive_omsdev where rownum <=5000;
+create table OMS_CONSIGNMENT as select * from OMS_CONSIGNMENT@orderactive_omsdev where rownum <=5000;
+create table W_II_STORE_LOCATION as select * from W_II_STORE_LOCATION@orderactive_omsdev where rownum <=5000;
+create table STORE as select * from STORE@orderactive_omsdev where rownum <=5000;
+create table COUNTRY as select * from COUNTRY@orderactive_omsdev where rownum <=5000;
+create table OMS_STORE_DELIV_GRP_MAP as select * from OMS_STORE_DELIV_GRP_MAP@orderactive_omsdev where rownum <=5000;
+create table OMS_PACKAGE_DOCUMENT as select * from OMS_PACKAGE_DOCUMENT@orderactive_omsdev where rownum <=5000;
+create table S_CONTACT as select * from S_CONTACT@orderactive_omsdev;
+create table OMS_AREA as select * from OMS_AREA@orderactive_omsdev;
+create table CLIENTS as select * from CLIENTS@orderactive_omsdev;
+create table CARRIERTYPES as select * from CARRIERTYPES@orderactive_omsdev;
+create table S_NUM_CODES as select * from S_NUM_CODES@orderactive_omsdev;
+create table ORDERITEMHEADER as select * from ORDERITEMHEADER@orderactive_omsdev where rownum <=5000;
+create table ORDERITEMHEADER_STATUS as select * from ORDERITEMHEADER_STATUS@orderactive_omsdev where rownum <=5000;
+create table CUSTOMER as select 
+CLIENTCODE
+,CUSTOMERURN
+,CUSTOMERALIAS
+,TITLE
+,FORENAMES
+,INITIALS
+,SURNAME
+,INVOICEADD1
+,INVOICEADD2
+,INVOICEADD3
+,INVOICEADDTOWN
+,INVOICEADDCOUNTY
+,INVOICEADDPOSTCODE
+,INVOICEADDCOUNTRYCODE
+,PERSONALTEL
+,PERSONALFAX
+,MOBILEPHONE
+,PERSONALEMAIL
+,COMPANYNAME
+,JOBTITLE
+,WORKTEL
+,WORKFAX
+,WORKEMAIL
+,DELIVERYADD1
+,DELIVERYADD2
+,DELIVERYADD3
+,DELIVERYADDTOWN
+,DELIVERYADDCOUNTY
+,DELIVERYADDPOSTCODE
+,DELIVERYADDCOUNTRYCODE
+,INTERNALMAILRESTRICT
+,EXTERNALMAILRESTRICT
+,ALLOWSMSMESSAGING
+,ORDERSEQ
+,CUSTOMERTYPE
+,CREATIONDATE
+,FIRSTORDERDATE
+,LASTORDERDATE
+,LASTMAILINGDATE
+,PRIORITY
+,SHIPPING
+,LOYALTYCARDMEMBER
+,LOYALTYCARDNUMBER
+,DEFAULTCURRENCY
+,DEFAULTTAXCODE
+,VATNUMBER
+,DEFAULTDISCOUNTRATE
+,CUSTOMERSTATUS
+,CATEGORYCODE
+,CATEGORYTYPE
+,ORIGINID
+,ORIGINCAMPAIGNCODE
+,ORIGINSOURCECODE
+,SUMTOTALORDERVALUE
+,PREFERREDCARRIER
+,DEFAULTBILLTOID
+,DEFAULTDESPATCHTOID
+,DEFAULTMAILTOID
+,DEFAULTORDEREDBYID
+,DEFAULTCONTACTID
+,DEFAULTCHANNEL
+,CHANNELUPDATED
+,EMAILRESTRICT
+from CUSTOMER@orderactive_omsdev where rownum <=5000;
+create table ORDERHEADER as select * from ORDERHEADER@orderactive_omsdev where rownum <=5000;
+
+create table USR_PS_SORTLIST as select * from USR_PS_SORTLIST@orderactive_omsdev where rownum <=5000;
+
+create table CUSTOMERACCOUNTPROPS as select * from CUSTOMERACCOUNTPROPS@orderactive_omsdev where rownum <=5000;
+create table USR_PS_LOCATION as select * from USR_PS_LOCATION@orderactive_omsdev where rownum <=5000;
+create table W_II_MDS_LOAD as select * from W_II_MDS_LOAD@orderactive_omsdev where rownum <=5000;
+create table PBLDETAIL as select * from PBLDETAIL@orderactive_omsdev where rownum <=5000;
+
+create table CARRIERCONSIGNMENTHEADER as select * from CARRIERCONSIGNMENTHEADER@orderactive_omsdev where rownum <=5000;
+create table TRANSACTIONHEADER as select * from TRANSACTIONHEADER@orderactive_omsdev where rownum <=5000;
+create table IO_MSG_QUEUE as select * from IO_MSG_QUEUE@orderactive_omsdev where rownum <=5000;
+
+create table EFTHEADER as select * from EFTHEADER@orderactive_omsdev where rownum <=5000;
+create table PBLHEADER as select * from PBLHEADER@orderactive_omsdev where rownum <=5000;
+create table PBLTXN as select * from PBLTXN@orderactive_omsdev where rownum <=5000;
+
+create table CUSTOMERADDRESSBOOK as select * from CUSTOMERADDRESSBOOK@orderactive_omsdev where rownum <=5000;
+create table W_II_ODM_STK as select * from W_II_ODM_STK@orderactive_omsdev where rownum <=5000;
+create table TRANS_DC_PICK_RES as select * from TRANS_DC_PICK_RES@orderactive_omsdev where rownum <=5000;
+
+create table USR_PS_LOG as select * from USR_PS_LOG@orderactive_omsdev where rownum <=5000;
+create table ACTIONMESSAGEHEADER as select * from ACTIONMESSAGEHEADER@orderactive_omsdev where rownum <=5000;
+create table S_CHAR_CODES as select * from S_CHAR_CODES@orderactive_omsdev where rownum <=5000;
+create table R_EFT_RESPONSE_ACTION as select * from R_EFT_RESPONSE_ACTION@orderactive_omsdev where rownum <=5000;
+
+create table ACTIONCODES as select * from ACTIONCODES@orderactive_omsdev where rownum <=5000;
+create table CATEGORYCODES as select * from CATEGORYCODES@orderactive_omsdev where rownum <=5000;
+create table TBLUSERS as select * from TBLUSERS@orderactive_omsdev where rownum <=5000;
+create table OMS_EVENT_TYPE as select * from OMS_EVENT_TYPE@orderactive_omsdev where rownum <=5000;
+
+create table OMS_ACTIVITY_LOG as select * from OMS_ACTIVITY_LOG@orderactive_omsdev where rownum <=1;
+create table S_CODE_TYPES as select * from S_CODE_TYPES@orderactive_omsdev where rownum <=5000;
+create table MDS_II_CHUTE as select * from MDS_II_CHUTE@orderactive_omsdev where rownum <=5000;
+
+create table OMS_SYSTEM_PARAMS as select * from OMS_SYSTEM_PARAMS@orderactive_omsdev where rownum <=5000;
+create table OMS_RESULT_CODE as select * from OMS_RESULT_CODE@orderactive_omsdev where rownum <=5000;
+create table S_FILE_SEQUENCE as select * from S_FILE_SEQUENCE@orderactive_omsdev where rownum <=5000;
+
+create table S_PROCESS_DT as select * from S_PROCESS_DT@orderactive_omsdev where rownum <=5000;
+
+create table S_EVENT_QUEUE as select * from S_EVENT_QUEUE@orderactive_omsdev where rownum <=5000;
+create table S_EVENT_TYPE as select * from S_EVENT_TYPE@orderactive_omsdev where rownum <=5000;
+
+create table S_SLA as select * from S_SLA@orderactive_omsdev where rownum <=5000;
+create table S_EVENT_ATTACHMENT as select * from S_EVENT_ATTACHMENT@orderactive_omsdev where rownum <=5000;
+
+create table S_ERR_LOG as select * from S_ERR_LOG@orderactive_omsdev where rownum <1;
+
+create table S_EVENT_CONTACT as select * from S_EVENT_CONTACT@orderactive_omsdev where rownum <=5000;
+create table S_MAIL_QUEUE as select * from S_MAIL_QUEUE@orderactive_omsdev where rownum <=5000;
+
+create table S_DISPATCH_QUEUE as select * from S_DISPATCH_QUEUE@orderactive_omsdev where rownum <=5000;
+create table S_SLA_LEVEL as select * from S_SLA_LEVEL@orderactive_omsdev where rownum <=5000;
+create table S_WEBSERVICE_CONFIG as select * from S_WEBSERVICE_CONFIG@orderactive_omsdev where rownum <=5000;
+create table s_vld_test_email_addr as select * from s_vld_test_email_addr@orderactive_omsdev where rownum <=5000;
+create table s_err_message as select * from s_err_message@orderactive_omsdev where rownum <=5000;
+
+create table oms_store_deliv_grp as select * from oms_store_deliv_grp@orderactive_omsdev where rownum <=5000;
+
+s_err_message
+
+create sequence OMS_PACKAGE_SEQ start with 13672534;
+create sequence OMS_CAGE_ID_SEQ start with 284535;
+create sequence OMS_CONSIGNMENT_SEQ start with 26631313;
+create sequence OMS_ERR_LOG_SEQ start with 165836110;
+create sequence OMS_PACKAGE_DOCUMENT_SEQ start with 13636002;
+
+Test Cases
+
+Setup
+    create three new store, one with invalid country
+    create a store deliv group for these stores
+    change the max retry limit to 20.
+
+Tear down
+    delete new stores created in setup
+    delete the store delivery group created
+    set back the max retry limit back to normal.
+
+1. Create x labels for store y.
+    Validation  : x entries in oms_cage status = available, oms_package, oms_consignment, oms_package_document
+    check metapack site for consignment code and carrier.
+2. Create y labels for store group z
+    Validation  : x entries in oms_cage status = available, oms_package, oms_consignment, oms_package_document
+
+exec utGen.testpkg ('oms_click_collect');
+
+CREATE OR REPLACE PACKAGE ut_oms_click_collect
+IS
+PROCEDURE ut_setup;
+PROCEDURE ut_teardown;
+-- For each program to test...
+PROCEDURE ut_f_get_tote_label;
+PROCEDURE ut_p_load_store_loc;
+END ut_oms_click_collect;
+/
+
+CREATE OR REPLACE PACKAGE BODY ut_oms_click_collect
+IS
+    PROCEDURE ut_setup
+    IS
+    BEGIN
+    NULL;
+    END;
+    --
+    --
+    PROCEDURE ut_teardown
+    IS
+    BEGIN
+    NULL;
+    END;
+    --
+    --
+    PROCEDURE ut_F_GET_TOTE_LABEL
+    IS
+        against_this TABLE;
+        check_this TABLE;
+    BEGIN
+
+        against_this := NULL;
+        -- Execute test code
+        check_this :=  OMS_CLICK_COLLECT.F_GET_TOTE_LABEL(
+            STORE_ID => '' ,
+            I_NUM_CAGES => '',
+            I_CAGE_TYPE_ID => '',
+            ORDER_ID => '',
+            I_USER_ID => ''
+        );
+        -- Assert success
+        -- Compare the two values.
+        utAssert.eq (
+        'Test of F_GET_TOTE_LABEL',
+        check_this,
+        against_this
+        );
+        -- End of test
+    END ut_F_GET_TOTE_LABEL;
+    --
+    --
+    PROCEDURE ut_P_LOAD_STORE_LOC
+    IS
+    BEGIN
+    -- Define "control" operation
+    -- Execute test code
+    OMS_CLICK_COLLECT.P_LOAD_STORE_LOC (
+        I_FEED_ID => ''
+        );
+    -- Assert success
+    utAssert.this (
+    'Test of P_LOAD_STORE_LOC',
+    '<boolean expression>'
+    );
+    -- End of test
+    END ut_P_LOAD_STORE_LOC;
+    
+END ut_oms_click_collect;
+/
+
+tsihf-dev01
+
+
+
+80233358	oms_click_collect.f_get_tote_label	End	
+80233358	oms_click_collect.f_get_tote_label	Begin	I_cage_type_id : MXA1 | I_num_cages : 2 | I_user_id : 01216
+
+30/01/2017 10:28:10
+30/01/2017 10:26:06
+
+
+
+
+Whenever a change is detected, this tool automatically compiles and tests your application. If something goes wrong, the tool immediately notifies the developers so that they can fix the issue immediately.
+
+Automatically monitoring code quality and code coverage metrics,
+
+CI can also act as a communication tool, publishing a clear picture of the current state of development efforts.
+
+In essence, Continuous Integration is about reducing risk by providing faster feedback. First and foremost, it is designed to help identify and fix integration and regression issues faster, resulting in smoother, quicker delivery, and fewer bugs.
+
+Indeed, if you take automating the
+deployment process to its logical conclusion, you could push every build that passes
+the necessary automated tests into production. The practice of automatically deploying
+every successful build directly into production is generally known as Continuous
+Deployment.
+
+However, a pure Continuous Deployment approach is not always appropriate for everyone.
+For example, many users would not appreciate new versions falling into their
+laps several times a week, and prefer a more predictable (and transparent) release cycle.
+
+The notion of Continuous Delivery is a slight variation on the idea of Continuous Deployment
+that takes into account these considerations. With Continuous Delivery, any
+and every successful build that has passed all the relevant automated tests and quality
+gates can potentially be deployed into production via a fully automated one-click
+process, and be in the hands of the end-user within minutes. However, the process is
+not automatic: it is the business, rather than IT, that decides the best time to deliver
+the latest changes.
+
+But Continuous Integration is a mindset as much as a toolset. To get the most out of
+CI, a team needs to adopt a CI mentality. For example, your projects must have a
+reliable, repeatable, and automated build process, involving no human intervention.
+Fixing broken builds should take an absolute priority, and not be left to stagnate. The
+deployment process should be automated, with no manual steps involved. And since
+the trust you place in your CI server depends to a great extent on the quality of your
+tests, the team needs to place a very strong emphasis on high quality tests and testing
+practices.
+
+
+http://www.theserverlabs.com/blog/?p=435
+
+Maven Installation : 
+
+echo %JAVA_HOME%
+
+C:\Program Files\Java\jdk1.8.0_121
+
+add mvn directory to path variable C:\Saroj\Software\apache-maven-3.5.0\bin
+
+Path = D:\app\itsr\product\12.1.0\dbhome_1\bin;D:\app\itsr\product\11.2.0\client_2;D:\app\itsr\product\11.2.0\client_2\bin;c:\oracle\ora11gR2\bin;C:\ProgramData\Oracle\Java\javapath;C:\oraclexe\app\oracle\product\11.2.0\server\bin;C:\Program Files (x86)\Serena\vm\win32\bin;C:\Program Files (x86)\Serena\vm\common\bin\win32;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\;C:\Oracle\oclient\jdk\bin;C:\Program Files\OmniBack\bin\;C:\Go\bin;C:\Program Files (x86)\Microsoft SQL Server\100\Tools\Binn\;C:\Program Files\Microsoft SQL Server\100\Tools\Binn\;C:\Program Files\Microsoft SQL Server\100\DTS\Binn\;C:\Program Files\Git\cmd;C:\Saroj\Software\apache-maven-3.5.0\bin
+
+mvn -v
+
+mvn install:install-file -Dfile=C:\Saroj\Software\apache-maven-3.5.0\MyProjects\maven-utplsql-plugin-10-snapshot1.jar -DpomFile=C:\Saroj\Software\apache-maven-3.5.0\MyProjects\pom.xml
+
+mvn install:install-file -Dfile=C:\Saroj\Software\apache-maven-3.5.0\MyProjects\ojdbc6.jar -DgroupId=com.oracle -DartifactId=ojdbc6 -Dversion=9.0.2.0.0 -Dpackaging=jar -DgeneratePom=true
+
+
+

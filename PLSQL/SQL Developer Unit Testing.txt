@@ -1,0 +1,152 @@
+create user UNIT_TEST_REPOS identified by unit_test_repos default tablespace
+  users temporary tablespace temp;
+
+grant create session, create table, create procedure,
+  create sequence, create view, create public synonym,
+  drop public synonym to UNIT_TEST_REPOS;
+
+alter user UNIT_TEST_REPOS quota unlimited on users;
+
+sqlplus unit_test_repos/unit_test_repos@xe
+
+/* 
+drop table employees;
+drop procedure award_bonus;
+*/
+
+CREATE TABLE employees (employee_id NUMBER PRIMARY KEY, commission_pct NUMBER, salary NUMBER);
+INSERT INTO employees VALUES (1001, 0.2, 8400);
+INSERT INTO employees VALUES (1002, 0.25, 6000);
+INSERT INTO employees VALUES (1003, 0.3, 5000);
+-- Next employee is not in the Sales department, thus is not on commission.
+INSERT INTO employees VALUES (1004, null, 10000);
+commit;
+
+CREATE OR REPLACE
+PROCEDURE award_bonus (
+  emp_id        NUMBER, 
+  sales_amt    NUMBER) 
+AS
+  commission    REAL;
+  comm_missing  EXCEPTION;
+BEGIN
+  SELECT commission_pct INTO commission
+    FROM employees
+      WHERE employee_id = emp_id;
+ 
+  IF commission IS NULL THEN
+    RAISE comm_missing;
+  ELSE
+    UPDATE employees
+      SET salary = salary + sales_amt*commission
+        WHERE employee_id = emp_id;
+  END IF;
+END award_bonus;
+/
+
+Creating a Test
+
+Right-click the Tests node and select Create Test.
+Choose DB connection
+Choose OBJECT
+Give a Test Name  by default its the procedure name
+
+Create with single dummy representation: Creates a single (sometimes called "one-off") test case for which you must specify the input parameter values when you run the test. 
+
+Select/create implementation using lookup values: Generates multiple test cases using sets of input parameter values that you will specify. 
+
+Specify Startup >> You may want to create a copy of a table which would be modified by the test, any thing special you want to do before the test. Drop any intermediate table.
+
+    None: Perform no startup action. 
+    Row Copy: Copy rows from a specified table. You will be asked to specify the table and q query for selecting the rows. 
+    Table Copy: Copy a specified table. You will be asked to specify the table. For example, you might want to copy the EMPLOYEES table to a table named EMPLOYEES_ORIGINAL. 
+    User PL/SQL Code: Run a script. You will be asked to specify the script file.
+
+Specify Parameters >> For Parameter EMP_ID: 1001 and For Parameter SALES_AMT: 5000 and For Expected Result, leave the value as Success.
+Specify Validations >> click the plus (+) icon and select Query returning row(s). for the query replace the following statements.
+Specify one or more validation actions to perform after the test case is run, to check whether the desired result was returned
+SELECT * FROM employees
+  WHERE employee_id = 1001 AND salary = 9400
+
+Note that we could have instead specified the SELECT statement in this step using variable replacement (explained in Section 3.7), as follows:
+
+SELECT * FROM employees
+  WHERE employee_id = {EMP_ID} AND salary = 9400  
+
+However, in this specific example scenario, using variable substitution would provide no significant advantage.
+
+Specify Teardown >> select Table or Row Restore because you want to restore the original data values in the EMPLOYEES table before any data was modified by the unit test. When prompted, accept the supplied values for Target Table (EMPLOYEES) and Source Table (the name of the temporary table).
+
+Summary >> Displays the selected options. To make any changes, click Back. To perform the operation, click Finish
+
+    Create Unit Test Summary
+    -----------------------------------------------------------------
+    Connection: unit_test_repos@xe
+    Operation: UNIT_TEST_REPOS.AWARD_BONUS
+    -----------------------------------------------------------------
+    Test Name: AWARD_BONUS
+    Option: Create with single Dummy implementation.
+    -----------------------------------------------------------------
+    Startup Process: Table or Row Copy
+    -----------------------------------------------------------------
+    Expected Status: Success
+    -----------------------------------------------------------------
+    Process Validation: Query returning row(s)
+    -----------------------------------------------------------------
+    Teardown Process: Table or Row Restore
+    -----------------------------------------------------------------
+
+Different Types of validations
+
+    None: Perform no validation action. 
+
+    Boolean function: Validation succeeds if Boolean TRUE is returned by the specified function. 
+
+    Query returning no row(s): Validation succeeds if the specified query returns no rows. 
+
+    Query returning row(s): Validation succeeds if the specified query returns one or more rows that satisfy the specified query. 
+
+    Result Set Compare: Validation succeeds if the results returned by the specified query match the values that you specify. 
+
+    Table Compare: Validation succeeds if the target table (the table modified by the test case) is identical to the specified table. 
+
+    User PL/SQL Code: Validation succeeds if the specified script runs successfully.
+
+Different Type of Tear Down options
+
+    None: Perform no teardown action. 
+
+    Table Drop: Drop (delete) the specified table. 
+
+    Table Restore: Replace all rows in the specified target table (the table modified by the test case) with the rows in the specified source table. For example, you might want to replace the contents of EMPLOYEES (target) table with a source table named EMPLOYEES_ORIGINAL. 
+
+    User PL/SQL Code: Run a script. You will be asked to specify the script file
+
+Run the Unit Test : 
+In the Unit Test navigator, expand the Tests node and click the AWARD_BONUS test.
+On the Details tab, near the top-right corner, select the database connection for the schema that you used to create the AWARD_BONUS procedure.
+Click the Run Test (green arrowhead) icon in the Code Editor toolbar (or press F9).
+(if you later want to run the unit test with different specifications or data values, you can click the Edit (pencil) icon in the Code Editor toolbar at the top of the pane.)
+
+select * from ut_test where name='AWARD_BONUS';
+select * from ut_test_arguments where object_name='AWARD_BONUS';
+select * from ut_test_coverage_stats;
+select * from ut_test_impl;
+select * from ut_test_impl_arg_results;
+select * from ut_test_impl_arguments;
+select * from ut_test_impl_results;
+select * from ut_test_impl_val_results;
+select * from ut_test_results where name='AWARD_BONUS';;
+select * from ut_suite;
+select * from ut_test_coverage_stats;
+select * from ut_startups;
+select * from ut_teardowns;
+select * from ut_lib_startups;
+select * from ut_lib_teardowns;
+select * from ut_metadata;
+select * from ut_lookup_categories;
+select * from ut_lookup_datatypes;
+select * from ut_lookup_values;
+
+select * from user_col_comments where table_name like 'UT%' and comments is not null;
+

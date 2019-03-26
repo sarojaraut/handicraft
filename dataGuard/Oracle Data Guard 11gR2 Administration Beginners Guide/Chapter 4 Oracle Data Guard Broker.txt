@@ -1,0 +1,313 @@
+Chapter 4 Oracle Data Guard Broker
+
+The Data Guard broker consolidates the setup, upkeep, and monitoring of Data Guard configurations. The Data Guard broker when used with the Enterprise Manager becomes a powerful tool, offering configuration, monitoring, alerts, performance analysis, easy switchovers, and automatic failovers.
+
+The Data Guard Monitor (DMON) process and configuration file resides on the server side. However the Oracle Data Guard broker can be managed by DGMGRL or OEM from the client side as well.
+
+The Data Guard broker uses its own background process (DMON) on each primary and standby database and its own configuration file for interaction. The DMON process is started if you set the initialization parameter DG_BROKER_START to TRUE. This parameter is a dynamic parameter, and you can set it to TRUE or FALSE without any database bounce. To create and maintain the configuration files, you need to create a Data Guard configuration using either the Data Guard wizard from Cloud Control or you need to create it manually via the command-line DGMGRL.
+
+Data Guard broker features and benefits
+The Data Guard broker provides a graphical user interface and command-line interface for the simple management and automation of management and operational tasks across multiple databases in a Data Guard configuration. The broker monitors all of the systems within a single Data Guard configuration. You can perform all management operations locally or remotely through the broker's easy-to-use interfaces, Oracle Enterprise Manager Cloud Control/ Data Guard command-line interface called DGMGRL.
+
+Cloud Control integration
+Integration with Enterprise Manager Cloud Control simplifies the management of standby databases by using graphical consoles. All operations are controlled through navigation when managed with Cloud Control.
+
+Oracle Data Guard and RAC
+Oracle Data Guard and RAC are the two products that combine in such a way that they enhance or emphasize each other's qualities. RAC refers to node or instance failures; it provides automatic instance recovery from failures, such as node failures, instance crashes, or service lost failures, that do not affect data. It also provides scalability along with high availability. On the other hand, Data Guard provides data protection through the use of transactional images in primary and standby databases. Data Guard enables recovery from site disasters or data corruptions.
+
+Role transition with Data Guard broker
+To perform a switchover between a primary and standby database using SQL*Plus, you have to execute the commands step-by-step and check the synchronization and switchover status from both sites,  and the step-by-step commands from the primary and standby locations. The broker simplifies the performance of switchover and failover operations by gathering many tasks under a single command.
+
+Data Guard fast-start failover
+Fast-start failover was introduced to reduce unplanned downtime. Automatic database failover may occur because a primary database is down, due to designated health-check conditions, or due to the request of an application. 
+
+To sum up, the Data Guard broker can restart failed processes, manage CRS, automate switchovers/failovers, integrate with OEM so you can use GUI for management, and collect additional metrics for monitoring. On the other hand, one advantage of using SQL*Plus is that it requires you to have a full understanding of what's going on behind the scenes. 
+
+Data Guard Monitor process (DMON)
+The DMON is installed as part of the Oracle database software and manifests as a background component when enabled. The DMON process on the primary database is the owner of the configuration. DMON controls all the databases by using configuration files.
+
+Whenever a broker command is issued, the following steps will occur:
+1. The request will be processed on the primary database.
+2. The DMON process coordinates with all the standby databases of the Data Guard configuration.
+3. It then updates the changes, properties, and configuration in its configuration file.
+4. The DMON process contacts and updates the configuration file of each database in the setup.
+
+Configuration file
+The configuration file is a server-side component. This file holds the configuration information of all the databases that are part of the configuration, and the state of each database in the configuration. 
+
+Oracle Data Guard broker client-side components
+The Data Guard broker client-side components are the broker command-line interface (DGMGRL) and the Enterprise Manager Cloud Control client.
+
+DGMGRL utility
+Using DGMGRL, you can change property values directly by using the command-line utility. Instead of managing primary and standby databases with various SQL*Plus statements, the broker provides a single, unified interface.
+
+The Data Guard broker's parameter values must be changed by using broker interfaces. If the broker is active and you perform any parameter changes or role transitions by using SQL*Plus, it can create inconsistency in the configuration.
+
+Enterprise Manager Cloud Control client
+It's possible to perform all of the operations supported by DGMGRL by using the Enterprise Manager Cloud Control interface.
+
+Implementation of Oracle Data Guard broker
+initial setup of Data Guard broker
+1. Ensure that both the primary and standby databases are up and running as shown in the following query in both environments
+SQL> select db_unique_name,open_mode,database_role from v$database;
+
+2. Ensure that both the primary and standby databases are using server parameter files, so that the broker can form a healthy relationship between the broker properties and parameter values as follows:
+SQL> show parameter spfile
+
+3. This step is optional. Set the configuration file location parameters on both the primary and standby databases. The default location of the broker configuration file in Windows is $ORACLE_HOME/dbs in Unix and %ORACLE_HOME%\database.
+
+ALTER SYSTEM SET dg_broker_config_file1 = '\u01\app\oracle\broker_turkey01.dat' scope=both sid='*';
+ALTER SYSTEM SET dg_broker_config_file2 = '\u01\app\oracle\broker_turkey02.dat ' scope=both sid='*';
+
+4. Start the DMON process on both the primary and standby databases by setting the DG_BROKER_START parameter as follows:
+SQL> alter system set dg_broker_start=TRUE scope=both;
+System altered.
+ 
+5. For UNIX systems, you can now check the existence of the DMON process using the ps command as follows:
+$ps -ef|grep dmon
+
+6. In the alert logfile, you will see the following:
+DMON started with pid=35, OS id=27335
+
+7. If you monitor the DMON logfile, you'll see the error ORA-27037/ORA-16572 as shown in the following command line. This is expected behavior. These errors will be freed after creating the configuration using the broker utility DGMGRL:
+
+8. The configuration files will be created under the specified location or in the default directory automatically. The Data Guard broker will maintain two copies of its configuration files as follows:
+SQL> show parameter DG_BROKER_CONFIG_FILE
+
+9. Connect DGMGRL on the primary system and create the configuration as follows:
+[oracle@oracle-primary ~]$ dgmgrl
+DGMGRL> connect sys/free2go
+
+10. You will need to specify a configuration name and the unique name of the primary database. The configuration name can be anything, but the name of the primary
+database must be DB_UNIQUE_NAME.
+
+DGMGRL> CREATE CONFIGURATION 'PACKT' AS PRIMARY DATABASE IS 'turkey_un' CONNECT IDENTIFIER IS TURKEY;
+
+In the previous command, TURKEY_UN refers to DB_UNIQUE_NAME and TURKEY refers to Oracle Net Services name. The primary database will be added to the configuration and the metadata will be updated in the broker configuration file.
+
+11. Add a standby database to the Data Guard broker configuration as follows:
+
+DGMGRL> ADD DATABASE 'INDIA_UN' AS CONNECT IDENTIFIER IS 'INDIA';
+
+12. Enable the Data Guard broker configuration. After adding the standby database to the broker, the configuration will be disabled by default, as follows:
+DGMGRL> show configuration;
+DGMGRL> enable configuration;
+
+Connecting to Data Guard broker
+To connect from either a primary or a standby database server with OS authentication enabled, you can connect using / as follows:
+[oracle@oracle-primary ~]$ dgmgrl /
+
+Connect using database user SYS login credentials as follows:
+[oracle@oracle-primary]$ dgmgrl sys/free2go
+
+Try connecting it from the primary to the standby database, and vice versa, using the Oracle Net Services name as follows:
+[oracle@oracle-stby ~]$ dgmgrl sys/free2go@turkey
+
+Basic monitoring with Data Guard broker
+
+1. Check the configuration status with the following command. It provides the overall health status of the Data Guard configuration. If the Configuration Status resulted to SUCCESS, it means that the Data Guard configuration is working properly. Output can also be WARNING or ERROR as follows:
+DGMGRL> show configuration;
+
+2. Check the database status to find out if there are any warnings or errors in the databases of the Data Guard configuration. Use the following command from the DGMGRL utility:
+DGMGRL> show database turkey_un;
+
+3. Check the redo transport status. LogXptStatus is the database property that returns an output containing the status of the redo transport services to each of the enabled standby databases. This property is applicable to the primary database as shown in the following command line:
+DGMGRL> show database turkey_un 'LogXptStatus';
+
+4. Check Status Report. This is the database property that returns a list of errors or warnings about the status of the database. In RAC databases, it includes the status of all the running instances as follows:
+DGMGRL> show database turkey_un 'StatusReport';
+
+5. Check Inconsistent Properties. This will return an output that shows all the database properties whose values are contained in the broker configuration file and are inconsistent with the values in the database.
+
+DGMGRL> show database turkey_un InconsistentProperties;
+
+6. Check the TopWaitEvents property that specifies the top five events that waited for the most amount of time in the specified instance as follows:
+DGMGRL> show instance 'TURKEY' 'TopWaitEvents';
+
+7. Gather the same information using SQL*Plus as from the v$system_event view follows:
+SQL> select event,TIME_WAITED from v$system_event order by time_waited desc;
+
+8. Check the SendQEntries database property. The following output shows all the logfiles of the primary database that were not successfully archived to standby databases as shown in the following command line:
+DGMGRL> show database turkey_un 'SendQEntries';
+
+9. Check the RecvQEntries database property that reports on all the logfiles that were received by the standby database but not yet applied. If there are no rows, it means that all the logfiles have been applied as follows:
+DGMGRL> show database 'INDIA_UN' 'RecvQEntries';
+
+As we have seen, after the successful creation of the Data Guard broker configuration, the configuration will be in disabled status, and we have to enable it in order to monitor all the databases of the configuration. We must enable the configuration only from the primary database. After the configuration has been enabled from primary, it will communicate this information to standby and the Data Guard broker instance Slave Process (NSV0). We can also disable it later if we don't want the broker to manage the Data Guard configuration.
+
+Disabling broker configuration
+
+Disable the configuration as follows:
+DGMGRL> disable configuration;
+
+Check the current configuration status as follows:
+DGMGRL> show configuration;
+
+Using DGMGRL, it's possible to disable or enable the standby databases of a Data Guard configuration in order to stop broker management for that database.
+
+Disable the database from the configuration as follows:
+DGMGRL> disable database 'INDIA_UN';
+
+Physical standby information still exists in the configuration, but the database will be in a DISABLED state and won't be monitored by the broker. However, the configuration status will be SUCCESS.
+
+You can re-enable the database to the broker configuration as follows:
+DGMGRL> enable database 'INDIA_UN';
+
+After the creation of the Data Guard configuration using DGMGRL, you can edit the configuration or single database properties. The following command is an example of a configuration change that changes the fast-start failover threshold value to 60 seconds (from old value 30 seconds). This command can be run either from the primary or the standby database:
+DGMGRL> show configuration 'FastStartFailoverThreshold'; 
+	FastStartFailoverThreshold = '30'
+
+DGMGRL> edit configuration set property FastStartFailoverThreshold=60;
+
+These changes will be updated in all the configuration files.
+On the other hand, database property changes are specific to either the primary or a standby database. It won't perform changes in the rest of the configuration.
+
+DGMGRL> edit database 'INDIA_UN' SET PROPERTY LogArchiveTrace=10;
+DGMGRL> show database 'INDIA_UN' 'LogArchiveTrace';
+
+more examples on property changes
+
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET PROPERTY 'LogArchiveFormat'='log_%t_%s_%r_%d.arc';
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET PROPERTY LogXptMode=SYNC;
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET PROPERTY LogShipping=OFF;
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET PROPERTY NetTimeout=30;
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET PROPERTY 'ReopenSecs'=400;
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET PROPERTY ArchiveLagTarget=800;
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET PROPERTY 'DbFileNameConvert' ='/u01/app/oracle/oradata/orcl/, /u02/app/oracle/oradata/orcl/';
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET PROPERTY DelayMins='540';
+
+Changing the database name - 135
+
+Prior to changing the database name, disable the database from the configuration as follows:
+DGMGRL> show database 'INDIA_UN';
+DGMGRL> disable database 'INDIA_UN';
+
+Change the DB_UNIQUE_NAME value of the standby database as follows:
+SQL> alter system set db_unique_name='INDIA_NEW' scope=spfile;
+Now shut down and start up the database
+Rename the database name in the Data Guard broker as follows:
+DGMGRL> edit database 'INDIA_UN' rename to 'INDIA_NEW';
+Enable the database as follows:
+DGMGRL> enable database 'INDIA_NEW';
+
+Changing the state of the database
+In order to perform state changes in databases, you must use Data Guard broker interfaces when these are managed with the databases. For example, use the following command in order to turn off redo transport to all remote destinations on the primary database:
+DGMGRL> edit database 'TURKEY_UN' SET STATE="LOG-TRANSPORT-OFF";
+
+To stop and start redo transport services to specific standby databases, use the following command:
+DGMGRL> edit database 'INDIA_UN' SET PROPERTY 'LogShipping'='OFF';
+DGMGRL> edit database 'INDIA_UN' SET PROPERTY 'LogShipping'='ON';
+DGMGRL> SHOW DATABASE 'INDIA_UN' 'LogShipping';
+
+more examples on state changes
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET STATE='READ-ONLY';
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET STATE='OFFLINE';
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET STATE='APPLY-OFF';
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET STATE='TRANSPORT-OFF';
+DGMGRL> EDIT DATABASE 'INDIA_UN' SET STATE='ONLINE' WITH APPLY INSTANCE='INDIA_UN2';
+
+Troubleshooting Data Guard broker
+We first consider gathering diagnostic information. We must refer to the alert logfile in the Automatic Diagnostic Repository destination starting from Oracle 11g. 
+
+The LOG_ARCHIVE_TRACE parameter is used to trace redo transport and apply services on both the primary and standby databases. By default, the parameter is disabled and its value is 0. The Data Guard tracing levels.
+
+ORA-16797: database is not using a server parameter file
+SPFILE is mandatory for communicating with remote destinations to fetch required information from the broker configuration file and server parameter files. This issue can eventually be identified from DGMGRL by retrieving configuration information as follows:
+DGMGRL> show configuration;
+..
+..
+Error: ORA-16797: database is not using a server parameter file
+..
+..
+
+Fix
+SQL> create spfile from pfile;
+File created.
+SQL> shutdown immediate
+SQL> startup mount
+
+ORA-10458:standby database requires recovery
+
+For a database to open, it must have consistency over all the data files. This can occur in case the recovery has been terminated in the previous sessions or the standby control file SCN is has not been synchronized with the data files as shown in the following query:
+
+Either start Redo Apply from DGMGRL or bounce DMON so that DMON will initiate MRP to perform a recovery. Once enough number of archived logs are applied to provide consistency, you can open the database.
+
+Oracle Data Guard fast-start failover
+In Data Guard configurations, in case of any disasters in primary database systems or any corruptions or errors in the database that are not recoverable quickly, a failover can be performed manually on the standby database to convert it to a primary database and use it for production services. Another option is to automate the failover using the fast-start failover feature. A fast-start failover can be configured or managed either by DGMGRLor grid control.
+
+Fast-start failover will be invoked automatically if the primary site is unavailable. Also, it'll recover the standby database, perform the failover, and reinstate the old primary database if possible.
+
+An observer is required to configure a fast-start failover. It should be configured in a separate location rather than on the primary and standby databases. It acts as a client and monitors both the primary and standby databases at all times. We must install either the Oracle Client Administrator software or the full Oracle Database software to the observer host.
+
+Configuring fast-start failover
+
+1. Check if Data Guard is in the Maximum Performance(11gRx) or Maximum Availability mode using the following command:
+DGMGRL> show configuration
+...
+Protection Mode: MaxPerformance
+.....
+2. If your configuration is in the Maximum Availability mode, make sure that LogXptMode is set to synchronous redo transport.
+
+3. Make sure you have configured a flashback database and fast recovery area. This is applicable on both the primary and standby databases
+SQL> select flashback_on from v$database;
+
+4. We must set some parameters before turning on flashback. These parameters are DB_FLASHBACK_RETENTION_TARGET, DB_RECOVERY_FILE_DEST_SIZE, and DB_RECOVERY_FILE_DEST.
+
+SQL> ALTER SYSTEM SET DB_FLASHBACK_RETENTION_TARGET=5760;
+
+SQL> ALTER SYSTEM SET DB_RECOVERY_FILE_DEST_SIZE=20G;
+
+SQL> ALTER SYSTEM SET DB_RECOVERY_FILE_DEST='/data/FLASHBACK';
+
+SQL> ALTER DATABASE FLASHBACK ON;
+
+5. In the Oracle Net Services configuration, the listener.ora file needs to include a service with GLOBAL_DB_NAME , as follows, to enable the broker to automatically start the databases in the case of a switchover. This configuration is applicable on both servers. To set up the configuration, shut down the listener, make the changes, and restart the listener as follows:
+
+(SID_LIST =
+(SID_DESC =
+(SID_NAME = PLSExtProc)
+(ORACLE_HOME = /u01/home/oracle/product/11.2.0/db_1)
+(PROGRAM = extproc)
+)
+(SID_DESC =
+(GLOBAL_DBNAME = turkey_un_DGMGRL)
+(SID_NAME = TURKEY)
+(ORACLE_HOME = /u01/home/oracle/product/11.2.0/db_1)
+)
+)
+
+6. Setting the FastStartFailoverTarget value is required if there are multiple standby databases available in the Data Guard configuration. Use the following
+commands for the same:
+DGMGRL> edit database 'TURKEY_UN' SET PROPERTY FastStartFailoverTarget='INDIA_UN';
+
+DGMGRL> edit database 'INDIA_UN' SET PROPERTY FastStartFailoverTarget='TURKEY_UN';
+
+7. FSFO has two configuration properties. The FastStartFailoverLagLimit property refers to how much data loss is acceptable in terms of seconds. The FastStartFailoverThreshold property refers to the number of seconds for which the configuration will wait before initiating the failover process as follows:
+
+DGMGRL> EDIT CONFIGURATION SET PROPERTY FastStartFailoverLagLimit=30;
+
+DGMGRL> EDIT CONFIGURATION SET PROPERTY FastStartFailoverThreshold=30;
+
+8. Enable fast-start failover as shown in the following command:
+DGMGRL> enable fast_start failover;
+
+9. Assuming Oracle software is installed on the observer host, start observer. The following command must be issued on the observer server:
+$dgmgrl -logfile /tmp/obsvr.log sys/free2go@TURKEY "start observer" &
+
+10. Verify the FSFO configuration as follows:
+DGMGRL> SHOW FAST_START FAILOVER;
+
+SQL> select DB_UNIQUE_NAME, FS_FAILOVER_STATUS, FS_FAILOVER_CURRENT_TARGET from v$database;
+
+To make the observer process highly available and running all the time, we may need to bounce the observer process when needed. So we can prepare a script and run it as a job regularly. It can be scheduled as an OS-level job. The following shell script example can be used on Linux/Unix systems:
+
+# start and Stop Observer
+export ORACLE_BASE=/u02/app/oracle
+export ORACLE_HOME=/u01/home/oracle/product/11.2.0/db_1
+export PATH=$ORACLE_HOME/bin:$PATH
+dgmgrl << eof
+connect sys/free2go@turkey
+STOP OBSERVER;
+START OBSERVER;
+eof
+

@@ -1,0 +1,9 @@
+input.valError,
+textarea.valError {
+  background-color: #FE642E;
+}
+
+span.valError {
+  margin-left: 5px;
+  color: #FE642E;
+}

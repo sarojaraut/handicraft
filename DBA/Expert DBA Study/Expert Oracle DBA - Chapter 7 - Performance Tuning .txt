@@ -1,0 +1,663 @@
+Part 7 - Performance Tuning 
+Performance tuning focuses primarily on writing efficient SQL, allocating appropriate computing resources, and analyzing wait events and contention in the system. Oracle provides several options to aid performance, such as partitioning large tables, using materialized views, storing plan outlines, and many others. Performance tuning isn't a cut-and-dried subject with clear prescriptions and rules for every type of problem you may face. This is one area where your technical knowledge must be used together with constant experimentation and observation. 
+
+You can automate most of the mundane tasks such as backup, export and import, and data loading葉he simple, everyday tasks that can take up so much of your valuable time. Performance tuning is one area that requires a lot of detective work on the part of application programmers and DBAs to see why some process is running slower than expected. 
+Oracle suggests a specific design approach with the following steps:
+
+Design the application correctly.
+Tune the application SQL code.
+Tune memory.
+Tune I/O.
+Tune contention and other issues.
+
+A user's SQL statement goes through the parsing, optimizing, and execution stages. If the SQL statement is a query, data has to be retrieved, so there's an additional fetch stage before the SQL statement processing is complete.
+
+Parsing
+Parsing primarily consists of checking the syntax and semantics of the SQL statements. The end product of the parse stage of query compilation is the creation of the parse tree, which represents the query's structure.
+The SQL statement is decomposed into a relational algebra query that's analyzed to see whether it's syntactically correct. 
+The query then undergoes semantic checking. Ensure that the tables and the individual columns that are referenced in the query do exist, as well as all the object privileges. In addition. 
+Once the parse tree passes all the syntactic and semantic checks, it's considered a valid parse tree, and it's sent to the logical query plan generation stage. 
+All these operations take place in the library cache portion of the SGA.
+
+Optimization
+During the optimization phase, Oracle uses its optimizer葉he Cost-Based Optimizer (CBO)葉o choose the best access method for retrieving data for the tables and indexes referred to in the query. Using statistics that you provide and any hints specified in the SQL queries, the CBO produces an optimal execution plan for the SQL statement
+
+Query Rewrite Phase
+In this phase, the parse tree is converted into an abstract logical query plan. This is an initial pass at an actual query plan, and it contains only a general algebraic reformulation of the initial query. The various nodes and branches of the parse tree are replaced by operators of relational algebra.
+
+Execution Plan Generation Phase
+During this phase, Oracle transforms the logical query plan into a physical query plan.
+The physical query or execution plan takes into account the following factors:
+
+The various operations (for example, joins) to be performed during the query
+The order in which the operations are performed
+The algorithm to be used for performing each operation
+The best way to retrieve data from disk or memory
+The best way to pass data from one operation to another during the query
+
+Query Execution
+During the final stage of query processing, the optimized query (the physical query plan that has been selected) is executed. If it's a SELECT statement, the rows are returned to the user. If it's an INSERT, UPDATE, or DELETE statement, the rows are modified. The SQL execution engine takes the execution plan provided by the optimization phase and executes it.
+
+Of the three steps involved in SQL statement processing, the optimization process is the crucial one because it determines the all-important question of how fast your data will be retrieved. Understanding how the optimizer works is at the heart of query optimization.
+
+Query Optimization and the Oracle CBO
+The CBO uses statistics on tables and indexes, the order of tables and columns in the SQL statements, available indexes, and any user-supplied access hints to pick the most efficient way to access them. The most efficient way, according to the CBO, is the least costly access method, cost being defined in terms of the I/O and the CPU expended in retrieving the rows. 
+
+Providing Statistics to the Optimizer
+By default, the database itself automatically collects the necessary optimizer statistics. Every night, the database schedules a statistics collection job during the maintenance window of the Oracle Scheduler. The maintenance window, by default, extends from 10 p.m. to 6 a.m. on weekdays and all weekend as well. The job is named GATHER_STATS_JOB and runs by default in every Oracle Database 11g database. 
+
+
+The necessary statistics are as follows:
+The number of rows in a table
+The number of rows per database block
+The average row length
+The total number of database blocks in a table
+The number of levels in each index
+The number of leaf blocks in each index
+The number of distinct values in each column of a table
+Data distribution histograms
+The number of distinct index keys
+Cardinality (the number of columns with similar values for each column)
+The minimum and maximum values for each column
+System statistics, which include I/O characteristics of your system; and CPU statistics, which include CPU speed and other related statistics
+
+The DBA_TAB_STATISTICS table shows optimizer statistics for all the tables in your database. You can also see column statistics by querying the DBA_TAB_COL_STATISTICS view, as shown here:
+SELECT column_name, num_distinct FROM  dba_tab_col_statistics WHERE table_name='PERSONNEL';
+
+Setting the Optimizer Mode
+Oracle optimizes the throughput of queries by default. Optimizing throughput means using the fewest resources to process the entire SQL statement. You can also ask Oracle to optimize the response time, which usually means using the fewest resources to get the first (or first n) row(s). For batch jobs, response time for individual SQL statements is less important than the total time it takes to complete the entire operation. For interactive applications, response time is more critical.
+
+ALL_ROWS: This is the default optimizer mode, and it directs Oracle to use the CBO whether you have statistics on any of the tables in a query
+FIRST_ROWS_n: This optimizing mode uses cost optimization regardless of the availability of statistics. The goal is the fastest response time for the first n number of rows of output, where n can take the value of 10, 100, or 1000.
+FIRST_ROWS: Note that the FIRST_ROWS mode is retained for backward compatibility purposes only, with the FIRST_ROWS_n mode being the latest version of this model. The FIRST_ROWS mode uses cost optimization and certain heuristics (rules of thumb), regardless of whether you have statistics or not. 
+
+ALTER SESSION SET optimizer_mode = first_rows_10;
+
+EXECUTE DBMS_STATS.GATHER_SCHEMA_STATS (ownname => 'hr');
+EXECUTE DBMS_STATS.GATHER_TABLE_STATS ('hr','employees');
+EXECUTE dbms_stats.gather_database_stats (-
+   > ESTIMATE_PERCENT => NULL, -
+   > METHOD_OPT => 'FOR ALL COLUMNS SIZE AUTO', -
+   > GRANULARITY => 'ALL', -
+   > CASCADE => 'TRUE',-
+   > OPTIONS => 'GATHER AUTO');
+
+The ESTIMATE_PERCENT attribute refers to the percentage of rows that should be used to estimate the statistics. I chose null as the value. Null here, contrary to intuition, means that Oracle collects statistics based on all rows in a table. This is the same as using the COMPUTE STATISTICS option in the traditional ANALYZE command. The default for this attribute is to let Oracle estimate the sample size for each object, using the DBMS_STATS.AUTO_SAMPLE_SIZE procedure.
+
+You can use the METHOD_OPT attribute to specify several things, including whether histograms should be collected. Here, I chose FOR ALL COLUMNS SIZE AUTO, which is the default value for this attribute.
+
+The GRANULARITY attribute applies only to tables. The ALL value collects statistics for subpartitions, partitions, and global statistics for all tables.
+
+The CASCADE=>YES option specifies that statistics be gathered on all indexes, along with the table statistics.
+
+The OPTIONS attribute is critical. The most important values for this attribute are as follows:
+
+GATHER gathers statistics for all objects, regardless of whether they have stale or fresh statistics.
+GATHER AUTO collects statistics for only those objects that Oracle deems necessary.
+GATHER EMPTY collects statistics only for objects without statistics.
+GATHER STALE results in collection of statistics for only stale objects, the determination as to the object staleness being made by checking the DBA_TAB_MODIFICATIONS view.
+
+Deferred Statistics Publishing
+By default, the database publishes the statistics it collects for immediate use by the optimizer. However, there may be times when you don't want this to happen. Instead, you may wish to first test the statistics and release them for public use only if you're satisfied with them. Oracle lets you save new statistics collected by the database as pending statistics, which you can publish or not ultimately, based on your testing of the statistics. Current or published statistics are meant to be used by the optimizer, and pending or deferred statistics are private statistics, which are kept from the optimizer.
+
+Determining and Setting the Status of the Statistics
+Execute the DBMS_STATS.GET_PREFS procedure to determine the publishing status of statistics in your database:
+
+select dbms_stats.get_prefs('PUBLISH') publish from dual;  -- The value TRUE indicates that the database automatically publishes all statistics after it collects them. This is the default behavior of the database. 
+
+Extended Statistics
+
+The statistics that the database collects are sometimes unrepresentative of the true data. Oracle provides the capability for collecting extended statistics under some circumstances to mitigate the problems in statistics collection. Extended statistics include the collection of multicolumn statistics for groups of columns and expression statistics that collect statistics on function-based columns.
+
+Multicolumn Statistics
+When Oracle collects statistics on a table, it estimates the selectivity of each column separately, even when two or more columns may be closely related. Oracle assumes that the selectivity estimates of the individual columns are independent of each other and simply multiplies the independent predicates' selectivity to figure out selectivity of the group of predicates. This approach leads to an underestimation of the true selectivity of the group of columns. You can collect statistics for a group of columns to avoid this underestimation.
+
+
+ In the SH.CUSTOMERS table, the CUST_ STATE_PROVINCE and the COUNTRY_ID columns are correlated, with the former column determining the value of the latter column. Here's a query that shows the relationship between the two columns:
+SQL> SELECT count(*) FROM sh.customers WHERE cust_state_province = 'CA';
+COUNT(*)
+----------
+    3341
+
+SQL> SELECT count(*) FROM customers WHERE cust_state_province = 'CA' AND country_id=52790;
+COUNT(*)
+----------
+    3341
+
+Obviously, the same query with a different value for the COUNTRY_ID column will return a different count (most likely zero, since CA stands for California and it's unlikely that a city of the same name is present in other countries). 
+
+Creating Column Groups
+You create a column group by executing the CREATE_EXTENDED_STATS function, as shown in this example:
+
+
+declare
+  cg_name varchar2(30);
+begin
+  cg_name := dbms_stats.create_extended_stats(null,'customers', '(cust_state_province,country_id)');
+end;
+/
+
+SELECT extension_name, extension FROM dba_stat_extensions WHERE table_name='CUSTOMERS';
+
+exec dbms_stats.drop_extended_stats('sh','customers',' (cust_state_province, country_id)');
+
+Collecting Statistics for Column Groups
+You can execute the GATHER_TABLE_STATS procedure with the METHOD_OPT argument set to the value for all columns . . . to collect statistics for column groups. By adding the FOR COLUMNS clause, you can have the database create the new column group as well as collect statistics for it, all in one step, as shown here:
+
+SQL> exec dbms_Stats.gather_table_stats(
+     ownname=>null,-
+     tabname=>'customers',-
+     method_opt=>'for all columns size skewonly,-
+     for columns (cust_state_province,country_id) size skewonly');
+
+Expression Statistics
+If you apply a function to a column, the column value changes. For example, the LOWER function in the following example returns a lowercase string:
+
+
+SQL> SELECT
+     dbms_stats.create_extended_stats(null,'customers',
+     '(lower(cust_state_province))')
+     FROM dual;
+Alternatively, you can execute the GATHER_TABLE_STATS function to create expression statistics:
+
+
+SQL> exec dbms_stats.gather_table_stats(null,'customers',
+     method_opt=>'for all columns size skewonly,
+     for columns (lower(cust_state_province)) size skewonly');
+
+The Cost Model of the Oracle Optimizer
+The cost model of the optimizer takes into account both I/O cost and CPU cost, both in units of time.
+For the CBO to compute the cost of alternative paths accurately, it must have access to accurate system statistics. These statistics, which include items such as I/O seek time, I/O transfer time, and CPU speed, tell the optimizer how fast the system I/O and CPU perform.
+
+you need to collect operating system statistics with the GATHER_SYSTEM_STATS procedure. When you do this, Oracle populates the SYS.AUX_STATS$ table with various operating system statistics, such as CPU and I/O performance. Gathering system statistics at regular intervals is critical, because the Oracle CBO uses these statistics as the basis of its cost computations for various queries. 
+
+You can run the GATHER_SYSTEM_STATS procedure in different modes by passing values to the GATHERING_MODE parameter. There's a no-workload mode you can specify to quickly capture the I/O system characteristics. You can also specify a workload-specific mode by using the INTERVAL, START, and STOP values for the GATHERING_MODE parameter. Here's a brief explanation of the different values you can specify for the GATHERING_MODE parameter:
+
+No-workload mode: By using the NOWORKLOAD keyword, you can collect certain system statistics that mostly pertain to general I/O characteristics of your system, such as I/O seek time (IOSEEKTIM) and I/O transfer speed (IOTFRSPEED). You should ideally run the GATHER_SYSTEM_STATS procedure in no-workload mode right after you create a new database. The procedure takes only a few minutes to complete and is suitable for all types of workloads.
+
+Note- If you collect both workload and no-workload statistics, the optimizer will use the workload statistics.
+
+Workload mode: To collect representative statistics such as CPU and I/O performance, you must collect system statistics during a specified interval that represents a typical workload for your instance. You can use the INTERVAL keyword to specify statistics collection for a certain interval of time. You can alternatively use the START and STOP keywords to collect system statistics for a certain length of time.
+
+Here's what the various system statistics I mentioned stand for:
+
+IOTFRSPEED: I/O transfer speed (bytes per millisecond)
+IOSEEKTIM: Seek time + latency time + operating system overhead time (milliseconds)
+SREADTIM: Average time to (randomly) read a single block (milliseconds)
+MREADTIM: Average time to (sequentially) read an MBRC block at once (milliseconds)
+CPUSPEED: Average number of CPU cycles captured for the workload (statistics collected using the INTERVAL or START and STOP options)
+CPUSPEEDNW: Average number of CPU cycles captured for the no-workload mode (statistics collected using NOWORKLOAD option)
+MBR: Average multiblock read count for sequential read, in blocks
+MAXTHR: Maximum I/O system throughput (bytes/second)
+SLAVETHR: Average slave I/O throughput (bytes/second)
+EXECUTE dbms_stats.gather_system_stats('start');
+Do some activity
+EXECUTE dbms_stats.gather_system_stats('stop');
+SELECT * FROM sys.aux_stats$;
+
+Collecting Statistics on Dictionary Objects
+You should collect optimizer statistics on data dictionary tables to maximize performance. The two types of dictionary tables are fixed and real. You can't change or delete dynamic performance tables, which means they are fixed. Real dictionary tables belong to schemas such as sys and system.
+
+You can use the DBMS_STATS_GATHER_DATABASE_STATS procedure and set the GATHER_SYS argument to TRUE (the default is FALSE).
+You can use the GATHER_FIXED_OBJECTS_STATS procedure of the DBMS_STATS package, as shown here:
+
+EXECUTE DBMS_STATS.GATHER_FIXED_OBJECTS_STATS;
+
+Writing Efficient SQL
+One of the trickiest and most satisfying aspects of a DBA's job is helping to improve the quality of SQL code in the application. 
+
+Efficient WHERE Clauses
+You can follow some simple principles to ensure that the structure of your SQL statements is not inherently inefficient.
+
+It isn't always obvious why Oracle doesn't use an index. For example, Oracle may not use an index because the indexed columns are part of an IN list, and the consequent transformation prevents the use of an index. or For example, if a table has 1,000 rows placed in 200 blocks, and you perform a full table scan assuming that the database has set the DB_FILE_MULTIBLOCK_READ_COUNT to 8, you'll incur a total of 25 I/Os to read in the entire table. If your index has a low selectivity, most of the index has to be read first. If your index has 40 leaf blocks and you have to read 90 percent of them to get the indexed data first, your I/O is already at 32. On top of this, you have to incur additional I/O to read the table values. However, a full table scan costs you only 25 I/Os, making that a far more efficient choice than using the index. Be aware that the mere existence of an index on a column doesn't guarantee that it will be used all the time.
+
+Using SQL Functions
+If you use SQL functions in the WHERE clause (for example, the SUBSTR, INSTR, TO_DATE, and TO_NUMBER functions), the Oracle optimizer will ignore the index on that column. Make sure you use a function-based index if you must use a SQL function in the WHERE clause.
+
+Using the Right Joins
+Most of your SQL statements will involve multitable joins. Often, improper table-joining strategies doom a query. Try to use equi join, manitain proper join order and use proper filter criteria.
+
+Using the CASE Statement
+When you need to calculate multiple aggregates from the same table, avoid writing a separate query for each aggregate. With separate queries, Oracle has to read the entire table for each query. It's more efficient to use the CASE statement in this case, as it enables you to compute multiple aggregates from the table with just a single read of the table.
+
+Efficient Subquery Execution
+Subqueries perform better when you use IN rather than EXISTS. Oracle recommends using the IN clause if the subquery has the selective WHERE clause. If the parent query contains the selective WHERE clause, use the EXISTS clause rather than the IN clause.
+
+Using WHERE Instead of HAVING
+Wherever possible, use the WHERE clause instead of the HAVING clause. The WHERE clause restricts the number of rows retrieved at the outset. The HAVING clause forces the retrieval of a lot more rows than necessary. It then also incurs the additional overhead of sorting and summing.
+
+Minimizing Table Lookups
+One of the primary mottos of query writing is "Visit the data as few times as possible." This means getting rid of SQL that repeatedly accesses a table for different column values. Use multicolumn updates instead.
+
+
+Using Hints to Influence the Execution Plan
+ALL_ROWS: The ALL_ROWS hint instructs Oracle to optimize throughput (that is, minimize total cost), not optimize the response time of the statement.
+FIRST_ROWS(n): The FIRST_ROWS(n) hint dictates that Oracle return the first n rows quickly. Low response time is the goal of this hint.
+
+ Note  When you specify ALL_ROWS or the FIRST_ROWS(n) hint, it overrides the current value of the OPTIMIZER_MODE parameter, if it's different from that specified by the hint.
+ 
+FULL: The FULL hint requires that a full scan be done on the table, ignoring any indexes that may be present. You would want to do this when you have reason to believe that using an index in this case will be inefficient compared to a full table scan. To force Oracle to do a full table scan, you use the FULL hint.
+ORDERED: This hint forces the join order for the tables in the query.
+INDEX: This hint forces the use of an index scan, even if the optimizer was going to ignore the indexes and do a full table scan for some reason.
+INDEX_FFS: An index fast full scan (INDEX_FFS) hint forces a fast full scan of an index, just as if you did a full table scan that scans several blocks at a time. INDEX_FFS scans all the blocks in an index using multiblock I/O, the size of which is determined by the DB_FILE_MULTIBLOCK_ READ_COUNT parameter. You can also parallelize an INDEX_FFS hint, and it's generally preferable to a full table scan.
+
+Selecting the Best Join Method
+Choose a join method based on how many rows you expect to be returned from the join. The optimizer generally tries to choose the ideal join condition, but it may not do so for various reasons.
+
+Nested Loops
+If you're joining small subsets of data, the nested loop (NL) method is ideal. If you're returning fewer than, say, 10,000 rows, the NL join may be the right join method. If the optimizer is using hash joins or full table scans, force it to use the NL join method by using the following hint:
+SELECT /*+ USE_NL (TableA, TableB) */
+
+Hash Join
+If the join will produce large subsets of data or a substantial proportion of a table is going to be joined, use the hash join hint if the optimizer indicates it isn't going to use it:
+SELECT /* USE_HASH */
+
+Merge Join
+If the tables in the join are being joined with an inequality condition (not an equi join), the merge join method is ideal:
+SELECT /*+ USE_MERGE (TableA, TableB) */
+
+Using Bitmap Join Indexes
+Bitmap join indexes (BJIs) prestore the results of a join between two tables in an index, and thus do away with the need for an expensive runtime join operation. BJIs are specially designed for data warehouse star schemas, but any application can use them as long as there is a primary key/foreign key relationship between the two tables.
+
+Say you expect to use the following SQL statement frequently in your application:
+
+SELECT SUM((s.quantity)
+FROM sales s, customers c
+WHERE s.customer_id = c.customer_id
+AND c.city = 'DALLAS';
+
+In this example, the sales table is the fact table with all the details about product sales, and the customers table is a dimension table with information about your customers. The column customer_id acts as the primary key for the customers table and as the foreign key for the sales table, so the table meets the requirement for creating a BJI.
+
+The following statement creates the BJI. Notice line 2, where you're specifying the index on the city column (c.city). This is how you get the join information to place in the new BJI. Because the sales table is partitioned, you use the clause LOCAL in line 5 to create a locally partitioned index:
+
+SQL> CREATE BITMAP INDEX cust_city_BJI
+  2 ON city (c.city)
+  3 FROM sales s, customers c
+  4 WHERE c.cust_id = s.cust_id
+  5 LOCAL
+  6*TABLESPACE users;
+
+SQL> SELECT index_name, index_type, join_index
+  2  FROM dba_indexes
+  3 *WHERE table_name='SALES';
+
+Being a bitmap index, the new BJI uses space extremely efficiently. However, the real benefit of using this index is that when you need to find out the sales for a given city, you don't need to join the sales and customers tables. You only need to use the sales table and the new BJI that holds the join information already.
+
+Indexing Strategy
+When to Index
+You need to index tables only if you think your queries will be selecting a small portion of the table. If your query is retrieving rows that are greater than 10 or 15 percent of the total rows in the table, you may not need an index.
+If your system involves a large number of inserts and deletes, understand that too many indexes may be detrimental, because each DML causes changes in both the table and its indexes. 
+
+What to Index
+Your goal should be to use as few indexes as possible to meet your performance criteria. There's a price to be paid for having too many indexes,
+
+Index columns with high selectivity. Selectivity here means the percentage of rows in a table with a certain value. High selectivity, as you learned earlier in this chapter, means that there are few rows with identical values.
+
+Index all important foreign keys.
+Index all predicate columns.
+Index columns used in table joins.
+Try to avoid indexing columns that consist of long character strings, unless you're using the Oracle Text feature.
+
+Using Appropriate Index Types
+Bitmap Indexes
+Bitmap indexes are ideal for column data that has a low cardinality, which means that the indexed column has few distinct values. The index is compact in size and performs better than the B-tree index for these types of data. However, the bitmap index is going to cause some problems if a lot of DML is going on in the column being indexed.
+
+Index-Organized Tables
+The traditional Oracle tables are called heap-organized tables, where data is stored in the order in which it is inserted. Indexes enable fast access to the rows. However, indexes also mean more storage and the need for accessing both the index and the table rows for most queries (unless the query can be selected just by the indexed columns themselves). IOTs place all the table data in its primary key index, thus eliminating the need for a separate index.
+
+Concatenated Indexes
+Concatenated or composite indexes are indexes that include more than one column, and are excellent for improving the selectivity of the WHERE predicates. Even in cases where the selectivity of the individual columns is poor, concatenating the index improves selectivity. If the concatenated index contains all the columns in the WHERE list, you're saved the trouble of looking up the table, thus reducing your I/O. The index skip scan feature lets Oracle use a composite index even when the leading column isn't used in the query.
+
+Function-Based Indexes
+A function-based index contains columns transformed either by an Oracle function or by an expression. 
+CREATE INDEX upper_lastname_idx ON employees (UPPER(last_name));
+
+Reverse-Key Indexes
+If you're having performance issues in a database with a large number of inserts, you should consider using reverse-key indexes. These indexes are ideal for insert-heavy applications, although they suffer from the drawback that they can't be used in index range scans. A reverse-key index looks like this:
+
+
+Index value                   Reverse_Key Index Value
+-----------                   -----------------------
+9001                                  1009
+9002                                  2009
+9003                                  3009
+9004                                  4009
+When you're dealing with columns that sequentially increase, the reverse-key indexes provide an efficient way to distribute the index values more evenly and thus improve performance.
+
+Reducing SQL Overhead Via Inline Functions
+SELECT r.emp_id,
+     e.name, r.emp_type,t.type_des,
+     COUNT(*)
+     FROM employees e, emp_type t, emp_records r
+     WHERE r.emp_id = e.emp_id
+     AND r.emp_type = t.emp_type
+     GROUP BY r. emp_id, e.name, r.emp_type, t.emp_des;
+
+You can improve the performance of the preceding statement by using an inline function call. First, you create a couple of functions, which you can call later on from within your SQL statement. The first function is called SELECT_EMP_DETAIL, and it fetches the employee description if you provide emp_type as an input parameter. Here's how you create this function:
+
+
+SQL> CREATE OR REPLACE FUNCTION select_emp_detail (type IN) number
+  2  RETURN varchar2
+  3  AS
+  4  detail varchar2(30);
+  5  CURSOR a1 IS
+  6  SELECT emp_detail FROM emp_type
+  7  WHERE emp_type = type;
+  8  BEGIN
+  9  OPEN a1;
+  10 FETCH a1 into detail;
+  11 CLOSE a1;
+  12 RETURN (NVL(detail,'?'));
+  13 END;
+Function created.
+SQL>
+Next, create another function, SELECT_EMP, that returns the full name of an employee once you pass it employee_id as a parameter:
+
+
+SQL> CREATE OR REPLACE FUNCTION select_emp (emp IN number) RETURN varchar2
+  2  AS
+  3  emp_name varchar2(30);
+  4  CURSOR a1 IS
+  5  SELECT name FROM employees
+  6  WHERE employee_id = emp;
+  7  BEGIN
+  8  OPEN a1;
+  9  FETCH a1 INTO emp_name;
+ 10  CLOSE a1;
+ 11  RETURN (NVL(emp_name,'?'));
+ 12  END;
+
+ Function created.
+SQL>
+Now that you have both your functions, it's a simple matter to call them from within a SQL statement, as the following code shows:
+
+
+SQL> SELECT r.emp_id, select_emp(r.emp_id),
+  2  r.emp_type, select_emp_desc(r.emp_type),
+  3  COUNT(*)
+  4  FROM emp_records r
+  5* GROUP BY r.emp_id, r.emp_type;
+
+Let's look at some of the important ways in which you can help improve query performance in an application, even when you can't change the code right away.
+
+Using Partitioned Tables
+Partitioned tables usually lead to tremendous improvements in performance, and they're easy to administer. By partitioning a table into several subpartitions, you're in essence limiting the amount of data that needs to be examined to satisfy your queries. If you have large tables, running into tens of millions of rows, consider partitioning them.
+
+Using Materialized Views
+If you're dealing with large amounts of data, you should seriously consider using materialized views to improve response time. Materialized views are objects with data in them蓉sually summary data from the underlying tables. Expensive joins can be done beforehand and saved in the materialized view. When users query the underlying table, Oracle automatically rewrites the query to access the materialized view instead of the tables.
+
+Materialized views reduce the need for several complex queries because you can precalculate aggregates with them.
+
+When to Use Outlines
+Outlines are useful when you're planning migrations from one version of Oracle to another. The CBO could behave differently between versions, and you can cut your risk down by using stored outlines to preserve the application's present performance. You can also use them when you're upgrading your applications. Outlines ensure that the execution paths the queries used in a test instance successfully carry over to the production instance
+
+Using Histograms
+Normally, the CBO assumes that data is uniformly distributed in a table. There are times when data in a table isn't distributed in a uniform way. If you have an extremely skewed data distribution in a table, you're better off using histograms to store the column statistics. If the table data is heavily skewed toward some values, the presence of histograms provides more efficient access methods. Histograms use buckets to represent distribution of data in a column, and Oracle can use these buckets to see how skewed the data distribution is.
+
+You can use the following types of histograms in an Oracle database:
+
+Height-based histograms divide column values into bands, with each band containing a roughly equal number of rows. Thus, for a table with 100 rows, you'd create a histogram with 10 buckets if you wanted each bucket to contain 10 rows.
+Frequency-based histograms determine the number of buckets based on the distinct values in the column. Each bucket contains all the data that has the same value.
+
+Creating Histograms
+You create histograms by using the METHOD_OPT attribute of the DBMS_STATS procedure such as GATHER_TABLE_STATS, GATHER_DATABASE_STATS, and so on. You can either specify your own histogram creation requirements by using the FOR COLUMNS clause, or use the AUTO or SKEWONLY values for the METHOD_OPT attribute.
+
+The following example shows how to create a height-based histogram while collecting the optimizer statistics:
+
+
+SQL> BEGIN
+     DBMS_STATS.GATHER_table_STATS (OWNNAME => 'HR', TABNAME => 'BENEFITS',
+     METHOD_OPT => 'FOR COLUMNS SIZE 10 Number_of_visits');
+     END;
+
+The following example shows how to create a frequency-based histogram:
+
+
+SQL> BEGIN
+     DBMS_STATS.GATHER_table_STATS(OWNNAME => 'HR', TABNAME => 'PERSONS',
+     METHOD_OPT => 'FOR COLUMNS SIZE 20 department_id');
+     END;
+
+SQL> SELECT column_name, num_distinct, num_buckets, histogram
+    FROM USER_TAB_COL_STATISTICS
+    WHERE table_name = 'BENEFITS' AND column_name = 'NUMBER_OF_VISITS';
+
+Rebuilding Tables and Indexes Regularly
+The indexes could become unbalanced in a database with a great deal of DML. It's important to rebuild such indexes regularly so queries can run faster. You may want to rebuild an index to change its storage characteristics or to consolidate it and reduce fragmentation. Use the ALTER INDEX . . . REBUILD statement, because the old index is accessible while you're re-creating it. (The alternative is to drop the index and re-create it.)
+
+When you rebuild the indexes, include the COMPUTE STATISTICS statement so you don't have to gather statistics after the rebuild. Of course, if you have a 24/7 environment, you can use the ALTER INDEX . . . REBUILD ONLINE statement so that user access to the database won't be affected. It is important that your tables aren't going through a lot of DML operations while you're rebuilding online, 
+
+Caching Small Tables in Memory
+If the application doesn't reuse a table's data for a long period, the data might be aged out of the SGA and need to be read from disk. You can safely pin small tables in the buffer cache with the following:
+SQL> ALTER TABLE hr.employees CACHE;
+
+SQL Performance Tuning Tools
+SQL performance tuning tools are extremely important. Developers can use the tools to examine good execution strategies, and in a production database they're highly useful for reactive tuning. The tools can give you a good estimate of resource use by queries. The SQL tools are the EXPLAIN PLAN, Autotrace, SQL Trace, and TKPROF utilities.
+
+Creating the EXPLAIN PLAN
+To create an EXPLAIN PLAN for any SQL data manipulation language statement, you use explain plan for <sql query>;
+
+SELECT * FROM table (DBMS_XPLAN.DISPLAY);
+
+Using Autotrace
+The Autotrace facility enables you to produce EXPLAIN PLANs automatically when you execute a SQL statement in SQL*Plus. 
+
+The plan table should be there and the user who intends to use Autotrace should be given the PLUSTRACE role, as shown here:
+SQL> GRANT plustrace TO salapati;
+
+The user can now set the Autotrace feature on and view the EXPLAIN PLAN for any query that is used in the session. The Autotrace feature can be turned on with different options:
+
+SET AUTOTRACE ON EXPLAIN: This generates the execution plan only and doesn't execute the query itself.
+SET AUTOTRACE ON STATISTICS: This shows only the execution statistics for the SQL statement.
+SET AUTOTRACE ON: This shows both the execution plan and the SQL statement execution statistics.
+
+
+SQL> SET AUTOTRACE ON;
+SQL> SELECT * FROM EMP;
+no rows selected
+Execution Plan
+   0      SELECT STATEMENT Optimizer=CHOOSE (Cost=2 Card=1 Bytes=74)
+   1    0   TABLE ACCESS (FULL) OF 'EMP' (Cost=2 Card=1 Bytes=74)
+Statistics
+          0  recursive calls
+          0  db block gets
+          3  consistent gets
+          0  physical reads
+          0  redo size
+        511  bytes sent via SQL*Net to client
+        368  bytes received via SQL*Net from client
+          1  SQL*Net roundtrips to/from client
+          0  sorts (memory)
+          0  sorts (disk)
+          0  rows processed
+		  
+Using SQL Trace and TKPROF
+SQL Trace is an Oracle utility that helps you trace the execution of SQL statements. TKPROF is another Oracle utility that helps you format the trace files output by SQL Trace into a readable form. Although the EXPLAIN PLAN facility gives you the expected execution plan, the SQL Trace tool gives you the actual execution results of a SQL query. 
+
+Setting the Trace Initialization Parameters
+Collecting trace statistics imposes a performance penalty, and consequently the database doesn't automatically trace all sessions. Tracing is purely an optional process that you turn on for a limited duration to capture metrics about the performance of critical SQL statements.
+
+STATISTICS_LEVEL
+The STATISTICS_LEVEL parameter can take three values. The value of this parameter has a bearing on the TIMED_STATISTICS parameter. You can see this dependency clearly in the following summary:
+
+If the STATISTICS_LEVEL parameter is set to TYPICAL or ALL, timed statistics are collected automatically for the database.
+If STATISTICS_LEVEL is set to BASIC, then TIMED_STATISTICS must be set to TRUE for statistics collection.
+Even if STATISTICS_LEVEL is set to TYPICAL or ALL, you can keep the database from tracing by using the ALTER SESSION statement to set TIMED_STATISTICS to FALSE.
+
+TIMED_STATISTICS
+The TIMED_STATISTICS parameter is FALSE by default, if the STATISTICS_LEVEL parameter is set to BASIC. In a case like this, to collect performance statistics such as CPU and execution time, set the value of the TIMED_STATISTICS parameter to TRUE in the init.ora file or SPFILE, or use the ALTER SYSTEM SET TIMED_STATISTICS=TRUE statement to turn timed statistics on instance-wide.
+
+USER_DUMP_DEST
+USER_DUMP_DEST is the directory on your server where your SQL Trace files will be sent. By default you use the $ORACLE_HOME/admin/database_name/udump directory as your directory for dumping SQL trace files. If you want non-DBAs to be able to read this file, make sure the directory permissions authorize reading by others. Alternatively, you can set the parameter TRACE_FILES_PUBLIC=TRUE to let others read the trace files on UNIX systems. 
+
+EXEC DBMS_SYSTEM.set_ev(si=>1347, se=>1053, ev=>10046, le=>12, nm=>' ');
+EXEC DBMS_SYSTEM.set_ev(si=>775, se=>1045, ev=>10046, le=>0, nm=>' ');
+
+ALTER SESSION SET EVENTS '10046 trace name context off';
+
+ALTER SESSION SET sql_trace = false;
+
+Finding The trace file name
+
+select 
+  u_dump.value   || '/'     || 
+  db_name.value  || '_ora_' || 
+  v$process.spid || 
+  nvl2(v$process.traceid,  '_' || v$process.traceid, null ) 
+  || '.trc'  "Trace File"
+from 
+    v$parameter u_dump 
+    cross join v$parameter db_name
+    cross join v$process 
+    join v$session 
+    on v$process.addr = v$session.paddr
+where 
+    u_dump.name   = 'user_dump_dest' and 
+    db_name.name  = 'db_name'        and
+    v$session.sid=490
+
+tkprof finance_ora_16340.trc test.txt sys=no explain=y
+
+
+SQL> select e.last_name,e.first_name,d.department_name
+     from teste e,testd d
+     where e.department_id=d.department_id;
+
+	 Formatted TKPROF output.
+	 
+call     count   cpu elapsed disk      query    current         rows
+------- ------  ------ ---------- -- ---------- ----------   --------
+Parse        1  0.00   0.00   0          0          0            0
+Execute      1  0.00   0.00   0          0          0            0
+Fetch    17322  1.82   1.85   3        136          5       259806
+------- ------  -------- -------- -- ---------- ---------- ----------
+total    17324  1.82   1.85   3        136          5       259806
+
+Misses in library cache during parse: 0
+Optimizer goal: CHOOSE
+Parsing user id: 53
+
+CPU stands for total CPU time in seconds.
+Elapsed is the total time elapsed in seconds.
+Disk denotes total physical reads.
+Query is the number of consistent buffer gets.
+Current is the number of database block gets. (number of buffers gotten in current mode (usually for update))
+Rows is the total number of rows processed for each type of call.
+
+The SQL statement shown previously was parsed once, so a parsed version wasn't available in the shared pool before execution. The Parse column shows that this operation took less than 0.01 seconds. Note that the lack of disk I/Os and buffer gets indicates that there were no data dictionary cache misses during the parse operation. If the Parse column showed a large number for the same statement, it would be an indicator that bind variables weren't being used.
+
+The statement was executed once and execution took less than 0.01 seconds. Again, there were no disk I/Os or buffer gets during the execution phase.
+
+It took a lot longer than 0.01 seconds to get the results of the SELECT statement back. The Fetch column answers this question of why that should be: it shows that the operation was performed 17,324 times and took up 1.82 seconds of CPU time.
+
+The Fetch operation was performed 17,324 times and fetched 259,806 rows. Because the number of rows is far greater than the number of fetches, you can deduce that Oracle used array fetch operations.
+
+There were three physical reads during the fetch operation. If there's a large difference between CPU time and elapsed time, it can be attributed to time taken up by disk reads. In this case, the physical I/O has a value of only 3, and it matches the insignificant gap between CPU time and elapsed time. The fetch required 136 buffer gets in the consistent mode and only 5 DB block gets.
+
+The CBO was being used, because the optimizer goal is shown as CHOOSE.
+
+End-To-End Tracing
+In multitier environments, the middle tier passes a client's request through several database sessions. It's hard to keep track of the client across all these database sessions. Similarly, when you use shared server architecture, it's hard to identify the user session that you're tracing at any given time. Because multiple sessions may use the same shared server connection, when you trace the connection, you can't be sure who the user is exactly at any given time葉he active sessions using the shared server connection keep changing throughout.
+
+In the cases I described earlier, tracing a single session becomes impossible. Oracle Database 10g introduced end-to-end tracing, with which you can uniquely identify and track the same client through multiple sessions. The attribute CLIENT_IDENTIFIER uniquely identifies a client and remains the same through all the tiers. You can use the DBMS_MONITOR package to perform end-to-end tracing.
+
+Using the DBMS_MONITOR Package
+You use the Oracle PL/SQL package DBMS_MONITOR to set up end-to-end tracing. You can trace a user session through multiple tiers and generate trace files using the following three attributes:
+
+Client identifier
+Service name
+Combination of service name, module name, and action name
+
+Your application must use the DBMS_APPLICATION_INFO package to set module and action names. The service name is determined by the connect string you use to connect to a service. If a user's session isn't associated with a service specifically, the sys$users service handles it.
+
+
+Let's use two procedures belonging to the DBMS_MONITOR package. The first one, SERV_MOD_ACT_TRACE_ENABLE, sets the service name, module name, and action name attributes. The second, CLIENT_ID_TRACE_ENABLE, sets the client ID attribute. Here's an example:
+
+
+SQL> EXECUTE dbms_monitor.serv_mod_act_trace_enable
+     (service_name=>'myservice', module_name=>'batch_job');
+PL/SQL procedure successfully completed.
+SQL> EXECUTE dbms_monitor.client_id_trace_enable
+     (client_id=>'salapati');
+PL/SQL procedure successfully completed.
+SQL>
+
+You can use the SET_IDENTIFIER procedure of the DBMS_SESSION package to get a client's session ID. Here's an example showing how you can use a logon trigger and the SET_IDENTIFIER procedure together to capture the user's session ID immediately upon the user's logging into the system:
+
+CREATE OR REPLACE TRIGGER logon_trigger
+AFTER LOGON
+ON DATABASE
+DECLARE
+user_id VARCHAR2(64);
+BEGIN
+SELECT ora_login_user ||':'||SYS_CONTEXT('USERENV','OS_USER')
+INTO user_id
+FROM dual;
+dbms_session.set_identifier(user_id);
+END;
+
+Using the value for the client_id attribute, you can get the values for the SID and SERIAL# columns in the V$SESSION view for any user and set up tracing for that client_id. Here's an example:
+
+EXECUTE dbms_monitor.session_trace_enable (session_id=>111, serial_num=>23, waits=>true, binds=>false);
+
+You can now ask the user to run the problem SQL and collect the trace files so you can use the TKPROF utility to analyze them. In a shared server environment especially, there may be multiple trace files. By using the trcsess command-line tool, you can consolidate information from multiple trace files into one single file. Here's an example (first navigate to your user dump or udump directory):
+
+
+$ trcsess output="salapati.trc" service="myservice
+    "module="batch job" action="batch insert"
+You can then run your usual TKPROF command against the consolidated trace file, as shown here:
+
+$ tkprof salapati.trc output=salapati_report SORT=(EXEELA, PRSELA, FCHELA)
+
+Using the V$SQL View to Find Inefficient SQL
+
+Using the V$SQL View to Find Inefficient SQL
+The V$SQL view is an invaluable tool in tracking down wasteful SQL code in your application. The V$SQL view gathers information from the shared pool area on every statement's disk reads and memory reads, in addition to other important information. The view holds all the SQL statements executed since instance startup, but there's no guarantee that it will hold every statement until you shut down the instance. For space reasons, the older statements are aged out of the V$SQL view. It's a good idea for you to grant your developers select rights on this view directly if you haven't already granted them the "select any catalog" role. 
+
+The V$SQL view includes, among other things, the following columns, which help in assessing how many resources a SQL statement consumes:
+
+rows_processed gives you the total number of rows processed by the statement.
+
+sql_text is the text of the SQL statement (first 1,000 characters).
+sql_fulltext is a CLOB column that shows the full text of a SQL statement.
+buffer_gets gives you the total number of logical reads (indicates high CPU use).
+disk_reads tells you the total number of disk reads (indicates high I/O).
+sorts gives the number of sorts for the statement (indicates high sort ratios).
+cpu_time is the total parse and execution time.
+elapsed_time is the elapsed time for parsing and execution.
+parse_calls is the combined soft and hard parse calls for the statement.
+executions is the number of times a statement was executed.
+loads is the number of times the statement was reloaded into the shared pool after being flushed out.
+sharable_memory is the total shared memory used by the cursor.
+persistent_memory is the total persistent memory used by the cursor.
+runtime_memory is the total runtime memory used by the cursor.
+
+Note  In previous versions, DBAs used the V$SQLAREA view to gather information shown earlier. However, the V$SQL view supplants the V$SQLAREA view by providing all information in that view, plus other important tuning-related information as well.
+ 
+
+SELECT sql_text, rows_processed,
+  2 buffer_gets, disk_reads, parse_calls
+  3 FROM V$SQL
+  4 WHERE buffer_gets > 100000
+  5 OR disk_reads > 100000
+  6*ORDER BY buffer_gets + 100*disk_reads DESC;
+
+A Simple Approach to Tuning SQL Statements
+Identify Problem Statements
+Identify your slow-running or most resource-intensive SQL statements. For instance, you can use dynamic performance views such as V$SQL to find out your worst SQL statements, as shown earlier. Statements with high buffer gets are the CPU-intensive statements and those with high disk reads are the high I/O statements.
+
+Locate the Source of the Inefficiency
+Review each EXPLAIN PLAN carefully to see that the access and join methods and the join order are optimal. Specifically, check the plans with the following questions in mind:
+
+Are there any inefficient full table scans?
+Are there any unselective range scans?
+Are the indexes appropriate for your queries?
+Are the indexes selective enough?
+If there are indexes, are all of them being used?
+Are there any later filter operations?
+Does the driving table in the join have the best filter?
+Are you using the right join method and the right join order?
+Do your SQL statements follow basic guidelines for writing good SQL statements 
+
+
+

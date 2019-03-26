@@ -1,0 +1,42 @@
+{
+    "version": "0.1.0",
+
+    // The command is a shell script
+    "isShellCommand": true,
+
+    // Run sqlplus via a batch file
+    "windows": {
+        "command": "_run_sqlplus.bat"
+    },
+    "osx": {
+        "command": "./_run_sqlplus.sh"
+    },
+    "linux": {
+        "command": "./_run_sqlplus.sh"
+    },
+
+    // first argument is the database connection string
+    // second argument is the file to execute (ie the current file)
+    "args": ["itsr/itsr@//rlcmstd:1523/cmsdev", "@\"${file}\""],
+
+    // do not switch to the output pane automatically
+    "showOutput": "silent",
+
+    // use this to get any database errors (from user_errors view) listed in the "Problems" pane in VS Code
+    "problemMatcher": {
+        "owner": "plsql",
+        "fileLocation": ["relative", "${fileDirname}"],
+        "pattern": [
+          {
+            "regexp": "(.*) (\\d*)\/(\\d*) (.*?) (.*)",
+            "severity": 1,
+            "line": 2,
+            "column": 3,
+            "file": 4,
+            "message": 5,
+            "loop": true
+        }
+      ]
+    }
+}
+

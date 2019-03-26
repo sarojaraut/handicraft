@@ -1,0 +1,367 @@
+Chapter 4 - Creating an Oracle Database
+
+Using the DBCA to Create a Database
+
+These are the steps to follow to create a database:
+1. Create a parameter file and (optionally) a password file.
+2. Use the parameter file to build an instance in memory.
+3. Issue the CREATE DATABASE command. This will generate, as a minimum, a controlfile, two online redo log files, two datafiles for the SYSTEM and SYSAUX tablespaces, and a data dictionary.
+4. Run SQL scripts to generate the data dictionary views and the supplied PL/SQL packages.
+5. Run SQL scripts to generate the Enterprise Manager Database Control, and any options (such as Java) that the database will require.
+
+These steps can be executed interactively from the SQL*Plus prompt or through a GUI tool, the Database Configuration Assistant (DBCA). Alternatively, you can automate the process by using scripts or the DBCA with a response file. Whatever platform you are running on, the easiest way to create a database is through the DBCA.
+
+On Microsoft Windows you must be sitting in front of the machine where you are running it, because that is where the DBCA windows will open. On Unix, you run the DBCA on the machine where you wish to create the database, but you can launch and control it from any machine that has an X server to display the DBCA windows. This is standard X Window System—you set an environment variable DISPLAY to tell the program where to send the windows it opens. For example, export DISPLAY=10.10.10.65:0.0
+will redirect all X windows to the machine identified by IP address 10.10.10.65, no matter which machine you are actually running the DBCA on.
+
+
+To launch the DBCA on Linux, first set the environment variables that should always be set for any Linux DBA session: ORACLE_BASE, ORACLE_HOME, PATH, and LD_LIBRARY_PATH. This is an example of a script that will do this:
+export ORACLE_BASE=/u02/app/db11g
+export ORACLE_HOME=$ORACLE_BASE/product/11.1.0/db_1
+export PATH=$ORACLE_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib:$LD_LIBRARY_PATH
+
+Use the DBCA to Create a Database
+
+1. Launch the Net Configuration Assistant. The radio button for Listener Configuration will be selected.
+2. Click Next three times. If there is a message stating that a listener already exists, you can exit the tool immediately by clicking Cancel and Finish, and proceed to Step 3. Otherwise, click Next another four times to define the default listener, and then Finish to exit the tool.
+3. Launch the Database Configuration Assistant.
+4. On the DBCA Welcome dialog box, click Next.
+5. The next dialog box has radio buttons for
+Create a Database
+Configure Database Options
+Delete a Database
+Manage Templates
+Configure Automatic Storage
+Select the Create A Database radio button, and click Next.
+6. The Database Templates dialog box has radio buttons for selecting a template on which to base the new database. Select the Custom Database radio button, as this will present all possible options. Click Next.
+7. In the Database Identification dialog box, enter a global database name, and a System Identifier (a SID). For this exercise, enter ocp11g for both names. Click Next.
+8. The Management Options dialog box has a check box for configuring the database with Enterprise Manager. Select this. There are check boxes for Enable Email Notifications and Enable Daily Backup; do not select these. Click Next. It is at this point that the DBCA will give an error if there is no listener available.
+9. The Database Credentials dialog box prompts for passwords for four users in the database: SYS (who owns the data dictionary), SYSTEM (used for most
+DBA work), DBSNMP (used for external monitoring), and SYSMAN (used by Enterprise Manager). Select the radio button for Use The Same
+Password For All Accounts. Enter oracle as the password, twice, and click Next.
+10. In the Security Settings dialog box, accept the default, which is 11g security, and click Next.
+11. The Storage Options dialog box offers a choice between file system, ASM, or raw devices. Select File System, and click Next.
+12. The Database File Locations dialog box prompts for a root directory for the database. Select Use Database File Locations From Template. Click the File
+Location Variables button to see where the database will be created. It will be the OFA location ORACLE_BASE/oradata/DB_NAME. ClickNext.
+13. In the Recovery Configuration dialog box, accept the default configuration for the flash recovery area (which will be 2 GB in ORACLE_BASE/flash_recovery_area) and do not enable archiving. Click Next.
+14. In the Database Content dialog box, deselect all options except Enterprise Manager Repository. The others are not needed for this database and will make the creation take much longer. Some options will be grayed out; this will be because they have not been installed into the Oracle Home. Click the Standard Database Components button, and deselect these as well. Don’t worry about a warning that the XML DB is used by other components. Click Next.
+15. The Initialization Parameters dialog box has four tabs. Leave everything on default, but look at all the tabs. The Memory tab shows the memory that will be allocated to the instance, based on a percentage of the main memory detected. The Sizing tab shows the database block size, defaulting to 8 KB. This is the one thing that can never be changed after creation. The Character Sets tab shows the character set to be used within the database, which will have a default value based on the operating system. This can be very awkward to change afterward. The Connection Mode tab determines how user sessions will be managed. Click Next.
+16. The Database Storage dialog box shows, via a navigation tree on the left, the files that will be created. Navigate around this, and see the names and sizes of the files. These are nowhere near adequate for a production system but will be fine for now. Click Next.
+17. In the Creation Options dialog box, select the check boxes for Create Database and Generate Database Creation Scripts. Note the path for the scripts; it will be ORACLE_BASE/admin/ocp11g/scripts. Click Finish.
+18. The Confirmation dialog box shows what the DBCA is about to do. Click OK.
+19. The DBCA will generate the creation scripts (which should only take a few minutes). Click OK, and the DBCA will create the database. The illustration that follows shows the progress dialog box. Note the location of the DBCA logs—ORACLE_BASE/cfgtoollogs/dbca/ocp11g—it may be necessary to look at the logs if anything fails. The creation will typically take fifteen to forty minutes, depending on the machine.
+20. When the DBCA completes, it will present the dialog box. Take note of all the information given, in particular
+the URL given for database control: http://jwacer.bplc.co.za:1158/em
+
+The Database Creation Shell Script
+This is the file the DBCA executes to launch the database creation process. It is a batch file on Windows, and a shell script on Linux. A Windows example:
+
+mkdir D:\oracle\app
+mkdir D:\oracle\app\admin\ocp11g\adump
+mkdir D:\oracle\app\admin\ocp11g\dpdump
+mkdir D:\oracle\app\admin\ocp11g\pfile
+mkdir D:\oracle\app\cfgtoollogs\dbca\ocp11g
+mkdir D:\oracle\app\flash_recovery_area
+mkdir D:\oracle\app\oradata\ocp11g
+mkdir D:\oracle\app\product\11.1.0\db_3\database
+set ORACLE_SID=ocp11g
+set PATH=%ORACLE_HOME%\bin;%PATH%
+D:\oracle\app\product\11.1.0\db_3\bin\oradim.exe -new -sid OCP11G
+-startmode manual -spfile
+D:\oracle\app\product\11.1.0\db_3\bin\oradim.exe -edit -sid OCP11G
+-startmode auto -srvcstart system
+D:\oracle\app\product\11.1.0\db_3\bin\sqlplus /nolog
+@D:\oracle\app\admin\db11g\scripts\ocp11g.sql
+First, the script creates a few directories in the Oracle Base. Then it sets the ORACLE_SID environment variable (more of this later) and prepends the ORACLE_HOME/bin directory to the search path.
+
+The CREATE DATABASE Command
+This is an example of the CreateDB.sql script:
+
+connect "SYS"/"&&sysPassword" as SYSDBA
+set echo on
+spool D:\oracle\app\admin\ocp11g\scripts\CreateDB.log
+startup nomount pfile="D:\oracle\app\admin\ocp11g\scripts\init.ora";
+CREATE DATABASE "ocp11g"
+MAXINSTANCES 8
+MAXLOGHISTORY 1
+MAXLOGFILES 16
+MAXLOGMEMBERS 3
+MAXDATAFILES 100
+DATAFILE 'D:\oracle\app\oradata\ocp11g\system01.dbf'
+SIZE 300M REUSE AUTOEXTEND ON NEXT 10240K MAXSIZE UNLIMITED
+EXTENT MANAGEMENT LOCAL
+SYSAUX DATAFILE 'D:\oracle\app\oradata\ocp11g\sysaux01.dbf'
+SIZE 120M REUSE AUTOEXTEND ON NEXT 10240K MAXSIZE UNLIMITED
+SMALLFILE DEFAULT TEMPORARY TABLESPACE TEMP TEMPFILE
+'D:\oracle\app\oradata\ocp11g\temp01.dbf' SIZE 20M REUSE
+AUTOEXTEND ON NEXT 640K MAXSIZE UNLIMITED
+SMALLFILE UNDO TABLESPACE "UNDOTBS1" DATAFILE
+'D:\oracle\app\oradata\ocp11g\undotbs01.dbf' SIZE 200M REUSE
+AUTOEXTEND ON NEXT 5120K MAXSIZE UNLIMITED
+CHARACTER SET WE8MSWIN1252
+NATIONAL CHARACTER SET AL16UTF16
+LOGFILE GROUP 1 ('D:\oracle\app\oradata\ocp11g\redo01.log') SIZE 51200K,
+GROUP 2 ('D:\oracle\app\oradata\ocp11g\redo02.log') SIZE 51200K,
+GROUP 3 ('D:\oracle\app\oradata\ocp11g\redo03.log') SIZE 51200K
+USER SYS IDENTIFIED BY "&&sysPassword"
+USER SYSTEM IDENTIFIED BY "&&systemPassword";
+spool off
+
+With 9i and later, it is possible to change it afterward, but this is not an operation to embark on lightly. Get it right now!
+
+The Database Control URL is https://Saroj-PC:1158/em
+
+
+
+---------------------------------------
+
+Before creating a database, you must set several OS variables:
+• ORACLE_HOME - It defines the starting point directory for locating the Oracle binary files (such as sqlplus, dbca, netca, rman, and so on) that are in ORACLE_HOME/bin
+• ORACLE_SID - Defines the default name of the database you’re attempting to create. ORACLE_SID is also used as the default name for the parameter file, which is init<ORACLE_SID>.ora or spfile<ORACLE_SID>.ora.
+• LD_LIBRARY_PATH - It specifies where to search for libraries on Linux/Unix boxes. The value of this variable is typically set to include ORACLE_HOME/lib
+• PATH - Specifies which directories are looked in by default when you type a command from the OS prompt. In almost all situations, ORACLE_HOME/bin must be included in your PATHvariable.
+
+you can set OS variables manually from the OS command line with the export command::
+$ export ORACLE_HOME=/u01/app/oracle/product/12.1.0.1/db_1
+$ export ORACLE_SID=o12c
+$ export LD_LIBRARY_PATH=/usr/lib:$ORACLE_HOME/lib
+$ export PATH=$ORACLE_HOME/bin:$PATH
+For the C or tcsh shell, use the setenv command to set variables:
+$ setenv ORACLE_HOME <path>
+$ setenv ORACLE_SID <sid>
+$ setenv LD_LIBRARY_PATH <path>
+$ setenv PATH <path>
+
+Another way that DBAs set these variables is by placing the previous export or setenv commands into a Linux/Unix startup file, such as .bash_profile, .bashrc, or .profile. That way, the variables are automatically set upon login.
+
+If you have multiple databases with multiple Oracle homes on a box, manually setting these variables quickly becomes unwieldy and not very maintainable.
+
+Oracle’s Approach to Setting OS Variables
+Oracle provides a mechanism for automatically setting the required OS variables. Oracle’s approach relies on two files: oratab and oraenv.
+
+You can think of the entries in the oratab file as a registry of what databases are installed on a box and their corresponding Oracle home directories. The oratab file is automatically created for you when you install the Oracle software. On Linux boxes, oratab is usually placed in the /etc directory. On solaris servers the location is /var/opt/oracle.If, for some reason, the oratab file isn’t automatically created, you can manually create the directory and file.
+
+The oratab file is used in Linux/Unix environments for the following purposes:
+• Automating the sourcing of required OS variables
+• Automating the start and stop of Oracle databases on the server
+The oratab file has three columns with this format: 
+<database_sid>:<oracle_home_dir>:Y|N
+The Y or N indicates whether you want Oracle to restart automatically on reboot of the box; Y indicates yes, and N indicates no.
+
+The oraenv utility automates the setting of required OS variables (such as ORACLE_HOME, ORACLE_SID, and PATH) on an Oracle database server.
+
+You can also run the oraenv utility in a noninteractive way by setting OS variables before you run it. This is useful for scripting when you don’t want to be prompted for input:
+$ export ORACLE_SID=o12c
+$ export ORAENV_ASK=NO
+$ . oraenv
+
+Keep in mind that if you set your ORACLE_SID to a value that isn’t found with the oratab file, then you may be prompted for values such as ORACLE_HOME.
+
+Creating a Database
+Step 1. Set the OS Variables
+$ export ORACLE_HOME=/u01/app/oracle/product/12.1.0.1/db_1
+$ export ORACLE_SID=o12c
+$ export LD_LIBRARY_PATH=/usr/lib:$ORACLE_HOME/lib
+$ export PATH=$ORACLE_HOME/bin:$PATH
+
+Step 2: Configure the Initialization File
+Oracle requires that you have an initialization file in place before you attempt to start the instance. The initialization file is used to configure features such as memory and to control file locations. You can use two types of initialization files:
+• Server parameter binary file (spfile)
+• init.ora text file
+Oracle recommends that you use an spfile for reasons such as these:
+• You can modify the contents of the spfile with the SQL ALTER SYSTEM statement.
+• You can use remote-client SQL sessions to start the database without requiring a local (client) initialization file.
+
+When I first create a database, I find it easier to use an init.ora file. This file can be easily converted later to an spfile if required (via the CREATE SPFILE FROM PFILE statement). In this example my database name is o12c, so I place the following contents in a file named inito12c.ora and put the file in the ORACLE_HOME/dbs directory:
+db_name=o12c
+db_block_size=8192
+memory_target=300M
+memory_max_target=300M
+processes=200
+control_files=(/u01/dbfile/o12c/control01.ctl,/u02/dbfile/o12c/control02.ctl)
+job_queue_processes=10
+open_cursors=500
+fast_start_mttr_target=500
+undo_management=AUTO
+undo_tablespace=UNDOTBS1
+remote_login_passwordfile=EXCLUSIVE
+
+Ensure that the initialization file is named correctly and located in the appropriate directory. This is critical because when starting your instance, Oracle first looks in the ORACLE_HOME/dbs directory for parameter files with specific formats, in this order:
+• spfile<SID>.ora
+• spfile.ora
+• init<SID>.ora
+
+Initialization File Best Practices
+Set open_cursors to a higher value than the default. I typically set it to 500. Active online transaction processing (OLTP) databases may need a much higher value. The default value of 50 is almost never enough. 
+
+Starting with 10g, use the automatic UNDO feature. This is set using the undo_management and undo_tablespace parameters.
+
+For 11g and higher, set the memory_target and memory_max_target initialization parameters.
+
+Step 3: Create the Required Directories
+Any OS directories referenced in the parameter file or CREATE DATABASE statement must be created on the server before you attempt to create a database. For instance, in the previous section’s initialization file, the control files are defined as
+control_files=(/u01/dbfile/o12c/control01.ctl,/u02/dbfile/o12c/control02.ctl)
+
+$ mkdir -p /u01/dbfile/o12c
+$ mkdir -p /u02/dbfile/o12c
+
+Also make sure you create any directories required for data files and online redo logs referenced in the CREATE DATABASE statement. 
+
+Ensure that the oracle user and dba groups are properly set to own the directories, subdirectories, and files. This example recursively changes the owner and group of the
+following directories:
+# chown -R oracle:dba /u01
+# chown -R oracle:dba /u02
+
+Step 4: Create the Database
+Before you can run the CREATE DATABASE statement, you must start the background processes and allocate memory via the STARTUP NOMOUNT statement:
+$ sqlplus / as sysdba
+SQL> startup nomount;
+
+Listed next is a typical Oracle CREATE DATABASE statement:
+
+CREATE DATABASE o12c
+MAXLOGFILES 16
+MAXLOGMEMBERS 4
+MAXDATAFILES 1024
+MAXINSTANCES 1
+MAXLOGHISTORY 680
+CHARACTER SET AL32UTF8
+DATAFILE
+'/u01/dbfile/o12c/system01.dbf'
+SIZE 500M REUSE
+EXTENT MANAGEMENT LOCAL
+UNDO TABLESPACE undotbs1 DATAFILE
+'/u01/dbfile/o12c/undotbs01.dbf'
+SIZE 800M
+SYSAUX DATAFILE
+'/u01/dbfile/o12c/sysaux01.dbf'
+SIZE 500M
+DEFAULT TEMPORARY TABLESPACE TEMP TEMPFILE
+'/u01/dbfile/o12c/temp01.dbf'
+SIZE 500M
+DEFAULT TABLESPACE USERS DATAFILE
+'/u01/dbfile/o12c/users01.dbf'
+SIZE 20M
+LOGFILE GROUP 1
+('/u01/oraredo/o12c/redo01a.rdo',
+'/u02/oraredo/o12c/redo01b.rdo') SIZE 50M,
+GROUP 2
+('/u01/oraredo/o12c/redo02a.rdo',
+'/u02/oraredo/o12c/redo02b.rdo') SIZE 50M,
+GROUP 3
+('/u01/oraredo/o12c/redo03a.rdo',
+'/u02/oraredo/o12c/redo03b.rdo') SIZE 50M
+USER sys IDENTIFIED BY foo
+USER system IDENTIFIED BY foo;
+
+Note that the SYSTEM data file is defined as locally managed. This means that any tablespace created in this database must be locally managed (as opposed to dictionary managed). Oracle throws an error if you attempt to create a dictionary-managed tablespace in this database. This is the desired behavior.
+
+Locally managed tablespaces have these advantages:
+
+• Performance is increased.
+• No coalescing is required.
+• Contention for resources in the data dictionary is reduced.
+• Recursive space management is reduced.
+
+Also note that the TEMP tablespace is defined as the default temporary tablespace. This means that any user created in the database automatically has the TEMP tablespace assigned to him or her as the default temporary tablespace.
+Finally, note that the USERS tablespace is defined as the default permanent tablespace for any users created that don’t have a default tablespace defined in a CREATE USER statement.
+
+Step 5. Create a Data Dictionary
+After your database is successfully created, you can instantiate the data dictionary by running two scripts. These scripts are created when you install the Oracle binaries. You must run these scripts as the SYS schema:
+SQL> show user
+USER is "SYS"
+
+SQL> spool create_dd.lis
+SQL> @?/rdbms/admin/catalog.sql
+SQL> @?/rdbms/admin/catproc.sql
+
+After you successfully create the data dictionary, as the SYSTEM schema, create the product user profile tables:
+SQL> connect system/<password>
+SQL> @?/sqlplus/admin/pupbld
+These tables allow SQL*Plus to disable commands on a user-by-user basis. If the pupbld.sql script isn’t run, then all non-sys users see the following warning when logging in to SQL*Plus:
+Error accessing PRODUCT_USER_PROFILE
+Warning: Product user profile information not loaded!
+You may need to run PUPBLD.SQL as SYSTEM
+
+Configuring and Implementing the Listener
+Manually Configuring a Listener
+When you’re setting up a new environment, manually configuring the listener is a two-step process:
+1. Configure the listener.ora file.
+2. Start the listener.
+
+LISTENER =
+(DESCRIPTION_LIST =
+(DESCRIPTION =
+(ADDRESS_LIST =
+(ADDRESS = (PROTOCOL = TCP)(HOST = oracle12c)(PORT = 1521))
+)
+)
+)
+SID_LIST_LISTENER =
+(SID_LIST =
+(SID_DESC =
+(GLOBAL_DBNAME = o12c)
+(ORACLE_HOME = /u01/app/oracle/product/12.1.0.1/db_1)
+(SID_NAME = o12c)
+)
+)
+
+$ lsnrctl start
+
+Creating a Password File
+$ cd $ORACLE_HOME/dbs
+$ orapwd file=orapw<ORACLE_SID> password=<sys password>
+SQL> grant sysdba to heera;
+SQL> select * from v$pwfile_users;
+
+Using the dbca to Create a Database
+
+This utility works in two modes: graphical and silent. To use the dbca in graphical mode, ensure you have the proper X software installed, then issue the xhost + command, and make certain your DISPLAY variable is set; for example,
+$ xhost +
+$ echo $DISPLAY
+:0.0
+
+To run the dbca in graphical mode, type in dbca from the OS command line:
+$ dbca
+The graphical mode is very intuitive and will walk you through all aspects of creating a database. You may prefer to use this mode if you are new to Oracle and want to be explicitly prompted with choices.
+
+To create a database, using dbca in silent mode, perform the following steps:
+1. Locate the dbca.rsp file.
+$ find . -name dbca.rsp
+./12.1.0.1/database/response/dbca.rsp
+
+2. Make a copy of the dbca.rsp file.
+$ cp dbca.rsp mydb.rsp
+
+3. Modify the copy of the dbca.rsp file for your environment.
+[CREATEDATABASE]
+GDBNAME = "O12DEV"
+SID = "O12DEV"
+TEMPLATENAME = "General_Purpose.dbc"
+SYSPASSWORD = "foo"
+SYSTEMPASSWORD = "foo"
+SYSMANPASSWORD = "foo"
+DBSNMPPASSWORD = "foo"
+DATAFILEDESTINATION ="/u01/dbfile"
+STORAGETYPE="FS"
+CHARACTERSET = "AL32UTF8"
+NATIONALCHARACTERSET= "UTF8"
+
+4. Run the dbca utility in silent mode.
+$ dbca -silent -responseFile /home/oracle/orainst/mydb.rsp
+
+. . .
+100% complete
+Look at the log file . . . for further details.
+
+
+You must consider several architectural aspects when determining whether to use one database to host multiple applications and users:
+• Do the applications generate vastly different amounts of redo, which may necessitate differently sized online redo logs?
+• Are the queries used by applications dissimilar enough to require different amounts of undo, sorting space, and memory?
+• Does the type of application require a different database block size, such as 8KB, for an OLTP database, or 32KB, for a data warehouse?
+• Are there any security, availability, replication, or performance requirements that require an application to be isolated?
+• Does an application require any features available only in the Enterprise Edition of Oracle?
+• Does an application require the use of any special Oracle features, such as Data Guard, partitioning, Streams, or RAC?
+• What are the backup and recovery requirements for each application? Does one application require online backups and the other application not? Does one application require tape backups?
+• Is any application dependent on an Oracle database version? Will there be different database upgrade schedules and requirements?

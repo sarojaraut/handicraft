@@ -1,0 +1,280 @@
+﻿Administering User Security
+
+Default Tablespace and Quotas
+
+There is a database-wide default tablespace that will be applied to all user accounts if a default tablespace is not specified when creating the user. The default can be set when creating the database and changed later with
+
+ALTER DATABASE DEFAULT TABLESPACE tablespace_name ;
+
+If a default tablespace is not specified when creating the database, it will be set to the SYSTEM tablespace.
+A quota is the amount of space in a tablespace that a user is allowed to occupy. The query against DBA_TS_QUOTAS confirms the quota of a user; the figure “–1” is how “unlimited” is represented.
+ALTER USER username TEMPORARY TABLESPACE tablespace_name;
+Profile
+A user’s profile controls his/her password settings and gives a limited amount of control over his/her resource usage. Profiles are a useful way of managing passwords and resources but can really only apply in an environment where every application user has his/her own database user account.
+
+Every user account has a certain status,
+
+■ OPEN The account is available for use.
+■ LOCKED This indicates that the DBA deliberately locked the account. No user can connect to a locked account.
+■ EXPIRED This indicates that the lifetime has expired. No user can connect to an EXPIRED account until the password is reset.
+■ EXPIRED & LOCKED Not only has the account been locked, but its password has also expired.
+■ EXPIRED (GRACE) This indicates that the grace period is in effect.
+A password need not expire immediately when its lifetime ends; it may be configured with a grace period during which users connecting to the account have the opportunity to change the password.
+■ LOCKED (TIMED) This indicates that the account is locked because of failed login attempts. An account can be configured to lock automatically for a period after an incorrect password is presented a certain number of times.
+■ EXPIRED & LOCKED (TIMED)
+■ EXPIRED (GRACE) & LOCKED
+■ EXPIRED (GRACE) & LOCKED (TIMED)
+
+ALTER USER username ACCOUNT LOCK ;
+ALTER USER username ACCOUNT UNLOCK ;
+
+To force a user to change his password, use this command:
+ALTER USER username PASSWORD EXPIRE;
+
+Authentication Methods
+A user account must have an authentication method: some means whereby the database can determine if the user attempting to create a session connecting to the account is allowed to do so. The simplest technique is by presenting a password that will be matched against a password stored within the database, but there are alternatives. The possibilities are
+
+■ Operating system authentication
+■ Password file authentication
+■ Password authentication
+■ External authentication
+■ Global authentication
+
+The first two techniques are used only for administrators; the last requires an LDAP directory server. To enable operating system and password file authentication (the two go together) for an account, you must grant the user either the SYSDBA or the SYSOPER privilege:
+GRANT [sysdba | sysoper ] TO username ;
+
+Granting either (or both) of these privileges will copy the user’s password from the data dictionary into the external password file, where it can be read by the instance even if the database is not open. It also allows the instance to authenticate users by checking whether the operating system user attempting the connection is a member of the operating system group that owns the Oracle Home installation.
+
+To use password file authentication, the user can connect with this syntax with SQL*Plus:
+
+CONNECT username / password [@db_alias] AS [ SYSOPER | SYSDBA ] ;
+
+To use operating system authentication, the user can connect with this syntax with SQL*Plus:
+
+CONNECT / AS [ SYSOPER | SYSDBA ] ;
+
+To determine to whom the SYSDBA and SYSOPER privileges have been granted, query the view V$PWFILE_USERS. Connection with operating system or password file authentication is always possible, no matter what state the instance and database are in, and is necessary to issue STARTUP or SHUTDOWN commands.
+
+External Authentication
+If a user account is created with external authentication, Oracle will delegate the authentication to an external service; it will not prompt for a password. If the Advanced Security Option has been licensed, then the external service can be a Kerberos server, a Radius server, or (in the Windows environment) the Windows native authentication service. Without the Advanced Security Option, the only form of external authentication that can be used is operating system authentication. This can also be used for normal users like sysdba and sysoper. 
+The technique is to create an Oracle user account with the same name as the operating system user account but prefixed with a string specified by the instance parameter OS_AUTHENT_PREFIX. This parameter defaults to the string OPS$. To check its value, use a query such as select value from v$parameter where name='os_authent_prefix';
+
+On Linux or Unix, external operating system authentication is very simple. Assuming that the OS_AUTHENT_PREFIX is on default and that there is operating system user called jwatson, then create an oracle user and grant him the CREATE SESSION privilege as follows:
+
+create user ops$jwatson identified externally;
+grant create session to ops$jwatson;
+
+Any user logged on to Unix as jwatson will be able to issue this command: sqlplus /
+from an operating system prompt, and will be connected to the database user account ops$jwatson.
+
+Creating Accounts
+
+1 create user scott identified by tiger
+2 default tablespace users temporary tablespace temp
+3 quota 100m on users, quota unlimited on example
+4 profile developer_profile
+5 password expire
+6 account unlock;
+
+alter user scott identified by lion;
+alter user scott default tablespace hr_data temporary tablespace hr_temp;
+alter user scott quota unlimited on hr_data, quota 0 on users;
+alter user scott profile prod_profile;
+
+Having created a user account, it may be necessary to drop it:
+drop user scott;
+This command will only succeed if the user does not own any objects: if the schema is empty. If you do not want to identify all the objects owned and drop them first, they can be dropped with the user by specifying CASCADE:
+
+drop user scott cascade;
+
+Grant and Revoke Privileges
+Privileges come in two groups: system privileges that (generally speaking) let users perform actions that affect the data dictionary and object privileges that let users perform actions that affect data.
+
+System Privileges
+There are about two hundred system privileges. Most apply to actions that affect the data dictionary, such as creating tables or users. Others affect the database or
+the instance, such as creating tablespaces, adjusting instance parameter values, or establishing a session. Some of the more commonly used privileges are
+
+■ CREATE SESSION This lets the user connect. 
+■ RESTRICTED SESSION If the database is started with STARTUP RESTRICT, or adjusted with ALTER SYSTEM ENABLE RESTRICTED SESSION, only users with this privilege will be able to connect.
+■ ALTER DATABASE Gives access to many commands necessary for modifying physical structures.
+■ ALTER SYSTEM Gives control over instance parameters and memory structures.
+■ CREATE TABLESPACE With the ALTER TABLESPACE and DROP TABLESPACE privileges, these will let a user manage tablespaces.
+■ CREATE TABLE Lets the grantee create tables in his/her own schema; includes the ability to alter and drop them, to run SELECT and DML commands on them, and to create, alter, or drop indexes on them.
+■ GRANT ANY OBJECT PRIVILEGE Lets the grantee grant object permissions on objects he/she does not own to others—but not to himself/herself.
+■ CREATE ANY TABLE The grantee can create tables that belong to other users.
+■ DROP ANY TABLE The grantee can drop tables belonging to any other users.
+■ INSERT ANY TABLE, UPDATE ANY TABLE, DELETE ANY TABLE The grantee can execute these DML commands against tables owned by all other users.
+■ SELECT ANY TABLE The grantee can SELECT from any table in the database.
+
+After creating a user account, a command such as this will grant the system privileges commonly assigned to users who will be involved in developing applications:
+
+grant create session, alter session,
+create table, create view, create synonym, create cluster,
+create database link, create sequence,
+create trigger, create type, create procedure, create operator
+to username ;
+
+If a privilege is revoked from a user, any actions he/she performed using that privilege (such as creating tables) remain intact. Also, if he/she had been granted and had used the ADMIN OPTION, any users to whom he/she passed on the privilege will retain it. There is no record kept of the granter of a system privilege, so it is not possible for a REVOKE to cascade.
+
+ANY privilage is not as dangerous now as with earlier releases. It no longer includes tables in the SYS schema, so the data dictionary is still protected. But ANY should still be used with extreme caution, as it removes all protection from user tables.
+
+Object Privileges
+Object privileges give the ability to perform SELECT, INSERT, UPDATE, and DELETE commands against tables and related objects, and to execute PL/SQL objects.
+
+if a user has the system privilege CREATE TABLE, he/she can perform SELECT and DML operations against the tables he/she creates with no further need for permissions.
+
+grant select on hr.regions to scott;
+grant update (salary) on hr.employees to scott;
+grant all on hr.regions to scott;
+
+Granting privileges at the column level is often said to be bad practice because of the massive workload involved. If it is necessary to restrict peoples’ access to certain columns, creating a view that shows only those columns will often be a better alternative.
+
+Using WITH GRANT OPTION (or with Database Control, selecting the Grant Option check box) lets a user pass his/her object privilege on to a third party. Oracle retains a record of who granted object privileges to whom; this allows a REVOKE of an object to cascade to all those in the chain.
+
+connect hr/hr;
+grant select on employees to scott with grant option;
+connect scott/tiger;
+grant select on hr.employees to jon with grant option;
+conn jon/jon;
+grant select on hr.employees to sue;
+connect hr/hr;
+revoke select on employees from scott;
+
+At the conclusion of these commands, neither SCOTT nor JON nor SUE has the SELECT privilege against HR.EMPLOYEES.
+
+Revocation of an object privilege will cascade (unlike revocation of a system privilege).
+
+select grantee,privilege,grantor,grantable from dba_tab_privs where owner='ALOIS' and table_name='T1';
+
+select * from dba_sys_privs where grantee='ALOIS';
+
+Create and Manage Roles
+
+Managing security with directly granted privileges works but has two problems. 
+it can be a huge workload: an application with thousands of tables and users could need millions of grants. 
+Second, if a privilege has been granted to a user, that user has it in all circumstances: it is not possible to make a privilege active only in certain circumstances.
+
+Creating and Granting Roles
+Roles are not schema objects: they aren’t owned by anyone and so cannot be prefixed with a username. However, they do share the same namespace as users: it is not possible to create a role with the same name as an already-existing user. 
+
+Then grant privileges to the role with the usual syntax, including WITH ADMIN or WITH GRANT OPTION of desired.
+
+create role hr_junior;
+grant create session to hr_junior;
+
+There is no problem granting one role to another
+
+Predefined Roles
+
+DBA Has most of the system privileges, and several object privileges and roles. Any user granted DBA can manage virtually all aspects of the database, except for startup and shutdown.
+
+SELECT_CATALOG_ROLE Has over 2000 object privileges against data dictionary objects, but no system privileges or privileges against user data. Useful for junior administration staff who must monitor and report on the database but not be able to see user data.
+
+There is also a predefined role PUBLIC, which is always granted to every database user account. It follows that if a privilege is granted to PUBLIC, it will be available
+to all users. So following this command: grant select on hr.regions to public; all users will be able to query the HR.REGIONS table.
+
+Enabling Roles
+By default, if a user has been granted a role, then the role will enabled. This means that the moment a session is established connecting to the user account, all the privileges (and other roles) granted to the role will be active. This behavior can be modified by making the role non-default.
+
+CREATE ROLE rolename IDENTIFIED USING procedure_name ;
+then the role can only be enabled by running the PL/SQL procedure nominated by procedure_name. This procedure can make any number of checks, such as that the user is working on a particular TCP/IP subnet; that he/she is running a particular user process (probably not SQL*Plus); that the time is in a certain range; and so on.
+
+select * from dba_role_privs where granted_role in ('USR_ROLE','MGR_ROLE');
+
+select grantee,owner,table_name,privilege,grantable from dba_tab_privs where grantee in ('USR_ROLE','MGR_ROLE')
+union all
+select grantee,to_char(null),to_char(null),privilege,admin_option from dba_sys_privs where grantee in ('USR_ROLE','MGR_ROLE')
+order by grantee;
+
+Create and Manage Profiles
+A profile has a dual function: to enforce a password policy and to restrict the resources a session can take up.
+
+Password controls are always enforced; resource limits are only enforced if the instance parameter RESOURCE_LIMIT is on TRUE—by default it is FALSE.
+
+■ FAILED_LOGIN_ATTEMPTS Specifies the number of consecutive errors on a password before the account is locked. If the correct password is given before this limit is reached, the counter is reset to zero.
+■ PASSWORD_LOCK_TIME The number of days to lock an account after FAILED_LOGIN_ATTEMPTS is reached.
+■ PASSWORD_LIFE_TIME The number of days before a password expires. It may still be usable for a while after this time, depending on PASSWORD_GRACE_TIME.
+■ PASSWORD_GRACE_TIME The number of days following the first successful login after the password has expired that prompts to change the password will be generated. The old password is still usable during this time.
+■ PASSWORD_REUSE_TIME The number of days before a password can be reused.
+■ PASSWORD_REUSE_MAX Then number of times a password can be reused.
+■ PASSWORD_VERIFY_FUNCTION The name of a function to run whenever a password is changed. The purpose of the function is assumed to be checking the new password for a required degree of complexity, but it can do pretty much anything you want.
+
+alter system set resource_limit=true;
+
+Creating and Assigning Profiles
+select username,profile from dba_users;
+
+select * from dba_profiles where profile='DEFAULT';
+
+create profile dba_profile limit sessions_per_user unlimited
+password_life_time 7 password_grace_time 1;
+alter user sys profile dba_profile;
+alter user system profile dba_profile;
+
+alter system set resource_limit=true;
+
+---------------------------------------------------------------------------------------------
+
+However, if you have a user with an expired password, and you don’t know the current password and are hesitant to change it (because it’s in use in a production environment, and you’re not sure in how many places within the application code the old password has been hard-coded), what do you do?
+
+As a DBA-privileged database user, first note the current profile of the user:
+SQL> select username, profile from dba_users where username='MV_MAINT';
+USERNAME PROFILE
+-------------------- ----------
+MV_MAINT DEFAULT
+
+Next, create a temporary profile:
+CREATE PROFILE temp_prof LIMIT
+PASSWORD_REUSE_MAX unlimited
+PASSWORD_REUSE_TIME unlimited;
+
+Now, assign the temporary profile to the user:
+SQL> alter user mv_maint profile temp_prof;
+
+Then, view the obfuscated password:
+SQL> select password from user$ where name='MV_MAINT';
+Here is the output for this example:
+PASSWORD
+--------------------
+E88FDA313EC0F3F4
+
+Now, set the password to what it was; this unexpires it:
+SQL> alter user mv_maint identified by values 'E88FDA313EC0F3F4';
+
+Finally, assign the original profile back to the user:
+SQL> alter user mv_maint profile default; ;
+
+Identifying DBA-Created Accounts
+If you’ve inherited a database from another DBA, then sometimes it’s useful to determine whether the DBA created a user or if a user is a default account created by Oracle. As mentioned earlier, usually several user accounts are created for you when you create a database.
+
+select distinct u.username
+,case when d.user_name is null then 'DBA created account'
+else 'Oracle created account'
+end
+from dba_users u
+,default_pwd$ d
+where u.username=d.user_name(+);
+
+For default users, there should be a record in the DEFAULT_PWD$ view. So, if a user doesn’t exist in DEFAULT_PWD$, then you can assume it’s not a default account.
+
+The prior query is not 100 percent accurate, as there are users that exist in DEFAULT_PWD$ that can be created manually by a DBA. Having said that, the prior queries do provide a starting point for separating the default accounts from ones created by you (or another DBA).
+
+Understanding Schemas vs. Users
+SQL> connect inv_mgmt/f00bar
+SQL> describe inventory;
+The prior statement is identical in function to the following statement:
+SQL> desc inv_mgmt.inventory;
+You can alter your current user’s session to point at a different schema via the ALTER SESSION statement:
+SQL> alter session set current_schema = hr;
+The statement does instruct Oracle to use the schema qualifier HR for any subsequent SQL statements that reference database objects.
+
+You should verify the default permanent and temporary tablespace settings to make certain they meet your database standards. You can look at user information by selecting from the DBA_USERS view:
+select
+username
+,password
+,default_tablespace
+,temporary_tablespace
+from dba_users;
+
+In software development a smoke test is a simple test of the system to ensure that it has some level of workability. 
+

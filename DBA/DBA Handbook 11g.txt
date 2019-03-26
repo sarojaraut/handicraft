@@ -1,0 +1,1158 @@
+﻿An Oracle instance is composed of a large block of memory allocated in an area called the System Global Area (SGA), along with a number of background processes that interact between the SGA and the database files on disk.
+
+In an Oracle Real Application Cluster (RAC), more than one instance will use the same database. Although the instances that share the database can be on the same server, most likely
+the instances will be on separate servers that are connected by a high-speed interconnect and access a database that resides on a specialized RAID-enabled disk subsystem.
+
+TIMESTAMP (fractional_seconds) : Year, month, day, hour, minute, second, and fractional seconds. Value of fractional_seconds can range from 0 to 9; in other words, up to one billionth of a second precision. The default is 6 (one millionth).
+TIMESTAMP (fractional_seconds) WITH TIME ZONE : Contains a TIMESTAMP value in addition to a time zone displacement value. Time zone displacement can be an offset from UTC (such as ‘-06:00’) or a region name (e.g., ‘US/Central’).
+TIMESTAMP (fractional_seconds) WITH LOCAL TIME ZONE : Similar to TIMESTAMP WITH TIMEZONE, except that (1) data is normalized to the database time zone when it is stored and (2) when retrieving columns with this datatype, the user sees the data in the session’s time zone.
+ROWID A base-64 string representing the unique address of a row in its corresponding table. This address is unique throughout the database.
+UROWID [(size)] A base-64 string representing the logical address of a row in an indexorganized table. The maximum for size is 4000 bytes.
+
+Creating an index makes finding a particular row in a table more efficient. However, this adds a bit of overhead, because the database must maintain the data rows and the index entries for the table. What if your table does not have many columns, and access to the table occurs primarily on a single column? In this case, an indexorganized table (IOT) might be the right solution. An IOT stores rows of a table in a B-tree index, where each node of the B-tree index contains the keyed (indexed) column along with one or more non-indexed columns.
+The most obvious advantage of an IOT is that only one storage structure needs to be maintained instead of two; similarly, the values for the primary key of the table are stored only once in an IOT, versus twice in a regular table.
+There are, however, a few disadvantages to using an IOT. Some tables, such as tables for logging events, may not need a primary key, or any keys for that matter; an IOT must have a
+primary key. Also, IOTs cannot be a member of a cluster. Finally, an IOT might not be the best solution for a table if there are a large number of columns in the table and many of the columns are frequently accessed when table rows are retrieved.
+
+External Tables
+External tables were introduced in Oracle9i. In a nutshell, external tables allow a user to access a data source, such as a text file, as if it were a table in the database. The metadata for the table is stored within the Oracle data dictionary, but the contents of the table are stored externally.
+
+The definition for an external table contains two parts. The first part is the definition of the table from the database user’s point of view. This definition looks like any typical definition that you’d see in a create table statement. The second part is what differentiates an external table from a regular table. This is where the mapping between the database columns and the external data source occurs. The syntax for the default type of external table, ORACLE_LOADER, is virtually identical to that of a control file in SQL*Loader. This is one of the advantages of external tables; the user only needs to know how to access a standard database table to get to the external file.
+
+There are a few drawbacks, however, to using external tables. You cannot create indexes on an external table, and no inserts, updates, or deletes can be performed on external tables. These drawbacks are minor when considering the advantages of using external tables for loading native database tables.
+
+Clustered Tables
+If two or more tables are frequently accessed together (for example, an order table and a line item detail table), then creating a clustered table might be a good way to boost the performance of queries that reference those tables. In the case of an order table with an associated line-item detail table, the order header information could be stored in the same block as the line-item detail records, thus reducing the amount of I/O needed to retrieve the order and line-item information.
+
+Clustered tables also reduce the amount of space needed to store the columns the two tables have in common, also known as a cluster key value. The cluster key value is also stored in a
+cluster index. The cluster index operates much like a traditional index in that it will improve queries against the clustered tables when accessed by the cluster key value. In our example with orders and line items, the order number is only stored once, instead of repeating for each lineitem detail row.
+
+The advantages to clustering a table are reduced if frequent insert, update, and delete operations occur on the table relative to the number of select statements against the table. In addition, frequent queries against individual tables in the cluster may also reduce the benefits of clustering the tables in the first place.
+
+Partitioned Tables
+Partitioning a table (or index) helps make a large table more manageable. A table may be partitioned, or even subpartitioned, into smaller pieces. From an application point of view, partitioning is transparent (that is, no explicit references to a particular partition are necessary in any end-user SQL). The only effect that a user may notice is that queries against the partitioned table using criteria in the where clause that matches the partitioning scheme run a lot faster!
+
+There are many advantages to partitioning from a DBA point of view. 
+If one partition of a table is on a corrupted disk volume, the other partitions in the table are still available for user queries while the damaged volume is being repaired. Similarly, backups of partitions can occur over a period of days, one partition at a time, rather than requiring a single backup of the entire table.
+Partitions are one of three types: range partitioned, hash partitioned, or, as of Oracle9i, list partitioned; as of Oracle 11g, you can also partition by parent/child relationships, application controlled partitioning, and many combinations of basic partition types, including list-hash, list list, list-range, and range-range. Each row in a partitioned table can exist in one, and only one, partition. The partition key directs the row to the proper partition; the partition key can be a composite key of up to 16 columns in the table. There are a few minor restrictions on the types of tables that can be partitioned; for example, a table containing a LONG or LONG RAW column cannot be partitioned. The LONG restriction should rarely be a problem; LOBs (CLOBs and BLOBs, character large objects and binary large objects) are much more flexible and encompass all the features of LONG and LONG RAW datatypes.
+
+No matter what type of partitioning scheme is in use, each member of a partitioned table must have the same logical attributes, such as column names, datatypes, constraints, and so forth. The physical attributes for each partition, however, can be different depending on its size and location on disk. The key is that the partitioned table must be logically consistent from an application or user point of view.
+
+Bitmap Indexes
+A bitmap index has a significantly different structure from a B-tree index in the leaf node of the index.
+It stores one string of bits for each possible value (the cardinality) of the column being indexed. The
+length of the string of bits is the same as the number of rows in the table being indexed.
+In addition to saving a tremendous amount of space compared to traditional indexes, a
+bitmap index can provide dramatic improvements in response time because Oracle can quickly
+remove potential rows from a query containing multiple where clauses long before the table itself
+needs to be accessed. Multiple bitmaps can use logical and and or operations to determine which
+rows to access from the table.
+Although you can use a bitmap index on any column in a table, it is most efficient when the
+column being indexed has a low cardinality, or number of distinct values. For example, the
+Gender column in the PERS table will either be NULL, M, or F. The bitmap index on the Gender
+column will have only three bitmaps stored in the index.
+
+A variation of bitmap indexes called bitmap join indexes creates a bitmap index on a table
+column that is frequently joined with one or more other tables on the same column. This provides
+tremendous benefits in a data warehouse environment where a bitmap join index is created on a
+fact table and one or more dimension tables, essentially pre-joining those tables and saving CPU
+and I/O resources when an actual join is performed. Bitmap indexes are only available in the Enterprise Edition of Oracle 11g.
+
+
+Views
+Views allow users to see a customized presentation of the data in a single table or even a join between many tables. A view is also known as a stored query. When Oracle processes a query containing a view, it substitutes the underlying query definition in the user’s select statement and processes the resulting query as if the view did not exist. A regular view does not store any data, only the definition, and the underlying query is run every time the view is accessed. Extensions to a regular view, called a materialized view, allows the results of the query to be stored along with the definition of the query to speed processing, 
+
+Among other benefits. Object views, like traditional views, hide the details of the underlying table joins and allow object-oriented development and processing to
+occur in the database while the underlying tables are still in a relational format.
+
+The advantages of a view are many. Views hide data complexity
+
+Users and Schemas
+Access to the database is granted to a database account known as a user. A user may exist in the database without owning any objects. However, if the user creates and owns objects in the database, those objects are part of a schema that has the same name as the database user. A schema can own any type of object in the database: tables, indexes, sequences, views, and so forth. The schema owner or DBA can grant access to these objects to other database users. The user always has full privileges and control over the objects in the user’s schema.
+
+
+Sequences
+An Oracle sequence assigns sequential numbers, guaranteed to be unique unless the sequence
+is re-created or reset. It produces a series of unique numbers in a multi-user environment without
+the overhead of disk locking or any special I/O calls, other than what is involved in loading the
+sequence into the shared pool.
+Sequences can generate numbers up to 38 digits in length; the series of numbers can be
+ascending or descending, the interval can be any user-specified value.
+
+If a block of numbers is cached, and the instance is restarted, or a transaction that uses a number
+from a sequence is rolled back, the next call to retrieve a number from the sequence will not
+return the number that was not used in the original reference to the sequence.
+
+Synonyms
+An Oracle synonym is simply an alias to a database object, to simplify references to database
+objects and to hide the details of the source of the database objects. Synonyms can be assigned
+to tables, views, materialized views, sequences, procedures, functions, and packages.
+
+Synonyms can be either public or private. A private synonym is defined in the schema of
+a user and is available only to the user. A public synonym is usually created by a DBA and is
+automatically available for use by any database user. After creating a public synonym, make sure the users of the synonym
+have the correct privileges to the object referenced by the synonym.
+
+When referencing a database object, Oracle first checks whether the object exists in the user’s schema. If no such object exists, Oracle checks for a private synonym. If there is no private synonym, Oracle checks for a public synonym. If there is no public synonym, Oracle returns an error.
+
+Procedures and functions have many advantages in a database environment. Procedures are
+compiled and stored in the data dictionary once; when more than one user needs to call the
+procedure, it is already compiled, and only one copy of the stored procedure exists in the shared
+pool. In addition, network traffic is reduced, even if the procedural features of PL/SQL are not
+used. One PL/SQL call uses up much less network bandwidth than several SQL select and insert
+statements sent separately over the network,
+
+Triggers are extremely useful in a distributed environment to simulate a foreign key relationship
+between tables that do not exist in the same database. They are also very useful in implementing
+complex integrity rules that cannot be defined using the built-in Oracle constraint types.
+
+Database links allow an Oracle database to reference objects stored outside of the local database.
+The command create database link creates the path to a remote database,
+
+A database link can be public or private, and it provides
+a convenient shorthand way to access another set of resources.
+
+The DBA often has to decide whether to allocate one datafile that
+can autoextend indefinitely or to allocate many smaller datafiles with
+a limit to how much each can extend. Although the performance of
+each solution is likely very similar, it is probably a better idea to stick
+with more datafiles that are each less than 2GB in size. It is a lot easier
+to move around relatively smaller files, and some file systems may
+limit the size of an individual file to 2GB anyway. Also, if you need to
+temporarily move all the datafiles for a tablespace to another server,
+it is often easier to find several volumes, each with enough space to
+hold one of the datafiles, rather than one volume with enough space
+to hold a single datafile that is 25GB.
+
+--- Upgrade
+
+First Install the oracle 11g software
+
+SQL> spool upgrade_11g_info.txt
+SQL> @utlu111i.sql
+SQL> spool off
+
+Review the file upgrade_11g_info.txt for adjustments you should make before performing the actual upgrade; these adjustments include increasing the size of tablespaces, removing obsolete initialization parameters, and revoking obsolete roles such as CONNECT. As of Oracle Database 11g, the CONNECT role only contains the CREATE SESSION privilege.
+
+create the new database
+then impdp from old database and expdp to new version of oracle.
+
+The Database Upgrade Assistant can sloe be used in place of impdp and expdp.
+
+you will need to point your applications to connect to the new database instead of the old database. You will also need to update any configuration files, version-specific scripts, and the networking configuration sfiles (tnsnames.ora and listener.ora) to point to the new database.
+---------------
+OFA is slightly different depending on the type of storage options you use—either an Automatic Storage Management (ASM) environment or a standard operating system file system.
+
+For example, one installation of Oracle 11g, two different installations of Oracle 10g, and one installation of Oracle9i may reside in the following three directories:
+/u01/app/oracle/product/9.2.0.1
+/u01/app/oracle/product/10.1.0/db_1
+/u01/app/oracle/product/10.1.0/db_2
+/u01/app/oracle/product/11.1.0/db_1
+
+At the same time, the Oracle client executables and configuration may be stored in the same parent directory as the database executables:
+/u01/app/oracle/product/10.1.0/client_1
+
+Some installation directories will never have more than one instance for a given product; for example, Oracle Cluster Ready Services (CRS) will be installed in the following directory given the previous installations:
+/u01/app/oracle/product/11.1.0/crs
+
+Database Files : Any non-ASM Oracle datafiles reside in /<mount point>/oradata/<database name>. For example, /u02/oradata/rac0 and /u03/oradata/rac0 would contain the non-ASM control files, redo log files, and datafiles for the instance rac0, whereas /u05/oradata/dev1 would contain the same files for the dev1 instance on the same server. The naming convention for the different file types under the oradata directory are :
+
+Control files : control.ctl None.
+Redo log files : redo<n>.log n is a two-digit number.
+Datafiles : <tn>.dbf t is an Oracle tablespace name, and n is a two-digit number.
+
+it is advisable to keep the tablespace names eight characters or less in a Unix environment. Because portable Unix filenames are restricted to 14 characters. Six character suffix and eight character tablespace name.
+
+Only control files, redo log files, and datafiles associated with the database <database name> should be stored in the directory /<mount point>/oradata/<database name>.
+
+ASM Environment
+In an ASM environment, the executables are stored in the directory structure presented previously; All the control files, redo log files, and datafiles for the instance dw are managed by the ASM instance +ASM on this server.
+
+select file#, name from v$datafile;
+FILE# NAME
+---------- ----------------------------------------
+1 +DATA/dw/datafile/system.256.622426913
+2 +DATA/dw/datafile/sysaux.257.622426915
+3 +DATA/dw/datafile/undotbs1.258.622426919
+4 +DATA/dw/datafile/users.259.622426921
+5 +DATA/dw/datafile/example.265.622427181
+
+SQL> select name from v$controlfile;
+NAME
+----------------------------------------
++DATA/dw/controlfile/current.260.622427059
++RECOV/dw/controlfile/current.256.622427123
+
+SQL> select member from v$logfile;
+MEMBER
+----------------------------------------
++DATA/dw/onlinelog/group_3.263.622427143
++RECOV/dw/onlinelog/group_3.259.622427145
++DATA/dw/onlinelog/group_2.262.622427135
++RECOV/dw/onlinelog/group_2.258.622427137
++DATA/dw/onlinelog/group_1.261.622427127
++RECOV/dw/onlinelog/group_1.257.622427131
+
+Within the disk groups +DATA and +RECOV, we see that each of the database file types, such as datafiles, control files, and online log files, has its own directory. Fully qualified ASM filenames have the format
++<group>/<dbname>/<file type>/<tag>.<file>.<incarnation>
+
+Segment Segregation
+As a general rule of thumb, you want to divide segments into different tablespaces based on their type, size, and frequency of access.
+
+Big segments and small segments should be in separate tablespaces.
+Table segments and their corresponding index segments should be in separate tablespaces.
+A separate tablespace should be used for each application.
+Segments with low usage and segments with high usage should be in different tablespaces.
+Static segments should be separated from high DML segments.
+Read-only tables should be in their own tablespace.
+Staging tables for a data warehouse should be in their own tablespace.
+Tablespaces should be created with the appropriate block size, depending on whether
+segments are accessed row by row or in full table scans.
+Materialized views should be in a separate tablespace from the base table.
+For partitioned tables and indexes, each partition should be in its own tablespace.
+
+ASM Architecture
+ASM divides the datafiles and other database structures into extents, and it divides the extents among
+all the disks in the disk group to enhance both performance and reliability. Instead of mirroring
+entire disk volumes, ASM mirrors the database objects to provide the flexibility to mirror or stripe
+the database objects differently depending on their type.
+
+Automatic rebalancing is another key feature of ASM. When an increase in disk space is
+needed, additional disk devices can be added to a disk group, and ASM moves a proportional
+number of files from one or more existing disks to the new disks to maintain the overall I/O
+balance across all disks.This happens in the background while the database objects contained
+in the disk files are still online and available to users.
+
+ASM requires a special type of Oracle instance to provide the interface between a traditional
+Oracle instance and the file system; the ASM software components are shipped with the Oracle
+database software
+
+Two Oracle background processes introduced in Oracle Database 10g support ASM instances:
+RBAL and ORBn. RBAL coordinates the disk activity for disk groups, whereas ORBn, where n can
+be a number from 0 to 9, performs the actual extent movement between disks in the disk groups.
+For databases that use ASM disks, there are also two new background processes as of Oracle
+Database 10g: OSMB and RBAL. OSMB performs the communication between the database and
+the ASM instance, whereas RBAL performs the opening and closing of the disks in the disk group
+on behalf of the database.
+
+An ASM instance has a few other unique characteristics. Although it does have an initialization
+parameter file and a password file, it has no data dictionary, and therefore all connections to an
+ASM instance are via SYS and SYSTEM using operating system authentication only; you can only
+connect to an ASM instance with the connect / as sysdba command;
+Disk group commands such as create diskgroup, alter diskgroup,
+and drop diskgroup are only valid in an ASM instance. Finally, an ASM instance is either in a
+NOMOUNT or MOUNT state; it is never in an OPEN state.
+
+A number of initialization parameters are either specific to ASM instances or have new values
+within an ASM instance. An SPFILE is highly recommended instead of an initialization parameter
+file for an ASM instance.
+
+INSTANCE_TYPE : For an ASM instance, the INSTANCE_TYPE parameter has a value of ASM. The default, for a traditional Oracle instance, is RDBMS.
+DB_UNIQUE_NAME : The default value for the DB_UNIQUE_NAME parameter is +ASM and is the unique name for a group of ASM instances within a cluster or on a single node.
+ASM_POWER_LIMIT : To ensure that rebalancing operations do not interfere with ongoing user I/O, the ASM_POWER_LIMIT parameter controls how fast rebalance operations occur. The values range from 1 to 11, with 11 being the highest possible value; the default value is 1 (low I/O overhead). Because this is a dynamic parameter, you may set this to a low value during the day and set it higher overnight whenever a disk-rebalancing operation must occur.
+ASM_DISKSTRING : The ASM_DISKSTRING parameter specifies one or more strings, operating system dependent, to limit the disk devices that can be used to create disk groups. If this value is NULL, all disks visible to the ASM instance are potential candidates for creating disk groups. For the examples in this chapter for our test server, the value of the ASM_DISKSTRING parameter is /dev/raw/*:
+ASM_DISKGROUPS : The ASM_DISKGROUPS parameter specifies a list containing the names of the disk groups to be automatically mounted by the ASM instance at startup or by the alter
+diskgroup all mount command. Even if this list is empty at instance startup, anyexi sting disk group can be manually mounted.
+LARGE_POOL_SIZE : The LARGE_POOL_SIZE parameter is useful for both regular and ASM instances; however, this pool is used differently for an ASM instance. All internal ASM packages are executed from this pool, so this parameter should be set to at least 12MB for a single instance and 16MB for a RAC instance.
+ASM_PREFERRED_READ_FAILURE_GROUPS : The ASM_PREFERRED_READ_FAILURE_GROUPS parameter, new to Oracle Database 11g, contains a list of the preferred failure groups for a given database instance when using clustered ASM instances. This parameter is instance specific: each instance can specify a failure group that is closest to the instance’s node (for example, a failure group on the server’s local disk) to improve performance.
+
+ASM Instance Startup and Shutdown
+An ASM instance is started much like a database instance, except that the startup command defaults to startup mount. Because there is no control file, database, or data dictionary to mount, the ASM disk groups are mounted instead of a database. The command startup nomount starts up the instance but does not mount any ASM disks.
+
+Before the ASM instance finishes a shutdown, it waits for all dependent databases to shut down. If you use the shutdown abort command on the ASM instance, which eventually forces all dependent databases to perform a shutdown abort. For multiple ASM instances sharing disk groups, such as in a Real Application Clusters (RAC) environment, the failure of an ASM instance does not cause the database instances to fail. Instead, another ASM instance performs a recovery operation for the failed instance.
+
+ASM Filename Formats : All ASM files are Oracle-Managed Files (OMF), so the details of the actual filename within the disk group is not needed for most administrative functions. When an object in an ASM disk group is dropped, the file is automatically deleted.
+
+V$ASM_DISK : One row for each disk discovered by an ASM instance, used by a disk group or not. For a database instance, one row for each disk group in use by the instance.
+V$ASM_DISKGROUP : For an ASM instance, one row for each disk group containing general characteristics of the disk group. For a database instance, one row for each disk group in use whether mounted or not.
+V$ASM_FILE : One row for each file in every mounted disk group. Not available in normal instance.
+V$ASM_OPERATION : One row for each executing long-running operation in the ASM instance.
+
+ASM filenames can be one of six different formats.
+1. Fully Qualified Names : Fully qualified ASM filenames are used only when referencing an existing file. +group/dbname/file type/tag.file.incarnation
+where group is the disk group name, dbname is the database, file type is the Oracle file type, tag is information specific to the file type, and the file.incarnation pair ensures
+uniqueness. Here is an example of an ASM file for the USERS tablespace: +DATA/dw/datafile/users.259.627432977 The disk group name is +DATA, the database name is dw, it’s a datafile for the USERS tablespace, and the file number/incarnation pair 259.627432977 ensures uniqueness if you decide to create another ASM datafile for the USERS tablespace.
+
+2. Numeric Names : Numeric names are used only when referencing an existing ASM file. This allows you to refer to an existing ASM file by only the disk group name and the file number/incarnation pair. The numeric name for the ASM file in the preceding section is +DATA.259.627432977
+
+3. Alias Names : An alias can be used when either referencing an existing object or creating a single ASM file. Using the alter diskgroup add alias command, a more readable name can be created for an existing or a new ASM file, and it’s distinguishable from a regular ASM filename because it does not end in a dotted pair of numbers (the file number/incarnation pair), as shown here:
+
+SQL> alter diskgroup data add directory '+data/purch';
+Diskgroup altered.
+SQL> alter diskgroup data add alias '+data/purch/users.dbf' for '+data/dw/datafile/users.259.627432977';
+Diskgroup altered.
+
+4. Alias with Template Names : An alias with a template can only be used when creating a new ASM file. Templates provide a shorthand for specifying a file type and a tag when creating a new ASM file. Here’s an example of an alias using a template for a new tablespace in the +DATA disk group:
+SQL> create tablespace users2 datafile '+data(datafile)';
+Tablespace created.
+
+The template datafile specifies COARSE striping, MIRROR for a normal-redundancy group, and HIGH for a high-redundancy group; it is the default for a datafile. Because we did not fully qualify the name, the ASM name for this diskgroup is as follows: +DATA/dw/datafile/users2.267.627782171 
+
+5. Incomplete Names : An incomplete filename format can be used either for single-file or multiple-file creation operations. Only the disk group name is specified, and a default template is used depending on the type of file, as shown here:
+SQL> create tablespace users5 datafile '+data1';
+
+6. Incomplete Names with Template : As with incomplete ASM filenames, an incomplete filename with a template can be used either for single-file or multiple-file creation operations. Regardless of the actual file type, the template name determines the characteristics of the file. Even though we are creating a tablespace in the following example, the striping and mirroring characteristics of an online log file (fine striping) are used for the new tablespace instead as the attributes for the datafile (coarse striping):
+SQL> create tablespace users6 datafile '+data1(onlinelog)';
+
+Default-Template Redundancy Settings
+Template Name Striping : Mirroring : with Normal Redundancy Mirroring: with High Redundancy Mirroring : with Extended Redundancy : tag
+Control file : Fine : Three-way mirroring : Three-way mirroring : No mirroring : cf or bcf
+Datafile : Coarse : Two-way mirroring: Three-way mirroring : No mirroring : tablespacename.file#
+Onlinelog : Fine : Two-way mirroring : Three-way mirroring : No mirroring : logthread#
+Archivelog : Coarse : Two-way mirroring : Three-way mirroring : No mirroring : parameter
+Tempfile : Coarse : Two-way mirroring :three-way mirroring No : mirroring : tablespacename.file#
+Backupset : Coarse : Two-way mirroring : Three-way mirroring : No mirroring : client specified
+Flashback : : Fine : Two-way mirroring : Three-way mirroring : No mirroring : thread#_log#
+
+Disk Group Architecture : A disk group is a collection of physical disks managed as a unit. Every ASM disk, as part of a disk group, has an ASM disk name that is either assigned by the DBA or automatically assigned when it is assigned to the disk group. 
+
+Files in a disk group are striped on the disks using either coarse striping or fine striping. Coarse striping spreads files in units of 1MB each across all disks. Coarse striping is appropriate for a system with a high degree of concurrent small I/O requests, such as an OLTP environment.
+
+Alternatively, fine striping spreads files in units of 128KB, is appropriate for traditional data warehouse environments or OLTP systems with low concurrency, and maximizes response
+time for individual I/O requests.
+
+Disk Group Mirroring and Failure Groups : Before defining the type of mirroring within a disk group, you must group disks into failure groups. A failure group is one or more disks within a disk group that share a common resource, such as a disk controller, whose failure would cause the entire set of disks to be unavailable to the group.
+
+There are three types of mirroring available: external redundancy, normal redundancy, and high redundancy.
+
+External Redundancy:  Requires only one disk location and assumes that the disk is not critical to the ongoing operation of the database or that the disk is managed externally with high-availability hardware such as a RAID controller.
+
+Normal Redundancy:  Provides two-way mirroring and requires at least two failure groups within a disk group. Failure of one of the disks in a failure group does not cause any downtime for the disk group or any data loss other than a slight performance hit for queries against objects in the disk group; when all disks in the failure group are online, read performance
+is typically improved because the requested data is available on more than one disk.
+
+High Redundancy : Provides three-way mirroring and requires at least three failure groups within a disk group. The failure of disks in two out of the three failure groups is for the most part transparent to the database users, as in normal redundancy mirroring.
+
+Mirroring is managed at a very low level. Extents, not disks, are mirrored. In addition, each disk will have a mixture of both primary and mirrored (secondary and tertiary) extents on each disk. Although a slight amount of overhead is incurred for managing mirroring at the extent level, it provides the advantage of spreading out the load from the failed disk to all other disks instead of a single disk.
+
+Disk Group Dynamic Rebalancing : Whenever you change the configuration of a disk group—whether you are adding or removing a failure group or a disk within a failure group—dynamic rebalancing occurs automatically to proportionally reallocate data from other members of the disk group to the new member of the disk group. This rebalance occurs while the database is online and available to users; any impact to ongoing database I/O can be controlled by adjusting the value of the initialization parameter ASM_POWER_LIMIT to a lower value.
+
+Not only does dynamic rebalancing free you from the tedious and often error-prone task of identifying hot spots in a disk group, it also provides an automatic way to migrate an entire database from a set of slower disks to a set of faster disks while the entire database remainss online. 
+
+Using the view V$ASM_DISK, you can view all disks discovered using the initialization parameter ASM_DISKSTRING, along with the status of the disk (in other words, whether it is assigned to an existing disk group or is unassigned). Here is the command:
+
+select group_number, disk_number, name, failgroup, create_date, path from v$asm_disk; -- if group number is 0 and name,failgroup,create_date are null then those disks are not assigned
+
+select group_number, name, type, total_mb, free_mb from v$asm_diskgroup;
+
+Your first step is to create the disk group:
+SQL> create diskgroup data2 high redundancy
+failgroup fg1 disk '/dev/raw/raw5' name d2a
+failgroup fg2 disk '/dev/raw/raw6' name d2b
+failgroup fg3 disk '/dev/raw/raw7' name d2c
+failgroup fg4 disk '/dev/raw/raw8' name d2d;
+Diskgroup created.
+
+SQL> select group_number, name, type, total_mb, free_mb  from v$asm_diskgroup;
+
+GROUP_NUMBER NAME TYPE TOTAL_MB FREE_MB
+------------ ---------- ------ ---------- ----------
+3 DATA2 HIGH 16376 16221
+
+SQL> select group_number, disk_number, name, failgroup, create_date, path from v$asm_disk;
+
+GROUP_NUMBER DISK_NUMBER NAME FAILGROUP CREATE_DA PATH
+------------ ----------- ---------- ---------- --------- ---------------
+3 3 D2D FG4 13-JUL-07 /dev/raw/raw8
+3 2 D2C FG3 13-JUL-07 /dev/raw/raw7
+3 1 D2B FG2 13-JUL-07 /dev/raw/raw6
+3 0 D2A FG1 13-JUL-07 /dev/raw/raw5
+
+However, if disk space is tight, you don’t need four members; for a high-redundancy disk group, only three failure groups are necessary, so you drop the disk group and re-create it with
+only three members:
+SQL> drop diskgroup data2;
+Diskgroup dropped.
+
+SQL> create diskgroup data2 high redundancy
+failgroup fg1 disk '/dev/raw/raw5' name d2a
+failgroup fg2 disk '/dev/raw/raw6' name d2b
+failgroup fg3 disk '/dev/raw/raw7' name d2c;
+
+Now that the configuration of the new disk group has been completed, you can create a tablespace in the new disk group from the database instance:
+
+SQL> create tablespace users3 datafile '+DATA2';
+Tablespace created.
+
+Because ASM files are Oracle-Managed Files (OMF), you don’t need to specify any other characteristics when you create the tablespace.
+
+Oracle ASM Fast Mirror Resync
+Restoring the redundancy of an Oracle ASM disk group after a transient disk path failure can be time consuming. This is especially true if the recovery process requires rebuilding an entire Oracle ASM failure group. Oracle ASM fast mirror resync significantly reduces the time to resynchronize a failed disk in such situations. When you replace the failed disk, Oracle ASM can quickly resynchronize the Oracle ASM disk extents.
+
+Any problems that make a failure group temporarily unavailable are considered transient failures that can be recovered by the Oracle ASM fast mirror resync feature. For example, transient failures can be caused by disk path malfunctions, such as cable failures, host bus adapter failures, controller failures, or disk power supply interruptions.
+
+Oracle ASM fast resync keeps track of pending changes to extents on an OFFLINE disk during an outage. The extents are resynced when the disk is brought back online.
+
+To implement fast mirror resync, you set the time window within which ASM will not automatically drop the disk in the disk group when a transient planned or unplanned failure occurs. During the transient failure, ASM keeps track of all changed data blocks so that when the unavailable disk is brought back online, only the changed blocks need to be remirrored instead of the entire disk.
+
+SQL> alter diskgroup data set attribute 'compatible.asm' = '11.1.0.0.0';
+
+SQL> alter diskgroup data set attribute 'compatible.rdbms' = '11.1.0.0.0';
+
+The only side effect to using a higher compatibility level for the RDBMS and ASM instance is that only other instances with a version number 11.1.0.0.0 or higher can access this disk group. Next, set the disk group attribute disk_repair_time as in this example:
+SQL> alter diskgroup data set attribute 'disk_repair_time' = '2.5h';
+
+The default disk repair time is 3.6 hours, which should be more than adequate for most planned and unplanned (transient) outages. Once the disk is back online, run this command to notify the ASM instance that the disk DATA_0001 is back online:
+SQL> alter diskgroup data online disk data_0001;
+
+This command starts the background procedure to copy all changed extents on the remaining disks in the disk group to the disk DATA_0001 that is now back online.
+
+Altering Disk Groups : Disks can be added and dropped from a disk group; also, most characteristics of a disk group can be altered without re-creating the disk group or impacting user transactions on objects in the disk group.
+When a disk is added to a disk group, a rebalance operation is performed in the background after the new disk is formatted for use in the disk group.
+
+suppose you decide to improve the I/O characteristics of the disk group DATA by adding the last available raw disk to the disk group, as follows:
+SQL> alter diskgroup data add failgroup d1fg3 disk '/dev/raw/raw8' name d1c;
+
+The command returns immediately and the formatting and rebalancing continue in the background. You then check the status of the rebalance operation by checking the view V$ASM_OPERATION:
+SQL> select group_number, operation, state, power, actual, sofar, est_work, est_rate, est_minutes from v$asm_operation;
+GROUP_NUMBER OPERA STAT POWER ACTUA SOFAR EST_WORK EST_RATE EST_MINUTES
+------------ ----- ---- ----- ----- ----- -------- -------- -----------
+1 REBAL RUN 1 1 3 964 60 16
+Because the estimate for completing the rebalance operation is 16 minutes, you decide to allocate more resources to the rebalance operation and change the power limit for this particular rebalance operation:
+SQL> alter diskgroup data rebalance power 8;
+
+Checking the status of the rebalance operation confirms that the estimated time to completion has been reduced to four minutes instead of 16:
+SQL> select group_number, operation, state, power, actual, sofar, est_work, est_rate, est_minutes from v$asm_operation;
+GROUP_NUMBER OPERA STAT POWER ACTUA SOFAR EST_WORK EST_RATE EST_MINUTES
+------------ ----- ---- ----- ----- ----- -------- -------- -----------
+1 REBAL RUN 8 8 16 605 118 4
+
+Finally, you can confirm the new disk configuration from the V$ASM_DISK and V$ASM_DISKGROUP views:
+
+ALTER DISKGROUP Command Description
+alter diskgroup ... drop disk : Removes a disk from a failure group within a disk group and performs an automatic rebalance
+alter diskgroup ... drop ... add : Drops a disk from a failure group and adds another disk, all in the same command
+alter diskgroup ... mount : Makes a disk group available to all instances
+alter diskgroup ... dismount : Makes a disk group unavailable to all instances
+alter diskgroup ... check all : Verifies the internal consistency of the disk group
+
+------------------------------
+CHAPTER 5 Developing and Implementing Applications
+
+Do As Little As Possible - 
+In Your Application Design, Strive to Eliminate Logical Reads
+In Your Application Design, Strive to Avoid Trips to the Database
+For Reporting Systems, Store the Data the Way the Users Will Query It
+Avoid Repeated Connections to the Database
+Use the Right Indexes
+Eliminate Unnecessary Sorts
+Eliminate the Need to Query Undo Segments
+Keep Your Statistics Updated
+
+Use a Larger Database Block Size
+There is only one reason not to use the largest block size available in your environment for a new
+database: if you cannot support a greater number of users performing updates and inserts against
+a single block. Other than that, increasing the database block size should improve the performance
+of almost everything in your application.
+
+Divide and Conquer Your Data
+Use Partitions
+Use Materialized Views
+Use Parallelism
+
+
+Standard Deliverables
+How do you know if an application is ready to be migrated to a production environment?
+
+Entity relationship diagram
+Physical database diagram
+Space requirements
+Tuning goals for queries and transaction processing
+Security requirements - privileges, data security
+Data requirements - back up and recovery, archiving
+Query execution plans - 
+Acceptance test procedures - what functionality and performance goals must be achieved
+
+Resource Management and Stored Outlines --page 160
+
+
+Sizing Database Objects
+
+create tablespace users12 datafile '+DATA' size 100m extent management local autoallocate;
+
+The extent management local clause is the default for create tablespace; autoallocate is the default for tablespaces with local extent management.
+
+ When reading data via a full table scan, Oracle will read multiple blocks at a time. The number of blocks read at a time is set via the DB_FILE_MULTIBLOCK_READ_COUNT database initialization parameter and is limited by the operating system’s I/O buffer size. For example, if your database block size is 8KB and your operating system’s I/O buffer size is 128KB, you can read up to 16 blocks per read during a full table scan. In that case, setting DB_FILE_MULTIBLOCK_READ_COUNT to a value higher than 16 will not affect the performance of the full table scans.
+
+If you have an existing tablespace named USERS, you can estimate the space required for a new table in that tablespace. In the following example, the CREATE_TABLE_COST procedure is executed with values passed for the average row size, the row count, and the pctfree setting. The used_bytes and alloc_bytes variables are defined and are displayed via the DBMS_OUTPUT.PUT_LINE procedure:
+declare
+	calc_used_bytes NUMBER;
+	calc_alloc_bytes NUMBER;
+begin
+DBMS_SPACE.CREATE_TABLE_COST (
+	tablespace_name => 'USERS',
+	avg_row_size => 100,
+	row_count => 5000,
+	pct_free => 10,
+	used_bytes => calc_used_bytes,
+	alloc_bytes => calc_alloc_bytes
+	);
+DBMS_OUTPUT.PUT_LINE('Used bytes: '||calc_used_bytes);
+DBMS_OUTPUT.PUT_LINE('Allocated bytes: '||calc_alloc_bytes);
+end;
+/
+
+Index Size
+
+declare
+	calc_used_bytes NUMBER;
+	calc_alloc_bytes NUMBER;
+begin
+DBMS_SPACE.CREATE_INDEX_COST (
+	ddl => 'create index EMP_FN on EMPLOYEES(FIRST_NAME) tablespace USERS',
+	used_bytes => calc_used_bytes,
+	alloc_bytes => calc_alloc_bytes
+	);
+DBMS_OUTPUT.PUT_LINE('Used bytes = '||calc_used_bytes);
+DBMS_OUTPUT.PUT_LINE('Allocated bytes = '||calc_alloc_bytes);
+end;
+/
+
+
+The DBMS_STATS procedure, while powerful, does not collect statistics on chained rows. You can still use the analyze command, which is otherwise deprecated in favor of DBMS_STATS, to reveal chained rows, as in this example:
+
+analyze table employees list chained rows;
+
+Sizing Index-Organized Tables
+
+Row length for sizing = Average row length + number of columns + number of LOB columns + 2 header bytes
+Enter this value as the row length when using the CREATE_TABLE_COST procedure for the index organized table.
+
+
+Quiescing and Suspending the Database
+You can temporarily quiesce or suspend the database during your maintenance operations. Using these options allows you to keep the database open during application maintenance, avoiding the time or availability impact associated with database shutdowns.
+
+While the database is quiesced, no new transactions will be permitted by any accounts other than SYS and SYSTEM. New queries or attempted logins will appear to hang until you unquiesce
+the database. The quiesce feature is useful when performing table maintenance or complicated data maintenance. 
+
+To use the quiesce feature, you must first enable the Database Resource Manager. In addition, the RESOURCE_MANAGER_PLAN initialization parameter must have been set to a valid plan when the database was started.
+
+Any non-DBA sessions logged into the database will continue until their current command completes, at which point they will become inactive. In Real Application Clusters configurations, all instances will be quiesced.
+
+While logged in as SYS or SYSTEM (other SYSDBA privileged accounts cannot execute these commands), quiesce the database as follows:
+alter system quiesce restricted;
+select Active_State from V$INSTANCE; -- NORMAL (unquiesced), QUIESCING (active non-DBA sessions are still running), or QUIESCED.
+alter system unquiesce;
+
+Instead of quiescing the database, you can suspend it. A suspended database performs no I/O to its datafiles and control files, allowing the database to be backed up without I/O interference.
+
+alter system suspend; -- Any SYSDBA privileged account can execute
+Do not use the alter system suspend command unless you have put the database in hot backup mode.
+select Database_Status from V$INSTANCE; -- SUSPENDED or ACTIVE
+alter system resume; -- only SYS or SYSTEM can execute this
+
+You can drop a column immediately, or you can mark it as UNUSED to be dropped at a later time. If the column is dropped immediately, the action may impact performance. If the column is marked as unused, there will be no impact on performance. The column can actually be dropped at a later time when the database is less heavily used.
+
+alter table TABLE1 set unused column Col3;
+alter table TABLE1 drop unused columns;
+alter table TABLE1 drop column Col2;
+alter table TABLE1 drop (Col4, Col5); - dropping more than one columns, notice - no column keyword of the alter table command.
+
+----------------------------------
+CHAPTER 6 Monitoring Space Usage
+
+----------------------------------
+Space management problems generally fall into one of three categories: running out of space in a regular tablespace, not having enough undo space for long-running queries that need a consistent “before” image of the tables, and insufficient space for temporary segments.
+
+If a tablespace is not defined with the AUTOEXTEND attribute, then the total amount of space in all the datafiles that compose the tablespace limits the amount of data that can be stored in the tablespace. Even with the AUTOEXTEND attribute, the amount of space in the tablespace is ultimately limited by the amount of disk space on the physical disk drive or storage group.
+
+The AUTOEXTEND attribute is the default if you don’t specify the SIZE parameter in the create tablespace command and you are using OMF
+
+We want to monitor the free and used space within a tablespace to detect trends in space usage over time, and as a result be proactive in making sure that enough space is available for future space requests. As of Oracle Database 10g, you can use the DBMS_SERVER_ALERT package to automatically notify you when a tablespace reaches a warning or critical space threshold level
+
+Insufficient Space for Temporary Segments
+A temporary segment stores intermediate results for database operations such as sorts, index builds, distinct queries, union queries, or any other operation that necessitates a sort/merge operation that cannot be performed in memory.
+
+When there is not enough space available in the user’s default temporary tablespace, and either the tablespace cannot be autoextended or the tablespace’s AUTOEXTEND attribute is disabled, the user’s query or DML statement fails.
+
+Not only does an undo segment allow a rollback of an uncommitted transaction, it provides for read consistency of long-running queries that begin before inserts, updates, and deletes occur on a table.
+We want to make sure we have enough space allocated in an undo tablespace for peak demands without allocating more than is needed. As with any tablespace, we can use the AUTOEXTEND option when creating the tablespace to allow for unexpected growth of the tablespace without reserving too much disk space up front.
+
+Even with efficient extent allocation, table and index segments may eventually contain a lot of free space due to update and delete statements.
+
+The free space map in a segment is spread out into a bitmap block within each extent of the segment. Each process performing insert, update, or delete operations will likely be accessing different blocks instead of one freelist or one of a few freelist groups. In addition, each extent’s bitmap block lists each block within the extent along with a four-bit “fullness” indicator. 0000 Unformatted block, 0001 Block full, 0010 Less than 25 percent free space available, 0011 25 percent to 50 percent free space, 0100 50 percent to 75 percent free space, 0101 Greater than 75 percent free space
+
+Extents : it is a specific number of blocks allocated for a specific type of object, such as a table or index. An extent is the minimum number of blocks allocated at one time; 
+When a table is created, an initial extent is allocated. Once the space is used in the initial extent, incremental extents are allocated.
+
+Unless a table is truncated or the table is dropped, any blocks allocated to an extent remain allocated for the table, even if all rows have been deleted from the table. The maximum number of blocks ever allocated for a table is known as the high-water mark (HWM).
+
+DBA_FREE_SPACE : The view DBA_FREE_SPACE is broken down by datafile number within the tablespace. You can easily compute the amount of free space in each tablespace by using the following query:
+SQL> select tablespace_name, sum(bytes) from dba_free_space group by tablespace_name;
+
+Note that the free space does not take into account 1. Autoextended feature, and 2. Space free because of deleted records.
+
+DBA_OUTSTANDING_ALERTS : The Oracle 10g view DBA_OUTSTANDING_ALERTS contains one row for each active alert in the database, until the alert is cleared or reset.
+
+V$UNDOSTAT : Having too much undo space and having not enough undo space are both problems.
+
+
+SQL> analyze index hr.emp_job_ix validate structure;
+Index analyzed.
+SQL> select pct_used from index_stats where name = 'EMP_JOB_IX'; -- only 26% of space allocated is being used, good candidate for rebuild.
+PCT_USED
+----------
+26
+SQL> alter index hr.emp_job_ix rebuild online;
+Index altered.
+
+------------------------------------------------------
+Chapter 7: Managing Transactions with Undo Tablespaces
+-------------------------------------------------------s
+create database ord
+user sys identified by ds88dkw2
+user system identified by md78s233
+sysaux datafile '/u02/oradata/ord/sysaux001.dbf' size 1g
+default temporary tablespace temp01
+tempfile '/u03/oradata/ord/temp001.dbf' size 150m
+undo tablespace undotbs01
+datafile '/u01/oradata/ord/undo001.dbf' size 500m;
+
+create undo tablespace undotbs02
+datafile '/u01/oracle/rbdb1/undo0201.dbf'
+size 500m reuse autoextend on;
+
+drop tablespace undotbs02; --The active undo tablespace must be switched with another undo tablespace before it can be dropped.
+
+DBA_TABLESPACES : Tablespace names and characteristics, including the CONTENTS column, which can be PERMANENT, TEMPORARY, or UNDO; the undo RETENTION column is NOT APPLY, GUARANTEE, or
+NOGUARANTEE.
+DBA_UNDO_EXTENTS : All undo segments in the database, including their size, their extents, the tablespace where they reside, and current status (EXPIRED or UNEXPIRED).
+V$UNDOSTAT : The amount of undo usage for the database at ten-minute intervals; contains at most 1008 rows (7 days).
+V$ROLLSTAT : Rollback segment statistics, including size and status.
+V$TRANSACTION : Contains one row for each active transaction for the instance.
+
+
+SQL> connect hr/hr@dw;
+Connected.
+SQL> set transaction name 'Employee Maintenance';
+Transaction set.
+SQL> update employees set commission_pct = commission_pct * 1.1;
+
+SQL> select t.status, t.start_time, t.name from v$transaction t join v$session s on t.ses_addr = s.saddr where s.username = 'HR';
+STATUS START_TIME NAME
+-------------- -------------------- -------------------------
+ACTIVE 08/05/07 17:41:50 Employee Maintenance
+
+alter system set undo_tablespace=undo_batch;
+
+select r.status from v$rollstat r join v$transaction t on r.usn=t.xidusn join v$session s on t.ses_addr = s.saddr where s.username = 'HR';
+
+STATUS
+---------------
+PENDING OFFLINE
+
+Even though the current undo tablespace is UNDO_BATCH, the daytime tablespace UNDOTBS1 cannot be taken offline or dropped until HR’s transaction is committed or rolled back:
+
+SQL> alter tablespace undotbs1 retention guarantee;
+
+Flashback Features
+SQL> grant insert, update, delete, select on hr.employees to scott;
+SQL> grant insert, update, delete, select on hr.departments to scott;
+SQL> grant flashback on hr.employees to scott;
+SQL> grant flashback on hr.departments to scott;
+SQL> grant select any transaction to scott;
+
+select * from hr.employees as of timestamp systimestamp - interval '60' minute where hr.employees.employee_id not in (select employee_id from hr.employees);
+
+
+Using a VPD to Implement Application Security Policies page 337
+
+A Virtual Private Database (VPD) combines server-enforced fine-grained access control with a secure application context. The context-aware functions return a predicate—a where clause—that is automatically appended to all select statements or other DML statements. In other words, a select statement on a table, view, or synonym controlled by a VPD will return a subset of rows based on a where clause generated automatically by the security policy function in effect by the application context. The major component of a VPD is row-level security (RLS), also known as fine-grained access control (FGAC).
+
+Because a VPD generates the predicates transparently during statement parse, the security policy is enforced consistently.
+
+New to Oracle Database 10g are column-level VPD operations. Using column-level VPD, a DBA can restrict access to a particular column or columns in a table. The query returns the same number of rows, but if the user’s context does not allow access to the column or columns, NULL values are returned in the restricted column or columns.
+
+VPD policies can be static, context sensitive, or dynamic. Static and context-sensitive policies, new to Oracle Database 10g, can improve performance dramatically because they do not need to call the policy function every time a query is run because it is cached for use later in the session.
+
+You create application contexts using the create context command, and the package DBMS_RLS manages VPD policies. 
+
+You can create the name of application-defined attributes that will be used to enforce your security policy, along with the package name for the functions and procedures used to set the security context for the user session. Here’s an example: 
+
+create context hr_security using vpd.emp_access;
+
+create or replace package emp_access as
+procedure set_security_parameters;
+end;
+
+In this example, the context name is HR_SECURITY, and the package used to set up the characteristics/attributes for the user during the session is called EMP_ACCESS. The procedure
+SET_SECURITY_PARAMETERS will be called in the logon trigger.
+
+In a typical package used to implement application context, you use the built-in context USERENV to retrieve information about the user session itself.
+
+Parameter : Return Value
+CURRENT_SCHEMA : The default schema for the session DB_NAME The name of the database as specified in the initialization parameter DB_NAME
+HOST : The name of the host machine from which the user connected
+IP_ADDRESS : The IP address from which the user connected
+OS_USER : The operating system account that initiated the database session
+SESSION_USER : The authenticated database user’s name
+
+declare
+	username varchar2(30);
+	ip_addr varchar2(30);
+begin
+	username := SYS_CONTEXT('USERENV','SESSION_USER');
+	ip_addr := SYS_CONTEXT('USERENV','IP_ADDRESS');
+	-- other processing here
+end;
+/
+
+SQL> select SYS_CONTEXT('USERENV','SESSION_USER') username from dual;
+
+To ensure that the context variables are set for each session, we can use a logon trigger to call the procedure associated with the context. As mentioned earlier, the variables in the context can only be set or changed within the assigned package. Here is a sample logon trigger that calls the procedure to set up the context:
+
+create or replace trigger vpd.set_security_parameters
+after logon on database
+begin
+vpd.emp_access.set_security_parameters;
+end;
+
+
+Security Policy Implementation
+Once the infrastructure is in place to set up the security environment, the next step is to define the function or functions used to generate the predicate that will be attached to every select statement or DML command against the protected tables. The function used to implement the predicate generation has two arguments: the owner of the object being protected, and the name of the object within the owner’s schema. One function may handle predicate generation for just one type of operation, such as select, or may be applicable to all DML commands.
+
+Sample package body containing two functions—one that will be used to control access from select statements, and the other for any other DML statements:
+
+create or replace package body get_predicates is
+function emp_select_restrict(owner varchar2, object_name varchar2)
+return varchar2 is
+ret_predicate varchar2(1000); -- part of WHERE clause
+begin
+-- only allow certain employees to see rows in the table
+-- . . . check context variables and build predicate
+return ret_predicate;
+end emp_select_restrict;
+
+function emp_dml_restrict(owner varchar2, object_name varchar2)
+return varchar2 is
+ret_predicate varchar2(1000); -- part of WHERE clause
+begin
+-- only allow certain employees to make changes to the table
+-- . . . check context variables and build predicate
+return ret_predicate;
+end emp_dml_restrict;
+end; -- package body
+
+
+Each function returns a string containing an expression that is added to a where clause for a select statement or a DML command. The user or application never sees the value of this WHERE clause; it is automatically added to the command at parse time.
+
+The developer must ensure that the functions always return a valid expression. Otherwise, any access to a protected table will always fail, ORA-28113: policy predicate has error
+
+Using DBMS_RLS : The built-in package DBMS_RLS contains a number of subprograms that a DBA uses to maintain the security policies associated with tables, views, and synonyms. Any user who needs to create or administer policies must have EXECUTE privileges granted on the package SYS.DBMS_RLS.
+
+Subprogram : Description
+ADD_POLICY : Adds a fine-grained access control policy to an object
+DROP_POLICY : Drops an FGAC policy from an object
+REFRESH_POLICY : Reparses all cached statements associated with the policy
+ENABLE_POLICY : Enables or disables an FGAC policy
+CREATE_POLICY_GROUP : Creates a policy group
+ADD_GROUPED_POLICY : Adds a policy to a policy group
+ADD_POLICY_CONTEXT : Adds the context for the current application
+DELETE_POLICY_GROUP : Deletes a policy group
+DROP_GROUPED_POLICY : Drops a policy from a policy group
+DROP_POLICY_CONTEXT : Drops a context for the active application
+ENABLE_GROUPED_POLICY : Enables or disables a group policy
+DISABLE_GROUPED_POLICY : Disables a group policy
+REFRESH_GROUPED_POLICY : Reparses all cached statements associated with the policy group
+
+The syntax of ADD_POLICY follows:
+DBMS_RLS.ADD_POLICY
+(
+	object_schema 			IN varchar2 null,
+	object_name 			IN varchar2,
+	policy_name 			IN varchar2,
+	function_schema 		IN varchar2 null,
+	policy_function			IN varchar2,
+	statement_types			IN varchar2 null,
+	update_check 			IN boolean false,
+	enable 					IN boolean true,
+	static_policy 			IN boolean false,
+	policy_type 			IN binary_integer null,
+	long_predicate 			IN in Boolean false,
+	sec_relevant_cols 		IN varchar2,
+	sec_relevant_cols_opt 	IN binary_integer null
+);
+
+
+Parameter : Description
+object_schema : The schema containing the table, view, or synonym to be protected by the policy. If this value is NULL, the schema of the user calling the procedure is used.
+object_name : The name of the table, view, or synonym to be protected by the policy.
+policy_name : The name of the policy to be added to this object. It must be unique for each object being protected.
+function_schema : The schema that owns the policy function; if this value is NULL, the schema of the user calling the procedure is used.
+policy_function : The name of the function that will generate the predicate for the policy against the object_name. If the function is part of the package, the package name must also be specified here to qualify the policy function name.
+statement_types : The statement types to which the policy applies. The allowable values, separated by commas, can be any combination of SELECT, INSERT, UPDATE, DELETE, and INDEX. By default, all types are applied except for INDEX.
+update_check : For INSERT or UPDATE types, this parameter is optional, and it defaults to FALSE. If it is TRUE, the policy is also checked for INSERT or UPDATE statements when a SELECT or DELETE operation is being checked. 
+enable : This parameter defaults to TRUE and indicates if the policy is enabled when it is added. 
+static_policy : If this parameter is TRUE, the policy produces the same predicate string for anyone accessing the object, except for the SYS user or any user with the EXEMPT ACCESS POLICY privilege. The default is FALSE.
+policy_type : Overrides static_policy if this value is not NULL. Allowable values are STATIC, SHARED_STATIC, CONTEXT_SENSITIVE, SHARED_CONTEXT_SENSITIVE, and DYNAMIC.
+long_predicate : This parameter defaults to FALSE. If it is TRUE, the predicate string can be up to 32K bytes long. Otherwise, the limit is 4000 bytes.
+sec_relevant_cols : Enforces column-level VPD, new to Oracle 10g. Applies to tables and views only. Protected columns are specified in a list with either commas or spaces as delimiters. The policy is applied only if the specified sensitive columns are in the query or DML statement. By default, all columns are protected.
+sec_relevant_cols_opt : Allows rows in a column-level VPD filtered query to still appear in the result set, with NULL values returned for the sensitive columns. The default for this parameter is NULL; otherwise, you must specify
+DBMS_RLS.ALL_ROWS to show all columns with NULLs for the sensitive columns.
+
+Using the parameter sec_relevant_cols is handy when you don’t mind if users see part of a row, just not the columns that might contain confidential information, such as a Social Security Number or a salary.
+
+dbms_rls.add_policy (
+	object_schema => 'HR',
+	object_name => 'EMPLOYEES',
+	policy_name => 'EMP_SELECT_RESTRICT',
+	function_schema => 'VPD',
+	policy_function => 'get_predicates.emp_select_restrict',
+	statement_types => 'SELECT',
+	update_check => TRUE,
+	enable => TRUE
+);
+
+Here we’re applying a policy named EMP_SELECT_RESTRICT to the table HR.EMPLOYEES. The schema VPD owns the policy function get_predicates.emp_select_restrict. The policy explicitly applies to SELECT statements on the table; however, with UPDATE_CHECK set to TRUE, update or delete commands will also be checked when rows are updated or inserted into the table.
+
+Because we did not set static_policy, it defaults to FALSE, meaning that the policy is dynamic and is checked every time a select statement is parsed. This is the only behavior available before Oracle Database 10g.
+
+Using the subprogram ENABLE_POLICY is an easy way to disable the policy temporarily without having to rebind the policy to the table later:
+
+dbms_rls.enable_policy(
+object_schema => 'HR',
+object_name => 'EMPLOYEES',
+policy_name => 'EMP_SELECT_RESTRICT',
+enable => FALSE
+);
+
+If multiple policies are specified for the same object, an AND condition is added between each predicate. If you need to have an OR condition between predicates for multiple policies instead, the policy most likely needs to be revised. The logic for each policy needs to be combined within a single policy with an OR condition between each part of the predicate.
+
+Creating a VPD - Complete step
+1. create context(hr_security) 2. define the context set package (vpd.emp_access) 3. create after log on trigger to set the context by invoking the context set package 4. define the package to return the predicate (vpd.get_predicates) 5. Add policy using dbms_rls.add_policy 
+
+create user smavris identified by smavris;
+grant connect, resource to smavris;
+create user dgrant identified by dgrant;
+grant connect, resource to dgrant;
+create user kmourgos identified by kmourgos;
+grant connect, resource to kmourgos;
+
+grant select on hr.employees to public;
+create table hr.emp_login_map (employee_id, login_acct)
+as select employee_id, email from hr.employees;
+grant select on hr.emp_login_map to public;
+
+create user vpd identified by vpd;
+grant connect, resource, create any context, create public synonym to vpd;
+
+connect vpd/vpd@ocp12c;
+create context hr_security using vpd.emp_access;
+create or replace package vpd.emp_access as
+procedure set_security_parameters;
+end;
+/
+
+create or replace package body vpd.emp_access is
+--
+-- At user login, run set_security_parameters to
+-- retrieve the user login name, which corresponds to the EMAIL
+-- column in the table HR.EMPLOYEES.
+--
+-- context USERENV is pre-defined for user characteristics such
+-- as username, IP address from which the connection is made,
+-- and so forth.
+--
+-- for this procedure, we are only using SESSION_USER
+-- from the USERENV context.
+--
+procedure set_security_parameters is
+	emp_id_num number;
+	emp_login varchar2(50);
+begin
+	-- database username corresponds to email address in HR.EMPLOYEES
+	emp_login := sys_context('USERENV','SESSION_USER');
+	dbms_session.set_context('HR_SECURITY','USERNAME',emp_login);
+	-- get employee id number, so manager rights can be established
+	-- but don't bomb out other DB users who are not in the
+	-- EMPLOYEES table
+	begin
+		select employee_id into emp_id_num
+		from hr.emp_login_map where login_acct = emp_login;
+		dbms_session.set_context('HR_SECURITY','EMP_ID',emp_id_num);
+	exception
+		when no_data_found then
+		dbms_session.set_context('HR_SECURITY','EMP_ID',0);
+	end;
+	-- Future queries will restrict rows based on emp_id
+end; -- procedure
+end; -- package body
+/
+
+grant execute on vpd.emp_access to PUBLIC;
+create public synonym emp_access for vpd.emp_access;
+
+
+conn sys/oracle@ocp12c as sysdba
+
+create or replace trigger vpd.set_security_parameters
+after logon on database
+begin
+vpd.emp_access.set_security_parameters;
+end;
+/
+
+Now if you try to change the session context it will through error;
+begin
+dbms_session.set_context('HR_SECURITY','EMP_ID',100);
+end;
+/
+
+ORA-01031: insufficient privileges
+
+
+connect vpd/vpd@ocp12c;
+
+create or replace package vpd.get_predicates as
+-- note -- security function ALWAYS has two parameters,
+-- table owner name and table name
+function emp_select_restrict
+(owner varchar2, object_name varchar2) return varchar2;
+-- other functions can be written here for INSERT, DELETE, and so forth.
+end get_predicates;
+/
+
+create or replace package body vpd.get_predicates is
+function emp_select_restrict(
+	owner varchar2, 
+	object_name varchar2) 
+return varchar2 is
+	ret_predicate varchar2(1000); -- part of WHERE clause
+begin
+	-- only allow employee to see their row or immediate subordinates
+	ret_predicate := 'EMPLOYEE_ID = ' ||sys_context('HR_SECURITY','EMP_ID') ||' OR MANAGER_ID = ' ||sys_context('HR_SECURITY','EMP_ID');
+	return ret_predicate;
+end emp_select_restrict;
+end; -- package body
+/
+
+grant execute on vpd.get_predicates to PUBLIC;
+create public synonym get_predicates for vpd.get_predicates;
+
+conn sys/oracle@ocp12c as sysdba
+
+begin
+dbms_rls.add_policy (
+object_schema => 'HR',
+object_name => 'EMPLOYEES',
+policy_name => 'EMP_SELECT_RESTRICT',
+function_schema => 'VPD',
+policy_function => 'get_predicates.emp_select_restrict',
+statement_types => 'SELECT',
+update_check => TRUE,
+enable => TRUE
+);
+end;
+/
+
+begin
+dbms_rls.enable_policy (
+object_schema => 'HR',
+object_name => 'EMPLOYEES',
+policy_name => 'EMP_SELECT_RESTRICT',
+enable => FALSE
+);
+end;
+/
+
+begin
+dbms_rls.enable_policy (
+object_schema => 'HR',
+object_name => 'EMPLOYEES',
+policy_name => 'EMP_SELECT_RESTRICT',
+enable => TRUE
+);
+end;
+/
+
+Debugging a VPD Policy
+Even if you’re not getting an “ORA-28113: policy predicate has error” or an “ORA-00936: missing expression,” it can be very useful to see the actual predicate being generated at statement parse time.
+
+select s.sql_text, v.object_name, v.policy, v.predicate from v$sqlarea s, v$vpd_policy v  where s.hash_value = v.sql_hash;
+
+You also can join to v$session to identify which user is running the query.
+
+If the database is extremely busy, the SQL commands may be flushed from the shared pool for other SQL commands before you get a chance to run this query. The other method uses the alter session command to generate a plain-text trace file containing much of the information from the previous query.
+
+
+
+
+
+
+
+
+
+
+
+---------------
+
+
+
+
+---------------
+Resizing a Smallfile Tablespace Using ALTER DATABASE
+SQL> alter database
+2 datafile '/u01/app/oracle/oradata/rmanrep/users01.dbf' resize 15m;
+Database altered.
+SQL> alter database
+2 datafile '/u01/app/oracle/oradata/rmanrep/users01.dbf' resize 10m;
+Database altered.
+SQL> alter database
+2 datafile '/u01/app/oracle/oradata/rmanrep/users01.dbf' resize 1m;
+alter database
+*
+ERROR at line 1:
+ORA-03297: file contains used data beyond requested RESIZE value
+
+Dropping a Datafile from a Tablespace
+In previous versions of Oracle, dropping a datafile from a tablespace was problematic; there was
+not a single command you could issue to drop a datafile unless you dropped the entire tablespace.
+You only had three alternatives:
+Live with it.
+Shrink it and turn off AUTOEXTEND.
+Create a new tablespace, move all the objects to the new tablespace, and drop the
+original tablespace.
+
+Resizing a Bigfile Tablespace Using ALTER TABLESPACE
+
+create bigfile tablespace dmarts
+datafile '/u05/oradata/dmarts.dbf' size 750m
+autoextend on next 100m maxsize unlimited
+extent management local
+segment space management auto;
+
+SQL> alter tablespace dmarts resize 1g;
+
+Moving datafile or redo log file or control file.
+
+1. shut down the database
+2. rename the files at os prompt > mv <old file name> <new filename>
+3. open in mount mode
+4. alter database rename file <> to <>;
+5. take a backup of control file
+
+in case of moving control file step 4 will be perfoemed before shutting down the database.
+SQL> alter system set control_files =
+2 '/u02/oradata/control01.ctl',
+3 '/u03/oradata/control02.ctl',
+4 '/u04/oradata/control03.ctl'
+5 scope = spfile;
+
+Making one or more copies of the control file to an ASM volume is just as easy: using the RMAN utility restore a control file backup to an ASM disk location, as in this example:
+RMAN> restore controlfile to '+DATA/dw/controlfile/control_bak.ctl';
+Then change the CONTROL_FILES parameter to add the location +DATA/dw/controlfile/ control_bak.ctl in addition to the existing control file locations, and then shut down and restart the database.
+
+-------------------- Page 530
+
+Mis High Availability Features
+Online Object Reorganization
+
+drop table AUTHOR cascade constraints;
+SQL> select object_name, original_name, operation, type, user,
+2 can_undrop, space from recyclebin;
+flashback table AUTHOR to before drop;
+
+create index AUTH$NAME on AUTHOR (AuthorName) online; -- Without online dml will not be allowed during index build, DDL will never be alowed during
+alter index AUTH$NAME rebuild online; -- You can use the alter index rebuild command to change the storage characteristics and tablespace assignment for an index. It requires space for two copies of indexes it'll use existing index as data source.
+alter index AUTH$NAME coalesce; -- index coalesces are online operations. Coalescing does not require storage space for multiple copies of the index. Frees up index leaf blocks quickly.
+
+Redefining Tables Online
+there are very few restrictions on what types of tables cannot be redefined online : Temporary tables cannot be redefined online., Tables with fine-grained access control cannot be redefined online., Tables with BFILE, long , long raw columns cannot be redefined online etc.
+
+create table CUSTOMER
+(Name VARCHAR2(25) primary key,
+Street VARCHAR2(50),
+City VARCHAR2(25),
+State CHAR(2),
+Zip NUMBER);
+
+execute DBMS_REDEFINITION.CAN_REDEF_TABLE('SCOTT','CUSTOMER');
+The table is a candidate for online redefinition if the procedure returns the message
+PL/SQL procedure successfully completed.
+
+Next, create an interim table, in the same schema, with the desired attributes of the redefined
+table. 
+
+create table CUSTOMER_INTERIM
+(Name VARCHAR2(25) primary key,
+Street VARCHAR2(50),
+City VARCHAR2(25),
+State CHAR(2),
+Zip NUMBER)
+partition by range (Name)
+(partition PART1 values less than ('L'),
+partition PART2 values less than (MAXVALUE))
+;
+
+execute DBMS_REDEFINITION.START_REDEF_TABLE -
+('SCOTT','CUSTOMER','CUSTOMER_INTERIM');
+
+Next, create any triggers, indexes, grants, or constraints required on the interim table. In this
+example, the primary key has already been defined on CUSTOMER_INTERIM; you could add the
+foreign keys, secondary indexes, and grants at this point in the redefinition process. Create the
+foreign keys disabled until the redefinition process is complete.
+
+When the redefinition process completes, the indexes, triggers, constraints, and grants on the
+interim table will replace those on the original table. The disabled referential constraints on the
+interim table will be enabled at that point.
+
+execute DBMS_REDEFINITION.FINISH_REDEF_TABLE -
+('SCOTT','CUSTOMER','CUSTOMER_INTERIM');
+
+------------
+(DESCRIPTION=
+(ADDRESS=
+(PROTOCOL=TCP)
+(HOST=HQ)
+(PORT=1521))
+(CONNECT DATA=
+(SERVICE_NAME=LOC)))
+
+The instance name or SID can be specified, but neither is
+required when the service name is specified. When a service name is specified, an instance name
+is only needed if you want to connect to a specific instance in a RAC database.
+
+creates a private database link called HR_LINK:
+create database link HR_LINK
+connect to HR identified by HR
+using 'loc';
+
+create public database link HR_LINK
+connect to HR identified by HR
+using 'loc';
+
+596
+
+--------------------------
+create public database link HR_LINK  connect to HR identified by employeeservices202 using 'hq';
+DBA_DB_LINKS
+The number of database links that can be used by a single query is limited by the OPEN_LINKS parameter in the database’s initialization file. Its default value is 4.
+To see which links are currently in use in your session, query V$DBLINK.
+
+update emp set mod_date = sysdate;
+update emp@HQ set mod_date = sysdate;
+Commit;
+
+If either transaction cannot commit, both transactions will be rolled back. This is called two phase commit;
+Here are the two phases:
+The prepare phase: An initiating node called the global coordinator notifies all sites involved in the transaction to be ready either to commit or to roll back the transaction.
+The commit phase :If there is no problem with the prepare phase, all sites commit their transactions. If a network or node failure occurs, all sites roll back their transactions.
+
+create materialized view STORE_DEPT_SAL_MV
+tablespace MYMVIEWS
+parallel
+build immediate
+refresh fast on commit
+enable query rewrite
+as
+select d.DNAME, sum(SAL) as tot_sum
+from DEPT d, EMP e
+where d.DEPTNO = e.DEPTNO
+group by d.DNAME;
+
+execute DBMS_MVIEW.REFRESH('store_dept_sal_mv','c');
+
+execute DBMS_MVIEW.REFRESH('mv1,mv2,mv3','cfc');
+
+For performance statistics related to materialized view refreshes, query V$MVREFRESH.
+
+create materialized view log on EMPLOYEES tablespace DATA_2;
+

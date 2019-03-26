@@ -1,0 +1,60 @@
+Oracle Name resolution methods
+
+1. Easy connect, 10G onwards :  Easy Connect cannot be used with any of Oracle Net’s more advanced capabilities, such as load balancing or connect-time failover across different network routes. It is fair to say that Easy Connect is a method you as DBA will find very handy to use, but that it is not a method of much use for your nd users. Easy Connect is enabled by default. You invoke it with a syntax such as this as your connect string: sqlplus hr/hr@localhost:1521/XE
+
+connect scott/tiger@jwlnx1.bplc.co.za will also work, but only if the listener is using port 1521, and the service name registered with the listener is jwlnx1.bplc.co.za, the same as the computer name.
+
+2. Local Naming : With local naming the user supplies an alias, known as an Oracle Net service alias, for the connect string, and the alias is resolved by a local file into the full network address (protocol, address, port, and service or instance name). This local file is the infamous tnsnames.ora file, which has caused DBAs much grief over the years. Consider this example of a tnsnames.ora file:
+OCP11G =
+(DESCRIPTION =
+	(ADDRESS_LIST =
+		(ADDRESS = (PROTOCOL = TCP)(HOST = jwlnx1.bplc.co.za)(PORT= 1522))
+	)
+	(CONNECT_DATA =
+		(service_name = ocp11g)
+	)
+)
+
+This tnsnames.ora file has one Oracle Net service aliases defined within it: ocp11g. These aliases are what your users will provide in their connect statements. The entry, ocp11g, simply says that when the connect string “@ocp11g” is issued, your user process should use the TCP protocol to go the machine jwlnx1.bplc.co.za, contact it on port 1521, and ask the listener monitoring that port to establish a session against the instance with the service name ocp11g.
+
+There need be no relationship between the alias, the service name, and the instance name, but for the sake of your sanity you will usually keep them the same.
+
+Local naming supports all protocols and all the advanced features of Oracle Net, but maintaining tnsnames.ora files on all your client machines can be an extremely time-consuming task. The tnsnames.ora file is also notoriously sensitive to apparently trivial variations in layout.
+
+3. Directory Naming : Directory naming points the user toward an LDAP directory server to resolve aliases. LDAP (the Lightweight Directory Protocol) is a widely used standard that Oracle Corporation (and other mainstream software vendors) is encouraging organizations to adopt. To use directory naming, you must first install and configure a directory server somewhere on your network. Oracle provides an LDAP server (the Oracle Internet Directory) as part of the Oracle Application Server, but you do not have to use that—if you already have a Microsoft Active Directory, that will be perfectly adequate. IBM and Novell also sell directory servers conforming to the LDAP standard.
+Like local naming, directory naming supports all Oracle Net features—but unlike local naming, it uses a central repository, the directory server, for all your name resolution details. This is much easier to maintain than many tnsnames.ora files distributed across your whole user community. 
+
+
+4. External Naming : External naming is conceptually similar to directory naming, but it uses thirdparty naming services such as Sun’s Network Information Services (NIS+) or the Cell Directory Services (CDS) that are part of the Distributed Computing Environment (DCE).
+
+The Listener Control Utility : You can start and stop listeners through Database Control, but there is also a command-line utility lsnrctl (it is lsnrctl.exe on Windows)—lsnrctl commands can be run directly from an operating system prompt, or through a simple user interface. For all the commands, you must specify the name of the listener, if it is not the default name of LISTENER. 
+
+lsnrctl help
+lsnrctl status list2
+lsnrctl reload
+lsnrctl start
+lsnrctl SERVICES  (-- more info than status)
+
+To test a connect string, use the TNSPING utility. This will accept a connect string, locate the Oracle Net files, resolve the string, and send a message to the
+listener. If the listener is running and does know about the service requested, the test will return successfully. For example,
+
+
+File Names and the TNSADMIN Environment Variable
+There are three critical files involved in configuring Oracle Net:
+1. The listener.ora file is a server-side file that defines database listeners. It includes the protocols, addresses, and ports on which they will listen for
+incoming connection requests, and (optionally) a hard-coded list of instances against which they will launch sessions.
+2. The tnsnames.ora file is a client-side file used for name resolution. It is used by user processes to locate database listeners. It may also be used the
+instance itself, to locate a listener with which to register.
+3. The sqlnet.ora file is optional and may exist (possibly with different settings) on the server side, the client side, or both. It contains settings that
+apply to all connections and listeners, such as security rules and encryption.
+
+The three Oracle Net files by default exist in the directory ORACLE_HOME/network/admin. It is possible to relocate them with an environment variable: TNSADMIN. An important use of this is on systems that have several Oracle Homes. This is a very common situation.
+
+
+Database Links
+So far, Oracle Net has been discussed in the context of users connecting to database instances. Oracle Net can also be used for communications between databases: a user session against one database can execute SQL statements against another database. This is done through a database link. There are several options for creating database links (all to do with security), but a simple example is
+
+create database link prodscott connect to scott identified by tiger using 'prod';
+
+
+set TNSADMIN=C:\TNS

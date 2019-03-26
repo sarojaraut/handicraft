@@ -1,0 +1,64 @@
+RMAN Pocket Reference
+
+RMAN server processes are background processes, started on the server, used to communicate between RMAN and the databases. They can also communicate between RMAN and any disk, tape, or other I/O devices.
+
+A channel is an RMAN server process started when there is a need to communicate with an I/O device, such as a disk or a tape. A channel is what reads and writes RMAN backup files. Any time you issue an RMAN allocate channel command, a server process is started on the target database server.
+
+The target database is the database on which RMAN performs backup, restore, and recovery operations. This is the database that owns the datafiles, control files, and archived redo files that are backed up, restored, or recovered.
+
+The recovery catalog database is an optional repository used by RMAN to record information concerning backup and recovery activities performed on the target.
+
+The Media Management Layer (MML) is a third-party piece of software that manages the reading and writing of files to and from tape. An MML also keeps track of which files have been written to which tapes. If you want to back up your database files to tape, RMAN requires you to use an MML.
+
+When you issue an RMAN backup command, RMAN creates backup sets, which are logical groupings of physical files. The physical files that RMAN creates on your backup media are called backup pieces.
+
+Before you connect to your target database, you must ensure that the standard Unix environment variables are established. These variables include: ORACLE_SID, ORACLE_HOME, PATH, NLS_LANG, and NLS_DATE_FORMAT. When using RMAN, NLS_LANG should be set to the character set that your database was created with. If you do not set NLS_LANG, you may encounter problems when issuing BACKUP, RESTORE, and RECOVER commands.
+
+
+Executing RMAN Commands from a File
+rman target / nocatalog @full_back.rmn log=full_back.log
+
+another way
+$ rman nocatalog
+RMAN> connect target /
+RMAN> @full_back.rmn
+
+Running SQL and O/S Commandsfrom Within RMAN
+
+RMAN> sql "alter system switch logfile";
+
+Some SQL commands, such as ALTER DATABASE, are directly supported by RMAN. These can be executed directly from the RMAN command prompt, without using the sql command. For example: RMAN> alter database mount;
+
+Here's an example of how to call RMAN commands from a shell script:
+#!/bin/ksh
+#----------------------------------------------
+export TARGET_CONN=sys/gober@brdstn
+export CATALOG_CONN=rman_cat_owner/gando@rman_cat
+#----------------------------------------------
+rman <<EOF
+	# Connect to the target and the catalog
+	connect target ${TARGET_CONN}
+	connect catalog ${CATALOG_CONN}
+	# Run the backup command.
+	run { allocate channel d1 type disk;
+	backup full format
+	'/d0102/backup/rman_%U.bus' database; }
+EOF
+#
+#Test for success of RMAN operation
+if [ $? -ne 0 ]; then
+# notify adminstrator of problem
+fi
+exit
+
+show retention policy;
+
+Unique RMAN Configuration Settings
+run {
+allocate channel c1 device type disk format ’c:\oracle\oraback1\orcl\%U’;
+allocate channel c2 device type disk format ’c:\oracle\oraback2\orcl\%U’;
+backup database plus archivelog;
+};
+
+
+

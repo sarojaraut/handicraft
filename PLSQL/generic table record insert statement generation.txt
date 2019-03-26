@@ -1,0 +1,85 @@
+with t as (select 'S_QUOTE_ITEM' from dual)
+select 'INSERT INTO '||(select * from t) from dual
+union all
+select '(' from dual
+union all
+select column_name||','
+ from
+   (select column_name, data_type, table_name,char_length 
+  from user_tab_columns 
+  where nullable='N'
+  order by column_id)
+ where
+  table_name=(select * from t)
+union all
+select ')' from dual
+union all
+select ' SELECT' from dual
+union all
+select
+ decode(data_type,
+ 'DATE', 'sysdate,',
+ 'NUMBER','rownum,',
+ decode(appe,'''_''','''Y'''||',',appe||'||rownum,' )) Query
+from
+   (select
+  ''''||substr(column_name,1,char_length-8)||'_''' appe,
+  data_type
+   from
+  (select column_name, data_type, table_name,char_length 
+  from user_tab_columns 
+  where nullable='N'
+  order by column_id)
+   where
+  table_name=(select * from t))
+union all
+select 'from dual connect by rownum<=10' from dual
+ 
+ 
+---------------------------
+ 
+with t as (select 'S_QUOTE_ITEM' from dual)
+select 'INSERT INTO '||(select * from t) from dual
+union all
+select '(' from dual
+union all
+select column_name||','
+               from
+                      (select column_name, data_type,table_name from user_tab_columns order by column_id)
+               where
+                        table_name=(select * from t)
+union all
+select ')' from dual
+union all
+select ' SELECT' from dual
+union all
+select
+               decode(data_type,
+               'DATE', 'sysdate,',
+               'NUMBER','rownum,',
+               decode(appe,'''_''','''Y'''||',',appe||'||rownum,' )) Query
+from
+               (select
+                      ''''||substr(column_name,1,char_length-8)||'_''' appe,
+                               data_type
+               from
+                      (select column_name, data_type, table_name,char_length from user_tab_columns order by column_id)
+               where
+                      table_name=(select * from t))
+union all
+select 'from dual connect by rownum<=10' from dual
+ 
+ 
+---------------- Simple Form ---------------
+select
+               decode(data_type, 'DATE',
+               'sysdate,',
+               decode(appe,'''_''','rownum,',appe||'||rownum,' )) Query
+from
+               (select
+                               ''''||substr(column_name,1,char_length-3)||'_''' appe,
+                               data_type
+               from
+                               user_tab_columns
+               where
+                               table_name='ASSET');

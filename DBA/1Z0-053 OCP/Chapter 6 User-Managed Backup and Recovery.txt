@@ -1,0 +1,345 @@
+Chapter 6 User-Managed Backup and Recovery
+
+You never need to back up the online redo logs as part of any type of backup. Then, why do DBAs back up the online redo logs as part of a cold backup? One reason is that it
+makes the restore process for the noarchivelog mode scenario slightly easier. The online redo logs are required to open the database in a normal manner. Without online redo log first one extra step is required to open the database in resetlog mode.
+The extra step required is:
+alter database open resetlogs;
+
+If you see the Database altered message, the command was successful. However, you may see this error: ORA-01139: RESETLOGS option only valid after an incomplete database recovery
+In this case, issue the following command:
+SQL> recover database until cancel;
+You should see this message: Media recovery complete.
+Now, attempt to open your database with the OPEN RESETLOGS clause:
+SQL> alter database open resetlogs;
+
+Recover from a Lost Tempfile
+Create a Replacement Tempfile for the TEMP tablespace :  In this exercise, the tempfile for the TEMP tablespace was accidentally deleted
+1. Identify the name of the tempfile for the TEMP tablespace:
+SQL> select file#, name from v$tempfile;
+FILE# NAME
+---------- --------------------------------------------------
+1 /u01/app/oracle/oradata/hr/temp01.dbf
+
+2. Create a new tempfile with a different name for the TEMP tablespace:
+SQL> alter tablespace temp add tempfile '/u01/app/oracle/oradata/hr/temp02.dbf' size 25m;
+Tablespace altered.
+
+3. Drop the previous tempfile. This will update only the control file because the original tempfile is missing:
+
+SQL> alter tablespace temp drop tempfile '/u01/app/oracle/oradata/hr/temp01.dbf';
+
+4. Confirm that the TEMP tablespace contains only the newly created tempfile:
+SQL> select file#, name from v$tempfile;
+FILE# NAME
+---------- --------------------------------------------------
+2 /u01/app/oracle/oradata/hr/temp02.dbf
+
+Starting a Database Without a Tempfile
+Recovering from the loss of a tempfile is even easier if you start the database with a missing tempfile. The database starts, and if the original disk directory location is
+available, Oracle re-creates all missing tempfiles.
+
+If the original disk directory location is no longer available, the database still starts, and you can use the steps from the preceding section to re-create the tempfile(s) manually for the TEMP tablespace.
+
+Recover from a Lost Redo Log Group
+Understanding Log Group Status
+At any given point in time, the most common statuses are CURRENT, ACTIVE, and INACTIVE. A redo log group is in the UNUSED state after creation, and once it’s used it will never return to that state. The CLEARING and CLEARING_CURRENT states exist when you re-create a corrupted log file, which hopefully will not occur very often!
+
+CURRENT : Oracle is writing to this log group, and this group is needed for instance recovery.
+ACTIVE : This log group is needed for instance recovery, but Oracle is not writing to this log group. It may or may not be archived yet.
+INACTIVE : The log group is not needed for instance recovery, may be in use for media recovery, and may or may not be archived.
+UNUSED : The log group has not been used yet.
+CLEARING : The log is being cleared by ALTER DATABASE CLEAR LOGFILE. After being cleared, the status changes to UNUSED.
+CLEARING_CURRENT : An error has occurred during ALTER DATABASE CLEAR LOGFILE.
+
+SQL> select group#, sequence#, archived, status from v$log;
+
+the ARCHIVED column will be NO until the log file has been successfully written to all mandatory archived log file destinations.
+
+Recovering from Log Group Member Failures
+If one member of a log group becomes damaged or is lost, the Log Writer (LGWR) process continues to write to the undamaged member and no data loss or interruption in service occurs. However, it is imperative that you correct this problem as soon as possible.
+
+In this example, the second member of the third redo log file group becomes damaged. These error messages should appear in the alert log. 
+
+Mon Jun 30 11:13:16 2008
+Errors in file /u01/app/oracle/diag/rdbms/hr/hr/trace/hr_arc2_5718.trc:
+ORA-00313: open failed for members of log group 3 of thread 1
+ORA-00312: online log 3 thread 1: '/u06/app/oracle/oradata/hr/redo03.log'
+ORA-27046: file size is not a multiple of logical block size
+Additional information: 1
+
+You can also identify the lost or damaged redo log file member using the V$LOGFILE view:
+SQL> select group#, status, member from v$logfile; --Status columns should be invalid for the log file.
+
+The solution to this problem is straightforward. Drop the invalid member and add a new member to the group, as in this example:
+
+SQL> alter database drop logfile member '/u06/app/oracle/oradata/hr/redo03.log';
+Database altered.
+
+SQL> alter database add logfile member '/u06/app/oracle/oradata/hr/redo03a.log' to group 3;
+Database altered.
+
+If the destination disk itself is not damaged and the original redo log file is logically corrupted from user error or a rogue process, you can reuse the original redo log file by specifying the REUSE clause as follows:
+
+alter database add logfile member '/u06/app/oracle/oradata/hr/redo03.log' reuse to group 3;
+
+Recovering from a Lost INACTIVE Redo Log Group
+You must act quickly before the Oracle database processes need to use the redo log group again. If Oracle needs to use the redo log group before it is repaired, the database halts until the problem is fixed. The group is not needed for crash recovery because it is INACTIVE. Therefore, you can clear the group using the ALTER DATABASE CLEAR LOGFILE command. 
+
+A damaged redo log group with a status of INACTIVE may or may not be archived yet. The archival status determines which form of the ALTER DATABASE CLEAR LOGFILE command to use. Remember that you can look at the ARCHIVED column in the dynamic performance view V$LOG to determine whether the log group has been archived yet. If a damaged inactive redo log group has been archived, you can identify the group number of the damaged group from the alert log or from the dynamic performance view V$LOGFILE.
+
+In this example, redo log group #1 is damaged but has been archived. Use the ALTER DATABASE command as follows:
+SQL> alter database clear logfile group 1
+
+If the instance is down, start the database in MOUNT mode and run this command. Otherwise, you can run the command when the database is OPEN. All members of the redo log file group are reinitialized. If any or all of the redo log group members are missing, they are then re-created. 
+
+As the redo log group has been archived, no data loss will result and all backups in combination with archived redo log files can be used for complete recovery of the database.
+
+Clearing a Non-archived Inactive Redo Log Group : If you have a non-archived inactive redo log group, you will not lose any committed transactions. However, you must perform a full backup after clearing the redo log group to ensure that you can perform a complete recovery. You will have a gap in archived redo log files. Therefore, you will be able to perform only incomplete recovery up to the System Change Number (SCN) of the last transaction in the archived redo log file created before the missing log file.
+
+To clear the second unarchived log group, start up the database in MOUNT mode (if it is not already up) and use the following command:
+alter database clear logfile unarchived group 2;
+
+Note the UNARCHIVED keyword in this command. It performs the same action that occurs when you cleared an archived redo log group, but this is Oracle’s way of forcing you to acknowledge that you will have a gap in your archived redo log files.
+
+After clearing the log file group, perform a full backup using operating system commands (remember, this is user-managed recovery, not system-managed recovery using RMAN). This provides a backup that you can use for complete recovery along with all successive archived redo log files.
+
+A complicating factor to consider when you’re clearing a nonarchived inactive redo log group is whether an offline datafile needs the cleared log file group before it can be brought online. In this scenario, you must drop the tablespace containing the offline datafile and re-create it using logical backups or some other method. You cannot recover the datafile and therefore the tablespace containing the datafile, because the redo required to bring the datafile back online is gone. Oracle makes you acknowledge that your datafile is unrecoverable in this scenario as well, and you must use the UNRECOVERABLE DATAFILE keywords when you clear the log file group:
+alter database clear logfile unarchived group 2 unrecoverable datafile;
+
+The final step after clearing the redo log file group and creating a backup is to back up the control file to a specific directory or to the trace file directory:
+alter database backup controlfile to trace;
+
+Recovering from a Lost ACTIVE Redo Log Group
+If a damaged redo log group is in the ACTIVE state, Oracle is not currently writing to it but it is needed for instance recovery. Try this command:
+alter system checkpoint;
+If it runs successfully, all committed changes are written to the datafiles on disk. Next, clear the redo log file group as you did with an inactive redo log group, and you will not lose any transactions. In addition, your archived redo log file stream will be intact.
+
+If the checkpoint fails, you must perform an incomplete recovery using Flashback Database. You can also perform an incomplete recovery using all archived and online redo log files up to but not including the damaged redo log group.
+
+Recovering from a Lost CURRENT Redo Log Group
+A lost redo log group in the CURRENT state is currently being written to by the LGWR process—or it was being written to at the time of failure. The instance will crash, and your only option is to perform incomplete recovery using Flashback Database. Again, you can do likewise with all archived and online redo log files up to but not including the damaged redo log group.
+
+After performing incomplete recovery with the database in MOUNT mode, open the database with RESETLOGS:
+alter database open resetlogs;
+
+If the location for the damaged online redo log file group is available, Oracle will reinitialize the log file group along with all other groups, resetting the log sequence
+number to 1 and starting a new incarnation. If the location is no longer available, rename the online redo log files and point them to a new location as in this example, before opening the database with RESETLOGS:
+
+alter database rename file '/u01/app/oracle/oradata/hr/redo02.log' to '/u02/app/oracle/oradata/hr/redo02.log';
+alter database rename file '/u06/app/oracle/oradata/hr/redo02.log' to '/u07/app/oracle/oradata/hr/redo02.log';
+
+When you open the database with RESETLOGS, Oracle re-creates and initializes any missing online redo log files.
+
+Recover from the Loss of the Password File
+The loss of an Oracle password file is rather trivial compared to the loss of a datafile, a redo log file, or a control file. It won’t cause the database to shut down but will prevent some or all DBAs from connecting to the database when it is not open.
+
+First, if you have backed upthe password file and it has not changed since the backup, you can simply restore it. If you  did not have a backup of the password file, all you need to do is rerun the orapwd command to re-create the password file.
+
+A default installation of the Oracle database using the Oracle Universal Installer with a seed database, or using the Database Creation Assistant, will automatically create a password file. However, on some occasions you might need to re-create a password file if it is accidentally deleted or damaged. The orapwd command will create a password file with a single entry for the SYS user and other options when you run the orapwd command without any options:
+
+Usage: orapwd file=<fname> password=<password> entries=<users> force=<y/n> ignorecase=<y/n> nosysdba=<y/n>
+where
+file - name of password file (required),
+password - password for SYS (optional),
+entries - maximum number of distinct DBA (required),
+force - whether to overwrite existing file (optional),
+ignorecase - passwords are case-insensitive (optional),
+nosysdba - whether to shut out the SYSDBA logon
+(optional Database Vault only).
+
+There must be no spaces around equal-to (=) characters.
+example, the default password file for the DW database would be $ORACLE_HOME/dbs/orapwdw, and for Windows the default is %ORACLE_HOME%\database\PWD<sid>.ora.
+
+Once you’ve re-created the password file, you will have to grant the SYSDBA, SYSOPER, or SYSASM privileges to database users who previously had those privileges.
+
+The dynamic performance view V$PWFILE_USERS lists all the database users who have SYSDBA, SYSOPER, or SYSASM privileges:
+
+Re-create the Password File after Accidental Deletion
+
+orapwd file=$ORACLE_HOME/dbs/orapwhr password=bigsys entries=10
+
+sqlplus sys/bigsys as sysdba
+grant sysdba to rjb;
+select * from v$pwfile_users;
+
+Perform User-Managed Complete Database Recovery
+Recovery falls into one of two general categories: complete and incomplete. Firstly, if media failure occurs in your database, you will want to use complete recovery to bring your database back up to the state it was in before the media failure. This would include recovery of all committed transactions. 
+Secondly, and in contrast, the database media itself may be intact but a number of changes or logical corruptions to the database have occurred, and these are not easily reversible using logical backups or by users re-entering the correct data to reverse incorrect transactions. In this second scenario, you might consider using incomplete recovery, which is covered later in this chapter.
+
+Whether the database is open or closed during complete recovery, you need to perform the same basic steps:
+1. Identify files needed for recovery.
+2. Restore recovery-related files that can contain both committed and uncommitted transactions.
+3. Start up the database in MOUNT mode.
+4. Bring datafiles online.
+5. Apply archived and online redo log files to roll forward the database; this is also known as cache recovery.
+6. Open the database to provide high availability.
+7. Oracle automatically applies undo blocks to roll back uncommitted changes, which is also known as transaction recovery.
+8. Open the database as read-write if it was opened as read-only. Undo data is applied for uncommitted transactions even if the database is open as read-only.
+
+Performing Complete Closed Database Recovery
+Identifying Recovery-related Files
+If your database is still running after media failure of one or more datafiles, the dynamic performance view V$RECOVER_FILE contains a list of the datafiles that need recovery. In this example, a system administrator inadvertently deletes a datafile from disk. If she does not know which one was deleted, you can identify it by using V$RECOVER_FILE:
+SQL> select file#, error from v$recover_file;
+
+Joining V$RECOVER_FILE with V$DATAFILE and V$TABLESPACE helps you identify which tablespace is affected:
+SQL> select file#, d.name d_name, t.name t_name, status, error
+2 from v$recover_file r
+3 join v$datafile d using(file#)
+4 join v$tablespace t using(ts#)
+5 ;
+
+To recover this tablespace successfully, you’ll need archived and online redo log files. V$RECOVERY_LOG tells you which archived redo log files you’ll need:
+SQL> select archive_name from v$recovery_log
+
+Restoring Recovery-related Files
+After you have identified the tablespace and datafiles that need recovery, you can shut down the database (if it is not already down) and repair the problem that caused the media failure. Copy the datafile from the backup location to the original location, if it’s available. If the original location is not available, you can copy the backup datafile to an alternative location. Once the database is started in MOUNT mode, rename the datafile as follows.
+
+SQL> alter database rename file
+2 '/u01/app/oracle/oradata/hr/chgtrk02.dbf'
+3 to '/u09/oracle/oradata/hr/chgtrk02.dbf'
+4 ;
+
+In addition, ensure that all archived redo log files are available in the default archiving location. If insufficient space is available for all required archived redo log
+files, you can restore them to a location . You can then specify the alternative location when you recover the datafile. 
+in this example:
+SQL> alter database datafile
+2 '/u09/oracle/oradata/hr/chgtrk02.dbf' online;
+
+Applying Redo Log Files
+The command for recovering the database is as you might expect: RECOVER. Here it is in an example:
+SQL> recover automatic database;
+
+If you do not use the AUTOMATIC keyword, you are prompted to apply each archived and online redo log file. For complete recovery, you want to use AUTOMATIC so that all archived and online redo log files are applied to the datafiles.
+
+Another keyword available in the RECOVER command is the FROM keyword. This makes it easy to specify an alternative source location for all archived redo log files.
+
+Finally, you can open the database because you have performed these tasks while the database was in MOUNT mode:
+SQL> alter database open;
+
+Performing Complete Open Database Recovery
+In many situations, the database will continue to be available when datafiles for noncritical tablespaces become damaged or otherwise unavailable. Queries against tables in a damaged tablespace will return errors. Any attempt to write to the damaged tablespace will immediately bring the tablespace offline. 
+As with closed database recovery, you need to query V$RECOVER_FILE and V$RECOVERY_LOG to find the files required for recovery. While the database is open, take all tablespaces with damaged datafiles offline:
+
+SQL> alter tablespace chgtrk offline temporary;
+Specifying TEMPORARY issues a checkpoint for the remaining online datafiles in the tablespace, if any exist. This can save time in the recovery process if the hardware problem with the damaged datafile is temporary, because media recovery might not be necessary.
+
+restore the damaged file 
+Now you recover a tablespace, and not the entire database( as in closed database recovery)
+SQL> recover automatic tablespace chgtrk;
+SQL> alter tablespace chgtrk online;
+
+Whether you use complete open or complete closed database recovery depends primarily on whether the database is open, as you might expect. However, if enough datafiles are missing or damaged, the database will not be of much use to most of your users, and the recovery effort will take less time if the database is not open.
+
+Perform User-Managed and Server-Managed Backups
+The types of user-managed backup you can perform are dependent on whether your database is running in ARCHIVELOG mode. If you are not running in ARCHIVELOG mode, you must shut down the database to perform a backup using operating system commands. If you are using ARCHIVELOG mode, you can put an individual tablespace or the entire database into BEGIN BACKUP mode, copy the datafiles to a backup location, and then take the database out of backup mode with END BACKUP. This can all occur while users are accessing the database.
+
+Remember that you should never back up the online redo log files. This is very important to remember, because if you restore datafiles for complete recovery, then by restoring old copies of the redo log files you will almost certainly cause loss of committed transactions.
+
+Backing Up a Database in NOARCHIVELOG Mode
+SQL> shutdown immediate
+
+Next, use operating system commands to copy the files identified in the dynamic performance views V$DATAFILE and V$CONTROLFILE:
+SQL> ! cp /u01/app/oracle/oradata/hr/*.dbf /u06/backup
+SQL> ! cp /u01/app/oracle/oradata/hr/control01.ctl /u06/backup
+
+SQL>startup
+
+Backing Up a Database in ARCHIVELOG Mode
+A distinct advantage to using ARCHIVELOG mode is that you can perform online backups (also known as hot backups), while the database is available to users.
+You can back up the entire database while the database is online (with ALTER DATABASE BEGIN BACKUP). Typically you would back up only one tablespace at  a time to minimize response time delays for users accessing the database while it is online.
+
+Backing Up the Control File in ARCHIVELOG mode
+Backing up the control file for a database running in ARCHIVELOG mode produces the same end result as the method you use in NOARCHIVELOG mode. The only difference is that you can use two different SQL commands to perform the backup.
+
+The first method for backing up a control file in ARCHIVELOG mode creates an exact copy of the current control file to a location you specify:
+SQL> alter database backup controlfile to '/u06/backup/controlfile.bkup';
+
+The other method creates an editable script that re-creates the control file. Here is the command:
+SQL> alter database backup controlfile to trace;
+
+Recovering the Control File
+
+1. Shut down the database with SHUTDOWN ABORT (if it has not already crashed).
+2. Restore the control file from backup.
+3. Start up the database in MOUNT mode.
+4. Start database recovery and specify BACKUP CONTROLFILE in the RECOVER command.
+5. Open the database with RESETLOGS.
+If the following conditions are true, you do not have to open the database with RESETLOGS, and you will not lose any committed transactions:
+■ You manually ran CREATE CONTROLFILE or have a backup of the control file created with ALTER DATABASE BACKUP CONTROLFILE TO TRACE.
+■ All online redo log files are available.
+■ All datafiles are current.
+All other scenarios, including using a backup control file with undamaged online redo log files and datafiles, will require opening the database with RESETLOGS. A RECOVER command using a backup copy of the control file will look like this:
+SQL> recover database using backup controlfile until cancel;
+Even if all archived and online redo log files are intact, the RECOVER command will prompt for a missing archived redo log file. This indicates that unarchived changes existed in the online redo log files. In this scenario, you must manually specify the locations of each online redo log file until the RECOVER command finds the required redo information.
+
+Dealing with the Loss of One or More Control Files but Not All
+If you have but one control file left, recovery is quite simple. Follow these steps:
+Shut down the database normally.
+Copy one of the remaining control files to the location of the lost control files and give it the same name as the lost control file.
+Restart the database.
+
+----
+Recovering Lost Control Files with a Backup Control File
+If you have a backup control file, follow these steps to recover from the loss of all your control files:
+1. Copy the backup control file to the location of each control file defined by the parameter CONTROL_FILES. Modify the CONTROL_FILES parameter if required.
+2. Mount the database with the startup mount command.
+3. Recover the database using the recover database using backup controlfile command. At the prompt, type in AUTO to apply all archived redo logs.
+4. Recovery will end, likely with an error. This is because the final redo log sequence number you need to apply is not in an archived redo log but is in one of the online redo logs. Issue the recover database using backup controlfile command again. This time, when prompted for the archived redo log to apply, enter one of your online redo log names (for example, redo01.log). Continue to attempt to apply each online redo log group until you find the correct log sequence number.
+5. Once the final online redo log is applied, recovery will complete automatically and without error.
+6. You can now open the database using the alter database open resetlogs command.
+
+------------------------
+
+alter database datafile 4 offline;
+alter database datafile ’C:\ORACLE\ORADATA\ORCL\USERS01.DBF’ offline;
+
+Now you will find that the STATUS column for this datafile in V$DATAFILE will show that the file has a RECOVER status as seen here:
+
+SQL> select file#, status from v$datafile;
+
+A row will also appear for the datafile you have taken offline in the V$RECOVER_FILE view.
+
+Using the recover database Command
+When you issue the recover database command without any parameters, Oracle will assume a point-of-failure recovery or complete recovery. That is, it will try to recover the database up to the last redo-log entry.
+
+When you issue the recover database command from the SQL prompt, you have a number of options. You can recover the entire database with recover database, you can recover a specific tablespace with recover tablespace, and you can recover a datafile with recover datafile. 
+
+After you have issued the recover database command, you will be prompted for the archived redo log it thinks it needs to apply. You can simply press the Enter key and Oracle will apply the redo in that archived redo log. Once the redo has been applied, the recover database command will prompt you for the next redo log in the sequence, and you press Enter again. As you can imagine, this can get a little long-winded if you have to apply a number of archived redo logs. Another thing you can do at the prompt is type in auto.
+
+Don’t expect that these errors indicating datafiles are missing will always show up in the alert log. Sometimes they will (for example, on database startup), but often they won’t (for example, when a query fails because a datafile is offline). If you want to monitor for this problem reliably, then the V$RECOVER_FILE view is the way to go.
+
+alter database datafile ‘C:\ORACLE\ORADATA\ORCL\USERS01.DBF’ offline;
+As an alternative, you can use FILE_ID as shown in this example:
+alter database datafile 4 offline;
+
+If you need to figure out exactly which archived redo logs you need to restore your backup (so, perhaps, you can restore those files off of backup media), you can use the V$RECOVER_FILE and the V$LOG_HISTORY views. The V$RECOVER_FILE view provides the last change number (in the CHANGE# column) present in the file(s) needing recovery. The V$LOG_HISTORY view will tell you which archived redo logs the changes are in. Here is an example:
+
+SQL> Select a.file#, a.change#, b.first_change#, b.next_change#, b.sequence#
+2 From v$recover_file a, v$log_history b
+3 Where a.change#<=b.next_change#;
+
+Performing Incomplete Recoveries
+Incomplete recovery (also called point-in-time recovery) is the process of recovering the database to a different point in time than the most current point in time. Why would one do such a thing, you ask? There may be a number of reasons:
+Loss of one of the online redo log groups making full recovery impossible
+User error requiring a recovery of the database to a different point in time
+Creation of a duplicate database to a point in time other than that of the source database.
+
+With incomplete recovery, you must restore the entire database, and it must be restored to a point in time before the point in time that you wish to recover to. For example, suppose it’s 2 p.m. and you wish to recover just the USERS tablespace objects to 1 p.m. because someone messed something up. To do so, it’s not just as simple as restoring the USERS tablespace datafiles to 1 p.m. You have to restore the entire database to 1 p.m.
+
+There is a concept of tablespace point-in-time recovery that allows you to restore just a tablespace to a point in time different from that of the database. We will discuss tablespace point-in-time recovery using RMAN. 
+
+Recover database until time ‘2008-10-23:13:00:00’
+
+The format of the time in the command is ‘yyyy-mm-dd:hh24:mi:ss’, which is consistent in each Oracle database (so it is not dependent on parameters such as NLS_DATE_FORMAT).
+
+Recover database until sequence 34; -- Log sequence–based recovery
+Recover database until change 226250; -- Change-based recovery
+
+Having recovered the database, you will want to open it. A point-in-time recovery will result in a new incarnation of the database. A new incarnation is a new logical version of the database. The data remains the same, of course, but the redo stream essentially starts over. The log sequence number is reset to 1 (the SCN is not reset) and a new life begins for the database.
+
+To indicate to Oracle that you are doing an incomplete recovery, you will open the database with resetlogs clause. The resetlogs command indicates to Oracle that it should reset the control file and the redo log sequence number and open the database as a brand-new incarnation. The entire command looks like this:
+alter database open resetlogs;
+
+Through Oracle Database 10g, Oracle recommended that you back up the database any time you issue a resetlogs operation. This was because Oracle did not support recovering a database through a resetlogs operation. In Oracle Database 11g, Oracle has been modified to allow for a recovery through resetlogs. This is supported through the new %r format string available in the LOG_ARCHIVE_FORMAT parameter.
+
+select current_scn from v$database; --3586156

@@ -1,0 +1,1105 @@
+https://nvie.com/posts/a-successful-git-branching-model/
+
+https://bocoup.com/blog/git-workflows-for-successful-deployment
+
+https://www.codingblocks.net/podcast/comparing-git-workflows/
+
+Technique 18 Removing a file: git rm
+Technique 19 Resetting files to the last commit: git reset
+git reset --hard
+git reset
+Technique 20 Deleting untracked files: git clean
+git clean --force
+git ls-files
+git ls-files --others (or -o)
+Technique 21 Ignoring files: .gitignore
+Technique 22 Deleting ignored files
+git clean --force -X
+Technique 23 Temporarily stashing some changes: git stash
+
+
+Git SSH Setup
+
+#if no fle like id_rsa and id_rsa.pub are there that means ssh key has not used before
+ls -al ~/.ssh
+
+#generate with pasphrase and store the keys in slected files 
+ssh-keygen -t rsa -b 4096 -C "saroj.raut@gmail.com"
+/c/Users/saroj/.ssh/id_rsa and empty pas phrase
+
+# Copies the contents of the id_rsa.pub file to your clipboard
+clip < ~/.ssh/id_rsa.pub
+
+#login to git account and add the key to profile. settings > ssh and gpg keys
+
+# Test the ssh connection
+ssh -T git@github.com
+
+Git Study 
+
+A Git repository is the local collection of all the files related to a particular Git version control system and contains a .git subdirectory in its root. Git keeps track of the state of the files in the repository’s directory on disk.
+
+Git repositories store all their data on your local machine. Making commits, viewing history, and requesting differences between commits are all local operations that don’t require a network connection. This makes all these operations much faster in Git than with centralized version control systems such as Subversion.
+
+Indeed, in the world of software, the temptation to create new tools can be deceptively easy and inviting.
+
+Global Information Tracker
+
+The most commonly used git commands are:
+add : Add file contents to the index
+bisect : Find the change that introduced a bug by binary search
+branch : List, create, or delete branches
+checkout : Checkout and switch to a branch
+clone : Clone a repository into a new directory
+commit : Record changes to the repository
+diff : Show changes between commits, the commit and working trees, etc
+fetch : Download objects and refs from another repository
+grep : Print lines matching a pattern
+init : Create an empty git repository or reinitialize an existing one
+log : Show commit logs
+merge : Join two or more development histories
+mv : Move or rename a file, a directory, or a symlink
+pull : Fetch from and merge with another repository or a local branch
+push : Update remote refs along with associated objects
+
+Version Control With Git
+
+Creating an Initial Repository : To signify that your directory is a Git repository, the git init command creates a hidden directory, called .git, at the top level of your project.
+
+The command git init creates a new Git repository. Initially, each Git repository is empty. To manage content, you must explicitly deposit it in the repository. Such a conscious step separates scratch files from important files.
+
+Use git add file to add file to the repository: $ git add index.html
+
+After an add, Git knows that the file, index.html, is to remain in the repository. However, so far, Git has merely staged the file, an interim step before committal. Git separates the add and commit steps to avoid volatility.
+
+at this stage recently added file can be removed from git staging : git rm --cached index.html
+
+if you do a git status it will show that : new file:   index.html >> The means that the new file index.html will be added to the repository during the next commit.
+
+A fully qualified git commit command supplies a log message and an author:
+
+$ git commit -m "Initial contents of public_html" --author="Jon Loeliger <jdl@example.com>"
+
+git commit -a does both the things.
+
+Configuring the Commit Author
+Before making many commits to a repository, at a bare minimum, Git must know your name and email address. You may specify your identity on every commit command line, as shown previously, but that is the hard way and quickly becomes tedious. Instead, save your identity in a configuration file using the git config command.
+
+$ git config user.name "Jon Loeliger"
+$ git config user.email "jdl@example.com"
+
+You can also tell Git your name and email address using the GIT_AUTHOR_NAME and GIT_AUTHOR_EMAIL environment variables. If set, these variables override all configuration settings.
+
+Configuration Files
+Git’s configuration files are all simple text files in the style of .ini files. They record various choices and settings used by many Git commands.
+
+Git supports a hierarchy of configuration files. In decreasing precedence they are:
+.git/config : Repository-specific configuration settings manipulated with the --file option or by default. These settings have the highest precedence.
+~/.gitconfig : User-specific configuration settings manipulated with the --global option.
+/etc/gitconfig : System-wide configuration settings manipulated with the --system option if you have proper Unix file write permissions on it. These settings have the lowest precedence. Depending on your actual installation, the system settings file might be ssomewhere else (perhaps in /usr/local/etc/gitconfig), or may be entirely absent.
+
+For example, to establish an author name and email address that will be used on all the commits you make for all of your repositories, configure values for user.name and user.email in your $HOME/.gitconfig file using git config --global:
+
+$ git config --global user.name "itsr"
+$ git config --global user.email "saroja-raut@river-island.com"
+
+Or, to set a repository-specific name and email address that would override a --global setting, simply omit the --global flag:
+$ git config user.name "Jon Loeliger"
+$ git config user.email "jdl@special-project.example.org"
+
+Use git config -l to list the settings of all the variables collectively found in the complete set of configuration files:
+
+Use the --unset option to remove a setting:
+$ git config --unset --global user.email
+
+Repositories
+A Git repository is simply a database containing all the information needed to retain and manage the revisions and history of a project.
+
+Git manages and inspects configuration and setup information on a per-site, per-user, and per-repository basis.
+
+Within a repository, Git maintains two primary data structures, the object store and the index.
+
+The object store is designed to be efficiently copied during a clone operation as part of the mechanism that supports a fully distributed VCS. The index is ransitory information, is private to a repository, and can be created or modified on demand as needed.
+
+Git Object Types : Git places only four types of objects in the object store: the blobs, trees, commits, and tags.
+
+Blobs : Each version of a file is represented as a blob. Blob, a contraction of “binary large object,” is a term that’s commonly used in computing to refer to some variable or file that can contain any data and whose internal structure is ignored by the program. A blob holds a file’s data but does not contain any metadata about the file or even its name.
+
+Trees : A tree object represents one level of directory information. It records blob identifiers, path names, and a bit of metadata for all the files in one directory.
+
+Commits : A commit object holds metadata for each change introduced into the repository, including the author, committer, commit date, and log message. Each commit points to a tree object that captures, in one complete snapshot, the state of the repository at the time the commit was performed. The initial commit, or root commit, has no parent.
+
+Tags : A tag object assigns an arbitrary yet presumably human readable name to a specific object, usually a commit.
+
+Index : The index is a temporary and dynamic binary file that describes the directory structure of the entire repository. More specifically, the index captures a version of the project’s overall structure at some moment in time.
+
+Here’s how it works. As the developer, you execute Git commands to stage changes in the index. Changes usually add, delete, or edit some file or set of files. The index records and retains those changes, keeping them safe until you are ready to commit them. You can also remove or replace changes in the index. Thus, the index allows a gradual transition, usually guided by you, from one complex repository state to another, presumably better state.
+
+Using git rm : The command git rm is, naturally the inverse of git add. It removes a file from both the repository and the working directory. Git will not remove a file just from the working directory; the regular rm command may be used for that purpose.
+
+To convert a file from staged to unstaged, use git rm --cached:
+
+git ls-files --stage
+
+Using git mv : Suppose you need to move or rename a file. You may use a combination of git rm on the old file and git add on the new file, or you may use git mv directly.
+
+The following sequences of commands are equivalent Git operations:
+$ mv stuff newstuff
+$ git rm stuff
+$ git add newstuff
+and
+$ git mv stuff newstuff
+
+CHAPTER 6 : Commits
+
+In Git, a commit is used to record changes to a repository. At face value, a Git commit seems no different from a commit or check-in found in other VCS. Under the hood, however, a Git commit operates in a unique way.
+
+How you decide when to commit is pretty much up to you and your preferences or development style. In general, you should perform a commit at well-defined points in time when your development is at a quiescent stage, such as when a test suite passes, when everyone goes home for the day, or any number of other reasons.
+
+CHAPTER 7 : Branches
+A branch is the fundamental means of launching a separate line of development within a software project. A branch is a split from a kind of unified, primal state, allowing development to continue in multiple directions simultaneously and, potentially, to produce different versions of the project. Often, a branch is reconciled and merged with other branches to reunite disparate efforts.
+
+Reasons for Using Branches
+A branch can be created for a countless number of technical, philosophical, managerial, and even social reasons. Here is just a smattering of common rationales.
+
+• A branch often represents an individual customer release. If you want to start version 1.1 of your project but you know that some of your customers want to stick with version 1.0, then keep the old version alive as a separate branch.
+• A branch can encapsulate a development phase, such as the prototype, beta, stable, or bleeding-edge release. You can think of the version 1.1 release as a separate phase, too; the maintenance release.
+• A branch can isolate the development of a single feature or research into a particularly complex bug. For example, you can introduce a branch for a well-defined and conceptually isolated task or to facilitate a merge of several branches prior to a release. It may seem like overkill to create a new branch just to fix one bug, but Git’s branching system encourages such small-scale use.
+An individual branch can represent the work of an individual contributor. Another branch—the “integration” branch—can be used specifically to unify efforts.
+
+Branch or Tag?
+A branch and a tag seem similar, perhaps even interchangeable. So when should you use a tag name and when should you use a branch name?
+A tag and a branch serve different purposes. A tag is meant to be a static name that does not change or move over time. Once applied, you should leave it alone.
+
+Branch Names
+The default branch in a repository is named master and most developers keep the repository’s most robust and dependable line of development on that branch. There is nothing magic about the name master, except that Git introduces it during the initialization of a repository. If you prefer, you can rename or even delete the master branch, although it’s probably best practice to leave it alone.
+
+a development team that fixes a multitude of bugs. It may be useful to place the development of each repair in a hierarchical structure, under the branch name bug, on separate branches named something like bug/pr-1023 and bug/pr-17.
+
+One reason to use hierarchical branch names is that Git, just like the Unix shell, supports wildcards. For instance, given the naming scheme bug/pr-1023 and bug/pr-17, you can select all bug branches at once with a clever and familiar shorthand. git show-branch 'bug/*'
+
+To create a new branch off the HEAD of your current branch for the purposes of fixing Problem Report #1138, you might use: $ git branch prs/pr-1138
+
+The basic form of the command is git branch branch [starting-commit]
+When no starting-commit is specified, the default is to start a new branch at the point where you’re working right now.
+Note that the git branch command merely introduces the name of a branch into the repository. It does not change your working directory to use the new branch. You can’t actually start work on the branch until you switch to it,
+
+The git branch command lists branch names found in the repository. : git branch
+
+The git show-branch command provides more detailed output than git branch,
+
+Checking out Branches
+Your working directory can reflect only one branch at a time. To start working on a different branch, issue the git checkout command.
+
+$ git branch
+bug/pr-2
+* dev
+master
+
+$ git checkout bug/pr-1
+Switched to branch "bug/pr-1"
+
+$ git branch
+* bug/pr-1
+dev
+master
+
+The effects of changing branches are:
+• Files and directories present in the branch being checked out but not in the current branch are checked out of the object store and placed into your working tree.
+• Files and directories present in your current branch but absent in the branch being checked out will be removed from your working tree.
+• Files common to both branches are modified to reflect the content present in the checked out branch.
+
+Don’t be alarmed if it looks like the checkout appears to happen almost instantaneously. A common newbie mistake is to think that the checkout didn’t work because it returned instantly after supposedly making huge changes. This is one of the features of Git that truly and strongly differentiates it from many other VCSs. Git is good at determining the minimum set of files and directories that actually need to change during a checkout.
+
+If you have local modifications to a file that are different from changes that are present on the new branch, Git issues an error message such as the following and refuses to check out the target branch:
+
+$ git checkout dev
+error: Your local changes to the following files would be overwritten by checkout: NewStuff
+Please, commit your changes or stash them before you can switch branches.
+Aborting
+ Why it failed? You can find out by inspecting the contents of the file NewStuff, as it is locally modified in the current working directory, and the target dev branch:
+ $ git diff NewStuff
+
+ Git detects this potential loss and prevents it from happening. If you really don’t care about losing changes in your working directory and are willing to throw them away, you can force Git to perform the checkout by using the -f option.
+
+Merging Changes into a Different Branch
+In the previous section, the current state of your working directory conflicted with that of the branch you wanted to switch to. What’s needed is a merge: The changes in your working directory must be merged with the files being checked out.
+
+If possible or if specifically requested with the -m option, Git attempts to carry your local change into the new working directory by performing a merge operation between your local modifications and the target branch.
+
+$ git checkout -m dev
+M NewStuff
+Switched to branch "dev"
+Here, Git has modified the file NewStuff and checked out the dev branch successfully.
+
+You must be careful in these scenarios, however. Although it may look like the merge was performed cleanly and all is well, Git has simply modified the file and left the merge conflict indicators within it. You must still resolve any conflicts that are present:
+s
+$ cat NewStuff
+Something
+<<<<<<< dev:NewStuff
+A Change
+=======
+Something else
+>>>>>>> local:NewStuff
+
+Creating and Checking out a New Branch
+Another fairly common scenario happens when you want to both create a new branch and simultaneously switch to it as well. Git provides a shortcut for this with the -b newbranch option.
+
+Suppose you are in the master branch, editing files, and suddenly realize that you would like all of the changes to be committed on an entirely new branch named bug/pr-3. The sequence is as follows:
+
+$ git branch
+bug/pr-1
+bug/pr-2
+dev
+* master
+
+$ git checkout -b bug/pr-3
+M NewStuff
+Switched to a new branch "bug/pr-3"
+
+Deleting Branches
+The command git branch -d branch removes the named branch from a repository. Git prevents you from removing the current branch:
+Git also won’t allow you to delete a branch that contains commits that are not also present on the current branch. That is, Git prevents you from accidentally removing development in commits that will be lost if the branch were to be deleted.
+
+CHAPTER 8 : Diffs
+
+A diff is a compact summary of the differences (hence the name “diff”) between two items. The -u option produces a unified diff, a standardized format used widely to share modifications.
+
+wisdmac001:~ itsr$ cat original
+a
+b
+c
+d
+wwisdmac001:~ itsr$ cat new
+aa
+b
+c
+cc
+d
+e
+
+wwisdmac001:~ itsr$ diff -u original new
+--- original	2017-09-22 14:25:11.000000000 +0100
++++ new	2017-09-22 14:25:49.000000000 +0100
+@@ -1,4 +1,6 @@
+-a
++aa
+ b
+ c
++cc
+ d
++e
+
+Let’s look at the diff in detail. In the header, the original file is denoted by - - - and the new file by +++. The @@ line provides line number context for both file versions. A line prefixed with a minus sign (–) must be removed from the original file to produce the new file. Conversely, a line with a leading plus sign (+) must be added to the original file to produce the new file. A line that begins with a space is the same in both files and is provided by the -u option as context.
+
+git diff
+git diff shows the difference between your working directory and the index. It exposes what is dirty in your working directory and is thus a candidate to stage for your next commit.
+
+git diff commit
+This form summarizes the differences between your working directory and the given commit.
+
+The basic Git workflow goes something like this:
+
+You modify files in your working tree.
+You selectively stage just those changes you want to be part of your next commit, which adds only those changes to the staging area.
+You do a commit, which takes the files as they are in the staging area and stores that snapshot permanently to your Git directory.
+
+If a particular version of a file is in the Git directory, it’s considered committed. If it has been modified and was added to the staging area, it is staged. And if it was changed since it was checked out but has not been staged, it is modified.
+
+Checking Your Settings
+git config -l
+git config --list
+
+git help config
+
+Getting a Git Repository
+You typically obtain a Git repository in one of two ways:
+    You can take a local directory that is currently not under version control, and turn it into a Git repository, or
+    You can clone an existing Git repository from elsewhere.
+
+In either case, you end up with a Git repository on your local machine, ready for work.
+
+Initializing a Repository in an Existing Directory
+cd /Users/user/my_project
+$ git init
+$ git add *.c
+$ git add LICENSE
+$ git commit -m 'initial project version'
+
+Cloning an Existing Repository
+If you’re familiar with other VCS systems such as Subversion, you’ll notice that the command is "clone" and not "checkout". This is an important distinction – instead of getting just a working copy, Git receives a full copy of nearly all data that the server has. Every version of every file for the history of the project is pulled down by default when you run git clone.
+
+git clone https://github.com/libgit2/libgit2
+
+Git has a number of different transfer protocols you can use. The previous example uses the https:// protocol, but you may also see git:// or user@server:path/to/repo.git, which uses the SSH transfer protocol.
+
+Remember that each file in your working directory can be in one of two states: tracked or untracked. Tracked files are files that were in the last snapshot; they can be unmodified, modified, or staged. In short, tracked files are files that Git knows about.
+
+Untracked basically means that Git sees a file you didn’t have in the previous snapshot (commit); Git won’t start including it in your commit snapshots until you explicitly tell it to do so. It does this so you don’t accidentally begin including generated binary files or other files that you did not mean to include.
+
+Tracking New Files
+$ git add README
+
+If you run your status command again, you can see that your README file is now tracked and staged to be committed:
+
+$ git status
+On branch master
+Your branch is up-to-date with 'origin/master'.
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+    new file:   README
+
+You can tell that it’s staged because it’s under the “Changes to be committed” heading. If you commit at this point, the version of the file at the time you ran git add is what will be in the historical snapshot.
+If you see files under a section named “Changes not staged for commit”, this means file has been tracked and changed but not staged for next commit. To stage it, you run the git add command. git add is a multipurpose command – you use it to begin tracking new files, to stage files, and to do other things like marking merge-conflicted files as resolved.
+
+If you modify a file after you run git add, you have to run git add again to stage the latest version of the file:
+
+Short Status
+git status -s
+
+$ git status -s
+ M README
+MM Rakefile
+A  lib/git.rb
+M  lib/simplegit.rb
+?? LICENSE.txt
+
+There are two columns to the output - the left-hand column indicates the status of the staging area and the right-hand column indicates the status of the working tree.
+New files that aren’t tracked have a ?? next to them
+README file is modified in the working directory but not yet staged
+lib/simplegit.rb file is modified and staged
+Rakefile was modified, staged and then modified again, so there are changes to it that are both staged and unstaged.
+
+Viewing Your Staged and Unstaged Changes
+What have you changed but not yet staged? And what have you staged that you are about to commit? Although git status answers those questions very generally by listing the file names.
+git diff shows you the exact lines added and removed – the patch, as it were.
+To see what you’ve changed but not yet staged, type git diff with no other arguments:
+If you want to see what you’ve staged that will go into your next commit, you can use git diff --staged.
+It’s important to note that git diff by itself doesn’t show all changes made since your last commit – only changes that are still unstaged. This can be confusing, because if you’ve staged all of your changes, git diff will give you no output.
+
+
+Committing Your Changes
+Any files you have created or modified that you haven’t run git add on since you edited them – won’t go into this commit. They will stay as modified files on your disk.
+
+You can type your commit message inline with the commit command by specifying it after a -m flag, like this:
+git commit -m "Story 182: Fix benchmarks for speed"
+You can see that the commit has given you some output about itself: which branch you committed to (master), what SHA-1 checksum the commit has (463dc4f), how many files were changed, and statistics about lines added and removed in the commit.
+Remember that the commit records the snapshot you set up in your staging area. Every time you perform a commit, you’re recording a snapshot of your project that you can revert to or compare to later.
+
+git commit -a -m 'added new benchmarks'
+ -a flag includes all changed files(even fines not added using git add). This is convenient, but be careful; sometimes this flag will cause you to include unwanted changes.
+
+ Removing Files
+To remove a file from Git, you have to remove it from your tracked files (more accurately, remove it from your staging area) and then commit. The git rm command does that, and also removes the file from your working directory so you don’t see it as an untracked file the next time around.
+
+If you simply remove the file from your working directory, it shows up under the “Changed but not updated” (that is, unstaged) area of your git status output:
+
+Another useful thing you may want to do is to keep the file in your working tree but remove it from your staging area.
+git rm --cached README
+
+git rm log/\*.log
+This command removes all files that have the .log. Note the backslash (\) in front of the *. This is necessary because Git does its own filename expansion in addition to your shell’s filename expansion.
+
+Viewing the Commit History
+If you want to look back to see what has happened. The most basic and powerful tool to do this is the git log command.
+
+git log
+By default, with no arguments, git log lists the commits made in that repository in reverse chronological order – that is, the most recent commits show up first. As you can see, this command lists each commit with its SHA-1 checksum, the author’s name and email, the date written, and the commit message.
+
+git log --pretty=format:"%h - %an, %ar : %s"
+ca82a6d - Scott Chacon, 6 years ago : changed the version number
+085bb3b - Scott Chacon, 6 years ago : removed unnecessary test
+a11bef0 - Scott Chacon, 6 years ago : first commit
+
+Table 1. Useful options for git log --pretty=format
+Option	Description of Output
+%H Commit hash
+
+%h Abbreviated commit hash
+
+%T Tree hash
+
+%t Abbreviated tree hash
+
+%P Parent hashes
+
+%p Abbreviated parent hashes
+
+%an Author name
+
+%ae Author email
+
+%ad Author date (format respects the --date=option)
+
+%ar Author date, relative
+
+%cn Committer name
+
+%ce Committer email
+
+%cd Committer date
+
+%cr Committer date, relative
+
+%s Subject
+You may be wondering what the difference is between author and committer. The author is the person who originally wrote the work, whereas the committer is the person who last applied the work. So, if you send in a patch to a project and one of the core members applies the patch, both of you get credit – you as the author, and the core member as the committer.
+
+Limiting Log Output
+git log --since=2.weeks
+This command works with lots of formats – you can specify a specific date like "2008-01-15", or a relative date such as "2 years 1 day 3 minutes ago".
+
+Undoing Things
+if you commit and then realize you forgot to stage the changes in a file you wanted to add to this commit, you can do something like this:
+$ git commit -m 'initial commit'
+$ git add forgotten_file
+$ git commit --amend
+You end up with a single commit – the second commit replaces the results of the first.
+Effectively, it’s as if the previous commit never happened, and it won’t show up in your repository history.
+The obvious value to amending commits is to make minor improvements to your last commit, without cluttering your repository history with commit messages of the form, “Oops, forgot to add a file” or “Darn, fixing a typo in last commit”.
+
+Unstaging a Staged File
+For example, let’s say you’ve changed two files and want to commit them as two separate changes, but you accidentally type git add * and stage them both. How can you unstage one of the two? The git status command reminds you:
+$ git add *
+$ git status
+On branch master
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+    renamed:    README.md -> README
+    modified:   CONTRIBUTING.md
+Right below the “Changes to be committed” text, it says use git reset HEAD <file>... to unstage. So, let’s use that advice to unstage the CONTRIBUTING.md file:
+
+$ git reset HEAD CONTRIBUTING.md
+Unstaged changes after reset:
+M	CONTRIBUTING.md
+$ git status
+On branch master
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+    renamed:    README.md -> README
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+    modified:   CONTRIBUTING.md
+Unmodifying a Modified File
+What if you realize that you don’t want to keep your changes to the CONTRIBUTING.md file? How can you easily unmodify it – revert it back to what it looked like when you last committed (or initially cloned, or however you got it into your working directory)? Luckily, git status tells you how to do that, too. In the last example output, the unstaged area looks like this:
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+    modified:   CONTRIBUTING.md
+It tells you pretty explicitly how to discard the changes you’ve made. Let’s do what it says:
+
+$ git checkout -- CONTRIBUTING.md
+$ git status
+On branch master
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+    renamed:    README.md -> README
+You can see that the changes have been reverted.
+It’s important to understand that git checkout -- <file> is a dangerous command. Any changes you made to that file are gone – Git just copied another file over it. Don’t ever use this command unless you absolutely know that you don’t want the file.
+
+If you would like to keep the changes you’ve made to that file but still need to get it out of the way for now, we’ll go over stashing and branching in Git Branching; these are generally better ways to go.
+
+Working with Remotes
+Showing Your Remotes
+To see which remote servers you have configured, you can run the git remote command. It lists the shortnames of each remote handle you’ve specified. If you’ve cloned your repository, you should at least see origin – that is the default name Git gives to the server you cloned from:
+$ git clone https://github.com/River-Island/supreme-waffle
+Cloning into 'ticgit'...
+remote: Reusing existing pack: 1857, done.
+remote: Total 1857 (delta 0), reused 0 (delta 0)
+Receiving objects: 100% (1857/1857), 374.35 KiB | 268.00 KiB/s, done.
+Resolving deltas: 100% (772/772), done.
+Checking connectivity... done.
+$ git remote
+origin
+$ git remote -v : Tells the URL of remote repository.
+origin	https://github.com/schacon/ticgit (fetch)
+origin	https://github.com/schacon/ticgit (push)
+
+Fetching and Pulling from Your Remotes
+To get data from your remote projects, you can run:
+$ git fetch <remote>
+
+If you clone a repository, the command automatically adds that remote repository under the name “origin”. So, git fetch origin fetches any new work that has been pushed to that server since you cloned (or last fetched from) it. It’s important to note that the git fetch command only downloads the data to your local repository – it doesn’t automatically merge it with any of your work or modify what you’re currently working on.
+
+If your current branch is set up to track a remote branch (see the next section and Git Branching for more information), you can use the git pull command to automatically fetch and then merge that remote branch into your current branch. This may be an easier or more comfortable workflow for you; and by default, the git clone command automatically sets up your local master branch to track the remote master branch (or whatever the default branch is called) on the server you cloned from. Running git pull generally fetches data from the server you originally cloned from and automatically tries to merge it into the code you’re currently working on.
+
+Pushing to Your Remotes
+When you have your project at a point that you want to share, you have to push it upstream. The command for this is simple: git push <remote> <branch>.
+
+$git push origin master
+
+This command works only if you cloned from a server to which you have write access and if nobody has pushed in the meantime. If you and someone else clone at the same time and they push upstream and then you push upstream, your push will rightly be rejected. You’ll have to fetch their work first and incorporate it into yours before you’ll be allowed to push.
+
+3.1 Git Branching - Branches in a Nutshell
+Nearly every VCS has some form of branching support. Branching means you diverge from the main line of development and continue to do work without messing with that main line.
+
+https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes
+
+Buggy software is embarrassing
+Careful design
+Best practices, standards, guidelines
+Scope of Code review
+When we spend more time re-work then yes that's a concern.
+Complex data structures can take up substantial amounts of memory, use with care when the code can be called from multiple sessions.
+
+No program goes to QA until it passes its unit tests
+
+No program goes to QA until it passes its unit tests
+Unit testing is an intimidating process.
+But every incremental improvement in testing yields immediate and long-term benefits.
+BULK COLLECT and FORALL, cursor variables, table functions
+
+Whenever possible, use anchored declarations rather than explicit datatype references%
+Use anchoring to tightly link code to underlying data structures
+Use SUBTYPEs for programmatically-defined types􀂃SUBTYPEs can also be used to mask dependenciesthat are revealed by %TYPE and %ROWTYPE.
+Always Fetch into Cursor Recordsrec
+DBMS_UTILITY.FORMAT_ERROR_BACKTRACE
+Give your error numbers names and associate them with named exceptions.
+
+en_general_error CONSTANT NUMBER := -20000;
+exc_general_error EXCEPTION;
+PRAGMA EXCEPTION_INIT (exc_general_error, -20000);
+END labels
+Use GOTO and CONTINUE only when structured code is not an option.
+
+Use FOR loops for dense collections, WHILE loops for sparse collections.
+Never EXIT or RETURN from WHILE and FOR loops.
+Treat NULL conditions explicitly in conditional statements.
+Use IF...ELSIF only to test a single, simple condition. Use CASE to avoid lengthy sequences of IF statements.
+
+Coding Defensively : You weren’t supposed to do that with my program!
+Never use WHEN OTHERS THEN NULL.
+Don’t forget exception handlers for your DML statements.
+You may write PL/SQL code, but SQL always takes precedence.
+
+Limit execution section length to no more than 50 lines. One way in, one way out: multiple exits confuse me. Gifts should always come tightly wrapped.
+
+Use named notation to self-document subprogram calls and pass values more flexibly.
+Let Oracle do most of the tuning for you.
+Move static expressions outside of loops and SQL statements.
+Use BULK COLLECT and FORALL to improve performance of multirow SQL operations in PL/SQL.
+Use pipelined table functions to return data faster and to parallelize function execution.
+Don’t write code that a machine could write for you instead.
+Ask for help (or at least take a break) after 30 minutes on a problem.
+Who needs comments? My code is self-documenting!
+Comment tersely with value-added information.
+Name procedures with verb phrases, and functions with noun phrases.
+Assume the worst, and you will never be disappointed.
+
+Apply the Thirty Minute Rule rigorously
+This rule really does work. Do not spend hours banging your head against the
+wall of your code. Ask for help. If your manager has not set up a process or
+fostered a culture that says it’s OK to admit ignorance, you will have to do it
+yourself. This is especially important if you are (or are seen as) a senior developer
+on your team. Go to one of your junior team members and ask for help.
+
+Take a break
+If you are stuck and alone and cannot turn to another programmer—or any
+other human being—then STOP! Take a break. Get away from your work. Best
+alternative: get some exercise. Move your body. Go out for a walk or a run.
+Jump up and down, stretch, do sit-ups. Let your brain relax and make its
+
+Team leaders and development managers have a special responsibility to cultivate
+an environment in which we are encouraged to admit what we do not know, and
+to ask for help sooner rather than later. Ignorance isn’t a problem unless it is
+hidden from view. And by asking for help, you also validate the knowledge and
+experience of others, building the overall self-esteem and confidence of the team.
+
+Formal code walkthroughs
+On a regular basis (and certainly as a “gate” before any program moves to
+production status), a developer presents or “walks through” her code before a
+group of programmers.
+
+Best Practices
+
+The following are best practices we as utPLSQL have learned about PL/SQL and Unit Testing.
+
+Test Interaction
+
+Tests should not depend on a specific order to run.
+Tests should not depend on other tests to execute.
+A developer should be able to run one or more tests of their choosing with out any prerequisites.
+Tests are not for production
+
+Tests generate will generate fake data, so it should go without saying. You should not deploy your tests to a production database.
+
+Tests and their relationship to code under test.
+
+Code that you want to test, and the tests should be in separate packages.
+Test code commonly will be the same schema as code
+
+dev-apex.hq.river-island.com
+
+sg-22ef3d5a - security group added a new inbound rule\
+
+---- Git Study Version Control with Git, 2nd Edition
+showing all commits 
+The command git log yields a sequential history of the individual commits within the repository:
+git log
+
+commit 14efaf57d783090c4de17de0464b4534c1b61dd7 (HEAD -> master, origin/master)
+Author: Saroja Raut <saroja.raut@river-island.com>
+Date:   Mon Jun 11 21:31:45 2018 +0100
+
+    11th June
+
+To see more detail about a particular commit, use git show with a commit number: If you run git show without an explicit commit number, it simply shows the details of the most recent commit.
+
+git show 14efaf57d783090c4de17de0464b4534c1b61dd7
+
+Another view, show-branch, provides concise, one-line summaries for the current development branch:
+ git show-branch --more=10
+
+ git rm f1.html
+
+ git mv f1.html f2.html
+
+For example, to establish an author name and email address that will be used on all the
+commits you make for all of your repositories, configure values for user.name and
+user.email in your $HOME/.gitconfig file using git config --global:
+$ git config --global user.name "Jon Loeliger"
+$ git config --global user.email "jdl@example.com"
+
+git config -l
+
+Git places only four types of objects in the object store: the blobs, trees, commits, and tags.
+Blobs
+Each version of a file is represented as a blob. Blob contain any data and whose internal structure is ignored by the program. A blob is treated as being opaque.
+Trees
+A tree object represents one level of directory information.
+Commits
+A commit object holds metadata for each change introduced into the repository, including the author, committer, commit date, and log message.
+Tags
+A tag object assigns an arbitrary yet presumably human readable name to a specific object, usually a commit.
+
+Index
+The index is a temporary and dynamic binary file that describes the directory structure of the entire repository. More specifically, the index captures a version of the project’s overall structure at some moment in time.
+
+The Git object store is organized and implemented as a content-addressable storage system. Specifically, each object in the object store has a unique name produced by applying SHA1 to the contents of the object.
+
+Git is a content tracking system. Git’s object store is based on the hashed computation of the contents of its objects, not on the file or directory names from the user’s original file layout. If two separate files have exactly the same content, whether in the same or different directories, Git stores a single copy of that content as a blob within the object store.
+
+When Git needs to create a working directory, it says to the filesystem: “Hey! I have this big blob of data that is supposed to be placed at pathname path/to/directory/file. Does that make sense to you?” The filesystem is responsible for saying “Ah, yes, I recognize that string as a set of subdirectory names, and I know where to place your blob of data! Thanks!”
+
+Pack Files
+An astute reader may have formed a lingering question about Git’s data model and its
+storage of individual files: Isn’t it incredibly inefficient to store the complete content of
+every version of every file directly?
+
+Instead, Git uses a more efficient storage mechanism called a pack file. To create a
+packed file, Git first locates files whose content is very similar and stores the complete
+content for one of them. It then computes the differences, or deltas, between similar
+files and stores just the differences. For example, if you were to just change or add one
+line to a file, Git might store the complete, newer version and then take note of the one
+line change as a delta and store that in the pack too.
+
+Git Concepts at Work
+
+$ mkdir /tmp/hello
+$ cd /tmp/hello
+$ git init
+Initialized
+$ find .
+
+$ find .git/objects
+
+Using git add
+The command git add stages a file. In terms of Git’s file classifications, if a file is
+untracked, then git add converts that file’s status to tracked. When git add is used on
+a directory name, all of the files and subdirectories beneath it are staged recursively.
+
+saroja.raut@river-island.com
+
+"Programming is not about typing, it's about thinking." - Rich Hickey
+"First do it, then do it right, then do it better." - Addy Osmani
+“The trouble with programmers is that you can never tell what a programmer is doing until it’s too late.” - Seymour Cray
+"If it's a good idea, go ahead and do it. It is much easier to apologize than it is to get permission." - Grace Hopper
+
+git config --system 
+git config --global
+git config --local
+
+git config --local user.name sarojaraut
+git config --local user.email saroj.raut@gmail.com
+
+git config --unset --global user.name
+git config --global user.name
+
+git config --list
+git config --local --list
+
+If you are ever unable to figure out where a particular configuration value is set : git config --show-origin user.name
+
+git config core.editor
+
+git config --global alias.hist git log --pretty=format:"%h %ad | %s%d [%an]" --graph --date=short
+
+Practice
+git pull git@github.com:sarojaraut/Practice.git
+
+git reset --soft HEAD~1
+git reset --hard HEAD~1
+
+git push -f git@github.com:sarojaraut/Practice.git
+
+git clone git@github.com-sarojraut:sarojaraut/practice.git
+git config --local user.name sarojaraut
+git config --local user.email saroj.raut@gmail.com
+
+git push origin
+
+git init
+Initialized empty Git repository in /Users/itsr/gitstudy/samplerepo/.git/
+
+git config --local user.name sarojaraut
+git config --local user.email saroj.raut@gmail.com
+
+echo content > file1.c
+git add .
+
+find .git
+.git
+.git/config
+.git/objects
+.git/objects/d9
+.git/objects/d9/5f3ad14dee633a758d2e331151e950dd13e4ed
+.git/objects/pack
+.git/objects/info
+.git/HEAD
+.git/info
+.git/info/exclude
+.git/description
+.git/hooks
+.git/hooks/commit-msg.sample
+.git/hooks/pre-rebase.sample
+.git/hooks/pre-commit.sample
+.git/hooks/applypatch-msg.sample
+.git/hooks/pre-receive.sample
+.git/hooks/prepare-commit-msg.sample
+.git/hooks/post-update.sample
+.git/hooks/pre-applypatch.sample
+.git/hooks/pre-push.sample
+.git/hooks/update.sample
+.git/refs
+.git/refs/heads
+.git/refs/tags
+.git/index
+.git/branches
+
+git cat-file -t d95f3ad14dee633a758d2e331151e950dd13e4ed
+blob 
+
+git cat-file -p d95f3ad14dee633a758d2e331151e950dd13e4ed
+content
+
+git commit -am "comment string"
+
+wwisdmac001:samplerepo itsr$ find .git/
+.git/
+.git//config
+.git//objects
+.git//objects/d9
+.git//objects/d9/5f3ad14dee633a758d2e331151e950dd13e4ed
+.git//objects/b3
+.git//objects/b3/0257baf049d4faa54089bde8e7d63991d80e9e
+.git//objects/pack
+.git//objects/info
+.git//objects/6d
+.git//objects/6d/def68143282e4caa1912e126757270ab494c22
+.git//HEAD
+.git//info
+.git//info/exclude
+.git//logs
+.git//logs/HEAD
+.git//logs/refs
+.git//logs/refs/heads
+.git//logs/refs/heads/master
+.git//description
+.git//hooks
+.git//hooks/commit-msg.sample
+.git//hooks/pre-rebase.sample
+.git//hooks/pre-commit.sample
+.git//hooks/applypatch-msg.sample
+.git//hooks/pre-receive.sample
+.git//hooks/prepare-commit-msg.sample
+.git//hooks/post-update.sample
+.git//hooks/pre-applypatch.sample
+.git//hooks/pre-push.sample
+.git//hooks/update.sample
+.git//refs
+.git//refs/heads
+.git//refs/heads/master
+.git//refs/tags
+.git//index
+.git//branches
+.git//COMMIT_EDITMSG
+
+git cat-file -t b30257baf049d4faa54089bde8e7d63991d80e9e
+tree
+
+git cat-file -t 6ddef68143282e4caa1912e126757270ab494c22
+commit 
+
+git cat-file -p 6ddef68143282e4caa1912e126757270ab494c22
+tree b30257baf049d4faa54089bde8e7d63991d80e9e
+author sarojaraut <saroj.raut@gmail.com> 1529338052 +0100
+committer sarojaraut <saroj.raut@gmail.com> 1529338052 +0100
+
+comment string
+
+git cat-file -p b30257baf049d4faa54089bde8e7d63991d80e9e
+100644 blob d95f3ad14dee633a758d2e331151e950dd13e4ed	file1.c
+
+
+find .git/objects
+
+page 185
+
+
+find / \! \( -newer ttt -user wnj \) -print : Print out a list of all the files which are not both newer than ttt and owned by ``wnj''.
+find / \( -newer ttt -or -user wnj \) -print :  Print out a list of all the files that are either owned by ``wnj'' or that are newer than ttt.
+find / -newerct '1 minute ago' -print : Print out a list of all the files whose inode change time is more recent than the current time minus one minute.
+
+-----------------------------------------------------------------------------------------
+
+PLSQL Coding Guide Lines :
+
+Procedures should not contain "RETURN" statements : having multiple exit points increases the complexity of the procedure and makes it harder to understand and debug.
+
+Comments should not be nested
+
+Boolean literals should not be redundant
+Return of boolean expressions should not be wrapped into an "if-then-else" statement
+Lines should not end with trailing whitespaces
+Variables should comply with a naming convention
+Comments should not be located at the end of lines of code
+Reserved words should be written in lower case
+begin
+  null;
+  NULL; -- Noncompliant
+end;
+/
+SQL tables should be joined with the "JOIN" keyword : Since ANSI SQL-92, explicit joins using the JOIN keyword have been possible, and are preferred. 
+CASE should be used for sequences of simple tests
+Exceptions should not be ignored
+Lines in a multiline comment should start with "*"
+/*
+ * this is much better Compliant
+ */
+
+An "ORDER BY" direction should be specified explicitly
+Parameter "IN" mode should be specified explicitly
+Reserved words should be written in upper case
+Explicitly opened cursors should be closed
+Collapsible "if" statements should be merged
+Functions and procedures should not have too many parameters
+Magic numbers should not be used : magic numbers must be demystified by first being assigned to clearly named variables before being used. By default, -1, 0 and 1 are not considered magic numbers.
+Redundant pairs of parentheses should be removed
+SQL EXISTS subqueries should not be used
+Noncompliant Code Example
+SELECT e.name
+FROM employee e
+WHERE EXISTS (SELECT * FROM department d WHERE e.department_id = d.id AND d.name = 'Marketing');
+Compliant Solution
+SELECT e.name
+FROM employee e INNER JOIN department d
+  ON e.department_id = d.id AND d.name = 'Marketing';
+"WHEN" clauses should not have too many lines
+Noncompliant Code Example
+CASE my_variable
+  WHEN 0 THEN -- 6 lines till next WHEN
+    procedure1;
+    procedure2;
+    procedure3;
+    procedure4;
+    procedure5;
+  WHEN 1 THEN
+-- ...
+END CASE;
+Compliant Solution
+DECLARE
+  PROCEDURE do_something AS
+  BEGIN
+    procedure1;
+    procedure2;
+    procedure3;
+    procedure4;
+    procedure5;
+  END;
+BEGIN
+  CASE my_variable
+    WHEN 0 THEN
+      do_something;
+    WHEN 1 THEN
+-- ...
+  END CASE;
+END;
+/
+Sections of code should not be "commented out" : Unused code should be deleted and can be retrieved from source control history if required. as it bloats programs and reduces readability.
+"GROUP BY" should not be used in SQL "SELECT" statements : Using GROUP BY in SQL SELECT statements should be avoided because it makes queries complex. Complex queries are generally not performant and are difficult to understand and therefore to maintain.
+"UNION" should not be used in "SELECT" statements for above reason. 
+Magic literals should not be used : Literals should not be hard-coded, but externalized instead. Exceptions can be parameterized using the below parameters.
+SQL statements should not join too many tables : When you need access to data from multiple tables, it is more efficient, effective, and understandable to use pre-built views than to select the data from a large number of tables - effectively creating in-memory views - at runtime.
+"LIKE" clauses should not start with wildcard characters : When the value of a LIKE clause starts with '%' or '_', indexes on the searched column are ignored, and a full table scan is performed instead.
+
+Having two branches in an IF/ELSIF chain with the same implementation is at best duplicate code, and at worst a coding error.
+
+If the same logic is truly needed for both instances, then in an IF chain they should be combined.
+"END" statements of labeled blocks should be labeled
+"CASE" should be used rather than "DECODE" : DECODE is an old function that has been replaced by the easier to understand and more common CASE. Unlike DECODE, CASE may also be used directly within PL/SQL.
+Nested blocks should be labeled
+Nested loops should be labeled
+"EXIT WHEN" should be used rather than "IF ... THEN EXIT; END IF;"
+"NUMBER" variables should be declared with precision : Declaring a NUMBER variable without any precision wastes memory because Oracle supports up to 38 decimal digits by default (or the maximum supported by your system, whichever is less). 
+EXECUTE IMMEDIATE is easier to use and understand than the DBMS_SQL package's procedures. It should therefore be preferred, when possible.
+Procedures and functions should be encapsulated in packages
+Having a bunch of standalone functions or procedures reduces maintainability because it becomes harder to find them and to see how they are related. Instead, they should be logically grouped into meaningful packages.
+Column aliases should be defined using "AS"
+"FETCH ... BULK COLLECT INTO" should be used
+"FORALL" should be used
+"FUNCTIONS" should not have "OUT" parameters : Functions with OUT parameters are complex to understand. Indeed, it is impossible to tell, just by looking at the function call, whether an argument is a input or output. Moreover, functions with OUT parameters cannot be called from SQL. It is better to either break such functions up into smaller ones, which each return a single value, or to return several values at once, by combining them in a collection, record, type, or table row.
+"WHEN OTHERS" clauses should be used for exception handling
+String literals should not be duplicated
+"IF" statements should not be nested too deeply : Nested IF statements are a key ingredient for making what's known as "Spaghetti code". Such code is hard to read, refactor and therefore maintain.
+"LOOP ... END LOOP;" constructs should be avoided : Simple loops, of the form LOOP ... END LOOP, behave by default as infinite ones, since they do not have a loop condition. They can often be replaced by other, safer, loop constructs.
+Collections should not be iterated in "FOR" loops : The FOR loop at first seems like a convenient way of iterating over the elements of a collection, but doing so will raise a VALUE_ERROR exception if the collection is empty. Looping instead from 1 to COUNT doesn't work either if the collection is sparse; that leads to a ORA-01403: no data found error.
+
+Instead, a WHILE loop should be used.
+
+"COMMIT" and "ROLLBACK" should not be called from non-autonomous transaction triggers
+Pipelined functions should have at least one "PIPE ROW" statement and not return an expression (PLS-00633)
+"FORALL" statements should use the "SAVE EXCEPTIONS" clause
+"RAISE_APPLICATION_ERROR" should only be used with error codes from -20,000 to -20,999
+Constant declarations should contain initialization assignments
+
+Once I merge the code change, it will deploy these changes to dev and staging. 
+For prod deployment what 
+
+ORDS Deployment to PR : Old Record
+http://management-concourse.prod.transit.ri-tech.io/teams/shared-services/pipelines/shared-ords/jobs/tf_apply_shared-ords_dev/builds/18
+
+author	: Saroja Raut
+author_date	: 2018-05-08 11:33:16 +0100
+branch	: master
+commit	: 2b0bf99721cc8f2a625972cc95154c9e72e5271e
+message	: ORDS points to new OMSUAT environment (#44)
+
+Plan step
+11:37:12 : Identity added: /tmp/git-resource-private-key (/tmp/git-resource-private-key)
+11:37:12 : Cloning into '/tmp/build/get'...
+11:37:12 : Fetching HEAD
+11:37:35 : 2b0bf99 ORDS points to new OMSUAT environment (#44)
+11:37:35
+
+http://management-concourse.prod.transit.ri-tech.io/teams/shared-services/pipelines/shared-ords/jobs/tf_apply_shared-ords_staging/builds/17
+
+author	: Saroja Raut
+author_date : 2018-05-08 11:33:16 +0100
+branch	: master
+commit	: 2b0bf99721cc8f2a625972cc95154c9e72e5271e
+message
+
+http://management-concourse.prod.transit.ri-tech.io/teams/shared-services/pipelines/shared-ords/jobs/tf_plan_shared-ords_prod/builds/17
+
+author	: Saroja Raut
+author_date	: 2018-05-08 11:33:16 +0100
+branch	: master
+commit	: 2b0bf99721cc8f2a625972cc95154c9e72e5271e
+message	: ORDS points to new OMSUAT environment (#44)
+
+http://management-concourse.prod.transit.ri-tech.io/teams/shared-services/pipelines/shared-ords/jobs/tf_apply_shared-ords_prod/builds/10
+
+author	: Chris Harding
+author_date	: 2018-05-08 10:46:09 +0100
+branch	: master
+commit	: 028fe0361d8f23553213627634d40b59301fe04c
+message	: Merge pull request #42 from River-Island/memory-alarm-threshold upped memory alarm threshold
+
+Version : number	0.0.32
+
+http://management-concourse.prod.transit.ri-tech.io/teams/shared-services/pipelines/shared-ords/jobs/publish_shared-ords/builds/19
+
+author	: Saroja Raut
+author_date	: 2018-06-20 13:34:52 +0100
+branch	: master
+commit	: e386ce0ae6745ffe05734eb4b70cbad0ef1bc633
+message	: Omsprd migration change (#45), * OMSPRD config changes to point to new server
+
+* Corrected server name to lomspd01.wyn1346.ecs.hp.com
+13:35:10 : Identity added: /tmp/git-resource-private-key (/tmp/git-resource-private-key)
+13:35:10 : Cloning into '/tmp/build/get'...
+13:35:11 : Fetching HEAD
+13:36:11 : e386ce0 Omsprd migration change (#45)
+13:36:11
+
+http://management-concourse.prod.transit.ri-tech.io/teams/shared-services/pipelines/shared-ords/jobs/tf_apply_shared-ords_dev/builds/19
+
+author	: Saroja Raut
+author_date	: 2018-06-20 13:34:52 +0100
+branch	: master
+commit	: e386ce0ae6745ffe05734eb4b70cbad0ef1bc633
+message	: Omsprd migration change (#45), * OMSPRD config changes to point to new server, * Corrected server name to lomspd01.wyn1346.ecs.hp.com
+
+Version : number	0.0.34
+http://ords-alb.prod.transit.ri-tech.io/ords/omsprd/api/demo-api/dbdetails/
+Before deployment >> server_host: "lomspd"
+After deployment  >> server_host: "lomspd01"
+
+riverisland.eu.auth0.com	canonical name = b.eu.auth0.com.
+Name:	b.eu.auth0.com
+Address: 52.59.76.37
+Name:	b.eu.auth0.com
+Address: 35.157.71.149
+
+riverisland.eu.auth0.com	canonical name = b.eu.auth0.com.
+Name:	b.eu.auth0.com
+Address: 35.157.71.149
+Name:	b.eu.auth0.com
+Address: 52.59.76.37
+
+Hi Mike,
+
+We have postponed the idea of building ORDS end point for OPD phase-2 as we are targeting for building order data migration. 
+
+If you would like we can put together a list useful utilities/techniques of APEX .
+
+apex_string.format(
+    L_drop_partition_sql_stmt,
+    table_name,
+    partition_name)
+
+where customer_id in (select * from table(apex_string.split('001,002,003,004',',')))
+
+More redable
+
+How to handle compressed files
+
+declare
+    l_zip_file      blob;
+    l_unzipped_file blob;
+    l_files         apex_zip.t_files;
+begin
+    select file_content
+        into l_zip_file
+        from my_zip_files
+    where file_name = 'my_file.zip';
+
+    l_files := apex_zip.get_files (
+            p_zipped_blob => l_zip_file );
+
+    for i in 1 .. l_files.count loop
+        l_unzipped_file := apex_zip.get_file_content (
+            p_zipped_blob => l_zip_file,
+            p_file_name   => l_files(i) );
+
+        insert into my_files ( file_name, file_content )
+        values ( l_files(i), l_unzipped_file );
+    end loop;
+end;

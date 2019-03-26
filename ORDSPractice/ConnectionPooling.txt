@@ -1,0 +1,20 @@
+One of the most time-consuming procedures of a database application is establishing a connection. The connection pooling of the data source can be used to minimize this overhead.  That argues for using the data source instead of accessing the database driver directly.
+
+Configuring the size of the pool in the data source is somewhere between an art and science. In general, we want the size to be big enough so that you never run out of connections but no bigger to overstress the database. Connections are generally expensive to keep around.  They cause state to be kept on both the client and the server, and the state on the backend may be heavy (for example, a process).  
+
+Connection Pool parameters
+apex.jdbc.InitialLimit : The initial size of the pool, number of connections established on start-up. The more connections that are configured in initial capacity, the longer the boot time for webserver (Tomcat) and creating a lot of connections at boot time is the problem of logon storms (the database gets too much work at one time).
+
+apex.jdbc.MinLimit : How low the pool is allowed, idle connections beyond this number will be released. Should be close to the number of connections needed most of the time.
+
+apex.jdbc.MaxLimit : Number of maximum connections allowed, e.g =10 means new connections request after first ten will wait until one existing active connection is free. Usefull for spikes. Computing the maximum size requires some knowledge about the application and the current number of simultaneously active users, web sessions, batch programs, or whatever access patterns are common.
+
+apex.jdbc.InactivityTimeout : InactivityTimeout will idle the connection pool back down to the minLimit over time as the connections are idle for the value provided.
+
+apex.jdbc.MaxConnectionReuseCount : How many request a connection will service before it is closed and new one opened.
+
+Avoid opening and closing connections more often than necessary.
+
+Setting initial and maximum capacity to be the same may be simple but there are many other factors that may be important in making the decision about sizing.
+
+If possible, you can pick a size and see how it performs under simulated or real load.  There is a high-water mark statistic (ActiveConnectionsHighCount) that tracks the maximum connections concurrently used.  In general, you want the size to be big enough so that you never run out of connections but no bigger.   It will need to deal with spikes in usage, which is where shrinking after the spike is important.  Of course, the database capacity also has a big influence on the decision since it’s important not to overload the database machine.

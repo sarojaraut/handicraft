@@ -1,0 +1,668 @@
+Materialized Views
+There are two main uses for materialized views:
+
+Replicating of data to offload query workloads to separate reporting databases
+Improving performance of queries by periodically computing and storing the results of complex aggregations of data, which lets users query point-in-time results (of the complex queries)
+
+The MV can be a query based on tables, views, and other materialized views. The base tables are often referred to as master tables. When you create an MV, Oracle internally creates a table (with the same name as the MV) and also create a materialized view object.
+
+Materialized View Terminology
+Materialized view : Database object used for replicating data and improving performance.
+ Materialized view SQL statement : SQL query that defines what data is stored in the underlying MV base table.
+ Materialized view underlying table : Database table that has the same name as the MV that stores the result of the MV SQL query.
+ Master (or base) table : Table that an MV references in its FROM clause of the MV SQL statement.
+ Complete refresh : Process in which an MV is deleted from and completely refreshed with an MV SQL statement.
+ Fast refresh : Process during which only DML changes that have occurred since the last refresh are applied to an MV.
+ Materialized view log : Database object that tracks DML changes to the MV base table. An MV log is required for fast refreshes. It can be based on the primary key, ROWID, or object ID.
+ Simple MV : MV based on a simple query that can be fast-refreshed.
+ Complex MV : MV based on a complex query that isn't eligible for fast refresh.
+ Build mode : Mode that specifies whether the MV should be immediately populated or deferred.
+ Refresh mode : Mode that specifies whether the MV should be refreshed on demand, on commit, or never.
+ Refresh method : Option that specifies whether the MV refresh should be complete or fast.
+ Query rewrite : Feature that allows the optimizer to choose to use MVs (instead of base tables) to fulfill the requirements of a query (even though the query doesn't directly reference the MVs).
+ Local MV : MV that resides in the same database as the base table(s).
+ Remote MV : MV that resides in a separate database from the base table(s).
+ Refresh group : Set of MVs refreshed at the same consistent transactional point.
+ 
+Data-Dictionary View :  Description 
+ DBA/ALL/USER_MVIEWS : Information about MVs such as owner, base query, last refresh time, and so on.
+ DBA/ALL/USER_MVIEW_REFRESH_TIMES : MV last refresh times, MV names, master table, and master owner.
+ DBA/ALL/USER_REGISTERED_MVIEWS : All registered MVs. Helps identify which MVs are using which MV logs.
+ DBA/ALL/USER_MVIEW_LOGS : MV log information.
+ 
+create table sales(
+ sales_id number
+,sales_amt number
+,region_id number
+,sales_dtt timestamp
+,constraint sales_pk primary key(sales_id)
+);
+
+insert into sales values(1,101,100,sysdate-50);
+insert into sales values(2,511,200,sysdate-20);
+insert into sales values(3,11,100,sysdate);
+commit;
+
+create materialized view sales_mv
+segment creation immediate
+refresh
+  complete
+  on demand
+as
+select
+ sales_amt
+,sales_dtt
+from sales;
+
+select
+ mview_name
+,refresh_method
+,refresh_mode
+,build_mode
+,fast_refreshable
+from user_mviews
+where mview_name = 'SALES_MV';
+
+select
+ object_name
+,object_type
+from user_objects
+where object_name like 'SALES%'
+order by object_name;
+
+OBJECT_NAME          OBJECT_TYPE
+-------------------- --------------------
+
+SALES                TABLE
+SALES_MV             MATERIALIZED VIEW
+SALES_MV             TABLE
+SALES_PK             INDEX
+
+The MV is a logical container that stores data in a regular database table. Querying the USER_SEGMENTS view shows the base table, its primary-key index, and the table that stores data returned by the MV query:
+
+Creating a Fast-Refreshable Materialized View
+When you create a fast-refreshable MV, it initially populates the MV table with the entire result set of the MV query. After the initial result set is in place, only data modified (in the base table) since the last refresh needs to be applied to the MV. In other words, any updates, inserts, or deletes from the master table that have occurred since the last refresh are copied over. This feature is appropriate when you have a small amount of changes to a base table over a period of time compared to the total number of rows in the table.
+
+Here are the steps to implement a fast-refreshable MV:
+
+Create a base table (if it's not already created).
+Create an MV log on the base table.
+Create an MV as fast-refreshable.
+
+A fast-refreshable MV requires an MV log on the base table. When a fast refresh occurs, the MV log must have a unique way to identify which records have been modified and thus need to be refreshed. You can do this two different approaches. One method is to specify the PRIMARY KEY clause when you create the MV log, and the other is to specify the ROWID clause. If the underlying base table has a primary key, then use the primary key—based MV log. If the underlying base table has no primary key, then you have to create the MV log using ROWID.
+
+create materialized view log on sales with primary key;
+
+create materialized view log on sales with rowid;
+
+create materialized view sales_mv
+segment creation immediate
+refresh
+  with primary key
+  fast
+  on demand
+as
+select
+ sales_id
+,sales_amt
+,sales_dtt
+from sales;
+
+At this point, it's useful to inspect the objects that are associated with the MV. The following query selects from USER_OBJECTS:
+
+select
+ object_name
+,object_type
+from user_objects
+where object_name like '%SALES%'
+order by object_name;
+
+OBJECT_NAME          OBJECT_TYPE
+-------------------- --------------------
+MLOG$_SALES          TABLE
+RUPD$_SALES          TABLE
+SALES                TABLE
+SALES_MV             MATERIALIZED VIEW
+SALES_MV             TABLE
+SALES_PK             INDEX
+SALES_PK1            INDEX
+
+Several objects in the previous output require some explanation:
+
+MLOG$_SALES 
+RUPD$_SALES 
+SALES_PK1 
+
+First, when an MV log is created, a corresponding table is also created that stores the rows in the base table that changed and how they changed (insert, update, or delete). The MV log table name is of the format MLOG$_<base table name>.
+
+A table is also created with the format RUPD$_<base table name>. Oracle automatically creates this RUPD$ table when you create a fast-refreshable MV using a primary key. It's there to support the updateable MV feature. You don't have to worry about this table unless you're dealing with updatable MVs (see the Oracle Advanced Replication Guide for more details on updatable MVs). If you're not using the updatable MV feature, then you can ignore the RUPD$ table.
+
+Oracle also creates an index with the format <base table name>_PK1. This index is automatically created for primary key—based MVs and is based on the primary-key column(s) of the base table. If this is a ROWID instead of a primary key, then the index name has the format I_SNAP$_<table_name> and is based on the ROWID. If you don't explicitly name the primary-key index on the base table, then Oracle gives the MV table primary-key index a system-generated name such as SYS_C008780.
+
+Creating MVs and Specifying Tablespace for MVs and Indexes
+
+create materialized view inv_mv
+pctused 95
+pctfree 5
+tablespace mv_data
+using index tablespace mv_index
+as
+select
+ inv_id
+,inv_desc
+from inv;
+
+Creating Indexes on MVs. The syntax is the same as for creating an index on a regular table:
+
+create index inv_mv_idx1 on inv_mv(region_id) tablespace mv_index;
+
+Building a Materialized View on a Prebuilt Table
+In data-warehouse environments, sometimes you need to create a table, populate it with large quantities of data, and then transform it into an MV. Or you may be replicating a large table and find that it's more efficient to initially populate the remote MV by prebuilding the table with data using Data Pump. Listed next are the steps for building an MV on a prebuilt table:
+
+Create a table.
+Populate it with data.
+Create an MV on the table created in step 1.
+
+create table inv_mv
+(inv_id number
+,inv_desc varchar2(30)
+);
+
+Now, populate the table with data. For example, in a data-warehouse environment, this can be a table loaded using Data Pump, SQL*Loader, or external tables.
+
+create materialized view inv_mv
+on prebuilt table
+using index tablespace mv_index
+as
+select
+ inv_id
+,inv_desc
+from inv;
+
+Creating an Unpopulated Materialized View
+
+When you create an MV, you have the option of instructing Oracle whether or not to initially populate the MV with data. For example, if it takes several hours to initially build an MV, you may want to first define the MV and then populate it as a separate job.
+This example uses the BUILD DEFERRED clause to instruct Oracle not to initially populate the MV with the results of the query:
+
+create materialized view inv_mv
+tablespace mv_data
+build deferred
+refresh complete on demand
+as
+select
+ inv_id
+,inv_desc
+from inv;
+
+Creating a Materialized View Refreshed on Commit
+You may have a requirement when data is modified in the master table to have it immediately copied to an MV. In this scenario, use the ON COMMIT clause when you create the MV. The master table must have an MV log created on it for this technique to work. Here's a simple example that creates a table with a primary key, creates an MV log, and then creates an MV refreshed on commit:
+
+create table inv(inv_id number primary key,
+inv_desc varchar2(30));
+--
+create materialized view log on inv with primary key;
+--
+create materialized view inv_mv
+refresh
+on commit
+as
+select inv_id, inv_desc from inv;
+
+The ON COMMIT refreshable MV has a few restrictions you need to be aware of:
+The master table and MV must be in the same database.
+You can't execute distributed transaction on the base table.
+This approach isn't supported with MVs that contain object types or Oracle-supplied types.
+
+Creating a Never-Refreshable Materialized View
+You may never want an MV to be refreshed. For example, you may want to guarantee that you have a snapshot of table at a point in time for auditing purposes. Specify the NEVER REFRESH clause when you create the MV to achieve this:
+
+create materialized view inv_mv
+tablespace mv_data
+using index tablespace mv_index
+never refresh
+as
+select
+ inv_id
+,inv_desc
+from inv;
+
+
+You can alter a never-refreshable view to being refreshable. Use the ALTER MATERIALIZED VIEW statement to do this:
+
+alter materialized view inv_mv refresh on demand complete;
+
+Creating Materialized Views for Query-Rewrite
+Query rewrite allows the optimizer to recognize that an MV can be used to fulfill the requirements of a query instead of using the underlying master (base) tables. If you have an environment where users frequently write their own queries and are unaware of the available MVs, this feature can help greatly with performance. There are three prerequisites for enabling query-rewrite:
+
+Oracle Enterprise Edition
+Database initialization parameter QUERY_REWRITE_ENABLED must be set to TRUE (which is the default in Oracle Database 10g or higher
+MV either created or altered with the ENABLE QUERY REWRITE clause
+
+create materialized view sales_mv
+tablespace mv_data
+using index tablespace mv_index
+enable query rewrite
+as
+select
+ sum(sales_amt)
+,b.reg_desc
+from sales a
+    ,region b
+where a.region_id = b.region_id
+group by b.reg_desc;
+
+select
+ mview_name
+,rewrite_enabled
+,rewrite_capability
+from user_mviews
+where mview_name = 'SALES_MV';
+
+If for any reason a query isn't using the query-rewrite functionality, and you think it should be, use the EXPLAIN_REWRITE procedure of the DBMS_MVIEW package to diagnose issues.
+
+Creating a Fast-Refreshable MV Based on a Complex Query
+In many situations, when you base an MV on a query that joins multiple tables, it's deemed complex, and therefore is available only for a complete refresh. However, in some scenarios, you can create a fast-refreshable MV when you reference two tables that are joined together in the MV query.
+
+This section describes how to use the EXPLAIN_MVIEW procedure of the DBMS_MVIEW to determine whether it's possible to fast-refresh a complex query. 
+
+
+create table region(
+ region_id number
+,reg_desc varchar2(30)
+,constraint region_pk primary key(region_id));
+--
+create table inv(
+ inv_id    number
+,inv_desc  varchar2(30)
+,region_id number
+,constraint inv_pk primary key(inv_id)
+,constraint dept_fk foreign key (region_id) references region(region_id));
+
+Additionally, REGION and INV have MV logs created on them as follows:
+create materialized view log on region with primary key;
+create materialized view log on inv with primary key;
+
+Also, for this example, the base tables have the following data inserted into them:
+
+insert into region values(10,'East');
+insert into region values(20,'West');
+insert into region values(30,'South');
+insert into region values(40,'North');
+--
+insert into inv values(1,'book',10);
+insert into inv values(2,'table',20);
+insert into inv values(3,'chair',30);
+
+Suppose you want to create an MV that joins the REGION and INV base tables as follows:
+
+create materialized view inv_mv
+tablespace mv_data
+using index tablespace mv_index
+as
+select
+ a.inv_desc
+,b.reg_desc
+from inv    a
+    ,region b
+where a.region_id = b.region_id;
+
+Next, let's attempt to fast-refresh the MV:
+
+exec dbms_mview.refresh('INV_MV','F');
+
+ORA-12032: cannot use rowid column from materialized view log on "MV"."REGION"
+
+The error indicates that the MV has issues and can't be fast-refreshed. To determine whether this MV can become fast-refreshable, use the output of the EXPLAIN_MVIEW procedure of the DBMS_MVIEW package. This procedure requires that you first create MV_CAPABILITIES_TABLE first be created. Oracle provides a script to do this. Run this as the owner of the MV:
+
+SQL> @?/rdbms/admin/utlxmv.sql
+
+exec dbms_mview.explain_mview(mv=>'INV_MV',stmt_id=>'100');
+
+Now, query MV_CAPABILITIES_TABLE to see what potential issues this MV may have:
+
+select
+ capability_name
+,possible
+,msgtxt
+,related_text
+from mv_capabilities_table
+where capability_name like 'REFRESH_FAST_AFTER%'
+and statement_id = '100'
+order by 1;
+
+Listed next is the output. The P (POSSIBLE) column contains an N (NO) for every fast-refresh possibility:
+
+CAPABILITY_NAME                P MSGTXT                         RELATED_TEXT
+------------------------------ - ------------------------------ ---------------
+REFRESH_FAST_AFTER_ANY_DML     N see the reason why REFRESH_FAS
+                                 T_AFTER_ONETAB_DML is disabled
+REFRESH_FAST_AFTER_INSERT      N mv log must have ROWID         MV.REGION
+REFRESH_FAST_AFTER_INSERT      N the SELECT list does not have  B
+                                 the rowids of all the detail t
+                                 ables
+REFRESH_FAST_AFTER_INSERT      N mv log must have ROWID         MV.INV
+REFRESH_FAST_AFTER_ONETAB_DML  N see the reason why REFRESH_FAS
+                                 T_AFTER_INSERT is disabled
+
+MSGTXT indicates one issue: the MV logs need to be ROWID based. Let's drop and re-create the MV logs with ROWID (instead of a primary key):
+
+drop materialized view log on region;
+drop materialized view log on inv;
+--
+create materialized view log on region with rowid;
+create materialized view log on inv with rowid;
+
+Next, reset MV_CAPABILITIES_TABLE and repopulate it via the EXPLAIN_MVIEW procedure:
+
+SQL> delete from mv_capabilities_table where statement_id=100;
+SQL> exec dbms_mview.explain_mview(mv=>'INV_MV',stmt_id=>'100');
+
+Re-running the previous query that selects from MV_CAPABILITIES_TABLE (not reproduced here) shows the output:
+
+CAPABILITY_NAME                P MSGTXT                         RELATED_TEXT
+------------------------------ - ------------------------------ ---------------
+REFRESH_FAST_AFTER_ANY_DML     N see the reason why REFRESH_FAS
+
+                                 T_AFTER_ONETAB_DML is disabled
+REFRESH_FAST_AFTER_INSERT      N mv log is newer than last full MV.REGION
+                                  refresh
+REFRESH_FAST_AFTER_INSERT      N the SELECT list does not have B
+                                 the rowids of all the detail t
+                                 ables
+REFRESH_FAST_AFTER_INSERT      N mv log is newer than last full MV.INV
+                                  refresh
+REFRESH_FAST_AFTER_ONETAB_DML  N see the reason why REFRESH_FAS
+                                 T_AFTER_INSERT is disabled
+
+drop materialized view inv_mv;
+--
+create materialized view inv_mv
+as
+select
+ a.rowid inv_rowid
+,b.rowid region_rowid
+,a.inv_desc
+,b.reg_desc
+from inv    a
+    ,region b
+where a.region_id = b.region_id;
+
+Next, reset MV_CAPABILITIES_TABLE and repopulate it via the EXPLAIN_MVIEW procedure:
+
+SQL> delete from mv_capabilities_table where statement_id=100;
+SQL> exec dbms_mview.explain_mview(mv=>'INV_MV',stmt_id=>'100');
+
+The output shows that it's now possible to fast-refresh the MV:
+
+CAPABILITY_NAME                P MSGTXT                         RELATED_TEXT
+------------------------------ - ------------------------------ ---------------
+REFRESH_FAST_AFTER_ANY_DML     Y
+REFRESH_FAST_AFTER_INSERT      Y
+REFRESH_FAST_AFTER_ONETAB_DML  Y
+
+Execute the following statement to see if the fast refresh works:
+
+SQL> exec dbms_mview.refresh('INV_MV','F');
+PL/SQL procedure successfully completed.
+
+Dropping a Materialized View
+drop materialized view orders_mv;
+drop materialized view inv_mv preserve table;
+If the MV was originally built using the ON PREBUILT TABLE clause, then when you drop the MV, the underlying table isn't dropped. If you want the underlying table dropped, you must use a DROP TABLE statement:
+
+Modifying Base-Table DDL and Propagating to Materialized Views
+A common task involves adding a column to or dropping a column from a base table (because business requirements have changed). After the column is added to or dropped from the base table, you want those DDL changes to be reflected in any dependent MVs. You have a few options for propagating base-table column changes to dependent MVs:
+
+Drop and re-create the MV with the new column definitions.
+Drop the MV, but preserve the underlying table, modify the MV table, and then re-create the MV (with the new column changes) using the ON PREBUILT TABLE clause.
+If the MV was originally created using the ON PREBUILT TABLE clause, drop the MV object, modify the MV table, and then re-create the MV (with the new column changes) using the ON PREBUILT TABLE clause.
+
+alter table inv add(inv_loc varchar2(30));
+
+You can modify the underlying MV table directly: like below
+
+alter table inv_mv add(inv_loc varchar2(30));
+
+The alteration will be successful. When you next refresh the MV but realize that the additional column isn't being refreshed. To understand why, recall that an MV is a SQL query that stores its results in an underlying table. Therefore, to modify an MV, you have to change the SQL query that the MV is based on. Because there is no ALTER MATERIALIZED VIEW ADD/DROP/MODIFY <column> statement, you must do the following to add/delete columns in an MV:
+
+Toggling Redo Logging on a Materialized View
+
+When you refresh an MV, this initiates transactions in the underlying table that result in the generation of redo (just as with a normal database table). In the event of a database failure, you can restore and recover all the transactions associated with an MV.
+
+By default, redo logging is enabled when you create an MV. You have the option of specifying that redo not be logged when an MV is refreshed. To enable no logging, create the MV with the NOLOGGING option:
+
+create materialized view inv_mv
+nologging
+tablespace mv_data
+using index tablespace mv_index
+as
+select
+ inv_id
+,inv_desc
+from inv;
+
+You can also alter an existing MV into no-logging mode:
+
+alter materialized view inv_mv nologging;
+
+alter materialized view inv_mv move tablespace tbsp2;
+alter index inv_mv_pk1 rebuild;
+
+Managing Materialized View Logs
+MV logs are required for fast-refreshable MVs. The MV log is a table that stores DML information for a master (base) table. It's created in the same database as the master table with the same user that owns the master table. You need the CREATE TABLE privilege to create an MV log.
+
+The MV log is populated by an Oracle internal trigger (that you have no control over). This internal trigger inserts a row into the MV log after an INSERT, UPDATE, or DELETE on the master table. You can view the internal triggers in use by querying DBA/ALL/USER_INTERNAL_TRIGGERS.
+
+Shrinking the Space in a Materialized View Log
+If an MV log doesn't successfully delete records, this causes it to grow to a large size. After you resolve the issue and the records are deleted from the MV log, you can set the high-water mark for the MV log table to a high value. But doing so may cause performance issues and also unnecessarily consumes disk space. In this situations, consider shrinking the space used by the MV log.
+
+alter materialized view log on registrations shrink space;
+
+Manually Refreshing Materialized Views from SQL*Plus
+
+exec dbms_mview.refresh('INV_MV','F');
+
+exec dbms_mview.refresh('INV_MV','?'); 
+The question mark (?) to invoke the force-refresh method. This instructs Oracle to perform a fast refresh if possible. If not it will try a complete refresh.
+
+Creating an MV with a Refresh Interval
+When you initially create an MV, you have the option of specifying START WITH and NEXT clauses that instruct Oracle to set up an internal database job (via the DBMS_JOB package) to initiate the refresh of an MV on a periodic basis. If you omit START WITH and NEXT, then no job is set up, and you have to use another technique (such as a scheduling utility like cron).
+
+I almost never specify START WITH and NEXT as a refresh mechanism. I strongly prefer to use another scheduling utility such as cron. When using cron, it's easy to create a log file that details how the job ran and whether there were any issues. Also, when using cron, it's easy to have the log file e-mailed to a distribution list so the support DBAs are aware of any issues.
+
+The START WITH parameter specifies the date when you want the first refresh of an MV to occur. The NEXT parameter specifies a date expression that Oracle uses to calculate the interval between refreshes. For example, this MV initially refreshes one minute in the future (sysdate+1/1440) and subsequently refreshes on a daily basis (sysdate+1):
+
+create materialized view inv_mv
+refresh
+start with sysdate+1/1440
+next sysdate+1
+as
+select
+ inv_id
+,inv_desc
+from inv;
+
+Efficiently Performing a Complete Refresh
+When an MV does a complete refresh, the default behavior is to use a DELETE statement to remove all records from the MV table. After the delete is finished, records are selected from the master table and inserted into the MV table. The delete and insert are done as one transaction; this means anybody selecting from the MV during the complete-refresh process sees the data as it existed before the DELETE statement. Anybody accessing the MV immediately after the INSERT commits sees a fresh view of the data.
+
+In some scenarios, you may want to modify this behavior. If a large amount of data is being refreshed, the DELETE statement can take a long time. You have the option of instructing Oracle to perform the removal of data as efficiently as possible via the ATOMIC_REFRESH parameter. When this parameter is set to FALSE, it allows Oracle to use a TRUNCATE statement instead of a DELETE when performing a complete refresh:
+
+ exec dbms_mview.refresh('INV_MV',method=>'C',atomic_refresh=>false);
+
+If you get error like : ORA-12034: materialized view log on "CDS_PROD_ES2_LIVE"."PRODUCTLINEITEM"
+younger than last refresh
+Then try to completely refresh the MV:
+
+Monitoring Materialized View Refreshes
+
+Viewing Materialized Views' Last Refresh Times
+
+select
+ mview_name
+,to_char(last_refresh_date,'dd-mon-yy hh24:mi:ss')
+,refresh_mode
+,refresh_method
+from user_mviews
+order by 2;
+
+Determining Whether a Refresh Is in Progress
+
+select
+ sid
+,serial#
+,currmvowner
+,currmvname
+from v$mvrefresh;
+
+Monitoring Real-Time Refresh Progress
+
+
+column "MVIEW BEING REFRESHED" format a25
+column inserts format 9999999
+column updates format 9999999
+column deletes format 9999999
+--
+select
+  currmvowner_knstmvr || '.' || currmvname_knstmvr "MVIEW BEING REFRESHED",
+  decode(reftype_knstmvr, 1, 'FAST', 2, 'COMPLETE', 'UNKNOWN') reftype,
+  decode(groupstate_knstmvr, 1, 'SETUP', 2, 'INSTANTIATE',
+     3, 'WRAPUP', 'UNKNOWN' ) STATE,
+  total_inserts_knstmvr inserts,
+  total_updates_knstmvr updates,
+  total_deletes_knstmvr deletes
+from x$knstmvr x
+where type_knst = 6
+and exists (select 1
+            from v$session s
+            where s.sid=x.sid_knst
+            and s.serial#=x.serial_knst);
+
+When an MV first starts refreshing, you see this output:
+
+MVIEW BEING REFRESHED     REFTYPE  STATE        INSERTS  UPDATES  DELETES
+------------------------- -------- ----------- -------- -------- --------
+REP_MV.USERS_MV           UNKNOWN  SETUP              0        0        0
+
+After a few seconds, the MV reaches the INSTANTIATE state:
+
+REP_MV.USERS_MV           FAST     INSTANTIATE        0        0        0
+
+As the MV refreshes, the INSERTS, UPDATES, and DELETES columns are updated appropriately:
+
+REP_MV.USERS_MV           FAST     INSTANTIATE      860      274        0
+
+When the MV is almost finished refreshing, it reaches the WRAPUP state:
+
+REP_MV.USERS_MV           FAST     WRAPUP          5284     1518        0
+
+After the MV has completed refreshing, the query returns no rows:
+
+no rows selected
+
+Creating Remote Materialized View Refreshes
+You can create MVs that select from remote tables, MVs, and/or views. This allows you to quickly and efficiently replicate data. The setup for basing MVs on remote objects is as follows:
+
+Ensure that Oracle Net connectivity exists from the replicated database environment to the database with the master tables. If you don't have this connectivity, you can't replicate using MVs.
+Obtain access to a user account in the remote database that has access to the remote tables, MVs, or views that you want to replicate.
+For fast refreshes, create an MV log on the master (base) table. You only need to do this if you intend to perform fast refreshes.
+Create a database link in the replicated database environment that points to the master database.
+Create MVs in a replicated database environment that access remote master objects via the database link created in step 4.
+
+Viewing Materialized View Base-Table Information
+
+If an MV was dropped and unable to un-register itself from a master MV log table, then records grow indefinitely in the master MV log table. To resolve this issue, you need information regarding which MVs are tied to which MV logs. This query displays the master-table owner information and the SNAPID (MV ID) of all dependent MVs:
+
+select
+ mowner
+,master base_table
+,snapid
+,snaptime
+from sys.slog$;
+
+The next query displays information regarding all MVs that have been created that tie into an MV log. Run this query on the master site:
+
+select
+ a.log_table
+,a.log_owner
+,b.master mast_tab
+,c.owner  mv_owner
+,c.name   mview_name
+,c.mview_site
+,c.mview_id
+from dba_mview_logs a
+    ,dba_base_table_mviews b
+    ,dba_registered_mviews c
+where b.mview_id = c.mview_id
+and   b.owner    = a.log_owner
+and   b.master   = a.master
+order by a.log_table;
+
+Here's some sample output:
+
+LOG_TABLE           LOG_OWNE MAST_TAB      MV_OWN MVIEW_NAME       MVIEW_S MVIEW_ID
+------------------- -------- ------------- ------ ---------------- ------- --------
+MLOG$_CMP_GRP_ASSOC INV_MGMT CMP_GRP_ASSOC REP_MV CMP_GRP_ASSOC_MV DWREP        651
+MLOG$_CMP_GRP_ASSOC INV_MGMT CMP_GRP_ASSOC TSTDEV CMP_GRP_ASSOC_MV ENGDEV       541
+
+When you drop a remote MV, it should de-register from the master database. However, this doesn't always happen. A remote database may get wiped out (maybe a short-term development database), and the MV doesn't get a chance to un-register itself (via the DROP MATERIALIZED VIEW statement). In this situation, the MV log is unaware that a dependent MV is no longer available, and therefore it keeps records indefinitely.
+
+To purge unwanted MV information from the database that contains the MV log, execute the PURGE_MVIEW_FROM_LOG procedure of DBMS_MVIEW. This example passes in the ID of the MV to be purged:
+
+exec dbms_mview.purge_mview_from_log(541);
+
+This statement should update the data dictionary and remove information from the internal table SLOG$ and DBA_REGISTERED_MVIEWS. If the MV being purged is the oldest MV associated with the MV log table, the associate old records are also deleted from the MV log.
+
+If a remote MV is no longer available but still registered with the MV log table, you can manually un-register it at the master site. Use the UNREGISTER_MVIEW procedure of the DBMS_MVIEW package to unregister a remote MV. To do this, you need to know the remote MV owner, MV name, and MV site (available from the output of the previous query in this section):
+
+exec dbms_mview.unregister_mview('TSTDEV','CMP_GRP_ASSOC_MV','ENGDEV');
+
+Managing Materialized Views in Groups
+An MV group is a useful feature that enables you to refresh a set of MVs at a consistent transactional point in time. If you refresh MVs based on master tables that have parent/child relationships, then you should most likely use a refresh group. This method guarantees that you won't have any orphaned child records in your set of refreshed MVs. The following sections describe how to create and maintain MV refresh groups.
+
+
+Creating a Materialized View Group
+You use the MAKE procedure of the DBMS_REFRESH package to create an MV group. When you create an MV group, you must specify a name, a comma-separated list of MVs in the group, the next date to refresh, and the interval used to calculate the next refresh time. Here's an example of a group that consists of two MVs:
+
+begin
+  dbms_refresh.make(
+    name      => 'INV_GROUP'
+   ,list      => 'INV_MV, REGION_MV'
+   ,next_date => sysdate-100
+   ,interval  => 'sysdate+1'
+);
+end;
+/
+
+When you create an MV group, Oracle automatically creates a database job to manage the refresh of the group. You can view the details of an MV group by querying from DBA/ALL/USER_REFRESH:
+
+select
+ rname
+,job
+,next_date
+,interval
+from user_refresh;
+
+Notice that the NEXT_DATE value specified in the previous SQL is sysdate-100. That means the only way the database job will kick off this job is if the date somehow gets set to 100 days in the past. This way, the job scheduler never initiates the refresh.
+
+In most environments, the refresh needs to start at a specific time. In these scenarios, you use a cron job or some similar utility that has job-scheduling capabilities.
+
+DBMS_MVIEW vs. DBMS_REFRESH
+You may have noticed that you can use the DBMS_MVIEW package to refresh a group of MVs. For example, you can refresh a set of MVs in a list as follows using DBMS_MVIEW:
+
+SQL> exec dbms_mview.refresh(list=>'INV_MV,REGION_MV');
+
+This refreshes each MV in the list as a single transaction. It's the equivalent of using an MV group. However, when you use DBMS_MVIEW, you have the option of setting the ATOMIC_REFRESH parameter to TRUE (default) or FALSE. For example, here the ATOMIC_REFRESH parameter is set to FALSE:
+
+SQL> exec dbms_mview.refresh(list=>'INV_MV,REGION_MV',atomic_refresh=>false);
+
+Setting ATOMIC_REFRESH to FALSE instructs DBMS_MVIEW to refresh each MV in the list as a separate transaction. It also instructs complete refreshes of MV to consider using the TRUNCATE statement. The previous line of code is equivalent to the following two lines:
+
+SQL> exec dbms_mview.refresh(list=>'INV_MV', atomic_refresh=>false);
+SQL> exec dbms_mview.refresh(list=>'REGION_MV', atomic_refresh=>false);
+
+Compare that to the behavior of DBMS_REFRESH, which is the package you should use to set up and maintain an MV group. The DBMS_REFRESH package always refreshes a group of MVs as a consistent transaction.
+
+If you always need a set of MVs to be refreshed as a transactionally consistent group, use DBMS_REFRESH. If you need some flexibility as so whether a list of MVs is refreshed as a consistent transaction (or not), use DBMS_MVIEW.
+
+
+

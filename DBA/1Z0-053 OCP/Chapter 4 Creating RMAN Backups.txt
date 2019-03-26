@@ -1,0 +1,647 @@
+Chapter 4 Creating RMAN Backups
+
+Following are some of the major features of RMAN, which are either unavailable with traditional backup methods or are limited by significant restrictions using traditional backup methods:
+
+■ Skip unused blocks Blocks that have never been written to, such as blocks above the high water mark (HWM) in a table, are not backed up by RMAN when the backup is an RMAN backupset.
+
+■ Backup compression In addition to skipping blocks that have never been used, RMAN can also use one of two Oracle-specific binary compression modes to save space on the backup device. The compression algorithms used by RMAN are customized to maximize the compression for the typical kinds of data found in Oracle data blocks.
+
+■ Open database backups Tablespace backups can be performed in RMAN without using the BEGIN/END BACKUP clause with ALTER TABLESPACE.
+
+■ True incremental backups For any RMAN incremental backup, unchanged blocks since the last backup will not be written to the backup file. This saves a significant amount of disk space, I/O time, and CPU time.
+
+■ Block-level recovery To help avoid downtime during a recovery operation, RMAN supports block-level recovery for recovery operations that need to restore or repair only a small number of blocks identified as being corrupt during the backup operation.
+
+■ Multiple I/O channels During a backup or recovery operation, RMAN can utilize many I/O channels using separate operating system processes, thus performing concurrent I/O.
+
+■ Platform independence Backups written with RMAN commands are syntactically identical regardless of the hardware or software platform used. In other words, RMAN scripts are platform-independent.
+
+■ Cataloging A record of all RMAN backups is recorded in the target database control file and optionally in a recovery catalog stored in a different database.
+
+■ Encrypted backups RMAN uses backup encryption integrated into Oracle  Database 11g to store encrypted backups. Storing encrypted backups on tape requires the Advanced Security option.
+
+In a few limited cases, a traditional backup method can have an advantage over RMAN. For example, RMAN does not support the backup of password files and other nondatabase files, such as tnsnames.ora, listener.ora, and sqlnet.ora. However, these files are relatively static in nature, and they can be easily backed up and restored using a traditional backup method, such as the Unix cp command.
+
+
+Creating Backupsets
+A backupset is an object specific to RMAN; only RMAN can create and read backupsets. A backupset is a set of files called backup pieces that can be stored on a file system or on an Automatic Storage Management(ASM) disk. Each backup piece can contain one or more database file backups. All backupsets and pieces are recorded in the RMAN repository.
+
+By default, any backups to disk default to a backupset backup type: 
+CONFIGURE DEVICE TYPE DISK PARALLELISM 1 BACKUP TYPE TO BACKUPSET; # default
+
+But you can specify backup type, especially if it’s in a global script that could be run in an RMAN session with different defaults:
+
+RMAN> backup as backupset format '/u01/hr/backups/userbak.set'
+2> tablespace sysaux;
+
+The FORMAT clause can use substitution variables to differentiate backupsets by database, by piece, and so forth. Here are a few sample substitution variable types:
+
+■ %d Database name
+■ %e Archived log sequence number
+■ %f Absolute file number
+■ %F Combines the DBID, day, month, year, and sequence number, separated by dashes
+■ %c Copy number for multiple copies in a duplexed backup
+■ %I Database identifier (DBID)
+■ %n Database name padded to eight characters
+■ %p Piece number within the backupset
+■ %s Backupset number
+■ %t Backupset timestamp
+■ %U System-generated unique filename (the default)
+
+%U, is a shorthand for %u_%p_%c.
+
+You’ll create an RMAN backup to the directory /u06/backup that includes the database name, backupset number, a backupset timestamp, and a piece number within the backupset.
+
+rman target / catalog rman/rman@rcat
+RMAN> backup as compressed backupset
+format '/u06/backup/rman_%d_%s_%t_%p.bkupset'
+tablespace users;
+
+Creating Image Copies
+An image copy is an exact copy of a tablespace’s datafile, an archived redo log file, or a control file. Although you can use an operating system command to perform
+the copy, using the RMAN command BACKUP AS COPY provides the additional benefits of 1. block verification 2.automatically recording the backup into the control file and the recovery catalog 3. Another spin-off benefit to making image copies is that the copies can be used “as is” outside of RMAN if, for some reason, a recovery operation must occur outside of RMAN.
+
+In the next example, you lose the disk containing the tablespace STAR_SCHEMA and you want to switch to a backup copy:
+
+RMAN> sql "alter tablespace star_schema offline immediate";
+RMAN> switch tablespace star_schema to copy;
+RMAN> recover tablespace star_schema;
+RMAN> sql "alter tablespace star_schema online";
+
+Alternatively, at the SQL prompt, you can use the ALTER DATABASE RENAME FILE command, as long as the tablespace containing the datafile is offline or the database is in MOUNT mode.
+
+Create a Whole Database Backup
+An RMAN backup can be one of five types:
+■ A whole database backup
+■ A full backup
+■ An incremental level 0 backup
+■ A differential incremental level 1 backup
+■ A cumulative incremental level 1 backup
+
+Whole Database Backups
+A whole database backup includes a copy of all datafiles in the database plus the control file. You can also include archived redo log files and the server parameter file (SPFILE). 
+
+If your default backup device is disk, the following command will back up your database as image files, including all database files, the control file, all archived redo log files, and the SPFILE:
+
+RMAN> backup as copy database spfile plus archivelog;
+
+Even if CONTROLFILE AUTOBACKUP is OFF, RMAN backs up the current control file whenever datafile #1 is included in the backup.
+
+If you add the DELETE INPUT clause to the preceding BACKUP command, RMAN deletes the archived log files from all destinations after they are backed up. If you are using a flash recovery area, this clause is generally unnecessary, as RMAN automatically deletes obsolete files in the flash recovery area when space is running low.
+
+Finally, you can back up a previous backup of a database (either image copies or backupset) to another location (such as tape) by using this command:
+
+backup copy of database;
+
+Full Backups
+A full backup is different from a whole database backup. A full backup can consist of a single datafile or tablespace, while a whole database backup includes all datafiles in a database. 
+
+A full backup of an individual database object is a logical subset of a whole database backup. When performing database recovery, RMAN may use a more recent full backup of a tablespace than the most recent backup piece,
+
+You perform a full backup of an individual database object much like a whole database backup, except that you use the TABLESPACE keyword instead of the DATABASE keyword in the BACKUP command. This is because you are backing up tablespaces individually.
+
+you’ll perform a full backup of the USERS and SYSAUX tablespaces in the same BACKUP command.
+
+backup tablespace sysaux, users;
+
+Note that the control file and SPFILE are not included in this backup unless you have CONTROLFILE AUTOBACKUP set to ON or datafile #1 is included in the backup; by default, it is set to OFF, as in this example.
+
+Incremental Backups
+An incremental backup can be one of two types: level 0 or level 1. A level 0 incremental backup includes all blocks in the specified datafiles except for blocks that have never been used. In addition, a level 0 backup is physically identical to a full backup of the same datafiles, except that a full backup cannot be used in an incremental backup strategy—it stands alone. A level 1 backup can be one of two types: either a differential backup that backs up changed blocks since the last backup at level 0 or 1, or a cumulative backup that backs up all changed blocks since the last level 0 backup.
+
+Subsequent level 1 backups use the most recent level 0 backup as the base for comparison when identifying changed blocks.How often you perform a level 0 backup depends on how much the database object, such as a tablespace, changes between backups.
+
+You use the following keywords in the RMAN BACKUP command to specify an incremental level 0 or level 1 backup:
+INCREMENTAL LEVEL [0|1]
+
+In this example, you perform the first level 0 backup of the USERS tablespace in your incremental backup strategy:
+
+RMAN> backup incremental level 0 tablespace users;
+
+Subsequent level 1 backups will use this backup as the starting point for identifying changed blocks.
+
+Differential Incremental Backups
+A differential backup is the default type of incremental backup that backs up all changed blocks since the last level 0 or level 1 incremental backup. Again using the USERS tablespace, here’s how you perform an incremental backup:
+
+RMAN> backup incremental level 1 tablespace users;
+
+Differential is the default incremental backup type. Unlike most Oracle commands that allow you to use a keyword that is the default, DIFFERENTIAL can not be specified for the RMAN BACKUP command.
+
+Cumulative Incremental Backups
+Cumulative incremental backups back up all changed blocks since the last level 0 incremental backup. You perform a cumulative incremental level 1 backup the same way that you perform a differential level 1 backup, except that you specify the CUMULATIVE keyword, as in this example:
+
+RMAN> backup incremental level 1 cumulative tablespace users;
+
+Using cumulative backups means that each incremental backup will become progressively larger and take longer until another level 0 incremental backup is performed. This can be beneficial in that only two backupsets will be required during a restore and recovery operation. On the other hand, differential backups record only the changes since the last backup, so each backupset might be smaller or larger than the previous one, with no overlap in data blocks backed up. However, a restore and recovery operation can take longer if you have to restore from several backupsets instead of just two.
+
+Enable Fast Incremental Backup
+
+For a traditional incremental backup, RMAN must inspect every block of the tablespace or datafile to be backed up to see if the block has changed since the last backup. For a very large database, the time it takes to scan the blocks in the database can easily exceed the time it takes to perform the actual backup.
+
+By enabling block change tracking, RMAN knows which blocks have changed within a datafile by using a change tracking file. Although a slight overhead is incurred in space usage and maintenance of the tracking file every time a block is changed, the trade-off is well worth it if frequent incremental backups are performed on the database.
+
+Once you create a block change tracking file for your database, the maintenance of the tracking file is automatic and transparent. Updates to the block change tracking file occur in parallel with redo generation to the online redo log files. A committed transaction in the SGA that both generates redo in the online redo log files, and is processed by the CTWR (Change Tracking Writer) process and recorded in the change tracking file.
+
+In its simplest form, the following command is used to create and enable block change tracking:
+
+alter database enable block change tracking;
+
+If you do not specify a filename for the tracking file, Oracle creates it in the location specified by the initialization parameter DB_CREATE_FILE_DEST as an Oracle Managed File (OMF).
+
+SQL> alter database enable block change tracking using file '+DATA';
+
+Find the location of the current block change tracking file:
+SQL> select filename from v$block_change_tracking;
+
+Monitoring Block Change Tracking
+The dynamic performance view V$BLOCK_CHANGE_TRACKING contains the name and size of the block change tracking file plus the status of change tracking:
+
+SQL> select filename, status, bytes from v$block_change_tracking;
+
+Create Duplex Backup and Back Up Backupsets
+RMAN provides a number of options to make multiple copies of your backup simultaneously, to create backups of your existing backupsets, and to skip unnecessary backups of read-only tablespaces.
+
+Creating Duplexed Backupsets : To make multiple backups of the same backupset simultaneously
+RMAN> configure datafile backup copies for device type sbt to 3;
+
+Duplexing has a few restrictions: You cannot duplex backups to the flash recovery area, and you cannot duplex image copies—only backupsets. For duplexed disk backups, you specify multiple locations for a backup using the FORMAT clause. You can specify multiple locations either in the BACKUP command or when setting default values for
+device type DISK in the CONFIGURE command. In this example, you back up the USERS tablespace to two different disk locations simultaneously:
+
+RMAN> backup as compressed backupset
+2> device type disk
+3> copies 2
+4> tablespace users
+5> format '/u01/oradata/bkup/%U', '/u04/oradata/bkup/%U';
+
+Configuring Multiple Disk Locations for a Duplexed Disk Backup
+
+Change the value for the DISK device type to include two backup locations and two copies as the default:
+
+RMAN> configure datafile backup copies for device type disk to 2;
+RMAN> configure channel device type disk
+2> format '/u01/oradata/bkup/%U', '/u04/oradata/bkup/%U';
+
+Perform a backup of the USERS tablespace and confirm that RMAN creates two copies of the backupset:
+
+RMAN> backup as compressed backupset tablespace
+
+Creating Backups of Backupsets
+One option for creating a second copy of a backup is to create a backup of existing backupsets. This is especially useful if you forgot to duplex a previous backup and you don’t want to perform a time-consuming backup again. If your backupsets are on disk (you cannot back up existing backupsets that are on tape), you can use the BACKUP . . . BACKUPSET command to copy all backupsets on one disk, to another disk, or to tape. 
+
+This command copies all existing disk-based backupsets to the default tape device and channel:
+RMAN> backup device type sbt backupset all;
+
+In the following, example, all backupsets older than two weeks are backed up to tape and deleted from the disk:
+RMAN> backup device type sbt backupset
+2> completed before 'sysdate-14'
+3> delete input;
+
+Create an Archival Backup for Long-term Retention
+
+Archival backups, new to Oracle Database 11g, give you the flexibility to take a snapshot of the database and retain it indefinitely or for a specific period of time.
+
+In certain situations, you may want only a snapshot of the database at a certain point in time for archival or regulatory purposes. This causes two complications with the default RMAN configuration: First, your snapshot will most likely fall outside of your retention policy, and you certainly don’t want your yearly database snapshot to disappear before the end of the week! Second, you don’t want RMAN to maintain one, two, or more years’ worth of archived redo log files if you are not going to restore your database to a point in time between the snapshot and the current time.
+
+RMAN addresses the need for a database snapshot by supporting an archival backup. If you label a backup as an archival backup, RMAN does not consider the backup to be obsolete using the configured retention policy; instead, RMAN marks an archival backup as obsolete after the amount of time you specify.
+
+You can use an archival backup to migrate a copy of the database to another system for testing purposes without affecting the retention policy of the original database. Once you have created the database on the test system, you can delete the archival backup.
+
+Performing an Archival Backup
+One restriction for archival backups is that you cannot use the flash recovery area to store an archival backup. If you have a flash recovery area configured, you will have to use the FORMAT parameter to specify an alternative disk location for the backup. Additionally, a tape device might be the best option for long-term storage of archival backups.
+
+This example creates an archival backup to be retained for one year using the KEEP UNTIL clause:
+
+RMAN> backup as compressed backupset 
+2> database format '/u04/oradata/archbak/%U'
+3> tag save1yr
+4> keep until time 'sysdate+365'
+5> ;
+
+you can use "tag saveforever keep forever" for retaning for ever.
+
+Managing Archival Backups
+In some situations, you might want to change the status of a backup. For example, you might want to change an archival backup’s retention period, change an archival backup
+to a standard backup, or change a consistent backup to an archival backup. As you might expect, you can use the CHANGE command to accomplish this task. The CHANGE command has many other uses (such as to change the availability of a backup or to change the priority of failures in the database)
+
+This example changes the backup created earlier with the tag SAVEFOREVER to fall under the existing retention policy instead:
+
+RMAN> change backup tag 'saveforever' nokeep;
+
+Create a Multisection, Compressed, and Encrypted Backup
+
+A multisection backup produces a multipiece backupset from a single datafile and uses several channels, to disk or tape, to back up each piece of the datafile in parallel. This is mainly for bigfile tablespaces. 
+
+Here is the general syntax for specifying a multisection backup:
+BACKUP <backup options> SECTION SIZE <size> [K|M|G]
+
+In this example HR database, the USERS tablespace is approximately 25MB, and we want to back it up with a section size of 10MB:
+RMAN> backup tablespace users
+2> section size 10m;
+
+This backup created three backup pieces: the first two of 10MB each, and the third piece approximately 5MB, which is the remainder of the datafile.
+
+Validating a Backup with a Section Size : You can also use the SECTION SIZE parameter with the VALIDATE command. It will take you significantly less time to ensure that a datafile’s blocks are readable and have valid checksums. This example validates the datafile backed up in the previous section:
+
+RMAN> validate tablespace users
+2> section size 10m;
+
+The views V$BACKUP_SET and RC_BACKUP_SET have a MULTI_SECTION column that indicates whether the backup is a multisection backup. Similarly, the V$BACKUP_DATAFILE and RC_BACKUP_DATAFILE views have a SECTION_SIZE column that indicates the number of blocks in each piece of a multisection backup.
+
+Compressing Backups
+RMAN can apply one of two compression methods to the used blocks in a backup when you specify the COMPRESSED parameter: BZIP2 or ZLIB. By default, RMAN uses BZIP2 as follows: CONFIGURE COMPRESSION ALGORITHM 'BZIP2'; # default
+
+The ZLIB algorithm is significantly faster than BZIP2 but doesn’t compress the backup as much. In addition, it can be used only if you set the COMPATIBLE initialization parameter to 11.1.0 or higher. The BZIP2 algorithm, as you might expect, creates much smaller backups but requires more CPU time to compress the blocks.
+
+On the other hand, if a lot of disk space is available and the network path from the database to your backup location is not congested, it might take less time overall not to use compression.
+
+Encrypting Backups
+To ensure the security and privacy of your backups, you can encrypt them in one of three ways: via transparent encryption, password encryption, or dual mode encryption. By default, encryption is turned off:
+
+CONFIGURE ENCRYPTION FOR DATABASE OFF; # default
+CONFIGURE ENCRYPTION ALGORITHM 'AES128'; # default
+
+Using Transparent Encryption
+You can set transparent (wallet-based) encryption as the default RMAN encryption method using the CONFIGURE command as follows:
+RMAN> configure encryption for database on;
+
+Keep in mind that your database wallet must be open as well.
+
+Opening the wallet at the SQL> prompt 
+SQL> alter system set encryption wallet open identified by "fre#3dXX0";
+RMAN> backup as compressed backupset tablespace users;
+
+Using Password Encryption
+To enable password encryption for a specific backup, use the SET ENCRYPTION command as follows:
+RMAN> set encryption identified by "F45$Xa98";
+
+When you want to restore this backup, either to the same database (if walletbased encryption is off) or to a different database, you must specify the decryption password with SET DECRYPTION:
+
+RMAN> set decryption identified by "F45$Xa98";
+
+Using Dual Mode Encryption
+You can use both transparent encryption and password encryption at the same time. This is useful if your backup might be used to restore or recover within the same database, and on occasion it can be used to recover another database. When both methods are in effect, you can use either the password or the database wallet to restore the backup.
+
+RMAN> set encryption on;
+RMAN> set encryption identified by "F45$Xa98";
+
+Report On and Maintain Backups
+
+RMAN has the LIST and REPORT commands to help you extract this metadata from the recovery catalog or the target database control file. The LIST command provides basic information about the backupsets, image copies, proxy copies, and stored scripts recorded in the recovery catalog. In contrast,the REPORT command provides a more detailed analysis of the backup information. 
+
+For example, the REPORT NEED BACKUP command lists all datafiles that don’t have enough backups to satisfy the database’s retention policy. In contrast, the REPORT OBSOLETE command identifies files that are no longer needed to satisfy the database’s retention policy, such as extra datafile copies or archived redo log files that are superseded by a more recent datafile backup. If you are low on disk space, you can use DELETE OBSOLETE to remove these files.
+
+Occasionally, you can lose a disk containing backups due to a hardware failure. Also, tapes containing backups can sometimes wear out and are no longer writeable or readable. As a result, you should run the CROSSCHECK command on a regular basis to ensure that the recovery catalog reflects the existence and integrity of these backups.
+
+Using the LIST Command
+The LIST command displays information about backupsets and image copies in the repository and can also store the contents of scripts stored in the repository catalog.
+
+RMAN> list backup summary;
+
+Using the REPORT Command
+In contrast to the LIST command, the REPORT command performs a more detailed analysis of the information in the recovery catalog, such as which files need more backups to comply with the defined retention policy. The next example changes the retention policy to two copies, and then queries the recovery catalog to see which datafiles don’t have two copies:
+RMAN> configure retention policy to redundancy 2;
+
+RMAN> report need backup;
+
+Using the DELETE Command
+Once you have identified which datafiles and archived redo log files are obsolete (as defined by your database’s retention policy), you can remove them manually with the DELETE OBSOLETE command. You can remove obsolete files either one at a time or remove all obsolete backups using this command:
+RMAN> delete noprompt obsolete;
+
+Using the CROSSCHECK Command
+
+RMAN> crosscheck backup;
+
+-------------
+
+RMAN client interface The RMAN command-line interface (RCLI) provides access to Recovery Manager. This process spawns off-server sessions that connect to the target database, which is the database that will be backed up. From the RMAN client interface you will issue RMAN commands to execute RMAN backup, recovery, and restore operations.
+
+Backup Tags
+When you create backups, you can optionally tag them. If you do not tag a backup, RMAN will tag it for you. A tag is a name that you assign to the backup, such as, for example, Gold Copy (perhaps you re-create your database every day with the backup tagged Gold Copy). You can easily restore and recover the database using the tag as the key for the recovery.  
+
+RMAN> backup database tag ‘DPrestwich’ plus archivelog tag=’ARCH_GOLD’ delete input;
+
+Duplexing Backups
+You may want to create duplicate copies of backup sets when they are created. This is called duplexing. 
+RMAN>configure datafile backup copies for device type disk to 2;
+You can also configure duplexing for archive log backups, as shown here:
+RMAN>configure archivelog backup copies for device type disk to 2;
+
+If you want to duplex an individual backup rather than set a persistent configuration setting:
+RMAN> run
+2> {
+3> allocate channel d1 device type disk format ‘c:\oracle\backup\%U’;
+4> set backup copies 2;
+5> backup incremental level 0 database plus archivelog delete input;
+6> }
+
+SQL> alter database enable block change tracking using file ‘c:\oracle\block_change_tracking\orcl_block_change.fil’;
+
+V$BLOCK_CHANGE_TRACKING
+
+RMAN>backup as copy current controlfile format ’c:\oracle\controlfilebackup\contrf_backup.ctl’;
+SQL>Alter database backup controlfile to ’c:\oracle\controlfilebackup\contrf_backup.ctl’;
+RMAN>backup controlfilecopy ’c:\oracle\controlfilebackup\contrf_backup.ctl’;
+RMAN>Backup spfile;
+
+-------------------- Configuring and Backing Up Using RMAN 
+Free with the Oracle license.
+You can perform full and incremental backups of the entire database, specific tablespaces, and datafiles. You can also back up control files and archive logs.
+RMAN offers actual compression of backup images through various means.
+RMAN offers actual encryption of database backups.
+RMAN provides various backup reporting capabilities.
+RMAN provides for parallel processing of backups and restores.
+With RMAN, you can create duplicate databases.
+
+Before you use RMAN, you will want to customize it to use your preferences. This makes the backup process easy and repeatable with a minimum of effort. In this section, we will discuss a number of configurable features of RMAN:
+
+Setting the control_file_record_keep_time parameter
+Backup retention policies
+Backup compression
+Backup encryption
+Specific channel configurations
+Control-file autobackups
+Backup optimization
+Setting the location of the snapshot control file
+
+Let’s look at each of these in some more detail.
+
+Make sure that you have set the CONTROL_FILE_RECORD_KEEP_TIME parameter correctly. This parameter is used to determine how long RMAN-related control-file records are maintained in the control file. Make sure this parameter is set high enough so that it will not interfere with your retention-policy requirements
+
+SQL> alter system set control_file_record_keep_time=14;
+
+Retention Policies
+RMAN retention policies are used to manage how long Oracle will maintain backups. When you’re using the FRA, retention policies are used for automated cleanup of unneeded backup sets, which eliminates the need to manually manage space usage.
+
+These are the different types of retention policies that you can set in RMAN:
+ None
+ Redundancy (the default)
+ Recovery window
+ 
+ The redundancy retention policy ensures that there will be a certain number of backups available for recovery. Once a backup is no longer needed, Oracle will mark it as obsolete.
+ RMAN> configure retention policy to redundancy 1 ;
+ 
+ The recovery retention policy provides the ability to define a recovery window to be applied to your backups in a period of days. RMAN would maintain all backups required to restore the database to any point in time within the recovery window period.
+ 
+ RMAN> configure retention policy to recovery window of 2 days;
+ 
+ To disable the retention policy, use the configure command with the retention policy
+to none keywords, as shown here:
+RMAN> configure retention policy to none;
+
+ Using the Keep Option
+If you have a defined retention policy, you may well want to override it for specific backups. Perhaps you have a policy that says at the end of the year you will make a backup of the database and keep it forever.
+
+For example, if you wanted to create a backup with a retention criterion of 365 days, you would issue the following command:
+RMAN> backup database plus archivelog delete input keep until time ‘sysdate + 365’;
+Using the keep forever option, you could keep the backup indefinitely, as shown here:
+RMAN> backup database plus archivelog tag=gold_copy delete input keep forever;
+
+You cannot create backups on which you’ve used the keep option in the FRA. If you want to create backups that have non standard retention criteria, you will have to use a non-FRA location to create them. This often requires the use of the format parameter, as shown in this example:
+backup database format ’c:\oracle\backup\%U’ keep until time ”sysdate+300” ;
+
+You can use the change command to subsequently decide to keep a backup or to change the setting on a backup so that the status of the backup is no longer set to keep. For example, you can take a backup with a tag of gold_backup that was backed up with the keep command and start to enforce the retention criteria on that backup by using the change nokeep command, as shown here:
+
+RMAN>backup database plus archivelog tag=gold_copy delete input format ‘c:\oracle\backup\%U’ keep until time “sysdate+300”;
+RMAN>change backupset tag gold_backup nokeep;
+
+Compression
+RMAN has long offered white-space compression. Essentially, this means that blocks in a datafile that are not used do not get backed up. White-space compression is quite helpful for a database that is sized quite large but contains little data. It is less helpful for well packed databases.
+In these cases, you will want to take advantage of actual backup set compression.
+
+Oracle Database 11g offers two flavors of compression, zlib and bzip2 (the default). Zlib is designed to compress with a minimum of CPU impact. The result is often a slightly bigger backup image than you get with the bzip2 compression format.
+
+First set the compression algorithm
+RMAN> configure compression algorithm ‘zlib’;
+Then configure the default device type to use compression: To actually perform a backup with compression, you will need to configure the default device type to use compression, or you will have to use the as compressed keyword when issuing the backup command.
+RMAN> configure device type disk backup type to compressed backupset;
+
+And here is an example of using the as compressed keyword when creating a backup:
+RMAN> backup as compressed backupset database plus archivelog;
+
+Encryption
+You can choose to encrypt your backups in Oracle Database 11g. Several encryption options are available to you. 
+For example, if you wanted to configure encryption for the entire database, you would use the following commands:
+RMAN> configure encryption algorithm “AES128”;
+RMAN> configure encryption for database on;
+
+There are three different modes of encryption (as opposed to the algorithm used). These are transparent mode, password-based encryption, and dual-mode encryption,
+which encompasses both modes of encryption. For transparent encryption, you will need to create a wallet, and it must be open. Transparent encryption will then occur automatically after you have issued the configure encryption for database on or configure encryption for tablespace on command.
+
+For password authentication, you will need to use the set encryption identified by command first to enable password-based authentication. If you are restoring you will have
+to use the set decryption identified by command to set the password to decrypt a backup.
+
+RMAN> set encryption identified by my_pass only on for all tablespaces;
+
+Channel Configuration
+When you initiate an RMAN backup, RMAN will create one or more channels that connect the database to a backup device. By default, RMAN will create a single channel to back up or recover to or from the FRA. You can override the defaults using the configure command. Along with backup locations, the configure command allows you to define other settings for your backup channels, including parallelism and backup-set and piece-set sizing.
+
+Configuring Backup Locations
+The configure default device command is used to configure a backup location other than the default location. If, for example, you wanted to back up to a directory called /oracle01/ backup/orcl, you would issue the following command:
+RMAN> configure channel device type disk format ‘/oracle01/backup/orcl/%U’;
+
+You can configure multiple channels with the configure command by specifying each individual channel, as shown here where we have indicated different default backup locations for each channel:
+RMAN> configure channel 1 device type disk format ‘/oracle01/backup/orcl/%U’;
+RMAN> configure channel 2 device type disk FORMAT ‘/oracle02/backup/orcl/%U’;
+
+Configuring Parallelism
+Now that you can configure multiple channels, you might want to use them! To do so, you use the configure command along with the parallelism keyword, as shown here:
+RMAN> configure device type disk parallelism 2;
+
+The maxsetsize operator will limit the size of any backup set. The maxpiecesize operator will limit the size of any individual backup set piece. Here is an example of
+configuring a default channel with a maxpiecesize setting:
+RMAN> configure channel 1 device type disk maxpiecesize 2g;
+
+The main use of the maxpiecesize parameter is to ensure that your backup set pieces do not grow bigger than some OS, file system, or storage device limit. For example, if each of your tapes can hold only 200GB of data, then you would want to limit the size of each backup set piece to 200GB.
+Maxsetsize has essentially the same purpose, to limit the overall size of one backup set. The downside to using maxsetsize is that if you end up with a datafile that is larger than maxsetsize, it will never get backed up since each datafile must be backed up within the scope of one backup set.
+
+Control-File Autobackups
+When enabled, RMAN will perform automatic control-file autobackups after each backup. Additionally, RMAN/Oracle will automatically create a backup of the control file to disk anytime a database change occurs that impacts the control file and the database physical structure, such as adding a tablespace or datafile.
+To enable control-file autobackups through RMAN:
+RMAN> configure controlfile autobackup on;
+
+Control-file autobackups are stored in the FRA if one is configured. You can also use the configure command to configure RMAN to create the control-file autobackup in a
+different location, as shown in this example:
+configure controlfile autobackup format for device type disk to ‘/oracle01/oracle/controfilebackup/%F’;
+
+%F is required when defining the location of the backup control file. This will ensure that the backup control file name is unique each time the backup is created.
+
+Backup optimization provides the ability to tell RMAN that you don’t want to back up a database datafile if that backup is not needed.
+RMAN> configure backup optimization on;
+
+Backup Tags
+When you create backups, you can optionally tag them. If you do not tag a backup, RMAN will tag it for you. A tag is a name that you assign to the backup
+
+RMAN> backup database tag ‘DPrestwich’ plus archivelog tag=’ARCH_GOLD’ delete input;
+
+Duplexing Backups
+You may want to create duplicate copies of backup sets when they are created. This is called duplexing. Duplexing of backup sets can be configured as a default setting by using the configure command, as shown here:
+RMAN>configure datafile backup copies for device type disk to 2;
+
+Note that you can duplex across similar devices only.
+
+RMAN Commands
+RMAN : Command Description
+@ : Run a command file.
+@@ : Run a command file in the same directory as another command file that is currently running. The @@ command differs from the @ command only when run from within a command file.
+ALLOCATE CHANNEL : Establish a channel, which is a connection between RMAN and a database instance.
+ALTER DATABASE : Mount or open a database.
+CATALOG : Add information about a datafile copy, archived redo log, or control file copy to the repository.
+CONFIGURE : Configure persistent RMAN settings. These settings apply to all RMAN sessions until explicitly changed or disabled.
+CONNECT : Establish a connection between RMAN and a target, auxiliary, or recovery catalog database.
+CROSSCHECK : Determine whether files managed by RMAN, such as archived logs, datafile copies, and backup pieces, still exist on disk or tape.
+DELETE : Delete backups and copies, remove references to them from the recovery catalog, and update their control-file records to status DELETED.
+DUPLICATE : Use backups of the target database to create a duplicate database that you can use for testing purposes or to create a standby database.
+LIST : Produce a detailed listing of backup sets or copies.
+RECOVER : Apply redo logs and incremental backups to datafiles restored from backup or datafile copies in order to update them to a specified time.
+REGISTER : Register the target database in the recovery catalog.
+RELEASE CHANNEL : Release a channel that was allocated with an ALLOCATE CHANNEL command.
+REPORT : Perform detailed analyses of the content of the recovery catalog.
+RESTORE : Restore files from backup sets or from disk copies to the default or to a new location.
+RESYNC : Perform a full resynchronization, which creates a snapshot control file and then copies any new or changed information from that snapshot control file to the recovery catalog.
+SET : Set the value of various attributes that affect RMAN behavior for the duration of a RUN block or a session.
+SPOOL : Write RMAN output to a log file.
+SQL : Execute a SQL statement from within RMAN.
+VALIDATE : Examine a backup set and report whether its data is intact. RMAN scans all of the backup pieces in the specified backup sets and looks at the checksums to verify that the contents can be successfully restored.
+
+Types of RMAN Backups
+There are two principle types of RMAN backups. 
+The first type is called backup sets. Backup sets are a very flexible way of backing up your Oracle database. The downside is that backup sets are not direct copies of Oracle database datafiles. As a result, you need RMAN to put the backup sets back together to restore your database.
+
+Oracle also supports image copies. Image copies are direct copies of database datafiles. Image copies offer faster recovery options but typically take up a great deal more space. 
+RMAN> Backup as copy database;
+RMAN>backup as copy datafile 4;
+RMAN>Backup as copy tablespace users;
+If you prefer to always use image copies rather than backup sets, you can configure RMAN to do so by default with the configure command, as seen here:
+RMAN>configure device type disk backup type to copy;
+
+By default, when you create a backup in RMAN, it writes the backups to physical files. These physical files are called backup set pieces. A given backup may create more than one backup set piece. A collection of related backup set pieces is called a backup set. A backup set is a logical entity that is used to maintain the association of independent backup set pieces.
+
+In addition to multiple backup set pieces, you may have more than one backup set. This occurs when you parallelize a backup. Each channel will represent one backup set, each with its own backup set pieces. New backup sets will also be created on a channel if a backup set exceeds the backup set size limitations.
+
+Note that a given datafile can span backup set pieces but cannot span backup sets. The ability of a given datafile to span backup set pieces is known as multiplexing. Multiplexing is another form of parallelization, as it allows RMAN to read from multiple datafiles in parallel and write them to a single backup set piece.
+
+Oracle Database 11g has a new feature called multisection backups. Multisection backups allow you to parallelize the backup of large datafiles
+
+RMAN Offline Backups
+
+1. Start the RMAN client.
+2. Shut down the database, shutdown should be a consistent shutdown, so use the shutdown, shutdown immediate, or shutdown transactional command.
+3. Start up the database in mount mode using the startup mount command.
+4. Back up the database with the RMAN backup command: RMAN>backup database;
+5. When the backup is complete, open the database with the alter database open command.
+
+RMAN Online Backups
+For online backups in RMAN, the database must be configured in ARCHIVELOG mode
+
+Online backups with RMAN are easy. You need to make sure the database and the archived redo logs are backed up; thus you issue the command backup database plus archivelog.
+If you want to delete the archived redo logs after the backup, you would append the delete input clause to the command.
+
+RMAN> backup as compressed backupset database plus archivelog delete input;
+
+Other examples
+RMAN>Backup tablespace users;
+RMAN>Backup datafile 3;
+
+RMAN Incremental Backups
+Incremental database backups are a way to quickly back up your database. RMAN will perform an incremental backup when you issue the appropriate backup command. However,
+without any configuration, RMAN must inspect each block and determine whether it has indeed changed since the last backup and if it must go into the backup image.
+Optionally you can create a block-change tracking file that will keep track of blocks that have changed since the last full or incremental backup. This can significantly reduce the time it takes to perform an incremental backup of your database. 
+
+The block-change tracking file can track only a maximum of seven different incremental level-1 backups. After the seventh backup, the initial level-0 backup records will be overwritten in the block-change tracking file. This will result in RMAN having to scan all database blocks on subsequent incremental backups. As a result, limit incremental backups without an intervening level 0 to a maximum of seven.
+
+SQL> alter database enable block change tracking using file ‘c:\oracle\block_change_tracking\orcl_block_change.fil’;
+
+By default, Oracle will create the block-change tracking file in the location defined by the DB_CREATE_FILE_DEST parameter
+
+You can find the location of the current block-change tracking file by looking at the FILENAME column of the V$BLOCK_CHANGE_TRACKING view. You can use the STATUS column of the V$BLOCK_CHANGE_TRACKING view to determine if block-change tracking is enabled.
+
+Two types of incremental backups are available for you to choose from:
+Level-0 incremental backup
+Level-1 incremental backup
+The level-0 backup is like a full backup, except that incremental backups can be based on it (they can not be based on a regular full backup).
+The level-1 backup is the incremental backup that backs up changed blocks. There are two different kinds of level-1 backups:
+Differential incremental backup
+Cumulative incremental backup
+The differential incremental backup will back up all changed blocks since the last level-1 backup. These images are typically smaller. The cumulative incremental backup is one where the data backed up is the data that changed since the last level-0 full backup. Thus it is a cumulative backup of all changed blocks since the last level-0 backup. This makes for faster recoveries since you don’t have to apply several incremental backups during the database restore.
+
+To create a base, level-0 backup, you would issue this command:
+RMAN> Backup as compressed backupset incremental level 0 database plus archivelog delete input;
+
+When you are ready to run your first incremental backup you would use the backup command with the incremental level-1 option, as shown here:
+RMAN> Backup as compressed backupset incremental level 1 database plus archivelog delete input;
+
+Differential backups are the default type of incremental backup in Oracle. If you want to perform a cumulative backup, you will need to include the cumulative keyword, as
+shown here:
+RMAN> Backup as compressed backupset incremental level 1 cumulative database plus archivelog delete input;
+
+Note that if you try to do a level-1 backup and a level-0 does not exist, RMAN will not generate an error. It will simply perform a level-0 backup for you instead.
+
+RMAN Incrementally Updated Backups
+Incrementally updated backups involve a combination of a full image backup of the database and then subsequent level-1 incremental backups of the database, which are applied to the image-copy backup. An incrementally updated backup makes for a quicker restore but for a bigger backup image.
+To create an incrementally updated backup, all you need do is run the following script:
+
+RUN { # the recover copy command does not really recover anything.
+# it simply tells RMAN that the incremental to be executed should
+# be applied to the database copy we made above.
+Recover copy of database with tag ’Jacob_Jared_Lizzie’;
+Backup incremental level 1
+for recover of copy with tag ’Jacob_Jared_Lizzie’ Database; }
+
+On the first execution of this script, RMAN will detect that no backup copy exists. Warnings will be generated, but no errors. RMAN will proceed to create the initial copy
+of the database. No incremental copy will be created. On subsequent executions, RMAN will detect that an image copy does exist, and it will then apply the previous level-1 incremental-and then execute another level-1 incremental backup. Note that on the second run, RMAN will detect that no incremental backup exists to apply to the datafile copy and a warning will be raised because of this. That is normal.This method limits the recovery window for your database to one day. For example, if you executed this script on day 1, day 2, and day 3, after day 3’s execution you would not be able to restore your database to any point before day 3’s backup.
+
+You could provide for longer recovery windows by including the until time clause. In this example, we allow for a recovery window of five days:
+
+run {
+recover copy of database with tag ‘lisa’ until time ‘sysdate - 5’;
+backup incremental level 1 for recover of copy with tag ‘lisa’ database;
+}
+
+RMAN Multisection Backups
+Prior to Oracle Database 11g, you could not parallelize the backup of a given database datafile. Since datafiles had to be contained wholly within a single backup set, this meant that the backup of that datafile was serialized.
+
+Oracle Database 11g provides a new feature called multisection backups that provides the ability to parallelize the backup of a single datafile. 
+
+RMAN> backup section size 40m database;
+
+In this example, RMAN will chunk up each datafile into 40MB chunks, and each allocated channel can process those individual 40MB chunks. Note that if you allocate only
+one channel, only one chunk at a time will get backed up! Also note that the size parameter does not indicate the size of the resulting backup set piece. Rather, it is the equivalent amount of data within the datafile that each RMAN channel will process. The resulting pieces can vary wildly in size.
+
+RMAN Backup of Archived Redo Logs
+Backing up archived redo logs is an important task since it serves to protect the database’s principal recovery mechanism, which is redo. Backing up archived redo logs is done via the backup archivelog command.
+
+Backing up all archived redo logs, still on disk, that were generated in the last 24 hours:
+RMAN> backup archivelog time between “sysdate-1” and “sysdate”;
+
+RMAN Backup of the Spfile and Control Files
+
+You have two options in RMAN for control-file backups, using the backup current controlfile command or the backup controlfilecopy command.
+
+The backup as copy command will cause the current control file to be backed up. This is a copy of the control file, so it’s like a backup control file. Thus, you could just copy the file into place and treat it as a backup control file. By default the backup will be created in the FRA as would happen in this example:
+RMAN> backup as copy current controlfile;
+
+Or you can choose to define the location of the output control file, as shown in this example:
+RMAN>backup as copy current controlfile format ’c:\oracle\controlfilebackup\contrf_backup.ctl’;
+
+The backup controlfile copy command will back up a control-file copy (created with the alter database backup controlfile to command or the backup as copy current controlfile command). Here is an example of the use of the backup controlfilecopy
+command:
+SQL>Alter database backup controlfile to ’c:\oracle\controlfilebackup\contrf_backup.ctl’;
+RMAN>backup controlfilecopy ’c:\oracle\controlfilebackup\contrf_backup.ctl’;
+You can also back up spfiles with RMAN using the backup spfile command, as shown in this example:
+RMAN>Backup spfile;
+
+Backing Up RMAN Backup Sets
+Often database backups will be initially made to disk, and then later those backups will be backed up to tape. The reason for this is that backing up to disk is generally much faster than backing up to tape. Yet you want to back up to tape so you can offsite the media and because tape tends to be less expensive for longer-term storage (though this is quickly becoming less true). To back up a backup set, you use the backup backupset command, as shown here:
+RMAN> backup device type sbt backupset all;
+
+Consider the following command:
+Backup database plus archivelog delete input;
+How many backup sets would be created by this command if the following were true:
+Control-file auto backups were enabled.
+The size of backup sets was not restricted.
+One channel was allocated.
+
+One for an archive log backup before the main backup.
+One for the main backup. Since we are using a single chael with no backup-set size restriction, RMAN would create a single backup set.
+One for an archive log backup after the main backup.
+One for the control-file autobackup.

@@ -1,0 +1,257 @@
+Chapter 3 Configuring Oracle Data Guard Logical Standby Database - 79
+
+Logical standby has its own pros and cons:
+
+Not everything must be duplicated
+Depending on your conditions, there may be cases where you don't want all the data in your primary database to be replicated. which is not possible with a physical standby database, but possible with logical standby.
+
+Use for reporting at all times
+It's possible to use a logical standby database anytime to offload reporting jobs from the primary database because a logical standby database is always open for user connections. This is also available with the Oracle version 11g physical standby feature of Active Data Guard but it requires an additional license.
+
+Independent standby database objects
+A logical standby database may contain additional schemas and objects that do not exist on the primary database. This feature also relies on the fact that the logical standby database is a read/write accessible database.
+
+Protecting writes on replicated standby tables
+The replicated data on a standby database normally needs to be non-modifiable in order to provide data consistency. Logical standby database is capable of guaranteeing this. 
+
+Limitation for specific data types and objects
+There are specific Oracle database objects and data types that are not supported for replication in a logical standby database configuration. Tables containing LOB columns stored as SecureFiles, Tables with virtual columns
+
+We should also keep in mind that changes on the tables or sequences owned by SYS are not applied by SQL Apply. We should be careful so as to not put any user data under SYS objects or create any object under the SYS schema in the primary database manually.
+
+The following data types are also not supported in a logical standby database configuration. If a table contains a column with one of these data types, the entire table will be skipped by SQL Apply: BFILE, Collections (including VARRAYS and nested tables), Multimedia data types (including spatial, image, and Oracle text), ROWID and UROWID,  User-defined data types
+
+DDL statements for materialized views and database links are skipped by SQL Apply. Therefore, these objects must be handled manually on the logical standby database, if necessary.
+
+High availability and disaster recovery considerations
+A logical standby database can be used for switchover or failover just like the physical standby database configuration. We can also configure fast-start failover with the logical standby environment. However, the following considerations are very important if you use the logical standby database for high availability and disaster recovery:
+
+We should be aware of the unsupported objects that will not be replicated.
+
+Once we failover to a logical standby database, all other standby databases in the configuration must be recreated. This is not the same on physical standby configuration.
+
+Physical standby offers higher recovery performance than the logical standby because it consumes less memory, CPU, and I/O resource on the apply process. If the primary database has high redo generation rate, you can consider using a physical standby for the purposes in question.
+
+The management of a logical standby configuration is more complex than that of physical.
+
+Preparation for the configuration
+First we'll start preparing the primary database for the configuration. Then we'll convert a physical standby database into a logical standby database. This is the method of creating logical standby Data Guard configuration.
+
+Run the following query on the primary database to see the unsupported table names:
+SELECT OWNER, TABLE_NAME FROM DBA_LOGSTDBY_UNSUPPORTED_TABLE ORDER BY OWNER,TABLE_NAME;
+
+Now let's check the reasons for which these tables are on the unsupported list.
+SELECT DISTINCT(ATTRIBUTES) FROM DBA_LOGSTDBY_UNSUPPORTED WHERE OWNER='IX' and TABLE_NAME = 'STREAMS_QUEUE_TABLE';
+
+If the structure of the table is supported but some columns in the table have unsupported data types, the ATTRIBUTE column will be NULL. Let's check which columns of which tables have ATTRIBUTE value NULL, in other words which tables have unsupported data types on specific columns.
+SELECT OWNER, TABLE_NAME, COLUMN_NAME,DATA_TYPE FROM DBA_LOGSTDBY_UNSUPPORTED WHERE ATTRIBUTES IS NULL;
+
+
+Keep in mind that the changes on the unsupported tables will still be sent by the redo transport service; however, SQL Apply will ignore the changes on the unsupported tables. Another point is the unsupported tables will exist on the logical standby database, because a logical standby is converted from a physical standby database, which is an exact copy of the primary.
+
+SQL Apply needs another unique identifier to apply changes, which are the primary keys, non-null unique-constraint/index, or all columns of bounded size, respectively depending on their existence.
+
+In order to check for any table row uniqueness, we can run the following query on the primary database:
+SELECT * FROM DBA_LOGSTDBY_NOT_UNIQUE;
+
+The output shows the list of tables having row uniqueness problem.
+
+The BAD_COLUMN column has two values, which are Y and N. If you see the rows with BAD_COLUMN=Y, it means that the table column is defined using an unbounded data type, such as LONG or BLOB. If two rows contain the same data except in their LOB columns, the replication will not work properly for this table.
+
+BAD_COLUMN=N means that there is enough column information to maintain the table in the logical standby database; however, the transport and apply services will run more efficiently if you add a primary key to the table.
+
+If the application ensures the rows are unique, we should consider adding a disabled primary key RELY constraint to these tables. When RELY is used, the system will assume that rows are unique and not validate them on every modification to the table. This method will avoid the overhead of maintaining a primary key on the primary database. However, if there's no such uniqueness, we must add a unique-constraint/index to the columns on the primary database.
+
+ALTER TABLE SCOTT.BONUS ADD PRIMARY KEY (ENAME) RELY DISABLE;
+
+We should aff rely constraints to all tables returned by query
+SELECT * FROM DBA_LOGSTDBY_NOT_UNIQUE;
+
+Creating a logical standby database
+In order to create a logical standby database, we should first check the primary and the physical standby databases and make them ready for a logical standby conversion. These configurations are as follows:
+
+ Stopping the media recovery on the standby
+ Configuring primary database initialization parameters to be ready for a logical standby role transition
+ Building the LogMiner dictionary on the primary
+ If standby is RAC, converting it to a single instance temporarily
+
+After completing these tasks, we continue the process of converting the physical standby into a logical standby with the following tasks:
+
+ Recovering the standby to the SCN that the LogMiner dictionary was built with
+ Re-enabling RAC on the standby if it exists
+ Modifying the archival initialization parameters for the standby
+ Opening the database with resetlogs
+ Starting SQL Apply on the standby
+
+It's important to complete all these steps for a successful logical standby database configuration.
+
+If Data Guard broker is used, it's advised to remove the physical standby database from the broker configuration before starting the logical standby conversion process. If you don't, broker will still show the standby database as a physical standby even if you convert it to a logical standby database and you'll struggle with this problem later on.
+
+1. Stop the media recovery on the physical standby with the following statement:
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+
+2. In order to prepare the primary database for possible switchovers with the logical standby in future, we will make some changes on the archival initialization parameters. This step is optional and if you don't plan any switchovers between the primary and logical standby in the future.
+
+SQL> ALTER SYSTEM SET LOG_ARCHIVE_DEST_1='LOCATION=/u01/app/oracle/archive VALID_FOR=(ONLINE_LOGFILES,ALL_ROLES) DB_UNIQUE_NAME=TURKEY_UN' SCOPE=BOTH;
+
+SQL> ALTER SYSTEM SET LOG_ARCHIVE_DEST_3='LOCATION=/u01/app/oracle/archive_std VALID_FOR=(STANDBY_LOGFILES,STANDBY_ROLE) DB_UNIQUE_NAME=TURKEY_UN' SCOPE=BOTH;
+
+In this configuration LOG_ARCHIVE_DEST_1 will archive the online logfiles to the archived logfiles even if the database is primary or logical standby (ALL_ROLES option). After a switchover when the database role is logical standby, this setting will archive the local online redo logfiles and not the standby redo logs. It will be filled with the redo transferred from primary.
+
+The LOG_ARCHIVE_DEST_3 parameter (not set in physical standby Data Guard configuration) will be omitted when the database is primary (STANDBY_ROLE option). If the database role is logical standby, this parameter will archive the standby redo logs that contain redo generated and sent by the primary database.
+
+There is already LOG_ARCHIVE_DEST_2 defined on the primary database that sends redo to the standby. We are not going to change this parameter. The value of this parameter should resemble the following:
+SERVICE=INDIA LGWR ASYNC VALID_FOR=(ONLINE_LOGFILES,PRIMARY_ROLE) DB_UNIQUE_NAME=INDIA_UN
+
+3. Execute the following statement on the primary database to make it ready to support a logical standby configuration. This package enables supplementary logging on the primary database, which ensures that the updates contain enough information to identify each modified row. It also builds the LogMiner dictionary and identifies the SCN that SQL Apply has to start mining redo.
+SQL> EXECUTE DBMS_LOGSTDBY.BUILD;
+
+4. If the physical standby is RAC, you must convert it to a single instance before the logical database conversion. Use the following statements for this purpose:
+
+SQL> ALTER SYSTEM SET CLUSTER_DATABASE=FALSE SCOPE=SPFILE;
+SQL> SHUTDOWN ABORT;
+SQL> STARTUP MOUNT EXCLUSIVE;
+
+We're now ready to continue with the conversion of the standby database from physical to logical.
+
+1. Execute the following special recovery command on the standby database in order to recover it until the SCN that the dictionary was built:
+SQL> ALTER DATABASE RECOVER TO LOGICAL STANDBY ORCL2;
+
+We specified the name ORCL2 at the end. The database name needs to be changed for the physical standby database to become a logical standby and ORCL2 will be the new name of the standby database.
+
+3. If the standby database is RAC, we can enable the cluster again using the following query:
+
+SQL> ALTER SYSTEM SET CLUSTER_DATABASE=TRUE SCOPE=SPFILE;
+SQL> SHUTDOWN;
+SQL> STARTUP MOUNT;
+
+4. There are two kinds of archived redo logfiles on the logical standby databases. The first one is created from the online redo logs and the second is created from the standby redo logs. We'll create separate destinations for these archived logfiles using the following query:
+
+SQL> ALTER SYSTEM SET LOG_ARCHIVE_DEST_1='LOCATION=/u01/app/oracle/archive VALID_FOR=(ONLINE_LOGFILES,ALL_ROLES) DB_UNIQUE_NAME=INDIA_UN';
+
+SQL> ALTER SYSTEM SET LOG_ARCHIVE_DEST_2='SERVICE=TURKEY ASYNCVALID_FOR=(ONLINE_LOGFILES,PRIMARY_ROLE) DB_UNIQUE_NAME=TURKEY_UN';
+
+SQL> ALTER SYSTEM SET LOG_ARCHIVE_DEST_3='LOCATION=/u01/app/oracle/archive_std VALID_FOR=(STANDBY_LOGFILES,STANDBY_ROLE) DB_UNIQUE_NAME=INDIA_UN';
+
+5. We used specific and different destinations for the archived logs for a better understanding in this example. However, using fast recovery area for this purpose with the LOCATION=USE_DB_RECOVERY_FILE_DEST option is a good practice.
+
+6. Then set LOG_ARCHIVE_DEST_1 as follows:
+SQL> ALTER SYSTEM SET LOG_ARCHIVE_DEST_1='LOCATION=USE_DB_RECOVERY_FILE_DEST';
+
+7. LOG_ARCHIVE_DEST_1 will be enough to archive both online and standby logfiles and we will not need LOG_ARCHIVE_DEST_3 in this case. The directory structure will be automatically created as follows:
+/u01/app/oracle2/fra/INDIA_UN/foreign_archivelog - for the files archived from standby logs
+/u01/app/oracle2/fra/INDIA_UN/archivelog - for the files archived from online logs
+
+8. Now restart the standby database and open it with the resetlogs option as shown in the following query:
+SQL> SHUTDOWN IMMEDIATE;
+SQL> STARTUP MOUNT;
+SQL> ALTER DATABASE OPEN RESETLOGS;
+
+9. Start SQL Apply on the logical standby database by executing the following statement:
+SQL> ALTER DATABASE START LOGICAL STANDBY APPLY IMMEDIATE;
+
+Verifying the logical standby database
+There are two services that we need to check for the verification of the logical standby configuration, which are the redo transport service and the SQL Apply service. There are several ways to check the status of these services. 
+You can use alert log and trace files (whenever necessary) or you can query the views of the logical standby database that contains information about the status of the Data Guard services. 
+Another way for controlling is modifying the primary database tables and querying the same tables on the logical standby.
+
+checking the redo transport service status
+1. The first query to be executed to be sure that the redo transport service is working properly will be the V$DATAGUARD_STATS view.
+SQL> SELECT NAME, VALUE, TIME_COMPUTED FROM V$DATAGUARD_STATS WHERE NAME='TRANSPORT LAG';
+
+The TIME_COMPUTED value has to be up-to-date. We can see that there is no redo transport lag in our logical standby configuration. We'll see a time value if there is a problem with the redo transport.
+
+2. By executing the following SQL query on the logical standby, we can check logs with which sequences are being transferred from primary and also which sequences are being archived from the local database online redo logs.
+SQL> SELECT PROCESS, STATUS, THREAD#, SEQUENCE#, BLOCK#, BLOCKS FROM V$MANAGED_STANDBY;
+
+3. On the other hand, we can use the following query to check which sequences were received from the primary database and if they were applied or not:
+SQL> SELECT FILE_NAME, SEQUENCE# as SEQ#, DICT_BEGIN AS BEG, DICT_END AS END,APPLIED FROM DBA_LOGSTDBY_LOG ORDER BY SEQUENCE#;
+
+checking the SQL Apply service status
+1. Use the following query on the logical standby database, to check the general SQL Apply status:
+SQL> SELECT * FROM V$LOGSTDBY_STATE;
+
+At the STATE column, we can see INITIALIZING, WAITING FOR DICTIONARY LOGS, LOADING DICTIONARY, WAITING ON GAP, APPLYING, and IDLE values, which describe the status of the SQL Apply clearly with their names.
+
+2. The DBA_LOGSTDBY_LOG view, that we have queried in the Checking the Redo Transport Service Status action, will be very helpful to find the last applied archived log sequence and to check if there are archived log sequences that were received but not applied. Another view V$LOGSTDBY_PROCESS is helpful to control the status of the processes responsible for SQL Apply.
+
+SQL> SELECT TYPE, STATUS_CODE, STATUS FROM V$LOGSTDBY_PROCESS;
+
+Output shows all the processes in the SQL Apply and their status. The READER, PREPARER, and BUILDER processes are responsible for the mining of the redo. On the other side, COORDINATOR, ANALYZER, and APPLIER processes work together to apply the changes to the database.
+
+working with skip rules on a logical standby database
+1. We need to create skip rules for tables and schemas, but first we need to stop SQL Apply using the following query:
+SQL> ALTER DATABASE STOP LOGICAL STANDBY APPLY;
+
+2. Then, the following statement will create a skip rule to skip changes caused by DML statements on the EMP table of the SCOTT schema. Execute the following statement on the logical standby database:
+SQL> EXECUTE DBMS_LOGSTDBY.SKIP(STMT => 'DML', SCHEMA_NAME =>'SCOTT', OBJECT_NAME => 'EMP');
+
+3. If we also want skip DDL statements encountered for this table, the following statement will create another skip rule:
+SQL> EXECUTE DBMS_LOGSTDBY.SKIP(STMT => 'SCHEMA_DDL', SCHEMA_NAME => 'SCOTT', OBJECT_NAME => 'EMP');
+
+4. The next rule will disable DML replication for a complete schema. Execute the following statement to skip all DML changes to the HR schema:
+SQL> EXECUTE DBMS_LOGSTDBY.SKIP(STMT => 'DML', SCHEMA_NAME =>'HR', OBJECT_NAME => '%');
+
+7. Now create a rule to invoke this procedure before running the replicated tablespace DDL commands on the logical standby database using the following query:
+SQL> EXECUTE DBMS_LOGSTDBY.SKIP(STMT => 'TABLESPACE', PROC_NAME =>'SYS.CHANGE_TS_DDL');
+
+procedure sys.change_ts_ddl contains the below statements
+new_stmt := replace(old_stmt,'/u01/app/oracle2/datafile/ORCL','/datafile/ORCL');
+action := dbms_logstdby.skip_action_replace;
+
+13. Disable a skip rule. We may want to re-enable replication for a table or schema in the logical standby database. In this case we will use DBMS_LOGSTDBY.UNSKIP procedure to remove the skip rule for that table or schema. However, prior to this we need the current state of the table and its data on the logical standby database to start the replication again.
+
+First, we stop SQL Apply as follows:
+SQL> ALTER DATABASE STOP LOGICAL STANDBY APPLY;
+
+We need a database link to connect to the primary database to read and lock the table in the primary database. The link must connect to the primary database with a user who has privileges to read and lock the table, as well as the SELECT_CATALOG_ROLE procedure. Let's create this database link on the logical standby database as follows:
+SQL> CREATE PUBLIC DATABASE LINK INSTANTIATE_TABLE_LINK CONNECT TO
+SYSTEM IDENTIFIED BY ORACLE USING 'TURKEY';
+
+15. Then execute the INSTANTIATE_TABLE procedure as follows:
+SQL> EXECUTE DBMS_LOGSTDBY.INSTANTIATE_TABLE (SCHEMA_NAME =>'SCOTT', TABLE_NAME => 'EMP', DBLINK => 'INSTANTIATE_TABLE_LINK');
+PL/SQL procedure successfully completed.
+
+This procedure uses Data Pump on the background. It locks the table on the primary for a moment and records that SCN. Then the drop table, create table and export/import operations are performed.
+
+16. Now we must delete the DML and DDL skip rules of SCOTT.EMP table from the logical standby database using DBMS_LOGSTDBY.UNSKIP as follows:
+SQL> EXECUTE DBMS_LOGSTDBY.UNSKIP(STMT => 'DML', SCHEMA_NAME =>'SCOTT', OBJECT_NAME => 'EMP');
+
+17. We're ready to start the SQL Apply again as follows:
+SQL> ALTER DATABASE START LOGICAL STANDBY APPLY IMMEDIATE;
+
+Database Guard settings for the logical standby database
+SQL> SELECT GUARD_STATUS FROM V$DATABASE;
+Database Guard offers the following three GUARD_STATUS options:
+ ALL: This setting will prevent all database users except SYS from modifying any table in the logical standby database. This is the default mode of a logical standby database.
+ STANDBY: In standby mode, users may modify the database tables, which are out of the replication scope. The tables maintained by SQL Apply are still not modifiable by users except SYS. 
+ALTER DATABASE GUARD STANDBY;
+ NONE: Users are free to modify any tables that they have necessary privileges for. This is the mode of a primary database.
+
+Note - The tables skipped by SQL Apply can be only be modified.
+
+
+Automatic deletion of archived logs
+The two types of archived redo logfiles on the logical standby database need to be deleted as they become unnecessary depending on our data retention specifications. The archived logs containing redo that were sent from the primary database are called foreign archived logs and the archived log produced by the logical standby itself, containing the changes on the standby database are called local archived logs. Oracle handles this deletion process automatically while offering some customization.
+
+If we specified the log archive destination for the standby logfiles as LOCATION=USE_DB_
+RECOVERY_FILE_DEST, the foreign archive logs will be kept in FRA. A foreign archived log
+in FRA is automatically deleted by the logical standby database if all the redo it contains
+were applied and then the retention time period specified by DB_FLASHBACK_RETENTION_
+TARGET passes. The default value for this parameter is 1440 minutes, which is one day. This
+value is also valid if we did not specify any value for this parameter.
+
+Files outside the fast recovery area
+By default, even if we keep the foreign archived log outside the FRA, logical standby handles
+the automatic deletion of these files. The retention time value for the applied foreign
+archived logs can be defined with the following syntax:
+SQL> EXECUTE DBMS_LOGSTDBY.APPLY_SET
+('LOG_AUTO_DEL_RETENTION_TARGET','4320');
+The default value for LOG_AUTO_DEL_RETENTION_TARGET is the DB_FLASHBACK_
+RETENTION_TARGET initialization parameter value in the logical standby database.
+
+Deletion of the local archived logs
+Local archived logs that were generated from online redo logs of the standby database are created in the same way within the primary databases. Unlike foreign archived logs, logical standby databases do not delete these archived logs automatically unless they're kept in the fast recovery area.
+You can use RMAN to handle the deletion of the local archived logs.
+
+

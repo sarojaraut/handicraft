@@ -1,0 +1,1719 @@
+{
+	"_type": "export",
+	"__export_format": 3,
+	"__export_date": "2019-03-12T22:15:26.567Z",
+	"__export_source": "insomnia.desktop.app:v6.3.2",
+	"resources": [
+		{
+			"_id": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"created": 1538758277309,
+			"description": "",
+			"modified": 1538759141776,
+			"name": "Saroj",
+			"parentId": null,
+			"_type": "workspace"
+		},
+		{
+			"_id": "env_91d58a8c81024a63877484e44839de9a",
+			"color": null,
+			"created": 1538758277337,
+			"data": {
+				"dev_base_url": "http://ords-alb.dev.transit.ri-tech.io/ords/",
+				"order_handler_url": "ordermanagement/v1/orders",
+				"order_reference_v1": "orderreference/v1/",
+				"order_test_handler_url": "ordermanagement-test/v1/",
+				"ords_oauth_suffix": "oauth/token",
+				"picks_url": "ordermanagement/v1",
+				"prd_base_url": "http://ords-alb.dev.transit.ri-tech.io/ords/",
+				"schema_alias": "api/",
+				"stg_base_url": "http://ords-alb.dev.transit.ri-tech.io/ords/"
+			},
+			"isPrivate": false,
+			"metaSortKey": 1538758277337,
+			"modified": 1546875073660,
+			"name": "New Environment",
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"_type": "environment"
+		},
+		{
+			"_id": "jar_e8719c4918ed44c4bf8fcaad407ed807",
+			"cookies": [
+				{
+					"creation": "2018-10-06T18:12:32.437Z",
+					"domain": "metapack.com",
+					"expires": "2019-10-06T18:12:32.000Z",
+					"hostOnly": false,
+					"httpOnly": true,
+					"id": "5716504961808373",
+					"key": "__cfduid",
+					"lastAccessed": "2018-10-06T18:12:32.437Z",
+					"path": "/",
+					"value": "daae72a5720f171dc72f16bfa4a606bd11538849552"
+				},
+				{
+					"creation": "2018-10-06T18:20:00.954Z",
+					"domain": "riverislanddev.service-now.com",
+					"hostOnly": true,
+					"httpOnly": true,
+					"id": "049536090633517604",
+					"key": "JSESSIONID",
+					"lastAccessed": "2018-11-01T17:05:51.669Z",
+					"path": "/",
+					"secure": true,
+					"value": "B2116D317302D1262B3C4FB0BBC0B9BA"
+				},
+				{
+					"creation": "2018-10-06T18:20:00.954Z",
+					"domain": "riverislanddev.service-now.com",
+					"expires": "1970-01-01T00:00:10.000Z",
+					"hostOnly": true,
+					"httpOnly": true,
+					"id": "26709702145252345",
+					"key": "glide_user",
+					"lastAccessed": "2018-11-01T17:05:51.669Z",
+					"path": "/",
+					"secure": true,
+					"value": "\"\""
+				},
+				{
+					"creation": "2018-10-06T18:20:00.954Z",
+					"domain": "riverislanddev.service-now.com",
+					"expires": "1970-01-01T00:00:10.000Z",
+					"hostOnly": true,
+					"httpOnly": true,
+					"id": "9651246966538787",
+					"key": "glide_user_session",
+					"lastAccessed": "2018-11-01T17:05:51.669Z",
+					"path": "/",
+					"secure": true,
+					"value": "\"\""
+				},
+				{
+					"creation": "2018-10-06T18:20:00.954Z",
+					"domain": "riverislanddev.service-now.com",
+					"expires": "2086-11-19T20:19:58.000Z",
+					"hostOnly": true,
+					"httpOnly": true,
+					"id": "0645211786320905",
+					"key": "glide_user_route",
+					"lastAccessed": "2018-11-01T17:05:51.670Z",
+					"path": "/",
+					"secure": true,
+					"value": "glide.44cf477a0ffecfdff4a86ae01e082226"
+				},
+				{
+					"creation": "2018-10-06T18:20:00.954Z",
+					"domain": "riverislanddev.service-now.com",
+					"expires": "2018-11-01T17:35:51.000Z",
+					"hostOnly": true,
+					"httpOnly": true,
+					"id": "5598638804224672",
+					"key": "glide_session_store",
+					"lastAccessed": "2018-11-01T17:05:51.670Z",
+					"path": "/",
+					"secure": true,
+					"value": "35571109DB69230088E3F1C41D961993"
+				},
+				{
+					"creation": "2018-10-06T18:20:00.954Z",
+					"domain": "riverislanddev.service-now.com",
+					"hostOnly": true,
+					"httpOnly": true,
+					"id": "9139362064489267",
+					"key": "BIGipServerpool_riverislanddev",
+					"lastAccessed": "2018-10-06T18:20:00.954Z",
+					"path": "/",
+					"secure": true,
+					"value": "243324682.56638.0000"
+				},
+				{
+					"creation": "2018-10-06T18:22:07.110Z",
+					"domain": "apex.oracle.com",
+					"hostOnly": true,
+					"httpOnly": true,
+					"id": "8091612810756983",
+					"key": "BIGipServer~Public~adc-apex_oracle_com_http",
+					"lastAccessed": "2018-10-06T18:22:07.110Z",
+					"path": "/",
+					"secure": true,
+					"value": "rd2o00000000000000000000ffff8d92722ao7801"
+				}
+			],
+			"created": 1538758277349,
+			"modified": 1541091951670,
+			"name": "Default Jar",
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"_type": "cookie_jar"
+		},
+		{
+			"_id": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"created": 1538846857462,
+			"description": "",
+			"environment": {},
+			"metaSortKey": -1538846857462,
+			"modified": 1538846857462,
+			"name": "OPD APIs",
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"_type": "request_group"
+		},
+		{
+			"_id": "fld_102a17f22264477e9c96503515900b4e",
+			"created": 1538849495141,
+			"description": "",
+			"environment": {},
+			"metaSortKey": -1538849495141,
+			"modified": 1538849495141,
+			"name": "Metapack",
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"_type": "request_group"
+		},
+		{
+			"_id": "fld_ca4c8bfbce3d476c91fc03ec52f0e4d9",
+			"created": 1538849932500,
+			"description": "",
+			"environment": {},
+			"metaSortKey": -1538849932500,
+			"modified": 1538849932500,
+			"name": "SNOWApis",
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"_type": "request_group"
+		},
+		{
+			"_id": "fld_104a609d4f0b46bda5a1526064fb3364",
+			"created": 1538850064696,
+			"description": "",
+			"environment": {},
+			"metaSortKey": -1538850064696,
+			"modified": 1538850064696,
+			"name": "Alexa Trial",
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"_type": "request_group"
+		},
+		{
+			"_id": "fld_e66a1c7e0d3246c09268779594e68d5a",
+			"created": 1538850241081,
+			"description": "",
+			"environment": {},
+			"metaSortKey": -1538850241081,
+			"modified": 1538850241081,
+			"name": "ORDS Demo",
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"_type": "request_group"
+		},
+		{
+			"_id": "fld_bcad865c0d664dc68690021757103fb8",
+			"created": 1549630639643,
+			"description": "",
+			"environment": {},
+			"metaSortKey": -1549630639643,
+			"modified": 1549630639643,
+			"name": "OPD APis - Full URL",
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_4e9036d14cce41bebb988fd073721f2c",
+			"authentication": {
+				"accessTokenUrl": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/oauth/token",
+				"audience": "",
+				"clientId": "l-JXBgFxH_yP0AVksXEE7A..",
+				"clientSecret": "rlLfUZpR6kzXWHh1ekQvZg..",
+				"credentialsInBody": false,
+				"disabled": false,
+				"grantType": "client_credentials",
+				"scope": "",
+				"tokenPrefix": "",
+				"type": "oauth2"
+			},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/opdcode/GiftCardWork/sample_test_500.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1538758373149,
+			"description": "",
+			"headers": [
+				{
+					"id": "pair_a40877024d4249dfa519054aafb69344",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538758373149,
+			"method": "POST",
+			"modified": 1541087116939,
+			"name": "CMS PaymentNotification",
+			"parameters": [],
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v1/paymentnotifications",
+			"_type": "request"
+		},
+		{
+			"_id": "req_ba80b24b88c2491e96ffd0a8ae5ab57b",
+			"authentication": {
+				"accessTokenUrl": "http://ords-alb.dev.transit.ri-tech.io/ords/omsdev/api/oauth/token",
+				"audience": "",
+				"clientId": "EAIwyVejU_ttHrrWLGXSxQ..",
+				"clientSecret": "ChiVqzZfoO80ooTr6WESXQ..",
+				"credentialsInBody": false,
+				"disabled": false,
+				"grantType": "client_credentials",
+				"scope": "",
+				"tokenPrefix": "",
+				"type": "oauth2"
+			},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/payment.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1539348451599,
+			"description": "",
+			"headers": [
+				{
+					"id": "pair_a40877024d4249dfa519054aafb69344",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538758373099,
+			"method": "POST",
+			"modified": 1543925105078,
+			"name": "OMS PaymentNotification",
+			"parameters": [],
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://ords-alb.dev.transit.ri-tech.io/ords/omsdev/api/ordermanagement/v1/paymentnotifications",
+			"_type": "request"
+		},
+		{
+			"_id": "req_7e33ca61f0a64dc98d35b1f365850469",
+			"authentication": {},
+			"body": {
+				"mimeType": "application/json",
+				"text": "{\n  \"audience\": \"https://notifications-api.staging.order.ri-tech.io/\",\n  \"grant_type\": \"client_credentials\",\n  \"client_id\": \"DsGCYyfu3uzrA8123H7FKHene1CMrUfO\",\n  \"client_secret\": \"sXmwLb0ec7Ca7efkV_IjNjAwBIKb-5v-cXxc4J07xOVrTNWfxtrCHaECIPpTgkn3\"\n}"
+			},
+			"created": 1543925114666,
+			"description": "",
+			"headers": [
+				{
+					"id": "pair_a40877024d4249dfa519054aafb69344",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538758373049,
+			"method": "POST",
+			"modified": 1543925712135,
+			"name": "auth0 staging",
+			"parameters": [],
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "https://riverisland.eu.auth0.com/oauth/token",
+			"_type": "request"
+		},
+		{
+			"_id": "req_9fb707a4fcda4038bf5054756e6e7eb1",
+			"authentication": {},
+			"body": {
+				"mimeType": "application/json",
+				"text": "{\n  \"audience\": \"https://notifications-api.dev.order.ri-tech.io/\",\n  \"grant_type\": \"client_credentials\",\n  \"client_id\": \"nYzOYemxv3CBQWIAylMJx8ElxZyJDG4o\",\n  \"client_secret\": \"kbXuUZMGHgOGLOIWoQmAhXYeJmxsLLtN3j6quRM0MWeLRD3DLS5GbdbqmT7jX_Gz\"\n}"
+			},
+			"created": 1543925520866,
+			"description": "",
+			"headers": [
+				{
+					"id": "pair_a40877024d4249dfa519054aafb69344",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538758372999,
+			"method": "POST",
+			"modified": 1543925543900,
+			"name": "auth0 dev",
+			"parameters": [],
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "https://riverisland.eu.auth0.com/oauth/token",
+			"_type": "request"
+		},
+		{
+			"_id": "req_c13097568448445c9ec26eb86f86e92e",
+			"authentication": {},
+			"body": {
+				"mimeType": "application/json",
+				"text": "{\n  \"audience\": \"https://notifications-api.prod.order.ri-tech.io/\",\n  \"grant_type\": \"client_credentials\",\n  \"client_id\": \"uHaEN5qUkpP3Smnel0mXSLbIomqIRZVY\",\n  \"client_secret\": \"h7s3fMRhz7txFLuaCdOMtC7Axnv-JmS1xVNKlIf952U6A9hW4yFIRfKQl5xNadHW\"\n}"
+			},
+			"created": 1543931283673,
+			"description": "",
+			"headers": [
+				{
+					"id": "pair_a40877024d4249dfa519054aafb69344",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538758373024,
+			"method": "POST",
+			"modified": 1545049642435,
+			"name": "auth0 prod",
+			"parameters": [],
+			"parentId": "wrk_82107e4b9c8e4a658ea24740553e94a3",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "https://riverisland.eu.auth0.com/oauth/token",
+			"_type": "request"
+		},
+		{
+			"_id": "env_b03aaa448f4d4bcf80e30d6b8e8d9111",
+			"color": "#00f900",
+			"created": 1538847285920,
+			"data": {
+				"base_url": "{{ dev_base_url  }}",
+				"client_id": "HW_6ZhR3U49he-iRxPUVqQ..",
+				"client_secret": "LhA7xjx8tRtTwdAcn7rCUg..",
+				"env": "cmsdev/",
+				"payments_client_id": "l-JXBgFxH_yP0AVksXEE7A..",
+				"payments_client_secret": "rlLfUZpR6kzXWHh1ekQvZg.."
+			},
+			"isPrivate": false,
+			"metaSortKey": 1538847285920,
+			"modified": 1546874202390,
+			"name": "CMSDEV",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "env_8481fa91be924994a03863265a67b149",
+			"color": "#00f900",
+			"created": 1541087347836,
+			"data": {
+				"base_url": "{{ dev_base_url  }}",
+				"client_id": "EAIwyVejU_ttHrrWLGXSxQ..",
+				"client_secret": "ChiVqzZfoO80ooTr6WESXQ..",
+				"env": "omsdev/",
+				"payments_client_id": "l-JXBgFxH_yP0AVksXEE7A..",
+				"payments_client_secret": "rlLfUZpR6kzXWHh1ekQvZg.."
+			},
+			"isPrivate": false,
+			"metaSortKey": 1541087347836,
+			"modified": 1542994507428,
+			"name": "OMSDEV",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "env_f8dbb5a9c48646d58f2b0425a4afdc05",
+			"color": "#00f900",
+			"created": 1541087617243,
+			"data": {
+				"base_url": "{{ dev_base_url  }}",
+				"client_id": "goM-pnIV3GjsXRCitqxOew..",
+				"client_secret": "kREpA1G-P5QKCN4bCy8LrA..",
+				"env": "wmsdev/",
+				"payments_client_id": "l-JXBgFxH_yP0AVksXEE7A..",
+				"payments_client_secret": "rlLfUZpR6kzXWHh1ekQvZg.."
+			},
+			"isPrivate": false,
+			"metaSortKey": 1541087617243,
+			"modified": 1542799559009,
+			"name": "WMSDEV",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "env_b3d238cf2d8d4758bf59d66f1e4cf832",
+			"color": "#ffffff",
+			"created": 1541159541684,
+			"data": {
+				"base_url": "{{ dev_base_url  }}",
+				"client_id": "YqOp25Q_r-6HKrIufJhvRg..",
+				"client_secret": "E5d-GwGBIuvH8wV_wEjwxA..",
+				"env": "wmsts4/",
+				"payments_client_id": "l-JXBgFxH_yP0AVksXEE7A..",
+				"payments_client_secret": "rlLfUZpR6kzXWHh1ekQvZg.."
+			},
+			"isPrivate": false,
+			"metaSortKey": 1541159541684,
+			"modified": 1542799576268,
+			"name": "WMSTS4",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "env_592a4eeb08454c7198a65477ff6b8f0d",
+			"color": "#ffffff",
+			"created": 1541159757378,
+			"data": {
+				"base_url": "{{ dev_base_url  }}",
+				"client_id": "TQ_TMw8DBc-_vodhAscvwA..",
+				"client_secret": "qDb6YDeFSn_NZivALuqDjA..",
+				"env": "wmsts3/",
+				"payments_client_id": "l-JXBgFxH_yP0AVksXEE7A..",
+				"payments_client_secret": "rlLfUZpR6kzXWHh1ekQvZg.."
+			},
+			"isPrivate": false,
+			"metaSortKey": 1541159757378,
+			"modified": 1542799575613,
+			"name": "WMSTS3",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "env_62707ffe2f034162bbcc4fbf657b9d87",
+			"color": "#ff9300",
+			"created": 1542799495436,
+			"data": {
+				"base_url": "{{ dev_base_url  }}",
+				"client_id": "EAIwyVejU_ttHrrWLGXSxQ..",
+				"client_secret": "ChiVqzZfoO80ooTr6WESXQ..",
+				"env": "omsts3/",
+				"payments_client_id": "l-JXBgFxH_yP0AVksXEE7A..",
+				"payments_client_secret": "rlLfUZpR6kzXWHh1ekQvZg.."
+			},
+			"isPrivate": false,
+			"metaSortKey": 1542799495436,
+			"modified": 1542994584598,
+			"name": "OMSTS3",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "env_b0ab252ac83d4b9e971fdcb567c6a03b",
+			"color": "#0433ff",
+			"created": 1542994522911,
+			"data": {
+				"base_url": "{{ dev_base_url  }}",
+				"client_id": "AE9qcbwEi_6TFS65_-UaMw..",
+				"client_secret": "bA2oz87IJiqHU8ElJRrqVA..",
+				"env": "omsdev/",
+				"payments_client_id": "l-JXBgFxH_yP0AVksXEE7A..",
+				"payments_client_secret": "rlLfUZpR6kzXWHh1ekQvZg..",
+				"schema_alias": "itsr/"
+			},
+			"isPrivate": false,
+			"metaSortKey": 1542994522911,
+			"modified": 1542994690623,
+			"name": "OMSWIP",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "env_6c54655374284d1f88ddb1f9610c61b1",
+			"color": "#ff9300",
+			"created": 1546537301049,
+			"data": {
+				"base_url": "{{ dev_base_url  }}",
+				"client_id": "lETPyYKJSUad1SSCaQt2kw..",
+				"client_secret": "9mz-4iGzUztmb9HMQwg5_Q..",
+				"env": "omsts4/"
+			},
+			"isPrivate": false,
+			"metaSortKey": 1546537301049,
+			"modified": 1547550628455,
+			"name": "OMSTS4",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "env_dd65988c918645ac8ac1e1fe7a9109c7",
+			"color": "#ff9300",
+			"created": 1546873185007,
+			"data": {
+				"base_url": "{{ dev_base_url  }}",
+				"client_id": "oTpv_Z8Ahcx0OueaYm09-w..",
+				"client_secret": "k35VaDga4nTwr_7atcWIvg..",
+				"env": "cmsts4/"
+			},
+			"isPrivate": false,
+			"metaSortKey": 1546873185007,
+			"modified": 1547550757632,
+			"name": "CMSTS4",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "env_8c6cdbf893db4650be255e965a3b929a",
+			"color": "#ff9300",
+			"created": 1546874149274,
+			"data": {
+				"base_url": "{{ dev_base_url  }}",
+				"client_id": "HW_6ZhR3U49he-iRxPUVqQ..",
+				"client_secret": "LhA7xjx8tRtTwdAcn7rCUg..",
+				"env": "cmstst/",
+				"payments_client_id": "l-JXBgFxH_yP0AVksXEE7A..",
+				"payments_client_secret": "rlLfUZpR6kzXWHh1ekQvZg.."
+			},
+			"isPrivate": false,
+			"metaSortKey": 1546874149274,
+			"modified": 1546874237987,
+			"name": "CMSTST",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "env_ab87659bce9a4b41921cef693e43bada",
+			"color": "#ff9300",
+			"created": 1551374055691,
+			"data": {
+				"base_url": "{{ stg_base_url }}",
+				"client_id": "byYOE4nJhDcmrsLHUN2a6A..",
+				"client_secret": "We4vB98JU2PqS4JBkNB-Mw..",
+				"env": "omsuat/"
+			},
+			"isPrivate": false,
+			"metaSortKey": 1551374055691,
+			"modified": 1551376175897,
+			"name": "OMSUAT",
+			"parentId": "env_91d58a8c81024a63877484e44839de9a",
+			"_type": "environment"
+		},
+		{
+			"_id": "fld_7e0bb32da04844bc940dfacceb7d6da4",
+			"created": 1538846857453,
+			"description": "",
+			"environment": {},
+			"metaSortKey": -1538846857453,
+			"modified": 1538846857453,
+			"name": "OrderReference",
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"_type": "request_group"
+		},
+		{
+			"_id": "fld_20aad411d9354270965b3f71f6213769",
+			"created": 1538848816872,
+			"description": "",
+			"environment": {},
+			"metaSortKey": -1538848816872,
+			"modified": 1538848816872,
+			"name": "TestAPIs",
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_48b61da9c26945dca9fc84cb7b411a35",
+			"authentication": {
+				"disabled": false,
+				"password": "We4vB98JU2PqS4JBkNB-Mw..",
+				"type": "basic",
+				"username": "byYOE4nJhDcmrsLHUN2a6A.."
+			},
+			"body": {
+				"mimeType": "application/x-www-form-urlencoded",
+				"params": [
+					{
+						"disabled": true,
+						"id": "pair_3009fe46ab664e4c9d19a18dca2ca02c",
+						"multiline": false,
+						"name": "grant_type",
+						"type": "text",
+						"value": "client_credentials"
+					},
+					{
+						"disabled": true,
+						"id": "pair_48da8f88512b4469aa9f61c589b8695d",
+						"name": "",
+						"value": ""
+					}
+				]
+			},
+			"created": 1538846857219,
+			"description": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v2/orders",
+			"headers": [
+				{
+					"disabled": true,
+					"id": "pair_a160daba6a7f45ae8d34fc1744b45e98",
+					"name": "Content-SHA1",
+					"value": "1031463fe268a47afa3acee1d1cf3a1bd4b2a4c7"
+				},
+				{
+					"id": "pair_989b4cd3cb6143d3a195690837ef9bb4",
+					"name": "Content-Type",
+					"value": "application/x-www-form-urlencoded"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538846857219,
+			"method": "POST",
+			"modified": 1551376067628,
+			"name": "ordermanagement.v1 Access Token",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://ords-alb.staging.transit.ri-tech.io/ords/omsuat/api/oauth/token",
+			"_type": "request"
+		},
+		{
+			"_id": "req_4293252a99c642dc874d47299edafffc",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857247,
+			"description": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v2/orders",
+			"headers": [
+				{
+					"id": "pair_01aff86062e6470a913b74755bb0a975",
+					"name": "Content-SHA1",
+					"value": "1031463fe268a47afa3acee1d1cf3a1bd4b2a4c7"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538846857247,
+			"method": "POST",
+			"modified": 1539348432856,
+			"name": "ordermanagement.v1 Local Tomcat",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://localhost:8080/ords/cmsdev/api/ordermanagement/v1/orders",
+			"_type": "request"
+		},
+		{
+			"_id": "req_6ee1262e7b084b1baa9ff22187faebb5",
+			"authentication": {
+				"accessTokenUrl": "{{ base_url  }}{{ env  }}{{ schema_alias  }}{{ ords_oauth_suffix  }}",
+				"authorizationUrl": "{{ base_url  }}{{ env  }}{{ schema_alias  }}{{ ords_oauth_suffix  }}",
+				"clientId": "{{ payments_client_id  }}",
+				"clientSecret": "{{ payments_client_secret  }}",
+				"grantType": "client_credentials",
+				"redirectUrl": "",
+				"type": "oauth2"
+			},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/opdcode/GiftCardWork/sample_test_success.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1538846857280,
+			"description": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v2/orders",
+			"headers": [
+				{
+					"id": "pair_a50c49116afd4d269ea9d06057f24b19",
+					"name": "Content-SHA1",
+					"value": "e0f7102fbe84668622608ae3cf21b8897e8f8765"
+				},
+				{
+					"id": "pair_b544be03b06e40deabc1027f460b1763",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538846857280,
+			"method": "POST",
+			"modified": 1539341557361,
+			"name": "paymentnotification.ordermanagement.v1",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}/ordermanagement/v1/paymentnotifications",
+			"_type": "request"
+		},
+		{
+			"_id": "req_28f755e2c0864202ae0e25e6bf43deb0",
+			"authentication": {
+				"accessTokenUrl": "{{ base_url  }}{{ env  }}{{ schema_alias  }}{{ ords_oauth_suffix  }}",
+				"authorizationUrl": "",
+				"clientId": "{{ client_id  }}",
+				"clientSecret": "{{ client_secret  }}",
+				"grantType": "client_credentials",
+				"type": "oauth2"
+			},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/opdcode/Global_E_order.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1538846857293,
+			"description": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v2/orders",
+			"headers": [
+				{
+					"id": "pair_4de2145db97a4b6bbd9dd84e2dafbd46",
+					"name": "Content-SHA1",
+					"value": "2641469e3498c97df74db86a8388b1ab171fe495"
+				},
+				{
+					"id": "pair_b3214910f06a45a5befde7b04054aa55",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538846857293,
+			"method": "POST",
+			"modified": 1551374255536,
+			"name": "ordermanagement.v1",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{order_handler_url}}",
+			"_type": "request"
+		},
+		{
+			"_id": "req_8293aaf330d0400bb337ade8dcbd312b",
+			"authentication": {
+				"accessTokenUrl": "{{ base_url  }}{{ env  }}{{ schema_alias  }}{{ ords_oauth_suffix  }}",
+				"authorizationUrl": "{{ base_url  }}{{ env  }}{{ schema_alias  }}{{ ords_oauth_suffix  }}",
+				"clientId": "{{ client_id  }}",
+				"clientSecret": "{{ client_secret  }}",
+				"grantType": "client_credentials",
+				"redirectUrl": "",
+				"type": "oauth2"
+			},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/opdcode/GiftCardWork/sample_test success.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1539165544209,
+			"description": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v2/orders",
+			"headers": [
+				{
+					"id": "pair_a50c49116afd4d269ea9d06057f24b19",
+					"name": "Content-SHA1",
+					"value": "e0f7102fbe84668622608ae3cf21b8897e8f8765"
+				},
+				{
+					"id": "pair_b544be03b06e40deabc1027f460b1763",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538846857263.5,
+			"method": "POST",
+			"modified": 1539348428894,
+			"name": "paymentnotification.ordermanagement.v1 (Copy)",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}/ordermanagement/v1/paymentnotifications",
+			"_type": "request"
+		},
+		{
+			"_id": "req_aab985a412d244b9810c0a99b6cbf475",
+			"authentication": {},
+			"body": {},
+			"created": 1542041537693,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1542041537693,
+			"method": "GET",
+			"modified": 1542112276069,
+			"name": "SKUs",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://localhost:38080/ords/mycms/demo/test/v1/",
+			"_type": "request"
+		},
+		{
+			"_id": "req_5434ce8f85d649afaf8e0dd988e360e5",
+			"authentication": {
+				"accessTokenUrl": "{{ base_url  }}{{ env  }}{{ schema_alias  }}{{ ords_oauth_suffix  }}",
+				"authorizationUrl": "",
+				"clientId": "{{ client_id  }}",
+				"clientSecret": "{{ client_secret  }}",
+				"grantType": "client_credentials",
+				"type": "oauth2"
+			},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/to_collect.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1542112316040,
+			"description": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v2/orders",
+			"headers": [
+				{
+					"id": "pair_4de2145db97a4b6bbd9dd84e2dafbd46",
+					"name": "Content-SHA1",
+					"value": "2641469e3498c97df74db86a8388b1ab171fe495"
+				},
+				{
+					"id": "pair_b3214910f06a45a5befde7b04054aa55",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538846857286.5,
+			"method": "PUT",
+			"modified": 1549625773891,
+			"name": "ordermanagement.v1_c&cEvent",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{order_handler_url}}/",
+			"_type": "request"
+		},
+		{
+			"_id": "req_c3d11bc1c4b34f099ddb9ee20c360caf",
+			"authentication": {
+				"accessTokenUrl": "{{ base_url  }}{{ env  }}{{ schema_alias  }}{{ ords_oauth_suffix  }}",
+				"authorizationUrl": "",
+				"clientId": "{{ client_id  }}",
+				"clientSecret": "{{ client_secret  }}",
+				"grantType": "client_credentials",
+				"type": "oauth2"
+			},
+			"body": {
+				"mimeType": "application/json",
+				"text": "{\n\t\t\"_comment\": \"Possible status values : COLLECTED/TO_COLLECT\",\n    \"externalId\": \"-283695\",\n    \"status\": \"TO_COLLECT\",\n    \"orderNumber\": \"-283695\",\n    \"parcelBarcode\": \"12345678901234\",\n    \"deviceId\": \"RI.400\",\n    \"receivedByEmployeeId\": \"DEMO\",\n    \"storeReceivedDate\": \"2018-10-24T10:49:45Z\",\n    \"scannedByEmployeeId\": \"DEMO1\",\n    \"customerCollectedDate\": \"2018-10-25T10:49:45Z\"\n}"
+			},
+			"created": 1542663870095,
+			"description": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v2/orders",
+			"headers": [
+				{
+					"id": "pair_4de2145db97a4b6bbd9dd84e2dafbd46",
+					"name": "Content-SHA1",
+					"value": "2641469e3498c97df74db86a8388b1ab171fe495"
+				},
+				{
+					"id": "pair_b3214910f06a45a5befde7b04054aa55",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538846857283.25,
+			"method": "PUT",
+			"modified": 1542802958298,
+			"name": "ordermanagement.v1",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{order_handler_url}}/-283695",
+			"_type": "request"
+		},
+		{
+			"_id": "req_789acda855b0425884b0f8444104b24d",
+			"authentication": {
+				"accessTokenUrl": "{{ base_url  }}{{ env  }}{{ schema_alias  }}{{ ords_oauth_suffix  }}",
+				"authorizationUrl": "",
+				"clientId": "{{ client_id  }}",
+				"clientSecret": "{{ client_secret  }}",
+				"grantType": "client_credentials",
+				"type": "oauth2"
+			},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/opdcode/wmspickloadWork/MG1902190_new.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1542994436162,
+			"description": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v2/orders",
+			"headers": [
+				{
+					"id": "pair_4de2145db97a4b6bbd9dd84e2dafbd46",
+					"name": "Content-SHA1",
+					"value": "2641469e3498c97df74db86a8388b1ab171fe495"
+				},
+				{
+					"id": "pair_b3214910f06a45a5befde7b04054aa55",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538846857284.875,
+			"method": "POST",
+			"modified": 1550581982504,
+			"name": "itsr.ordermanagement.v1.picks",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{ picks_url }}/picks",
+			"_type": "request"
+		},
+		{
+			"_id": "req_6afec9e5f3e84bb5ad0045ce15a4ef2e",
+			"authentication": {
+				"accessTokenUrl": "{{ base_url  }}{{ env  }}{{ schema_alias  }}{{ ords_oauth_suffix  }}",
+				"authorizationUrl": "",
+				"clientId": "{{ client_id  }}",
+				"clientSecret": "{{ client_secret  }}",
+				"grantType": "client_credentials",
+				"type": "oauth2"
+			},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/to_collect_1.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1549623834033,
+			"description": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v2/orders",
+			"headers": [
+				{
+					"id": "pair_4de2145db97a4b6bbd9dd84e2dafbd46",
+					"name": "Content-SHA1",
+					"value": "2641469e3498c97df74db86a8388b1ab171fe495"
+				},
+				{
+					"id": "pair_b3214910f06a45a5befde7b04054aa55",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538846857285.6875,
+			"method": "PUT",
+			"modified": 1550661878609,
+			"name": "ordermanagement.v1/orders/parcels",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{order_handler_url}}/parcels",
+			"_type": "request"
+		},
+		{
+			"_id": "req_3721dfa19fd74ff9a91c093edf81b8d6",
+			"authentication": {
+				"accessTokenUrl": "http://ords-alb.staging.transit.ri-tech.io/ords/omsuat/api/oauth/token",
+				"authorizationUrl": "",
+				"clientId": "lETPyYKJSUad1SSCaQt2kw..",
+				"clientSecret": "9mz-4iGzUztmb9HMQwg5_Q..",
+				"credentialsInBody": true,
+				"disabled": true,
+				"grantType": "client_credentials",
+				"tokenPrefix": "",
+				"type": "oauth2"
+			},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/opdcode/Global_E_order.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1551374263216,
+			"description": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/ordermanagement/v2/orders",
+			"headers": [
+				{
+					"id": "pair_4de2145db97a4b6bbd9dd84e2dafbd46",
+					"name": "Content-SHA1",
+					"value": "2641469e3498c97df74db86a8388b1ab171fe495"
+				},
+				{
+					"id": "pair_b3214910f06a45a5befde7b04054aa55",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538846857289.75,
+			"method": "POST",
+			"modified": 1551375725756,
+			"name": "ordermanagement.v1 (Copy)",
+			"parameters": [],
+			"parentId": "fld_2ce4ea7180f748f1a7c29dc2d08b2a81",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{order_handler_url}}",
+			"_type": "request"
+		},
+		{
+			"_id": "req_2910f7708c7c48cc82b503b7845bddd0",
+			"authentication": {
+				"disabled": false,
+				"password": "ridelta",
+				"type": "basic",
+				"username": "ridelta"
+			},
+			"body": {},
+			"created": 1538849531610,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538849531610,
+			"method": "GET",
+			"modified": 1538849572317,
+			"name": "AllocationServiceWSDL",
+			"parameters": [],
+			"parentId": "fld_102a17f22264477e9c96503515900b4e",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://dm-delta.metapack.com/api/4.x/services/AllocationService?wsdl",
+			"_type": "request"
+		},
+		{
+			"_id": "req_ed6ba92f335a40b9b9551b9729ca7e6a",
+			"authentication": {
+				"disabled": false,
+				"password": "83dGtRchJ0",
+				"type": "basic",
+				"username": "OBD WebServices"
+			},
+			"body": {
+				"mimeType": "application/json",
+				"text": "{\n\"short_description\":\"short_description\",\n\"description\":\"description\",\n\"comments\":\"comments\",\n\"cmdb_ci\":\"cmdb_ci\",\n\"impact\":\"2\",\n\"assignment_group\":\"assignment_group\",\n\"state\":\"1\" ,\n\"service_category\":\"service_category\",\n\"service\":\"service\",\n\"attribute\":\"attribute\",\n\"category\":\"Inquiry\"\n}"
+			},
+			"created": 1538849945016,
+			"description": "",
+			"headers": [
+				{
+					"id": "pair_e3be1d799a614d0dbf651cb2a7fc894a",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538849945016,
+			"method": "POST",
+			"modified": 1541091958944,
+			"name": "CreateSNOWIncident",
+			"parameters": [],
+			"parentId": "fld_ca4c8bfbce3d476c91fc03ec52f0e4d9",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "https://riverislanddev.service-now.com/api/now/table/incident",
+			"_type": "request"
+		},
+		{
+			"_id": "req_c86583d7e4e943518ca576a45db03c40",
+			"authentication": {},
+			"body": {
+				"mimeType": "application/json",
+				"text": "{\n  \"version\": \"1.0\",\n  \"session\": {\n    \"new\": true,\n    \"sessionId\": \"amzn1.echo-api.session.ba8190af-5857-4cec-af25-6d2e26f56644\",\n    \"application\": {\n      \"applicationId\": \"amzn1.ask.skill.210aae8b-3243-435b-91a6-9a3e4a8650bc\"\n    },\n    \"user\": {\n      \"userId\": \"amzn1.ask.account.AEWNKN6M27LFJWXS6KV4HCZUTIFRXTJT5AZ5BHR4ZMS4SWXFF6ZYU4Y6UVQFQPHAHJ3KDM4SRACHFJU2Q3ZP34WXUDVB4YHYM3FBFUZWD4ASOS5SMG2PRSZAMFL5N7762QSKVH5DXXK53Z5R6CTIVH22I2URURF6ZFKBKRA3OEPORSKMUX2PQACC5V6B54TIXDI6ADDZ5KUHABY\"\n    }\n  },\n  \"context\": {\n    \"System\": {\n      \"application\": {\n        \"applicationId\": \"amzn1.ask.skill.210aae8b-3243-435b-91a6-9a3e4a8650bc\"\n      },\n      \"user\": {\n        \"userId\": \"amzn1.ask.account.AEWNKN6M27LFJWXS6KV4HCZUTIFRXTJT5AZ5BHR4ZMS4SWXFF6ZYU4Y6UVQFQPHAHJ3KDM4SRACHFJU2Q3ZP34WXUDVB4YHYM3FBFUZWD4ASOS5SMG2PRSZAMFL5N7762QSKVH5DXXK53Z5R6CTIVH22I2URURF6ZFKBKRA3OEPORSKMUX2PQACC5V6B54TIXDI6ADDZ5KUHABY\"\n      },\n      \"device\": {\n        \"deviceId\": \"amzn1.ask.device.AHQIP2H3DEAE5AJ7A262N5WVMQYTPZZIXVYDI46QQTBDEV3DYRFGDFFKEGFYIZCQILXQS5GSEIOJ4G64FSCVBDFUVFAUY7UUPF6UN4VFPWTKBTD6TKHULUWNAUASEGYIVHP7NKYEX4DOFKBZMWHAM4DOHNACOZUMR4Z66IG7VC3HK4WLWOBOS\",\n        \"supportedInterfaces\": {}\n      },\n      \"apiEndpoint\": \"https://api.amazonalexa.com\",\n      \"apiAccessToken\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjEifQ.eyJhdWQiOiJodHRwczovL2FwaS5hbWF6b25hbGV4YS5jb20iLCJpc3MiOiJBbGV4YVNraWxsS2l0Iiwic3ViIjoiYW16bjEuYXNrLnNraWxsLjIxMGFhZThiLTMyNDMtNDM1Yi05MWE2LTlhM2U0YTg2NTBiYyIsImV4cCI6MTUzMDI2NDM1MiwiaWF0IjoxNTMwMjYwNzUyLCJuYmYiOjE1MzAyNjA3NTIsInByaXZhdGVDbGFpbXMiOnsiY29uc2VudFRva2VuIjpudWxsLCJkZXZpY2VJZCI6ImFtem4xLmFzay5kZXZpY2UuQUhRSVAySDNERUFFNUFKN0EyNjJONVdWTVFZVFBaWklYVllESTQ2UVFUQkRFVjNEWVJGR0RGRktFR0ZZSVpDUUlMWFFTNUdTRUlPSjRHNjRGU0NWQkRGVVZGQVVZN1VVUEY2VU40VkZQV1RLQlRENlRLSFVMVVdOQVVBU0VHWUlWSFA3TktZRVg0RE9GS0JaTVdIQU00RE9ITkFDT1pVTVI0WjY2SUc3VkMzSEs0V0xXT0JPUyIsInVzZXJJZCI6ImFtem4xLmFzay5hY2NvdW50LkFFV05LTjZNMjdMRkpXWFM2S1Y0SENaVVRJRlJYVEpUNUFaNUJIUjRaTVM0U1dYRkY2WllVNFk2VVZRRlFQSEFISjNLRE00U1JBQ0hGSlUyUTNaUDM0V1hVRFZCNFlIWU0zRkJGVVpXRDRBU09TNVNNRzJQUlNaQU1GTDVONzc2MlFTS1ZINURYWEs1M1o1UjZDVElWSDIySTJVUlVSRjZaRktCS1JBM09FUE9SU0tNVVgyUFFBQ0M1VjZCNTRUSVhESTZBRERaNUtVSEFCWSJ9fQ.Bao1cff9DiX5KjY7Mmm-XJtpLpjVIlEY7aQqgL49f3eQTHUl344AeByfmiQqjq6uDuHjeKFRSPvqWrIZJCjiYl786O0g4NunphxfOVc8TkAhBy1yAfMBrpyNIhUtpSuJ1E14Z2zG6MIB7CZMm_DlZIlyxo8o2sFv1kfNFxj2AG-guZi_QBVh0iEFqujVnUujj_C99Cvd5CWyOHlCWrAqwmjaHHG8QI98NALNsuZALN0w-yPAB0ElxTF6N2-wTDO9yDLMI55hkORxziy8iW7cn21UPdCbbw7WFGyiiJZT86WLZXHIXC28_7ZlqTyTnpOrLTWE9Cezu6PFZ0RoeUT5eQ\"\n    }\n  },\n  \"request\": {\n    \"type\": \"IntentRequest\",\n    \"requestId\": \"amzn1.echo-api.request.60fe8634-9648-4c67-a0bc-bd3d430f4a64\",\n    \"timestamp\": \"2018-06-29T08:25:52Z\",\n    \"locale\": \"en-GB\",\n    \"intent\": {\n      \"name\": \"orders\",\n      \"confirmationStatus\": \"NONE\",\n      \"slots\": {\n        \"since_last_x_hour\": {\n          \"name\": \"since_last_x_hour\",\n          \"value\": \"3\",\n          \"confirmationStatus\": \"NONE\"\n        }\n      }\n    }\n  }\n}"
+			},
+			"created": 1538850097246,
+			"description": "",
+			"headers": [
+				{
+					"id": "pair_ca1447663c8c4041a20a0a7ba42ed260",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1538850097246,
+			"method": "POST",
+			"modified": 1538850111928,
+			"name": "Orders - V3",
+			"parameters": [],
+			"parentId": "fld_104a609d4f0b46bda5a1526064fb3364",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "https://apex.oracle.com/pls/apex/sarojws/aps/v3/alexa",
+			"_type": "request"
+		},
+		{
+			"_id": "req_ace5908ca69948dd8a02f270b366e5f9",
+			"authentication": {},
+			"body": {},
+			"created": 1538850169724,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538850169724,
+			"method": "GET",
+			"modified": 1538850176265,
+			"name": "Get Orders",
+			"parameters": [],
+			"parentId": "fld_104a609d4f0b46bda5a1526064fb3364",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://ords-alb.dev.transit.ri-tech.io/ords/omsdev/itsr/aps/v1/alexa",
+			"_type": "request"
+		},
+		{
+			"_id": "req_f6c0d36e7e7e4ec889d413877f7463b8",
+			"authentication": {},
+			"body": {},
+			"created": 1538850264607,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538850264607,
+			"method": "GET",
+			"modified": 1538850268969,
+			"name": "Metadata Catalogue",
+			"parameters": [],
+			"parentId": "fld_e66a1c7e0d3246c09268779594e68d5a",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/api/metadata-catalog",
+			"_type": "request"
+		},
+		{
+			"_id": "req_8867498c686546e995fd929d308d97f9",
+			"authentication": {},
+			"body": {},
+			"created": 1538850296273,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538850296273,
+			"method": "GET",
+			"modified": 1543857244465,
+			"name": "DB Session",
+			"parameters": [],
+			"parentId": "fld_e66a1c7e0d3246c09268779594e68d5a",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://ords-alb.dev.transit.ri-tech.io/ords/cmsdev/itsr-api/demo/v1/dbsession/",
+			"_type": "request"
+		},
+		{
+			"_id": "req_fea885a9080b46f48e9a67c182eaf270",
+			"authentication": {},
+			"body": {},
+			"created": 1538850370109,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538850280440,
+			"method": "GET",
+			"modified": 1543861236669,
+			"name": "DB Session TZ",
+			"parameters": [],
+			"parentId": "fld_e66a1c7e0d3246c09268779594e68d5a",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://ords-alb.dev.transit.ri-tech.io/ords/itsr-api/demo/v1/timezone",
+			"_type": "request"
+		},
+		{
+			"_id": "req_d66b08bf289a4b08883727eaee21c658",
+			"authentication": {},
+			"body": {},
+			"created": 1543767233814,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1543767233814,
+			"method": "GET",
+			"modified": 1543767262574,
+			"name": "local_JSON_size",
+			"parameters": [],
+			"parentId": "fld_e66a1c7e0d3246c09268779594e68d5a",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://localhost:38080/ords/myoms/hr/testmod-1/emp",
+			"_type": "request"
+		},
+		{
+			"_id": "req_4ca3165f1d394b1abe0ab4ffa04253c8",
+			"authentication": {},
+			"body": {},
+			"created": 1543768326087,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1542904385753.5,
+			"method": "GET",
+			"modified": 1543857239633,
+			"name": "local_JSON_size (Copy)",
+			"parameters": [],
+			"parentId": "fld_e66a1c7e0d3246c09268779594e68d5a",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://localhost:38080/ords/myoms/hr/testmod-1/zippedemp/",
+			"_type": "request"
+		},
+		{
+			"_id": "req_3566f5bcc7cf4f148c7902f479ac5180",
+			"authentication": {},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/2100140376_to_collect.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1549630678367,
+			"description": "",
+			"headers": [
+				{
+					"id": "pair_97c5d106378b4c589cdc2c5c67405376",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1549630678367,
+			"method": "PUT",
+			"modified": 1550581122773,
+			"name": "orders/:ordernumber",
+			"parameters": [],
+			"parentId": "fld_bcad865c0d664dc68690021757103fb8",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://ords-alb.dev.transit.ri-tech.io/ords/omsts3/api/ordermanagement/v1/orders/2100140376",
+			"_type": "request"
+		},
+		{
+			"_id": "req_6699ef7cac2542eb8ad0858c28ae2488",
+			"authentication": {},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/2100140376_to_collect.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1549635325949,
+			"description": "",
+			"headers": [
+				{
+					"id": "pair_97c5d106378b4c589cdc2c5c67405376",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1546698956090.5,
+			"method": "PUT",
+			"modified": 1550579985931,
+			"name": "orders/parcels",
+			"parameters": [],
+			"parentId": "fld_bcad865c0d664dc68690021757103fb8",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://ords-alb.dev.transit.ri-tech.io/ords/omsdev/api/ordermanagement/v1/orders/parcels",
+			"_type": "request"
+		},
+		{
+			"_id": "req_a94bd895253b4b259626860738470d8b",
+			"authentication": {},
+			"body": {
+				"fileName": "/Users/itsr/Desktop/2100140376_to_collect.json",
+				"mimeType": "application/octet-stream"
+			},
+			"created": 1551644878700,
+			"description": "",
+			"headers": [
+				{
+					"id": "pair_97c5d106378b4c589cdc2c5c67405376",
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"isPrivate": false,
+			"metaSortKey": -1545233094952.25,
+			"method": "POST",
+			"modified": 1551644921618,
+			"name": "async trial",
+			"parameters": [],
+			"parentId": "fld_bcad865c0d664dc68690021757103fb8",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "http://ords-alb.dev.transit.ri-tech.io/ords/omsdev/api/async/v1/trial",
+			"_type": "request"
+		},
+		{
+			"_id": "fld_934fe8c0b05a4091b7d198d33f725136",
+			"created": 1538846857343,
+			"description": "",
+			"environment": {},
+			"metaSortKey": -1538846857343,
+			"modified": 1538846857343,
+			"name": "OMS",
+			"parentId": "fld_7e0bb32da04844bc940dfacceb7d6da4",
+			"_type": "request_group"
+		},
+		{
+			"_id": "fld_de7f68ef994f4ea8858ce5ad6343a09b",
+			"created": 1538846857425,
+			"description": "",
+			"environment": {},
+			"metaSortKey": -1538846857425,
+			"modified": 1538846857425,
+			"name": "CMS",
+			"parentId": "fld_7e0bb32da04844bc940dfacceb7d6da4",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_ad5ae4195b2044629b7cc23a49a25171",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857181,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538848327017.25,
+			"method": "DELETE",
+			"modified": 1538848868994,
+			"name": "Orders/2100110347",
+			"parameters": [],
+			"parentId": "fld_20aad411d9354270965b3f71f6213769",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{ order_test_handler_url }}/orders/250198280",
+			"_type": "request"
+		},
+		{
+			"_id": "req_d28b516b03b84195a4390deb2dce279a",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857196,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538848327167.25,
+			"method": "GET",
+			"modified": 1538848878923,
+			"name": "PIng API",
+			"parameters": [],
+			"parentId": "fld_20aad411d9354270965b3f71f6213769",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}/demo-api/dbdetails/",
+			"_type": "request"
+		},
+		{
+			"_id": "req_93a866de51da400ca347910f0288475c",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857203,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538848327117.25,
+			"method": "GET",
+			"modified": 1538848876232,
+			"name": "Orderheaders/2100110347",
+			"parameters": [],
+			"parentId": "fld_20aad411d9354270965b3f71f6213769",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{ order_test_handler_url }}/orderheaders/2100108462",
+			"_type": "request"
+		},
+		{
+			"_id": "req_0a1bde62629d4aafb492e123312b2b37",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857212,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538848327067.25,
+			"method": "GET",
+			"modified": 1538848872846,
+			"name": "Orderheaders",
+			"parameters": [],
+			"parentId": "fld_20aad411d9354270965b3f71f6213769",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{ order_test_handler_url }}/orderheaders",
+			"_type": "request"
+		},
+		{
+			"_id": "req_78421b3e47ac42f98949d8295efdedfb",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857305,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538846857305,
+			"method": "GET",
+			"modified": 1538846857305,
+			"name": "OMS - scharcodes",
+			"parameters": [],
+			"parentId": "fld_934fe8c0b05a4091b7d198d33f725136",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}/{{schema_alias}}/{{order_reference_v1}}/scharcodes",
+			"_type": "request"
+		},
+		{
+			"_id": "req_f80cf791d08040e995505d0c0ddcfe95",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857317,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538846857317,
+			"method": "GET",
+			"modified": 1542112295150,
+			"name": "OMS - omspaymentprovider",
+			"parameters": [],
+			"parentId": "fld_934fe8c0b05a4091b7d198d33f725136",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}/{{schema_alias}}/{{order_reference_v1}}/omspaymentprovider",
+			"_type": "request"
+		},
+		{
+			"_id": "req_b61713f69e124a2197c5f671a1c6f852",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857327,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538846857327,
+			"method": "GET",
+			"modified": 1538848727287,
+			"name": "OMS - currencytable",
+			"parameters": [],
+			"parentId": "fld_934fe8c0b05a4091b7d198d33f725136",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{ schema_alias }}{{order_reference_v1}}currencytable",
+			"_type": "request"
+		},
+		{
+			"_id": "req_528225c210a24ebfb0abb2a7a898fe1c",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857377,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538846857377,
+			"method": "GET",
+			"modified": 1538848661530,
+			"name": "CMS - omspaymentprovider",
+			"parameters": [],
+			"parentId": "fld_de7f68ef994f4ea8858ce5ad6343a09b",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{order_reference_v1}}/omspaymentprovider",
+			"_type": "request"
+		},
+		{
+			"_id": "req_b51b717e177545c582acc668f529a7c2",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857388,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538846857388,
+			"method": "GET",
+			"modified": 1538848652030,
+			"name": "CMS - scharcodes",
+			"parameters": [],
+			"parentId": "fld_de7f68ef994f4ea8858ce5ad6343a09b",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{order_reference_v1}}/scharcodes",
+			"_type": "request"
+		},
+		{
+			"_id": "req_33299f80143b43a29eae33554f08baaa",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857398,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538846857398,
+			"method": "GET",
+			"modified": 1538849222139,
+			"name": "CMS - rrefdtl",
+			"parameters": [],
+			"parentId": "fld_de7f68ef994f4ea8858ce5ad6343a09b",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{order_reference_v1}}/rrefdtl",
+			"_type": "request"
+		},
+		{
+			"_id": "req_0bf7ea5e7db54a35a89747292cdecee5",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857407,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538846857407,
+			"method": "GET",
+			"modified": 1538849201167,
+			"name": "CMS - curratee",
+			"parameters": [],
+			"parentId": "fld_de7f68ef994f4ea8858ce5ad6343a09b",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{order_reference_v1}}/curratee",
+			"_type": "request"
+		},
+		{
+			"_id": "req_31f7c1a88e104e5dbc02679f0031d848",
+			"authentication": {},
+			"body": {},
+			"created": 1538846857415,
+			"description": "",
+			"headers": [],
+			"isPrivate": false,
+			"metaSortKey": -1538846857415,
+			"method": "GET",
+			"modified": 1538849225013,
+			"name": "CMS - bascooee",
+			"parameters": [],
+			"parentId": "fld_de7f68ef994f4ea8858ce5ad6343a09b",
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingMaxTimelineDataSize": 1000,
+			"settingRebuildPath": true,
+			"settingSendCookies": true,
+			"settingStoreCookies": true,
+			"url": "{{base_url}}{{env}}{{schema_alias}}{{order_reference_v1}}/bascooee",
+			"_type": "request"
+		}
+	]
+}

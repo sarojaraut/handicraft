@@ -1,0 +1,554 @@
+Configuring Database Recoverability
+
+As of Oracle Database 10g, you can use Recovery Manager (RMAN) to execute nearly all of your backup and recovery operations. In situations for which you cannot use RMAN for recovery, such as for a database that is not in ARCHIVELOG mode, user-managed backup and recovery needs to be used. 
+
+A logical backup backs up individual objects, such as a table or a schema; a physical backup backs up objects with a granularity at the file system level, such as the datafiles that make up a tablespace. A physical backup of a database can occur while the database is either online or offline. 
+
+Before you can use RMAN to back up or recover a database, you must perform a number of steps: First, your database must be in ARCHIVELOG mode. Then you must ensure that the retention policy and the number of archived log file destinations are appropriate for your environment.
+
+Your backup and recovery plan should include, at a minimum, these tasks:
+■ Configuration Define backup destinations, encryption, and retention policies.
+■ Scheduling Automate backups to minimize human error and manual intervention.
+■ Testing Perform routine backup and recovery options to ensure that your backup plan works before you experience a real disaster.
+■ Monitoring Ensure that you minimize the resources used to perform a sufficient backup and minimize the impact to other database users.
+■ Restoration Restore your database files in the file system (datafiles, archive logs, and so on), from a previous backup.
+■ Recovery Perform a recovery of the database to the point of failure of the database by applying archived redo log entries to restored database files and rolling forward changes to your restored backup. Know how to recover your
+
+Backup and recovery tools such as RMAN can be used in nonemergency situations as well: For example, you can take a snapshot of an entire database at one location and restore it to another location for developers or for testing.
+
+Logical Backups
+A logical backup of a database involves reading a set of database rows and writing them to a file. These records are read independently of their physical location. In Oracle, the Data Pump Export utility performs this type of database backup.
+
+Data Pump Export and Import can use a network connection for a simultaneous export and import operation, avoiding the use of intermediate operating system files and reducing total export and import time.
+
+You can import either all or part of the exported data. If you import the entire export dump file from a full export, all the database objects, including tablespaces,
+datafiles, and users, will be created during the import. However, it is often useful to precreate tablespaces and users in order to specify the physical distribution of objects in another database. This is one method of changing the physical structure of a database. If you want to import part of the data from the export dump file, the tablespaces, datafiles, and users that will own and store that data should be set up prior to the import.
+
+Physical Backups
+Physical backups involve copying the files that constitute the database. To perform all physical backups. You can optionally choose to write your own scripts to perform physical backups, but doing so will prevent you from obtaining many of the benefits of the RMAN approach.
+
+You should never, ever want or need to back up online redo log files. While a slight time savings results from restoring from a cold backup after a  clean shutdown, the risk of losing committed transactions outweighs the convenience. Your online redo logs should be mirrored and duplexed so that you more or less eliminate the chances of losing the current online log file.
+
+Invoking RMAN
+rman target / catalog rman/rman@rac
+In this example, the target option is used to connect to the database using operating system authentication, and the catalog option is used to connect to a recovery catalog in a different database.
+
+■ target Identifies the connect string for the Oracle database you want to back up.
+■ catalog Specifies a recovery catalog database for backup information.
+■ nocatalog Uses the control file for backup information.
+■ cmdfile Specifies an input file containing a list of RMAN commands.
+■ log Sets the name of the log file for RMAN messages.
+
+RMAN Command Types
+The two basic types of RMAN commands are standalone commands and job commands. Standalone commands are executed only at the RMAN> prompt and are self-contained. Examples of standalone commands are CHANGE, CONNECT, CREATE SCRIPT, and CREATE CATALOG.
+
+In contrast, job commands are usually grouped and run inside of a command block using the RUN command. Within a command block, the failure of any command within the block terminates execution of the block. An example of an RMAN command that can be used only as a job command is ALLOCATE CHANNEL: the channel allocation is valid only for the duration of the command block. (You would use CONFIGURE CHANNEL, a standalone command, to create a default channel.) An RMAN channel is one stream of data from the database to a device and corresponds to one database server session.
+
+Here is an example of some commands run within a command block to back up the database, force the archiving of the current online redo log file, and remove obsolete backups:
+
+
+RMAN> run
+2> {
+3> backup as compressed backupset database;
+4> sql 'alter system archive log current';
+5> delete noprompt obsolete;
+6> }
+
+Some commands are both standalone and job commands—in other words, you can use them at the RMAN> command prompt or within a command block. For example, you can use BACKUP DATABASE as a standalone or within a command block; when you run BACKUP DATABASE as a standalone command, RMAN automatically allocates one or more channels based on defaults specified by CONFIGURE CHANNEL and whether or not you’re using a flash recovery area.
+
+Common RMAN Commands
+
+RMAN Command : Description
+@ : Runs an RMAN command script at the pathname specified after the @. If no path is specified, the path is assumed to be the directory from which RMAN was invoked.
+
+ADVISE FAILURE : Displays repair options for the failure found.
+
+ALLOCATE CHANNEL : Creates a connection between RMAN and a database instance, initiating a database server session that performs the work of backing up, restoring, or recovering an RMAN backup.
+
+BACKUP : Performs an RMAN backup, with or without archived redo logs. Backs up datafiles and datafile copies, or performs an incremental level 0 or level 1 backup. Backs up an entire database or a single tablespace or datafile. Validates the blocks to be backed up with the VALIDATE clause.
+
+CREATE SCRIPT : Creates a stored script in the recovery catalog.
+
+CATALOG : Adds information about file copies and user-managed backups to the repository.
+
+CHANGE : Changes the status of a backup in the RMAN repository. Useful for explicitly excluding a backup from a restore or recovery operation, or to notify RMAN that a backup file was inadvertently or deliberately removed by an operating system command outside of RMAN.
+
+CONFIGURE : Configures the persistent parameters for RMAN. The parameters configured are available during every subsequent RMAN session unless they are explicitly cleared or modified.
+
+CONVERT : Converts datafile formats for transporting tablespaces or entire databases across platforms.
+
+CREATE CATALOG : Creates the repository catalog containing RMAN metadata for one or more target databases. It is strongly recommended that this catalog not be stored in one of the target databases.
+
+CROSSCHECK : Checks the record of backups in the RMAN repository against the actual files on disk or tape. Objects are flagged as EXPIRED, AVAILABLE, UNAVAILABLE, or OBSOLETE. If the object is not available to RMAN, it is marked UNAVAILABLE.
+
+DELETE : Deletes backup files or copies and marks them as DELETED in the target database control file. If a repository is used, the record of the backup file is removed.
+
+DROP DATABASE : Deletes the target database from disk and unregisters it. The target database must be mounted in EXCLUSIVE mode. All datafiles, online redo logs, and control files are deleted. All metadata stored in the recovery catalog is removed.
+
+DUPLICATE : Uses backups of the target database (or use the live database) to create a duplicate database.
+
+FLASHBACK DATABASE : Performs a Flashback Database operation, new to Oracle 10g. The database is restored to a point in the past by System Change Number (SCN) or log sequence number using Flashback logs to undo changes before the SCN or log sequence number, and then archived redo logs are applied to bring the database forward to a consistent state.
+
+LIST : Displays information about backupsets and image copies recorded in the target database’s RMAN repository (the catalog). See REPORT for identifying complex relationships between backupsets.
+
+RECOVER : Performs a complete or incomplete recovery on a datafile, a tablespace, or the entire database. Can also apply incremental backups to a datafile image copy to roll it forward in time.
+
+REGISTER DATABASE : Registers a target database in the RMAN repository. REPAIR FAILURE Repairs one or more failures recorded in the automated diagnostic repository (ADR).
+
+REPORT : Performs a detailed analysis of the RMAN repository. For example, this command can identify which files need a backup to meet the retention policy or which backup files can be deleted.
+
+RESTORE : Restores files from image copies or backupsets to disk, typically after a media failure. Can be used to validate a restore operation without actually performing the restore by specifying the PREVIEW option.
+
+RUN : Runs a sequence of RMAN statements as a group when those commands are typed out between braces: {run this stuff}. The braces form a group of commands, allowing you to override default RMAN parameters for the duration of the execution of the group.
+
+SET : Sets RMAN configuration settings for the duration of the RMAN session, such as allocated disk or tape channels. Persistent settings are assigned with CONFIGURE.
+SHOW : Shows all or individual RMAN configured settings.
+SHUTDOWN : Shuts down the target database from within RMAN. Identical to the SHUTDOWN command within SQL*Plus.
+STARTUP : Starts up the target database. Has the same options and function as the SQL*Plus STARTUP command.
+SQL : Runs SQL commands that cannot be accomplished directly or indirectly using standard RMAN commands; for example, it can run SQL 'ALTER TABLESPACE USERS OFFLINE IMMEDIATE'; within RMAN before restoring and recovering the USERS tablespace.
+
+TRANSPORT TABLESPACE : Creates transportable tablespace sets from backup for one or more tablespaces.
+
+VALIDATE : Examines a backup set and reports whether its data is intact and consistent.
+
+To make use of the ARCHIVELOG capability, you must first place the database in ARCHIVELOG mode. Before starting the database in ARCHIVELOG mode, make sure you are using one of the following configurations, listed from most to least recommended:
+
+■ Enable archiving to the flash recovery area only; use disk mirroring on the disks containing the flash recovery area. The DB_RECOVERY_FILE_DEST parameter specifies the file system location or ASM disk group containing the flash recovery area.
+■ Enable archiving to the flash recovery area and set at least one LOG_ARCHIVE_DEST_n parameter to another location outside of the flash recovery area.
+■ Set at least two LOG_ARCHIVE_DEST_n parameters to archive to non-flash recovery area destinations.
+
+SQL> shutdown immediate
+SQL> startup mount
+SQL> alter database archivelog;
+SQL> alter database open;
+
+The SQL*Plus archive log list command displays a useful summary of the archiving configuration of your database:
+SQL> archive log list;
+
+If you enable archiving but do not specify any archiving locations, the archived log files reside in a default platform-dependent location; $ORACLE_HOME/dbs. If the destination directory of the archived redo log files runs out of space, the ARCn processes will stop processing the online redo log data and the database will stop until you free up space in the destination directory.
+
+If you are using the flash recovery area for your archived redo log files, the database issues a warning alert (via e-mail or on the Enterprise Manager home page) if the available space in the flash recovery area is less than 15 percent, and a critical alert when the available space is less than 3 percent.
+
+Leveraging Multiple Archive Destinations
+
+If you are using only local disk locations (in other words, you’re not using a standby database as the destination for archived redo log files) and no more than two local disk locations, you can use the LOG_ARCHIVE_DEST and LOG_ARCHIVE_DUPLEX_DEST parameters. Here is an example of setting these two parameters to an archive location on two different disk drives:
+
+LOG_ARCHIVE_DEST is incompatible with the LOG_ARCHIVE_DEST_n parameters, and must be defined as the null string ("") or (' ') when any LOG_ARCHIVE_DEST_n parameter has a value other than a null string
+
+LOG_ARCHIVE_DEST = '/u01/app/oracle/arch'
+LOG_ARCHIVE_DUPLEX_DEST = '/u03/app/oracle/arch'
+
+LOG_ARCHIVE_DEST_1 = 'LOCATION=/u01/app/oracle/arch'
+LOG_ARCHIVE_DEST_2 = 'LOCATION=/u03/app/oracle/arch MANDATORY'
+LOG_ARCHIVE_DEST_3 = 'SERVICE=STNDBY_CLEVELAND MANDATORY'
+LOG_ARCHIVE_MIN_SUCCEED_DEST = 1
+All archive destinations marked as MANDATORY must be available when ARCn attempts to archive a filled redo log. Note that the disk drives can be local to the server running Oracle Database 11g, or they can be on a network-based storage server hundreds of miles away.
+
+Local and Remote Destinations
+You can specify up to 10 archive log file destinations, either local or remote. If specified, you must use either the LOCATION parameter for a disk destination or the SERVICE parameter to specify a remote database instance as the destination. In this example, you have two archived log file destinations on disk, and a third is a standby instance whose service name is STNDBY_CLEVELAND:
+
+LOG_ARCHIVE_DEST_1 = 'LOCATION=/u01/app/oracle/arch'
+LOG_ARCHIVE_DEST_2 = 'LOCATION=/u03/app/oracle/arch'
+LOG_ARCHIVE_DEST_3 = 'SERVICE=STNDBY_CLEVELAND'
+
+ORA-16018: cannot use %s with LOG_ARCHIVE_DEST_n or DB_RECOVERY_FILE_DEST
+
+Either the LOCATION or the SERVICE attribute must be specified. There is no default.
+The LOG_ARCHIVE_DEST_11 through LOG_ARCHIVE_DEST_31 parameters do not support the LOCATION attribute.
+
+For the LOCATION attribute, you can specify one of the following:
+
+LOCATION=local_disk_directory -- This specifies a unique directory path name for a disk directory on the system that hosts the database. This is the local destination for archived redo log files.
+LOCATION=USE_DB_RECOVERY_FILE_DEST
+
+When you specify a SERVICE attribute: You identify remote destinations by specifying the SERVICE attribute with a valid Oracle Net service name (SERVICE=net_service_name) that identifies the remote Oracle database instance to which the redo data will be sent.The SERVICE attribute is translated into a connection descriptor that contains the information necessary for connecting to the remote database.
+
+To verify the current settings for LOCATION and SERVICE attributes, query the V$ARCHIVE_DEST fixed view:
+
+The LOG_ARCHIVE_DEST_11 through LOG_ARCHIVE_DEST_31 parameters do not support the MANDATORY attribute. If MANDATORY is not specified, then, by default, the destination is considered to be optional.
+
+The LOG_ARCHIVE_MIN_SUCCEED_DEST=n parameter (where n is an integer from 1 to 10) specifies the number of destinations that must archive successfully before online redo log files can be overwritten.
+
+LOG_ARCHIVE_DEST_2='LOCATION=/disk1/oracle/oradata/payroll/arch/'
+LOG_ARCHIVE_DEST_STATE_2=ENABLE
+
+LOG_ARCHIVE_DEST_STATE_n = enabled(default) | defer (Specifies that valid destination information and attributes are preserved, but the destination is excluded from archiving operations until re-enabled.) | alternate (Specifies that a log archive destination is not enabled but will become enabled if communications to another destination fail.)
+
+Define, Apply, and Use a Retention Policy
+
+Backups can be automatically retained and managed using one of two methods: by a recovery window or by redundancy.
+
+Using a recovery window, RMAN will retain as many backups as necessary to bring the database to any point in time within the recovery window. Any backups that are not needed to support this recovery window are marked as OBSOLETE and are automatically removed by RMAN if you are using a flash recovery area and disk space is needed for new backups.
+
+In contrast, a redundancy retention policy directs RMAN to retain the specified number of backups (copies of datafiles and control file). Any extra copies or backups beyond the number specified in the redundancy policy are marked as OBSOLETE.
+
+If the retention policy is set to NONE, no backups or copies are ever considered obsolete, and the DBA must manually remove unneeded backups from the catalog and from disk. By default, the retention policy is a single copy (with the retention policy set to 1). You can set the retention policy to 2 copies using the following RMAN command:
+
+RMAN> configure retention policy to redundancy 2;
+
+The following example sets the retention policy to a recovery window of 4 days:
+
+RMAN> configure retention policy to recovery window of 4 days;
+old RMAN configuration parameters:
+CONFIGURE RETENTION POLICY TO REDUNDANCY 2;
+new RMAN configuration parameters:
+CONFIGURE RETENTION POLICY TO RECOVERY WINDOW OF 4 DAYS;
+new RMAN configuration parameters are successfully stored
+RMAN>
+
+In some environments, you may want to disable the retention policy completely. This is useful in an environment where a backup system outside of RMAN stores the disk backups to tape and deletes them. As a result, RMAN does not need to decide when a backup is obsolete and therefore no retention policy is needed. As a result, the details of RMAN backups are maintained up to the time specified by the initialization parameter CONTROL_FILE_RECORD_KEEP_TIME. Here is how you can disable the retention policy:
+
+RMAN> configure retention policy to none;
+
+Show the existing retention policy:
+RMAN> show retention policy;
+RMAN configuration parameters for database
+with db_unique_name DW are:
+CONFIGURE RETENTION POLICY TO none;
+RMAN>
+
+Configure the Flash Recovery Area
+
+RMAN will work out of the box without any configuration. Unfortunately, this is generally not a good idea. RMAN tends to throw things into ORACLE_HOME. The flash recovery area, available since Oracle Database 10g, is a unified storage location for all recovery-related files in an Oracle database. As the price of disk space drops, the convenience, increased availability, and decreased recovery times make a completely disk-based backup solution more desirable than tape backup.
+
+The files that can reside in the area are divided into two categories: permanent or transient. Permanent files are actively being used by the database instance and transient files are required only when you need to recover a part of or the entire database.
+
+The following permanent items are stored in the flash recovery area:
+■ Control file Oracle stores one copy of the control file in the flash recovery area during an installation.
+■ Online redo log files You can store one mirrored copy from each redo log file group in the flash recovery area.
+
+The following transient items are stored in the flash recovery area:
+■ Archived redo log files When you configure the flash recovery area, one set of archived redo log files is stored in the flash recovery area.
+■ Flashback logs Flashback logs are stored in the flash recovery area when Flashback Database is enabled.
+■ Control file automatic backups RMAN stores control file automatic backups in the flash recovery area. When RMAN backs up the first datafile, which is part of the SYSTEM tablespace, the control file is automatically included in the RMAN backup.
+■ Datafile copies When you use the RMAN command BACKUP AS COPY, the datafile copies are stored in the flash recovery area by default.
+■ RMAN backupsets Files created with the BACKUP AS BACKUPSET command are stored in the flash recovery area.
+■ RMAN files By default, RMAN uses the flash recovery area as a staging area for backup and recovery of the archive log files from disk or tape.
+
+Configuring the FRA
+Configuring the FRA is easy. First you create the base directory of the FRA from the OS, and then you set the following parameters in any database that will use the FRA:
+DB_RECOVERY_FILE_DEST(Not dynamic), DB_RECOVERY_FILE_DEST_SIZE
+mkdir C:\oracle\app\fast_recovery_area
+alter system set db_recovery_file_dest_size=4GB;
+alter system set db_recovery_file_dest='C:\oracle\app\fast_recovery_area' scope=spfile;
+startup force;
+
+Three initialization parameters control the default locations for new control files, online redo log files, and data files: 
+DB_CREATE_FILE_DEST - specifies the default location for Oracle-managed datafiles if you do not explicitly specify a destination
+DB_RECOVERY_FILE_DEST - specifies the default location for the flash recovery area. If you use DB_RECOVERY_FILE_DEST, you must also specify DB_RECOVERY_FILE_DEST_SIZE. 
+DB_CREATE_ONLINE_LOG_DEST_n - specifies up to five locations for online redo log files; if this parameter is not specified, and you create new or additional redo log files Oracle uses DB_CREATE_FILE_DEST as the destination.
+
+Here is an example of the values of these parameters in a default installation of Oracle Database 11g:
+
+When the flash recovery area is configured, the initialization parameter log_archive_dest_10 is automatically set to the flash recovery area location. The corresponding ARCn background processes create archived log files in the flash recovery area and any other locations defined by the LOG_ARCHIVE_DEST_n initialization parameters.
+
+The recommended size of the flash recovery area is the sum of the database size, the size of incremental backups, and the size of all archived log files that have not been copied to tape or to another disk location
+
+You should be proactive in monitoring the size of the flash recovery area. Using the dynamic performance view V$RECOVERY_FILE_DEST, you can see the total used and reclaimable space on the destination file system. In addition, you can use the dynamic performance view V$FLASH_RECOVERY_AREA_USAGE to see a usage breakdown by file type.
+
+for space pressure in the flash recovery area, your possible corrective actions fall into one of these categories:
+■ Add additional disk space to the flash recovery area and adjust DB_RECOVERY_FILE_DEST_SIZE.
+■ Back up files to a tertiary tape or disk device and remove the files from the flash recovery area.
+■ Review and delete files from the flash recovery area using the RMAN commands REPORT OBSOLETE and DELETE OBSOLETE.
+■ Change the RMAN retention policy.
+
+The REASON column in DBA_OUTSTANDING_ALERTS contains a description for the alert,
+
+You can use the V$RECOVERY_FILE_DEST view to determine the state of the FRA.
+select name, space_limit, space_used, space_reclaimable from v$recovery_file_dest;
+
+If you manually remove files from the FRA, you will have to let Oracle know that you have done so. By default Oracle will not detect that the files have been removed. Oracle can detect the file removals by using the RMAN crosscheck and delete expired commands.
+
+You can see the current settings for all persistent parameters in RMAN by using the
+RMAN show all command, as shown here:
+RMAN> show all;
+
+You can also look at an individual setting by using the show command followed by the setting you are interested in. 
+RMAN> show retention policy;
+
+You can clear configuration settings using the configure clear command, as shown in this example:
+RMAN>configure device type disk clear;
+
+Preparing RMAN for Use
+
+When using RMAN without a recovery catalog, you will need to make sure that you have set the CONTROL_FILE_RECORD_KEEP_TIME(defined in days) parameter correctly. This parameter is used to determine how long RMAN-related control-file records are maintained in the control file. Make sure this parameter is set high enough so that it will not interfere with your retention-policy requirements.
+
+SQL> alter system set control_file_record_keep_time=14;
+
+Types of Retention Policies
+
+These are the different types of retention policies that you can set in RMAN:
+None
+Redundancy (the default)
+Recovery window
+
+Redundancy Retention Policy
+The redundancy retention policy ensures that there will be a certain number of backups available for recovery. Once a backup is no longer needed, Oracle will mark it as obsolete, making it eligible for removal. For example, if the retention criterion is set to redundancy 2, then the following happens as you back up your database:
+Backup 1 occurs; when successful, it is considered current.
+Backup 2 occurs. Backups 1 and 2 are considered current.
+Backup 3 occurs. Backup 1 is marked as obsolete and backups 2 and 3 are considered current.
+
+The default retention setting in RMAN is a redundancy retention policy of 1 copy.
+
+Recovery Window Retention Policy
+The recovery retention policy provides the ability to define a recovery window to be applied to your backups in a period of days. For example, if you want to be sure you can restore your database to 14 days ago, you would establish a recovery retention policy of 14 days and earlier. This means that backups taken 15, 16, or 30 days
+ago may remain valid backups as demonstrated here
+
+Your database retention policy is 14 days.
+You perform database backup #1 on day 1; it is of course valid.
+Archive log backups are taken on days 1 through 14. Backup #1 is now 15 days old. It remains valid because it is needed to restore the database to days 0 through 14.
+Database backup #2 is taken on day 16. Database backup #1 is still valid. Why? Because we need database backup #1 to restore the database to day 10, or day 9, since database backup #2 is valid for only day 16 and beyond.
+Archive log backups are taken on days 17 through 29, which is the 14th day since backup #2.
+On day 29, backup #1 and all the associated archived redo logs are finally eligible for removal.
+
+When the backup is marked obsolete, it is eligible for removal. If it exists in the FRA, then Oracle will remove it automatically. If it is not in the FRA, you can use the list obsolete command to list those backups subject to removal based on the retention policy and then use the delete obsolete command to remove those backups. Here is an example:
+RMAN> report obsolete;
+RMAN> delete noprompt obsolete;
+
+If you wanted to create a particular backup with a retention criterion of 365 days (which is different from the default retention policy), you would issue the following command:
+RMAN> backup database plus archivelog delete input keep until time ‘sysdate + 365’;
+Using the keep forever option, you could keep the backup indefinitely, as shown here:
+RMAN> backup database plus archivelog tag=gold_copy delete input keep forever;
+
+Compression
+Oracle Database 11g offers two flavors of compression, zlib and bzip2 (the default). Zlib is designed to compress with a minimum of CPU impact. The result is often a slightly bigger backup image than you get with the bzip2 compression format. 
+RMAN> configure compression algorithm ‘zlib’;
+
+To actually perform a backup with compression, you will need to configure the default device type to use compression, or you will have to use the as compressed keyword when
+issuing the backup command. Here is an example of configuring the default device type to use compression:
+RMAN> configure device type disk backup type to compressed backupset;
+
+And here is an example of using the as compressed keyword when creating a backup: 
+RMAN> backup as compressed backupset database plus archivelog;
+
+Encryption
+You can choose to encrypt your backups in Oracle Database 11g. Several encryption options are available to you, and they can be found by querying the V$RMAN_ENCRYPTION_ALGORITHMS view.
+
+For example, if you wanted to configure encryption for the entire database, you would use the following commands:
+
+RMAN> configure encryption algorithm “AES128”;
+RMAN> configure encryption for database on;
+
+There are three different modes of encryption (as opposed to the algorithm used). These are transparent mode, password-based encryption, and dual-mode encryption, which encompasses both modes of encryption. For transparent encryption, you will need to create a wallet, and it must be open. Transparent encryption will then occur automatically after you have issued the configure encryption for database on or configure encryption for tablespace on command.
+For password authentication, you will need to use the set encryption identified by command first to enable password-based authentication. If you are restoring you will have
+to use the set decryption identified by command to set the password to decrypt a backup. You can also use the set command to change the type of encryption for a specific backup or to turn off encryption. Here is an example of the use of the set encryption command:
+
+RMAN> set encryption identified by my_pass only on for all tablespaces;
+
+Channel Configuration
+When you initiate an RMAN backup, RMAN will create one or more channels that connect the database to a backup device. By default, RMAN will create a single channel to back up or recover to or from the FRA. You can override the defaults using the configure command. Along with backup locations, the configure command allows you to define other settings for your backup channels, including parallelism and backup-set and piece-set sizing.
+
+Configuring Backup Locations
+The configure default device command is used to configure a backup location other than the default location. If, for example, you wanted to back up to a directory called /oracle01/backup/orcl, you would issue the following command:
+RMAN> configure channel device type disk format ‘/oracle01/backup/orcl/%U’;
+RMAN will use this path for future backups. You can configure multiple channels with the configure command by specifying each individual channel, as shown here where we have indicated different default backup locations for each channel:
+
+RMAN> configure channel 1 device type disk format ‘/oracle01/backup/orcl/%U’;
+RMAN> configure channel 2 device type disk FORMAT ‘/oracle02/backup/orcl/%U’;
+
+Configuring Parallelism
+Now that you can configure multiple channels, you might want to use them! To do so, you use the configure command along with the parallelism keyword, as shown here:
+RMAN> configure device type disk parallelism 2;
+This will cause any backup database command to use two channels, performing the backup in parallel.
+
+Other Channel Configuration Options
+SBT Channel Configuration
+You may well want to have your backup go to tape. To do so, you will need to install the vendor’s interface into RMAN’s MML API, following the vendor’s instructions. Once you have done so, you would then allocate a channel (or more if you want parallel backups) to a device called SBT to send it to the tape device. Here is an example where we use the configure command to make the SBT device the default device:
+
+RMAN> configure device type sbt parallelism 2;
+
+Or you could configure individual channels like this:
+
+RMAN> configure channel 1 device type sbt;
+RMAN> configure channel 2 device type sbt;
+During the backup, you could manually allocate channels to SBT also within a run block:
+run {
+allocate channel c1 device type sbt;
+allocate channel c2 device type sbt;
+backup database plus archivelog;
+};
+
+Maxsetsize and Maxpiecesize Configuration
+You may find that the OS that you are working on has a maximum file-size limit of 2GB. Thus, you need to make sure your backup set pieces are no larger than 2GB. This is facilitated through the use of the maxsetsize and maxpiecesize operators.
+
+The maxsetsize operator will limit the size of any backup set. The maxpiecesize operator will limit the size of any individual backup set piece.
+
+RMAN> configure channel 1 device type disk maxpiecesize 2g;
+
+The main use of the maxpiecesize parameter is to ensure that your backup set pieces do not grow bigger than some OS, file system, or storage device limit.
+
+Maxsetsize has essentially the same purpose, to limit the overall size of one backup set. The downside to using maxsetsize is that if you end up with a datafile that is larger than maxsetsize, it will never get backed up since each datafile must be backed up within the scope of one backup set.
+
+Control-File Autobackups
+When enabled, RMAN will perform automatic control-file autobackups after each backup. Additionally, RMAN/Oracle will automatically create a backup of the control file to disk anytime a database change occurs that impacts the control file and the database physical structure, such as adding a tablespace or datafile.
+
+RMAN> configure controlfile autobackup on;
+
+Control-file autobackups are stored in the FRA if one is configured. You can also use the configure command to configure RMAN to create the control-file autobackup in a
+different location, as shown in this example: 
+RMAN> configure controlfile autobackup format for device type disk to ‘/oracle01/oracle/controfilebackup/%F’;
+
+Duplexing Backups
+You may want to create duplicate copies of backup sets when they are created. This is called duplexing.
+
+RMAN>configure datafile backup copies for device type disk to 2;
+You can also configure duplexing for archive log backups, as shown here:
+RMAN>configure archivelog backup copies for device type disk to 2;
+
+If you want to duplex an individual backup rather than set a persistent configuration setting, you would use the set backup copies command within a RUN block, as in this example:
+RMAN> run
+2> {
+3> allocate channel d1 device type disk format ‘c:\oracle\backup\%U’;
+4> set backup copies 2;
+5> backup incremental level 0 database plus archivelog delete input;
+6> }
+
+
+------------- commands
+rman target=/
+show all;
+3. Configure the retention policy to redundancy of 2:
+RMAN> CONFIGURE RETENTION POLICY TO REDUNDANCY 2;
+4. Configure control-file autobackups on:
+RMAN> CONFIGURE CONTROLFILE AUTOBACKUP on;
+5. Configure for compressed backup sets:
+RMAN> CONFIGURE DEVICE TYPE DISK PARALLELISM 1 BACKUP TYPE TO COMPRESSED BACKUPSET;
+6. Create a directory to hold the snapshot control file (you will want to use your own directory paths, of course):
+RMAN> host “mkdir \oracle01”;
+RMAN> host “mkdir \oracle01\snapshot”;
+7. Configure RMAN so the snapshot control file will be created in the new directory:
+RMAN> CONFIGURE SNAPSHOT CONTROLFILE NAME TO ‘c:\oracle01\snapshot’;
+8. Exit RMAN:
+RMAN> exit
+
+RMAN Commands
+
+@ : Run a command file.
+@@ : Run a command file in the same directory as another command file that is currently running. The @@ command differs from the @ command only when run from within a command file.
+ALLOCATE CHANNEL : Establish a channel, which is a connection between RMAN and a database instance.
+ALLOCATE CHANNEL FOR MAINTENANCE : Allocate a channel in preparation for issuing maintenance commands such as DELETE.
+allocOperandList : A subclause that specifies channel control options such as PARMS and FORMAT.
+ALTER DATABASE : Mount or open a database.
+archivelogRecordSpecifier : Specify a range of archived redo-log files.
+BACKUP : Back up database files, copies of database files, archived logs, or backup sets.
+BLOCKRECOVER : Recover an individual data block or set of data blocks withinone or more datafiles.
+CATALOG : Add information about a datafile copy, archived redo log, or control file copy to the repository.
+
+Types of RMAN Backups
+There are two principle types of RMAN backups. The first type is called backup sets. Backup sets are a very flexible way of backing up your Oracle database. The downside is that backup sets are not direct copies of Oracle database datafiles. As a result, you need RMAN to put the backup sets back together to restore your database.
+
+Oracle also supports image copies. Image copies are direct copies of database datafiles. Image copies offer faster recovery options but typically take up a great deal more space. 
+
+RMAN Backup Sets
+By default, when you create a backup in RMAN, it writes the backups to physical files. These physical files are called backup set pieces. A given backup may create more than one backup set piece. A collection of related backup set pieces is called a backup set.
+
+In addition to multiple backup set pieces, you may have more than one backup set. This occurs when you parallelize a backup. Each channel will represent one backup set, each with its own backup set pieces. New backup sets will also be created on a channel if a backup set exceeds the backup set size limitations. 
+
+Note that a given datafile can span backup set pieces but cannot span backup sets. The ability of a given datafile to span backup set pieces is known as multiplexing. Multiplexing is another form of parallelization, as it allows RMAN to read from multiple datafiles in parallel and write them to a single backup set piece. Thus a given backup set piece may have data from many datafiles in it.
+
+In the default RMAN configuration, a given tablespace/datafile backup may find itself in more than one backup set piece. However, each individual tablespace/datafile backup can be associated with only a single RMAN backup set and thus will be backed up by only one channel.
+
+RMAN Image Copies
+RMAN image copies are one-to-one copies of database datafiles. When you do an imagecopy backup of your database, you will receive no benefits of compression, so the disk-space requirement is a one-to-one requirement. The upside to an image copy is that it can be much faster to restore. RMAN will always choose to restore image copies over backup sets if an image copy is available. In fact, using the switch to copy command makes it even faster, as RMAN will simply switch to the image copy on disk and start using that copy. 
+
+RMAN> Backup as copy database;
+You can also make image copies of datafiles or tablespaces, as shown in these examples:
+RMAN>backup as copy datafile 4;
+RMAN>Backup as copy tablespace users;
+
+RMAN can use a mixture of image copies, incremental backups, and archived redo logs when performing recovery. 
+
+RMAN Offline Backups
+You will need to close the database, but your backup will be done with the database in mount mode rather than completely shut down. No parameter-file adjustments are required for an RMAN offline backup. We recommend that you configure and use the FRA (discussed earlier in this chapter) even if you are doing offline backups. This makes for a standardized backup location and also allows the Oracle database to manage the overall backup space utilization more efficiently.
+
+To perform an offline backup of your database with RMAN, follow these steps:
+1. Start the RMAN client.
+2. Shut down the database from the RMAN client, SQL*Plus, or OEM. The shutdown should be a consistent shutdown, so use the shutdown, shutdown immediate, or shutdown transactional command.
+3. Start up the database in mount mode using the startup mount command.
+4. Back up the database with the RMAN backup command: RMAN>backup database;
+5. When the backup is complete, open the database with the alter database open command.
+
+RMAN Online Backups
+RMAN> backup as compressed backupset database plus archivelog delete input;
+
+The database and archived redo logs are backed up, "delete input" clause deletes the archived logs after back up.
+
+You can also do backups of tablespaces and datafiles using the backup command, as shown in these examples:
+RMAN>Backup tablespace users;
+RMAN>Backup datafile 3;
+
+----------------------------
+Configuring for ARCHIVELOG Mode
+A number of parameters are directly associated with user managed backup and recovery in ARCHIVELOG mode.
+LOG_ARCHIVE_DEST : Indicates the destination to copy archived redo logs to. Typically this parameter is not set and the LOG_ARCHIVE_DEST_N parameter is set instead.
+LOG_ARCHIVE_DEST_n : Indicates one of up to 10 destinations to copy archived redo logs to. The first destination starts with 1 (LOG_ARCHIVE_DEST_01).
+LOG_ARCHIVE_DEST_STATE_n :Indicates the state of LOG_ARCHIVE_DEST_N (ENABLED, DEFERRED, or ALTERNATE).]
+LOG_ARCHIVE_FORMAT :Indicates the format of the archived redo log filenames.
+
+You would first have to create the file-system directory structures and then you would need to set the appropriate parameters.
+
+Alter system set log_archive_dest_1=’location=C:\oracle\archivelog\ocp11g’;
+You can also clear this parameter setting by just using blank quotes, as shown in this example:
+Alter system set log_archive_dest_1=’’;
+
+You can configure up to 10 different archivelog destination directories. This feature can be used to provide redundant backup locations for your archive logs to protect them in the event of a failure of one or more of those locations.
+
+You may also want to control how Oracle names the archived redo logs. This is done with the LOG_ARCHIVE_FORMAT parameter.
+
+Alter system set log_archive_format=’orcl_%s_%t_%r_%d.arc’;
+
+The %s represents the sequence number, which is always unique for a given database (until a resetlogs command occurs, which we will discuss in Chapter 3). 
+The %t is the thread number that represents an individual node on a cluster when your database is running on Oracle’s Real Application Clusters (RAC). 
+The %r represents the resetlogs number (see Chapter 3).
+Finally, the %d represents the DBID that should be unique for each database.
+Together, this string of variables will make the archive log filenames unique for every database on your system.
+
+Every database in Oracle has a DBID, which is a unique identifier for the database (see the DBID column in V$DATABASE to see your DBID). Be careful, though! It is possible to have databases on two different boxes with the same name and even with the same DBID.
+
+Select log_mode from v$database;
+show parameter log_archive_dest_1;
+host mkdir c:\oracle\arch\orcl
+Alter system set log_archive_dest_1=’location=C:\oracle\archivelog\ocp11g’;
+-- Log_archive_dest_2=’location=z:\oracle\arch\mydb’
+Alter system set log_archive_format=’ocp11g_%r_%t_%s.arc’ scope=spfile;
+shutdown immediate -- consistent shut down is mandatory otherwise oracle will throw error while changing to archivelog
+startup mount; 
+alter database archivelog;
+alter database open;
+Select log_mode from v$database;
+
+So it good toc heck that everything is fine ok, first you will force an archive-log switch with the alter system switch logfile command. This will cause a log switch to the next redo log group and ARCH will need to copy the redo log to an archived redo log. 
+
+alter system switch logfile;
+
+Look in the c:\oracle\arch\orcl directory. You should see a file in that directory.
+
+Oracle dynamic Performance Views Associated with User-Managed Backup and Recovery
+
+V$ARCHIVE : The V$ARCHIVE view provides information on redo logs that are in need of being archived.
+V$ARCHIVE_DEST : The V$ARCHIVE_DEST view provides information on each individual archive-log destination. Typically this view is used for Oracle Data Guard.
+V$ARCHIVE_DEST_STATE : The V$ARCHIVE_DEST_STATE view provides status information on each of the individual archive-log destination directories.
+V$ARCHIVE_PROCESSES : The V$ARCHIVE_PROCESSES view provides information on the different ARCH processes running on your system.
+V$ARCHIVED_LOG : The V$ARCHIVED_LOG view provides information on individual archived redo logs.
+V$LOG : The V$LOG view provides information on the online redo log groups.
+V$LOGFILE : The V$LOGFILE view provides information on specific online redo logs.
+V$LOG_HISTORY : The V$LOG_HISTORY view provides historical information on all online/archived redo logs.
+
+Performing Oracle User-Managed Backups
+
+When you put a tablespace in hot backup mode, Oracle will start writing block-sized records to the redo logs. These records are much bigger than the normal-sized records,so this can cause performance problems.
+One odd misconception we hear from time to time is that Oracle will stop writing to the database datafiles during a hot backup. In fact Oracle will continue to write changes to the datafiles; however, it will not update the datafile headers until the backup is complete.
+
+When you put a tablespace in hot backup mode, you are really putting the underlying datafiles of the that tablespace in hot backup mode. You can determine if a datafile is in hot backup mode by querying the V$BACKUP view. The STATUS column will indicate ACTIVE if the given datafile is in hot backup mode.
+
+select a.tablespace_name, b.status  from dba_data_files a, v$backup b
+where a.file_id=b.file# order by tablespace_name;
+
+Another thing to be aware of is what happens if the database is shut down while datafiles are in hot backup mode. First, Oracle will not allow you to shut down a database with most shutdown commands (shutdown, shutdown immediate, shutdown transactional, or startup force) while a tablespace is in hot backup mode. Instead it will generate an error, as shown here: ORA-01149: cannot shutdown - file 4 has online backup set
+
+This error identifies the datafile that is in hot backup mode. You would need to determine which tablespace the datafile is assigned to by looking at the DBA_DATA_FILES view. You would then issue the alter tablespace end backup command to take it out of hot backup mode. If you issue a shutdown abort or if the database crashes for some reason or the server shuts down without shutting down the database in a natural fashion, Oracle will not restart with a datafile in hot backup mode. You will see the following error when you try to restart the database: ORA-10873: file 4 needs end backup before opening a database.
+
+You simply issue the command alter database end backup to take the datafiles out of hot backup mode and then alter database open to open the database.
+Once the backup is complete, you will take the tablespaces out of hot backup mode with the alter database end backup command, or you can individually take each tablespace
+out of hot backup mode by issuing the alter tablespace end backup command. Once you complete the online backup, one more very important step is to back up the archived redo logs that were generated during the backup. You will need each log that was generated from the time you issued the alter database begin backup command until you issued the alter database end backup command. After the backup, use the alter system switch logfile command to force a log switch to cause the current online redo log ( contains redo generated during the backup) to be archived after you have completed the backup. You will need the redo in this log file, and any other archived redo logs that might have been generated during the backup, in order to recover the database from the backup you just completed.
+

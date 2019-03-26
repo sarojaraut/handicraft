@@ -1,0 +1,734 @@
+﻿Collections are used in some of the most important performance optimization features of PL/SQL, such as
+
+BULK COLLECT - SELECT statements that retrieve multiple rows with a single fetch, increasing the speed of data retrieval.
+FORALL - Inserts, updates, and deletes that use collections to change multiple rows of data very quickly
+Table functions - PL/SQL functions that return collections and can be called in the FROM clause of a SELECT statement.
+
+Collection Concepts and Terminology
+
+Index value - The location of the data in a collection. Index values are usually integers but for one type of collection can also be strings.
+Element - The data stored at a specific index value in a collection. Elements in a collection are always of the same type (all of them are strings, dates, or records). PL/SQL collections are homogeneous.
+Sparse - A collection is sparse if there is at least one index value between the lowest and highest defined index values that is not defined. For example, a sparse collection has an element assigned to index value 1 and another to index value 10 but nothing in between. The opposite of a sparse collection is a dense one.
+Method - A collection method is a procedure or function that either provides information about the collection or changes the contents of the collection. Methods are attached to the collection variable with dot notation (object-oriented syntax), as in my_collection.FIRST.
+
+Associative array - The first type of collection available in PL/SQL, this was originally called a “PL/SQL table” and can be used only in PL/SQL blocks. Associative arrays can be sparse or dense and can be indexed by integer or string.
+
+Nested table - Added in Oracle8 Database, the nested table can be used in PL/SQL blocks, in SQL statements, and as the datatype of columns in tables. Nested tables can be sparse but are almost always dense. They can be indexed only by integer. You can use the MULTISET operator to perform set operations and to perform equality comparisons on nested tables.
+
+Varray - Added in Oracle8 Database, the varray (variable-size array) can be used in PL/SQL blocks, in SQL statements, and as the datatype of columns in tables. Varrays are always dense and indexed by integer. When a varray type is defined, you must specify the maximum number of elements allowed in a collection declared with that type.
+
+You will rarely encounter a need for a varray (How many times do you know in advance the maximum number of elements you will define in your collection?). The associative array is the most commonly used collection type, but nested tables have some powerful, unique features (such as MULTISET operators) that can simplify the code you need to write to use your collection.
+
+If the TYPE statement contains an INDEX BY clause, the collection type is an associative array.
+If the TYPE statement contains the VARRAY keyword, the collection type is a varray.
+If the TYPE statement does not contain an INDEX BY clause or a VARRAY keyword, the collection type is a nested table.
+Only the associative array offers a choice of indexing datatypes. Nested tables as well as varrays are always indexed by integer.
+When you define a varray type, you specify the maximum number of elements that can be defined in a collection of that type.
+
+
+TYPE numbers_aat IS TABLE OF NUMBER INDEX BY PLS_INTEGER;
+TYPE numbers_aat IS TABLE OF NUMBER INDEX BY VARCHAR2(100);
+TYPE numbers_nt IS TABLE OF NUMBER;
+TYPE numbers_vat IS VARRAY(10) OF NUMBER;
+
+Once you’ve declared a collection type, you can use it to declare a collection variable as you would declare any other kind of variable:
+
+DECLARE
+   TYPE numbers_nt IS TABLE OF NUMBER; 
+   l_numbers numbers_nt;
+
+Initializing Collections
+
+When you work with nested tables and varrays, you must initialize the collection variable before you can use it. You do this by calling the constructor function for that type. This function is created automatically by Oracle Database when you declare the type.
+
+DECLARE
+   TYPE numbers_nt IS TABLE OF NUMBER; 
+   l_numbers numbers_nt;
+BEGIN
+   l_numbers := numbers_nt (1, 2, 3);
+END;
+
+If you neglect to initialize your collection, Oracle Database will raise an error when you try to use that collection: ORA-06531: Reference to uninitialized collection
+
+You do not need to initialize an associative array before assigning values to it.
+With an associative array, it is not necessary to use EXTEND or start with index value 1
+
+Populating Collections
+
+You can assign values to elements in a collection in a variety of ways:
+Call a constructor function (for nested tables and varrays).
+Use the assignment operator, for single elements as well as entire collections.
+Pass the collection to a subprogram as an OUT or IN OUT parameter, and then assign the value inside the subprogram.
+Use a BULK COLLECT query.
+
+DECLARE
+   TYPE numbers_aat IS TABLE OF NUMBER INDEX BY PLS_INTEGER; 
+   l_numbers1 numbers_aat;
+   l_numbers2 numbers_aat;
+BEGIN
+   l_numbers1 (100) := 12345;
+   l_numbers2       := l_numbers1; -- Assign one collection to another. As long as both collections are declared with the same type
+END;
+
+DECLARE
+   TYPE numbers_aat IS TABLE OF NUMBER
+      INDEX BY PLS_INTEGER;
+
+   l_numbers   numbers_aat;
+BEGIN
+     SELECT employee_id
+       BULK COLLECT INTO l_numbers
+       FROM employees
+   ORDER BY last_name;
+END;
+
+Iterating Through Collections
+The kind of code you write to iterate through a collection is determined by the type of collection with which you are working and how it was populated. Generally, you will choose between a numeric FOR loop and a WHILE loop.
+
+FOR loop : Your collection is densely filled, You want to scan the entire collection.
+WHILE loop : Your collection may be sparse, You might terminate the loop before iterating through all the elements .
+
+CREATE OR REPLACE PROCEDURE show_contents (
+   names_in IN DBMS_UTILITY.maxname_array)
+IS
+BEGIN
+   FOR indx IN names_in.FIRST .. names_in.LAST
+   LOOP
+      DBMS_OUTPUT.put_line (names_in (indx));
+   END LOOP;
+END;
+
+CREATE OR REPLACE PROCEDURE show_contents (
+   names_in IN DBMS_UTILITY.maxname_array)
+IS
+   l_index   PLS_INTEGER := names_in.FIRST;
+BEGIN
+   WHILE (l_index IS NOT NULL)
+   LOOP
+      DBMS_OUTPUT.put_line (names_in (l_index));
+      l_index := names_in.NEXT (l_index);
+   END LOOP;
+END;
+/
+
+If the collection is empty, both FIRST and LAST will return NULL. The WHILE loop terminates when l_index is NULL
+We can also scan the contents of a collection in reverse, starting with LAST and using the PRIOR method
+
+Deleting Collection Elements
+l_names.DELETE; -- (without any arguments) Remove all elements from a collection;  This form of DELETE works with all three kinds of collections.
+l_names.DELETE (l_names.FIRST); -- Remove one element, pass the index value to DELETE. can be used only with an associative array or a nested table. 
+l_names.DELETE (100, 200); -- Remove all the elements between the specified low and high index values. AAT and NT
+You can also use the TRIM method with varrays and nested tables to remove elements from the end of the collection. You can trim one or many elements:
+l_names.TRIM;
+l_names.TRIM (3);
+
+Associate Array
+DECLARE
+ TYPE varchar_aat IS TABLE OF varchar2(100) index by pls_integer;
+l_names   varchar_aat;
+BEGIN
+l_names (11) := 'Strawberry';
+l_names (10) := 'Blackberry';
+l_names (50) := 'Raspberry';
+
+DECLARE
+   indx   PLS_INTEGER := l_names.FIRST;
+BEGIN
+
+   WHILE (indx IS NOT NULL)
+   LOOP
+      DBMS_OUTPUT.put_line (l_names (indx));
+      indx := l_names.NEXT (indx);
+   END LOOP;
+END;
+END;
+/
+
+Nested Table
+DECLARE
+    TYPE varchar_nt IS TABLE OF varchar2(100); --index by pls_integer;
+   l_names   varchar_nt:= varchar_nt();
+BEGIN
+   l_names.extend();
+   l_names (1) := 'Strawberry';
+   l_names.extend(2);
+   l_names (2) := 'Blackberry';
+   l_names (3) := 'Raspberry';
+
+   DECLARE
+      indx   PLS_INTEGER := l_names.FIRST;
+   BEGIN
+
+      WHILE (indx IS NOT NULL)
+      LOOP
+         DBMS_OUTPUT.put_line (l_names (indx));
+         indx := l_names.NEXT (indx);
+      END LOOP;
+   END;
+END;
+/
+
+VARRAY
+
+DECLARE
+   TYPE varchar_vt IS VARRAY(10) of varchar2(100);
+   l_names varchar_vt:=varchar_vt();
+BEGIN
+   l_names.extend(5); 
+   l_names (1) := 'Strawberry';
+   l_names (2) := 'Blackberry';
+   l_names (3) := 'Raspberry';
+
+   DECLARE
+      indx   PLS_INTEGER := l_names.FIRST;
+   BEGIN
+      -- will loop for three items does not matter if you extend till five but only three values are assigned
+      WHILE (indx IS NOT NULL)
+      LOOP
+         DBMS_OUTPUT.put_line (l_names (indx));
+         indx := l_names.NEXT (indx);
+      END LOOP;
+   END;
+END;
+/
+
+create or replace TYPE varchar_aat IS TABLE OF varchar2(100) index by pls_integer; -- Error PLS-00355: use of pl/sql table not allowed in this context
+drop TYPE varchar_aat;
+create or replace TYPE varchar_nt IS TABLE OF varchar2(100);
+
+SELECT column_value AS val
+FROM   TABLE(varchar_nt('Strawberry','Blackberry','Raspberry'))
+
+GRANT EXECUTE ON VARCHAR_NT TO other_account; -- if needs to be referred by other users.
+
+--drop TYPE varchar_nt;
+
+Associative Arrays don't have constructors. This means you can't use the syntax myarray := mytype(2,4,6,37) to populate your collection with four values at once, as you can with the other types. 
+VARRAYs lack some of the functionality you get with nested table collections in 10g. The following work only with nested table collections, not with VARRAYs.
+
+Collection Functions such as CARDINALITY and SET
+Multiset Conditions such as IS A SET, MEMBER OF and SUBMULTISET
+Multiset Operators such as MULTISET INTERSECT
+
+DECLARE
+    my_array varchar_nt := varchar_nt('Apple','Apple','Orange','Banana');
+    my_array2 varchar_nt := varchar_nt('Orange','Kumquat','Grape','Banana');
+    my_array3 varchar_nt := my_array MULTISET INTERSECT my_array2;
+BEGIN
+
+-- Distinct Check
+    IF my_array IS A SET THEN
+        DBMS_OUTPUT.PUT_LINE('No duplicates found');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Collection contains duplicates');
+    END IF;
+-- Exis check
+    IF 'Orange' MEMBER OF my_array THEN
+        DBMS_OUTPUT.PUT_LINE('"Orange" exists in the collection');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('"Orange" does not exist in the collection');
+    END IF;
+-- collection intersection
+    FOR i IN my_array3.FIRST..my_array3.LAST LOOP
+        DBMS_OUTPUT.PUT_LINE(my_array3(i));
+    END LOOP;
+    
+END;
+/
+
+Using a VARRAY
+
+REM Section A
+SQL> CREATE TYPE first_names_t IS VARRAY (2) OF VARCHAR2 (100);
+/
+Type created.
+
+SQL> CREATE TYPE child_names_t IS VARRAY (1) OF VARCHAR2 (100);
+/
+Type created.
+
+REM Section B
+SQL> CREATE TABLE family (
+surname VARCHAR2(1000)
+, parent_names first_names_t
+, children_names child_names_t
+);
+
+Table created.
+
+REM Section C
+SQL>
+DECLARE
+	parents first_names_t := first_names_t ();
+	children child_names_t := child_names_t ();
+BEGIN
+	parents.EXTEND (2);
+	parents (1) := 'Samuel';
+	parents (2) := 'Charina';
+	--
+	children.EXTEND;
+	children (1) := 'Feather';
+
+--
+	INSERT INTO family
+	( surname, parent_names, children_names )
+	VALUES ( 'Assurty', parents, children );
+END;
+SQL> /
+
+SELECT * FROM family;
+
+As a PL/SQL developer, I find myself leaning toward using associative arrays as a first instinct. Why is this? They involve the least amount of coding. You don’t have to initialize or extend them. They have historically been the most efficient collection type (although this distinction will probably fade over time). However, if you want to store your collection within a database table, you cannot use an associative array. The question then becomes: nested table or VARRAY?
+
+The COUNT Method : Use COUNT to compute the number of elements defined in an associative array, nested table, or VARRAY. If elements have been DELETEd or TRIMmed from the collection, they are not included in COUNT.
+
+Boundary considerations : If COUNT is applied to an initialized collection with no elements, it returns zero. It also returns zero if it’s applied to an empty associative array. If COUNT is applied to an uninitialized nested table or a VARRAY, it raises the COLLECTION_IS_NULL predefined exception. Note that this exception is not possible for associative arrays, which do not require initialization.
+
+IF volunteer_list.COUNT > 0
+
+The DELETE Method : Use DELETE to remove one, a range of, or all elements of an associative array, nested table, or VARRAY. DELETE without arguments removes all of the elements of a collection. DELETE(i) removes the ith element from the nested table or associative array. DELETE(i,j) removes all elements in an inclusive range beginning with i and ending with j.
+
+The FIRST and LAST Methods : Use the FIRST and LAST methods with nested tables, associative arrays, and VARRAYs to return, respectively, the lowest and highest index values defined in the collection.
+
+LIMIT : function Returns the maximum number of elements allowed in a VARRAY.
+PRIOR, NEXT : functions Returns the subscript immediately before (PRIOR) or after (NEXT) a specified subscript. You should always use PRIOR and NEXT to traverse a collection, especially if you are working with sparse (or potentially sparse) collections. TRIM procedure Removes collection elements from the end of the collection (highest defined subscript).
+
+To create a nested table datatype that lives in the database (and not just your PL/SQL code), specify:
+CREATE [ OR REPLACE ] TYPE type_name AS | IS TABLE OF element_datatype [ NOT NULL ];
+
+To create a VARRAY datatype that lives in the database (and not just your PL/SQL code), specify:
+CREATE [ OR REPLACE ] TYPE type_name AS | IS VARRAY (max_elements) OF element_datatype [ NOT NULL ];
+
+To drop a type, specify:
+DROP TYPE type_name [ FORCE ];
+
+To declare a nested table datatype in PL/SQL, use the declaration:
+TYPE type_name IS TABLE OF element_datatype [ NOT NULL ];
+
+To declare a VARRAY datatype in PL/SQL, use the declaration:
+TYPE type_name IS VARRAY (max_elements) OF element_datatype [ NOT NULL ];
+
+I create a schema-level type named color_tab_t:
+CREATE OR REPLACE TYPE color_tab_t AS TABLE OF VARCHAR2(30)
+
+Next, I declare some PL/SQL variables based on that type.
+DECLARE
+my_favorite_colors color_tab_t := color_tab_t();
+his_favorite_colors color_tab_t := color_tab_t('PURPLE');
+her_favorite_colors color_tab_t := color_tab_t('PURPLE', 'GREEN');
+
+Initializing implicitly during direct assignment
+earth_colors color_tab_t := color_tab_t ('BRICK', 'RUST', 'DIRT');
+
+DECLARE
+TYPE emp_copy_t IS TABLE OF employees%ROWTYPE INDEX BY PLS_INTEGER;
+l_emps emp_copy_t;
+BEGIN
+FOR emp_rec IN (SELECT * FROM employees)
+LOOP
+l_emps (emp_rec.employee_id) := emp_rec;
+END LOOP;
+END;
+
+Nested Table Multiset Operations
+The essential advance made in collections starting with Oracle Database 10g is that the database treats nested tables more like the multisets that they actually are.
+
+Operation : Return value : Description
+= : BOOLEAN : Compares two nested tables, and returns TRUE if they have the same named type and cardinality and if the elements are equal.
+<> or != : BOOLEAN : Compares two nested tables, and returns FALSE if they differ in named type, cardinality, or equality of elements.
+x MULTISET EXCEPT [DISTINCT] y : NESTED TABLE : Performs a MINUS set operation on nested tables x and y, returning a nested table whose elements are in x, but not in y. x, y, and the returned
+other variants 
+x MULTISET INTERSECT [DISTINCT] y
+x MULTISET UNION [DISTINCT] y
+SET(x): NESTED TABLE :Returns nested table x without duplicate elements.
+x IS [NOT] A SET :BOOLEAN :Returns TRUE [FALSE] if the nested table x is composed of unique elements.
+x IS [NOT] EMPTY : BOOLEAN : Returns TRUE [FALSE] if the nested table x is empty.
+
+
+The BOOLEAN Datatype
+Boolean values and variables are very useful in PL/SQL. Because a Boolean variable can only be TRUE, FALSE, or NULL, you can use that variable to explain what is happening in your code. With Booleans you can write code that is easily readable because it is more English-like.
+
+Here is an example of an IF statement with a single Boolean variable (or function—you really can’t tell the difference just by looking at this short bit of code):
+IF report_requested
+THEN
+print_report (report_id);
+END IF;
+
+declare
+check1 boolean := false;
+begin
+    if check1 then
+        dbms_output.put_line('True');
+    else
+        dbms_output.put_line('False');
+    end if;
+end;
+/
+
+While PL/SQL supports a Boolean datatype, the Oracle database does not. You can create and work with Boolean variables from PL/SQL, but you cannot create tables having Boolean columns.
+
+The RAW Datatype
+The RAW datatype allows you to store and manipulate relatively small amounts of binary data. Unlike the case with VARCHAR2 and other character types, RAW data never undergoes any kind of character set conversion when travelling back and forth between your PL/SQL programs and the database. RAW variables are declared as follows:
+variable_name RAW(maximum_size)
+The value for maximum_size may range from 1 through 32767. Be aware that while a RAW PL/SQL variable can hold up to 32,767 bytes of data, a RAW database column can hold only 2,000 bytes.
+
+The UROWID and ROWID Datatypes
+The UROWID and ROWID types allow you to work with database ROWIDs in your PL/SQL programs. A ROWID is a row identifier—a binary value that identifies the physical address for a row of data in a database table. ROWID is the fastest way to locate or retrieve a specific row in a table
+
+Historically, the ROWID type came before UROWID. The U in UROWID stands for Universal, and a UROWID variable can contain any type of ROWID from any type of table.
+
+The LOB Datatypes
+Oracle and PL/SQL support several variations of large object datatypes. LOBs can store large amounts—from 8 to 128 terabytes—of binary data (such as images) or character text data.
+
+Within PL/SQL you can declare LOB variables of the following datatypes:
+BFILE : Binary file. Declares a variable that holds a file locator pointing to an operating system file outside the database. The database treats the data in the file as binary data.
+BLOB : Binary large object. Declares a variable that holds a LOB locator pointing to a large binary object stored inside the database.
+CLOB : Character large object. Declares a variable that holds a LOB locator pointing to a large block of character data in the database character set, stored inside the database.
+NCLOB : National Language Support (NLS) character large object. Declares a variable that holds a LOB locator pointing to a large block of character data in the national character set, stored inside the database.
+
+LOBs can be categorized as internal or external. Internal LOBs (BLOBs, CLOBs, and NCLOBs) are stored in the database and can participate in a transaction in the database server. External LOBs (BFILEs) represent binary data stored in operating-system files outside the database tablespaces.
+
+TABLE waterfalls (
+	falls_name VARCHAR2(80),
+	falls_photo BLOB,
+	falls_directions CLOB,
+	falls_description NCLOB,
+	falls_web_page BFILE)
+	
+The table implements one column for each of the four LOB types. Photos consist of large amounts of binary data, so the falls_photo column is defined as a BLOB. Directions and descriptions are text, so those columns are CLOB and NCLOB, respectively. Normally, you’d use either CLOB or NCLOB for both, but I wanted to provide an example that used each LOB type. Finally, the master copy of the web page for each waterfall is stored in an HTML file outside the database. I use a BFILE column to point to that HTML file.
+
+Fundamental to working with LOBs is the concept of a LOB locator. A LOB locator is a pointer to large object data in a database. Let’s look at what happens when you select a BLOB column into a BLOB PL/SQL variable:
+DECLARE
+	photo BLOB;
+BEGIN
+	SELECT falls_photo
+	INTO photo
+	FROM waterfalls
+	WHERE falls_name='Dryer Hose';
+	
+What, exactly, is in the photo variable after the SELECT statement executes? Is the photo itself retrieved? No. Only a pointer to the photo is retrieved. and you then use a built-in package named DBMS_LOB to retrieve and/or modify the actual LOB data. For example, to retrieve the binary photo data from the falls_photo BLOB column used in the previous example, you would go through the following steps:
+
+1. Issue a SELECT statement to retrieve the LOB locator for the photo you wish to display.
+2. Open the LOB via a call to DBMS_LOB.OPEN.
+3. Make a call to DBMS_LOB.GETCHUNKSIZE to get the optimal chunk size to use when reading (and writing) the LOB’s value.
+4. Make a call to DBMS_LOB.GETLENGTH to get the number of bytes or characters in the LOB value.
+5. Make multiple calls to DBMS_LOB.READ in order to retrieve the LOB data.
+6. Close the LOB.
+
+LOBs are not cached in the buffer cache by default, and LOBs do not generate undo like normal data. LOBs generate redo like normal data, unless you specify the NOLOGGING option. So loading 50 gigabytes of LOB data will not flush your buffer cache or flood your undo tablespace and degrade overall performance.
+
+Empty Versus NULL LOBs
+
+DECLARE
+directions CLOB;
+BEGIN
+	IF directions IS NULL THEN
+		DBMS_OUTPUT.PUT_LINE('at first directions is NULL');
+	ELSE
+		DBMS_OUTPUT.PUT_LINE('at first directions is not NULL');
+	END IF;
+	DBMS_OUTPUT.PUT_LINE('Length = '|| DBMS_LOB.GETLENGTH(directions));
+	-- initialize the LOB variable
+	directions := EMPTY_CLOB();
+	IF directions IS NULL THEN
+		DBMS_OUTPUT.PUT_LINE('after initializing, directions is NULL');
+	ELSE
+		DBMS_OUTPUT.PUT_LINE('after initializing, directions is not NULL');
+	END IF;
+	DBMS_OUTPUT.PUT_LINE('Length = '
+	|| DBMS_LOB.GETLENGTH(directions));
+END;
+
+The output is:
+	at first directions is NULL
+	Length =
+	after initializing, directions is not NULL
+	Length = 0
+
+If an IS NULL test on a NUMBER or a VARCHAR2 (or any other scalar type) returns TRUE, you know that the variable holds no data. With LOBs, however, you not only need to check for nullity (no locator), but you also need to check the length:	
+
+Thus, to determine whether a LOB holds data, you must first check for the presence of a locator using an IS NULL test, and then check for a non-zero length or perform both checks together like this:
+
+IF NVL(DBMS_LOB.GETLENGTH(some_clob),0) = 0 THEN
+-- There is no data
+ELSE
+-- There is data
+END IF;
+
+
+   FOR indx IN 
+   1 .. names_in.COUNT
+   LOOP
+      DBMS_OUTPUT.PUT_LINE 
+        (names_in(indx));
+   END LOOP
+
+FOR ALL and BULK COLLECT
+
+Turbo-charge SQL with Bulk Processing, Improve performance of repeated execute of same statements by an order of magnitude with bulk/array processing in PL/SQL!
+The goal is straightforward: reduce the number of context switches and you improve performance. 
+To do this, Oracle "bundles up" the requests for data (or to change data) and then passes them with a single context switch. 
+FORALL speeds up non-query DML, Use with inserts, updates, deletes and merges. Move data from collections to tables.
+BULK COLLECT speeds up queries, Can be used with all kinds of queries: implicit, explicit, static and dynamic. Move data from tables into collections.
+
+The bulk processing features of PL/SQL change the way the PL/SQL engine communicates with the SQL layer.
+For both FORALL and BULK COLLECT, the processing in the SQL engine is almost completely unchanged.
+   Same transaction and rollback segment management
+   Same number of individual SQL statements will be executed.
+Only one difference: BEFORE and AFTER statement-level triggers only fire once per FORALL INSERT statements.
+Not for each INSERT statement passed to the SQL engine from the FORALL statement.
+
+BULK COLLECT for multi-row querying 
+SELECT * BULK COLLECT INTO collection(s) FROM table;
+FETCH cur BULK COLLECT INTO collection(s);
+EXECUTE IMMEDIATE query BULK COLLECT INTO collection(s); 
+
+Retrieve multiple rows into a collection with a single fetch (context switch to the SQL engine). Deposit the multiple rows of data into one or more collections.
+NO_DATA_FOUND is not raised when no rows are fetched; instead, the collection is empty.
+The "INTO" collections are filled sequentially from index value 1. There are no "gaps" between 1 and the index value returned by the COUNT method.
+Only integer-indexed collections may be used. No need to initialize or extend nested tables and varrays. Done automatically by Oracle.
+
+ DECLARE
+   TYPE employees_aat IS TABLE OF  employees%ROWTYPE;
+
+   l_employees employees_aat;
+BEGIN
+   SELECT *
+   BULK COLLECT INTO l_employees
+     FROM employees;
+     
+   FOR indx IN 1 .. l_employees.COUNT 
+   LOOP
+      process_employee (l_employees(indx));
+   END LOOP;
+END;
+
+BULK COLLECT: SELECT statements that retrieve multiple rows with a single fetch, improving the speed of data retrieval
+FORALL: INSERTs, UPDATEs, and DELETEs that use collections to change multiple rows of data very quickly
+
+Given that PL/SQL is so tightly integrated with the SQL language, you might be wondering why special features would be needed to improve the performance of SQL statements inside PL/SQL. The explanation has everything to do with how the runtime engines for both PL/SQL and SQL communicate with each other—through a context switch.
+
+PROCEDURE increase_salary (
+   department_id_in   IN employees.department_id%TYPE,
+   increase_pct_in    IN NUMBER)
+IS
+   l_eligible   BOOLEAN;
+BEGIN
+   FOR employee_rec
+      IN (SELECT employee_id
+            FROM employees
+           WHERE department_id =
+                    increase_salary.department_id_in)
+   LOOP
+      check_eligibility (employee_rec.employee_id,
+                         increase_pct_in,
+                         l_eligible);
+
+      IF l_eligible
+      THEN
+         UPDATE employees emp
+            SET emp.salary =
+                     emp.salary
+                   +   emp.salary
+                     * increase_salary.increase_pct_in
+          WHERE emp.employee_id = employee_rec.employee_id;
+      END IF;
+   END LOOP;
+END increase_salary;
+
+Bulk processing for the increase_salary procedure 
+
+CREATE OR REPLACE PROCEDURE increase_salary (
+ department_id_in   IN employees.department_id%TYPE,
+ increase_pct_in    IN NUMBER)
+IS
+ TYPE employee_ids_t IS TABLE OF employees.employee_id%TYPE
+         INDEX BY PLS_INTEGER; 
+ l_employee_ids   employee_ids_t;
+ l_eligible_ids   employee_ids_t;
+
+ l_eligible       BOOLEAN;
+BEGIN
+ SELECT employee_id
+   BULK COLLECT INTO l_employee_ids
+   FROM employees
+  WHERE department_id = increase_salary.department_id_in;
+
+ FOR indx IN 1 .. l_employee_ids.COUNT
+ LOOP
+    check_eligibility (l_employee_ids (indx),
+                       increase_pct_in,
+                       l_eligible);
+
+    IF l_eligible
+    THEN
+       l_eligible_ids (l_eligible_ids.COUNT + 1) :=
+          l_employee_ids (indx);
+    END IF;
+ END LOOP;
+
+ FORALL indx IN 1 .. l_eligible_ids.COUNT
+    UPDATE employees emp
+       SET emp.salary =
+                emp.salary
+              + emp.salary * increase_salary.increase_pct_in
+     WHERE emp.employee_id = l_eligible_ids (indx);
+END increase_salary;
+
+Fetch rows with BULK COLLECT into one or more collections. A single context switch is needed for this step.
+Change the table with FORALL using the modified collections.
+
+About BULK COLLECT
+
+It can be used with all three types of collections: associative arrays, nested tables, and VARRAYs.
+You can fetch into individual collections (one for each expression in the SELECT list) or a single collection of records.
+The collection is always populated densely, starting from index value 1.
+If no rows are fetched, then the collection is emptied of all elements.
+
+Fetching values for two columns into a collection 
+DECLARE
+   TYPE two_cols_rt IS RECORD
+   (
+      employee_id   employees.employee_id%TYPE,
+      salary        employees.salary%TYPE
+   );
+
+   TYPE employee_info_t IS TABLE OF two_cols_rt;
+
+   l_employees   employee_info_t;
+BEGIN
+   SELECT employee_id, salary
+     BULK COLLECT INTO l_employees
+     FROM employees
+    WHERE department_id = 10;
+END;
+
+If you are fetching lots of rows, the collection that is being filled could consume too much session memory and raise an error. To help you avoid such errors, Oracle Database offers a LIMIT clause for BULK COLLECT.
+
+FETCH employees_cur
+BULK COLLECT INTO l_employee_ids
+LIMIT c_limit;
+
+About FORALL
+Whenever you execute a DML statement inside of a loop, you should convert that code to use FORALL. The performance improvement will amaze you and please your users.
+
+The FORALL statement is not a loop; it is a declarative statement to the PL/SQL engine: “Generate all the DML statements that would have been executed one row at a time, and send them all across to the SQL engine with one context switch.”
+
+Here are some things to know about FORALL:
+
+Each FORALL statement may contain just a single DML statement. If your loop contains two updates and a delete, then you will need to write three FORALL statements.
+PL/SQL declares the FORALL iterator (indx on line 30 in Listing 4) as an integer, just as it does with a FOR loop. You do not need to—and you should not—declare a variable with this same name.
+In at least one place in the DML statement, you need to reference a collection and use the FORALL iterator as the index value in that collection.
+When using the IN low_value . . . high_value syntax in the FORALL header, the collections referenced inside the FORALL statement must be densely filled. That is, every index value between the low_value and high_value must be defined.
+If your collection is not densely filled, you should use the INDICES OF or VALUES OF syntax in your FORALL header.
+
+Using SAVE EXCEPTIONS with FORALL 
+BEGIN
+   FORALL indx IN 1 .. l_eligible_ids.COUNT SAVE EXCEPTIONS
+      UPDATE employees emp
+         SET emp.salary =
+                emp.salary + emp.salary * increase_pct_in
+       WHERE emp.employee_id = l_eligible_ids (indx);
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      IF SQLCODE = -24381
+      THEN
+         FOR indx IN 1 .. SQL%BULK_EXCEPTIONS.COUNT
+         LOOP
+            DBMS_OUTPUT.put_line (
+                  SQL%BULK_EXCEPTIONS (indx).ERROR_INDEX
+               || ‘: ‘
+               || SQL%BULK_EXCEPTIONS (indx).ERROR_CODE);
+         END LOOP;
+      ELSE
+         RAISE;
+      END IF;
+END increase_salary;
+
+---------
+
+CREATE OR REPLACE TYPE OmsPdfLabel 
+AS OBJECT
+(
+  PACKAGE_DOC_ID             NUMBER(10),
+  ORDER_ID                   NUMBER(10),
+  DOCUMENT_CONTENTS          BLOB
+);
+/
+
+CREATE OR REPLACE TYPE OmsPdfLabelTab
+   AS TABLE OF OmsPdfLabel;
+/
+
+CREATE OR REPLACE PACKAGE OmsClickCollect
+AS
+    FUNCTION CreateAndGetToteLabel (
+            i_param_1 number,
+            i_param_2 number,
+            i_param_3 number)
+    RETURN OmsPdfLabelTab PIPELINED;
+END;
+/
+
+CREATE OR REPLACE PACKAGE BODY OmsClickCollect AS
+FUNCTION CreateAndGetToteLabel(
+            i_param_1 number,
+            i_param_2 number,
+            i_param_3 number)
+RETURN OmsPdfLabelTab PIPELINED IS
+BEGIN
+  FOR i in (SELECT 
+              package_doc_id, 
+              package_id, 
+              document_contents 
+          FROM oms_package_document
+          where rownum <=10)
+    LOOP
+      PIPE ROW (OmsPdfLabel(i.package_doc_id, i.package_id, i.document_contents));
+      DBMS_LOCK.SLEEP(2);
+    END LOOP;
+    RETURN;
+  END;
+END;
+/
+
+select * from table(OmsClickCollect.CreateAndGetToteLabel(1,1,1));
+
+5.0.4.00.12
+
+Optional
+ALTER system SET shared_servers=5 scope=both;
+
+ALTER USER anonymous ACCOUNT UNLOCK;
+ALTER USER xdb ACCOUNT UNLOCK;
+ALTER USER apex_public_user ACCOUNT UNLOCK;
+ALTER USER flows_files ACCOUNT UNLOCK;
+
+@apex_epg_config.sql /oracle
+
+EXEC dbms_xdb.sethttpport(8080);
+
+Run the Embedded PL/SQL Gateway configuration (EPG)
+
+EXEC dbms_xdb.setListenerLocalAccess(l_access => FALSE);
+
+http://rlomstd:8080/apex/apex_admin
+
+Enable remote HTTP connections
+
+xdg-open  http://localhost:8080/apex/apex_admin
+
+gnome-open http://localhost:8080/apex/apex_admin
+
+links http://localhost:8080/apex/apex_admin
+
+ANONYMOUS
+
+(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=127.0.0.1)(PORT=8080))(Presentation=HTTP)(Session=RAW))
+
+
+JGB 6209H20B03468150000283F5E4E       0071117      TSS01  ZZ755595780GB    RIVER ISLAND                       XX101AH9ZGBRM502ST
+
+
+

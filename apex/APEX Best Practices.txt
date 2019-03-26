@@ -1,0 +1,68 @@
+• Clear session state of unneeded values using Clear Cache built-ins
+• Enable Session State Protection to prevent URL tampering
+• Set appropriate protection for Pages, Items and Application Items using built-ins
+
+• Build public page for users to land on when session expired
+Execution tracing: enable with "flip of switch"
+Error logging: make it easy for developers to log and raise errors.
+Move as much as possible to PL/SQL packages.
+Decide on clear standards for SQL construction, error management, naming conventions.
+Build tracing into your code.
+
+Avoid programming your UI in APEX or is APEX generating your UI. 
+
+There is nothing fancy here - nothing special. Just division of labor. People that know the database - do the database. People that know UI and the UI tools - do that. 
+
+Use Views for report queries : They allow developers to mask the complexity of a sophisticated SQL statement in a much easier-to-use format. If the definition of the view needs to change, it can do so without any application code changes in many cases, thus making applications easier to manage over the course of their lifetime.
+
+The use of views in your application should be something that is considered during the design phase. Designing an application based on views from the ground up is a lot faster than trying to retrofit an existing application with views. Like most facets of application development, a little bit of planning will go a long way. 
+
+Secure View using SYS_CONTEXT, to show employees of the same department.
+
+CREATE CONTEXT emp_ctx USING SCOTT.emp_ctx_pkg;
+
+CREATE OR REPLACE VIEW emp_v AS
+SELECT
+empno,
+ename,
+job,
+deptno
+FROM
+emp
+WHERE
+deptno = SYS_CONTEXT('EMP_CTX', 'DEPTNO')
+/
+
+CREATE OR REPLACE PACKAGE BODY emp_ctx_pkg
+AS
+PROCEDURE set_ctx
+(
+p_user_name IN VARCHAR2
+)
+IS
+l_deptno NUMBER;
+BEGIN
+-- Fetch the DEPTNO based on the currently signed on APP_USER
+SELECT deptno INTO l_deptno FROM emp
+WHERE ename = p_user_name;
+-- Set the Context
+dbms_session.set_context(
+namespace => 'EMP_CTX',
+attribute => 'DEPTNO',
+value => l_deptno);
+EXCEPTION
+WHEN no_data_found THEN
+-- If no data is found, then clear the context
+dbms_session.clear_context('EMP_CTX');
+END set_ctx;
+PROCEDURE unset_ctx
+IS
+BEGIN
+-- Clear the context
+dbms_session.clear_context('EMP_CTX');
+END unset_ctx;
+END emp_ctx_pkg;
+/
+
+Call this emp_ctx_pkg.set_ctx(p_username => :APP_USER);  and emp_ctx_pkg.unset_ctx >> shared components > security > security attributes > intialisation and clean up code.
+

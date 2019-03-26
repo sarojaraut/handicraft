@@ -1,0 +1,199 @@
+Chapter 6 - Configuring the Oracle Network Environment
+
+The default Oracle Net configuration is a dedicated server. In a dedicated server environment, each user process is connected to its own server process. An alternative is shared server, where a number of user processes make use of a pool of server processes that are shared by all the sessions.
+
+Establishing a Session
+When a user, through his/her user process, wishes to establish a session against an instance, he/she will issue a command something like
+CONNECT SCOTT/TIGER@ORCL11G
+
+If the “@” and the connect string are omitted, then the user process will assume that the instance you wish to connect to is running on the local machine, and that the always-available IPC protocol can be used.
+
+Connecting to a Local Instance
+Even when you connect to an instance running on your local machine, you still use Oracle Net. All Oracle sessions use a network protocol to implement the separation of user code from server code, but for a local connection the protocol is IPC.  This is the only type of connection that does not require a database listener; indeed, local connections do not require any configuration at all. The only information needed is to tell your user process which instance you want to connect to. Remember that there could be several instances running on your local computer. You give the process this information through an environment variable. set ORACLE_SID=orc11g or export ORACLE_SID=orc11g
+
+Name Resolution
+When connecting using Oracle Net, the first stage is to work out exactly what it is you want to connect to. If your connect statement includes the connect string “@orcl11g,” Oracle Net has to work out what is meant by “orcl11g.” the protocol you want to use (assume that this is TCP), the IP address on which the database listener is running, the port that the listener is monitoring for incoming connection requests, and the name of the instance (which need not be the same as the connect string) to which you wish to connect.
+
+The name resolution process gives your user process enough information to go across the network to a database listener and request a connection to a particular instance.
+
+Creating a Listener
+A listener is defined in a file: the listener .ora file, whose default location is in the ORACLE_HOME/network/admin directory.
+
+You can run a listener completely on defaults, without a listener.ora file at all. It will listen on whatever address resolves to the machine’s host name, on port 1521. Don’t do this;  it would be very confusing
+
+This is an example of a listener.ora file:
+LISTENER =
+(DESCRIPTION =
+(ADDRESS = (PROTOCOL = TCP)(HOST = jwlnx1)(PORT = 1521))
+)
+LIST2 =
+(DESCRIPTION =
+	(ADDRESS_LIST =
+	(ADDRESS = (PROTOCOL = TCP)(HOST = 127.0.0.1)(PORT = 1522))
+	(ADDRESS = (PROTOCOL = TCP)(HOST = jwlnx1.bplc.co.za)(PORT = 1522))
+	)
+)
+
+The first section defines a listener called LISTENER, monitoring the local hostname on the default port, 1521. The second section defines another listener called LIST2. This listener is monitoring port 1522 on both the hostname address and a loopback address.
+
+To create the listener, you need do nothing more than create an entry in the listener.ora file, and start it.
+
+Database Registration
+A listener is necessary to spawn server processes against an instance. In order to do this, it needs to know what instances are available on the computer on which it is running. A listener finds out about instances by the process of “registration.” There are two methods for registering an instance with a database: static and dynamic registration. For static registration, you hard-code a list of instances in the listener.ora file. Dynamic registration means that the instance itself, at startup time, locates a listener and registers with it.
+
+Static Registration
+As a general rule, dynamic registration is a better option, but there are circumstances when you will resort to static registration (if you have older databases that your listener must connect users to, you will have to register them statically. Also some applications may require static registration: typically management tools.) To register an instance statically, add an
+appropriate entry to the listener.ora file:
+SID_LIST_LIST2 =
+(SID_LIST =
+(SID_DESC =
+(ORACLE_HOME = /u01/oracle/app/product/11.1.0/db_1)
+(SID_NAME = ocp11g)
+)
+)
+This entry will configure the listener called LIST2 to accept connection requests for an instance called ocp11g. It says nothing about whether the instance is running or even exists at all. The directive ORACLE_HOME is only required if the database listener is not running from the same Oracle Home as the instance. If this is the case, then this directive will let the listener find the executable file that it must run to launch a server process. 
+
+Dynamic Instance Registration
+This is the preferred method by which an instance will register with a listener. There is an initialization parameter local_listener, which tells the instance the network address that it should contact to find a listener with which to register. At instance startup time, the PMON process will user this parameter to locate a listener, and inform it of the instance’s name and the names of the service(s) that the instance is offering. The instance name is defined by the instance_name parameter, and the service_names parameter will have defaulted to this suffixed by the db_domain parameter, which will default to null. It is possible to create and start additional services at any time, either by changing the value of the service_names parameter (which can be a comma-delimited list, if the instance is to offer several services) or programmatically using the DBMS_SERVICE package. Any change to the services must be registered with the local listener. If this is not done, the listener won’t know what services are being offered, and will therefore not be able to set up sessions to them. The PMON process will reregister from time to time automatically, but at any time subsequent to instance startup you can force a reregistration by executing the command.
+
+alter system register;
+
+From release 9i onward, dynamic registration requires no configuration at all if your listener is running on the default port, 1521. All instances will automatically look for a listener on the local host on that port, and register themselves if they find one. However, if your listener is not running on the default port on the address identified by the hostname, you must specify where the listener is by setting the parameter local_listener and reregistering, for example,
+
+SQL> alter system set local_listener=list2 scope=memory;
+SQL> alter system register;
+
+where LIST2 is a entry in the tnsnames.ora file of server containing the listner details.
+
+LIST2=(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1522))))
+
+Alternatively following statement can be used.
+alter system set LOCAL_LISTENER='(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1522))' scope=memory; 
+
+Techniques for Name Resolution
+
+Oracle provides four methods of name resolution: easy connect, local naming, directory naming, and external naming. It is probably true to say that the majority of Oracle sites use local naming, but there is no question that directory naming is the best method for a large and complex installation.
+
+Easy Connect :The Easy Connect name resolution method was introduced with release 10g. It is very easy to use—it requires no configuration at all. But it is limited to one protocol:
+TCP. 
+SQL> connect scott/tiger@jwlnx1.bplc.co.za:1522/ocp11g
+In this example, SQL*Plus will use TCP to go to port 1522 on the IP address to which the hostname resolves. Then if there is a listener running on that port and address, it will ask the listener to spawn a server process against an instance that is part of the service called ocp10g. Easy Connect can be made even easier:
+SQL> connect scott/tiger@jwlnx1.bplc.co.za
+will also work, but only if the listener is using port 1521, and the service name registered with the listener is jwlnx1.bplc.co.za, the same as the computer name.
+
+Local Naming : With local naming the user supplies an alias, known as an Oracle Net service alias, for the connect string, and the alias is resolved by a local file into the full network address (protocol, address, port, and service or instance name). This local file is the infamous tnsnames.ora file, which has caused DBAs much grief over the years.
+Consider this example of a tnsnames.ora file:
+
+ocp11g =
+(DESCRIPTION =
+(ADDRESS_LIST =
+(ADDRESS = (PROTOCOL = TCP)(HOST = jwlnx1.bplc.co.za)(PORT
+= 1522))
+)
+(CONNECT_DATA =
+(service_name = ocp11g)
+)
+)
+
+This entry, simply says that when the connect string “@ocp11g” is issued, your user process should use the TCP protocol to go the machine jwlnx1.bplc.co.za, contact it on port 1521, and ask the listener monitoring that port to establish a session against the instance with the service name ocp11g.
+
+There need be no relationship between the alias, the service name, and the instance name, but for the sake of your sanity you will usually keep them the same.
+
+Local naming supports all protocols and all the advanced features of Oracle Net, but maintaining tnsnames.ora files on all your client machines can be an extremely time-consuming task. The tnsnames.ora file is also notoriously sensitive to apparently trivial variations in layout.
+
+Directory Naming and External Naming : Directory naming points the user toward an LDAP directory server to resolve aliases. LDAP (the Lightweight Directory Protocol) is a widely used standard that Oracle Corporation (and other mainstream software vendors) is encouraging organizations to adopt. To use directory naming, you must first install and configure a directory server somewhere on your network. Oracle provides an LDAP server (the Oracle Internet Directory) as part of the Oracle Application Server, but you do not have to use that—if you already have a Microsoft Active Directory, that will be perfectly adequate.  This is much easier to maintain than many tnsnames.ora files distributed across your whole user community. External naming is conceptually similar to directory naming, but it uses thirdparty naming services such as Sun’s Network Information Services (NIS+) or the Cell Directory Services (CDS) that are part of the Distributed Computing Environment (DCE).
+
+The Listener Control Utility
+You can start and stop listeners through Database Control, but there is also a command-line utility lsnrctl (it is lsnrctl.exe on Windows)—lsnrctl commands can be run directly from an operating system prompt, or through a simple user interface. For all the commands, you must specify the name of the listener, if it is not the default name of LISTENER. Figures 6-6 and 6-7 show how to check the status of a listener and to stop and start it, issuing the commands either from the operating system prompt or from within the user interface.
+
+lsnrctl status list2
+lsnrctl start list2
+lsnrctl > services
+
+The fact that the services are shown to be “status ready” indicates that they were automatically registered by the PMON process: the listener knows they are ready because PMON said they were. If the services has been statically registered, they would be marked as “status unknown,” indicating that while they are in the listener.ora file, they may not in fact be working. 
+
+Configuring Service Aliases
+
+Having decided what name resolution method to use, your next task is to configure the clients to use it. You can do this through Database Control, but since Database Control is a server-side process, you can only use it to configure clients running on the database server. An alternative is to use the Net Manager. This is a stand-alone Java utility, shipped with all the Oracle client-side products. 
+
+The Net Manager navigation tree has three branches. 
+The Profile branch is used to set options that may apply to both the client and server sides of Oracle Net and can be used to influence the behavior of all Oracle Net connections. This is where, for example, you can configure detailed tracing of Oracle Net sessions.  The Service Naming branch is used to configure client-side name resolution, and the Listeners branch is used to configure database listeners.
+The top line of the Net Manager window will show the location of the Oracle Net files.
+
+When you take the Profile branch, you are in fact configuring a file called sqlnet.ora. This file exists in your ORACLE_HOME/network/admin directory. It is optional—there are defaults for every sqlnet.ora directive—but you will usually configure it if only to select the name resolution method.
+
+To test a connect string, use the TNSPING utility. This will accept a connect string, locate the Oracle Net files, resolve the string, and send a message to the listener. If the listener is running and does know about the service requested, the test will return successfully. The tool does not go further than the listener; it will not check whether the instance is actually working.
+
+File Names and the TNSADMIN Environment Variable
+
+The listener.ora file is a server-side file that defines database listeners. It includes the protocols, addresses, and ports on which they will listen for incoming connection requests, and (optionally) a hard-coded list of instances against which they will launch sessions.
+
+The tnsnames.ora file is a client-side file used for name resolution. It is used by user processes to locate database listeners. It may also be used by the instance itself, to locate a listener with which to register. PMON will search for tnsnames.ora in the following order: 1.$HOME/.tnsnames.ora 2. $TNS_ADMIN/tnsnames.ora 3. /var/opt/oracle/tnsnames.ora or /etc/tnsnames.ora (depending on platform) 4. $ORACLE_HOME/network/admin/tnsnames.ora
+
+The sqlnet.ora file is optional and may exist (possibly with different settings) on the server side, the client side, or both. It contains settings that apply to all connections and listeners, such as security rules and encryption.
+
+The three Oracle Net files by default exist in the directory ORACLE_HOME/network/admin. It is possible to relocate them with an environment variable: TNSADMIN. An important use of this is on systems that have several Oracle Homes. This is a very common situation. To create system wide TNS_ADMIN variable in windows add a new string variable with name TNS_ADMIN and value as the directory location in the registry in the Oracle Home branch. This will typically be HKEY_LOCAL_MACHINE\SOFTWARE\ORACLE\KEY_OraDb1g_home1
+
+The Shared Server Architecture
+Shared server is implemented purely on the server side. The user process and the application software have no way of telling that anything has changed. The user process issues a connect string that must resolve to the address of a listener and the name of a service (or of an instance). In return, it will receive the address of a server-side process that it will think is a dedicated server. It will then proceed to send SQL statements and receive back result sets; as far as the user process is concerned, absolutely nothing has changed. But the server side is very different.
+
+Configuring Shared Server
+
+Shared server is implemented by additional processes that are a part of the instance. They are background processes, launched at instance startup time. There are two new process types: dispatchers and shared servers. There are also some extra queue memory structures within the SGA. 
+
+When an instance that is configured for shared server starts up, in addition to the usual background processes one or more dispatcher processes also start. The dispatchers, like any other TCP process, run on a unique TCP port allocated by your operating system’s port mapper: they contact the listener and register with it, using the local_listener parameter to locate the listener. One or more shared server processes also start. These are conceptually similar to a normal dedicated server process, but they are not tied to one session. They will receive SQL statements, parse and execute them, and generate a result set—but they will not receive the SQL statements directly from a user process, they will read them from
+a queue that will be populated with statements from any number of user processes. Similarly, the shared servers don’t fetch result sets back to a user process directly—instead, they put the result sets onto a response queue.
+
+When a user process contacts a listener, rather than launching a server process and connecting it to the user process, the listener passes back the address of a dispatcher. If there is only one dispatcher, the listener will connect it to all the user processes. If there are multiple dispatchers, the listener will load-balance incoming connection requests across them, but the end result is that many user processes will be connected to each dispatcher. Each user process will be under the impression that it is talking to a dedicated server process, but it isn’t: it is sharing a dispatcher with many other user processes. At the network level, many user processes will have connections multiplexed through the one port
+used by the dispatcher.
+
+When a user process issues a SQL statement, it is sent to the dispatcher. The dispatcher puts all the statements it receives onto a queue. This queue is called the common queue, because all dispatchers share it. All the shared server processes monitor the common queue. When a statement arrives on the common queue, the first available shared server picks it up. From then execution proceeds through the usual parse-bind-execute cycle, but when it comes to the fetch phase, the shared server puts the result set onto a response queue that is specific to the dispatcher that received the job in the first place. Each dispatcher monitors its own response queue, and whenever any results are put on it, the dispatcher will pick them up and fetch them back to the user process that originally issued the statement.
+
+A result of the mechanism of dispatchers and queues is that any statement from any user process could be executed by any available shared server. The PGA for a dedicated server session will store the session’s session data, its cursor state, its sort space, and its stack space. But in the shared server environment, each statement might be picked off the common queue by a different shared server process, which will have no idea what the state of the transaction is. To get around this problem, a shared server session stores most of the session data in the SGA, rather than in a PGA. Then whenever a shared server picks a job off the common queue, it will go to the SGA and connect to the appropriate block of memory to find out the state of the session. The memory used in the SGA for each shared server session is known as the user global area (the UGA) and includes all of what would have been in a PGA with the exception of the session’s stack space.
+
+Configuring Shared Server
+
+There are a number of relevant parameters, but two are all that are usually necessary: dispatchers and shared_servers. The first parameter to consider is shared_servers. This controls the number of shared servers that will be launched at instance startup time. Shared server uses a queuing mechanism, but the ideal is that there should be no queuing: there should always be a server process ready and waiting for every job that is put on the common queue by the dispatchers. Therefore, shared_servers should be set to the maximum number of concurrent requests that you expect. But if there is a sudden burst of activity, you don’t have to worry too much, because Oracle will launch additional shared servers, up to the value specified for max_shared_servers.
+
+When to Use the Shared Server
+You will not find a great deal of hard advice in the Oracle documentation on when to use shared server, or how many dispatchers and shared servers you’ll need. The main point to hang on to is that shared server is a facility you use because you are forced to, not something you use automatically. It increases scalability, but perhaps at the cost of reducing performance. It is quite possible that any one statement will take longer to execute in a shared server environment than if it were executing on a dedicated server, because it has to go via queues. It may also take more CPU resources because of this enqueuing and dequeuing activity. But overall, the scalability of your system will increase dramatically. Even if each request is marginally slower, you will be able to carry out many more requests per second through the instance.
+
+It is often said that you should think about using shared server when your number of concurrent connections is in the low hundreds. If you have less than one hundred concurrent connections, you almost certainly don’t need it. But if you have more than a thousand, you probably do. The critical factor is whether your operating system performance is beginning to degrade.
+
+It should be apparent that shared server is ideal for managing many sessions doing short transactions, where the bulk of the work is on the client side of the clientserver divide. In these circumstances, one shared server will be able to service dozens of sessions. But for batch processing work, dedicated servers are much better. If you submit a large batch job through a shared server session, it will work—but it will tie up one of your small pool of shared server processes for the duration of the job, leaving all your other users to compete for the remaining shared servers. The amount of network traffic involved in batch uploads from a user process and in fetching large result sets back to a user process will also cause contention for dispatchers.
+
+Set Up a Shared Server Environment
+
+Set the dispatchers and shared_servers parameters and register with the listener as follows:
+alter system set dispatchers='(pro=tcp)(dis=2)' scope=memory;
+alter system set shared_servers=4 scope=memory;
+alter system register;
+
+Confirm that the dispatchers and shared servers have started by querying the view V$PROCESS. Look for processes named S000, S001, S002, S003, D000, and D001:
+select program from v$process order by program;
+
+From an operating system prompt, confirm that the dispatchers have registered with the listener:
+lsnrctl services newlist
+
+Connect through the listener, and confirm that the connection is through the shared server mechanism:
+connect system/oracle@new;
+select d.name,s.name from v$dispatcher d,v$shared_server s, v$circuit c
+where d.paddr=c.dispatcher and s.paddr=c.server;
+
+This query will show the dispatcher to which your season is connected, and the shared server process that is executing your query.
+
+Tidy up the environment, by returning to the original configuration:
+alter system set dispatchers='' scope=memory;
+alter system set shared_servers=0 scope=memory;
+alter system register;
+
+150
+
+
+61606161
+
+3
+
+
+
+

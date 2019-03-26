@@ -1,0 +1,146 @@
+Many companies have started using Go because of its simplicity, ease of use, performance, low barrier of entry, and powerful tooling.
+
+C:\> set GOPATH=C:\work
+
+go version
+
+go help
+
+
+package main
+import "fmt"
+// this is a comment
+func main() {
+fmt.Println("Hello, World")
+}
+
+godoc fmt Println
+
+godoc cmd/fmt
+
+oversimplistic
+
+The line that starts with // is known as a comment. and /* */
+comments where everything between the asterisks is part of the comment (and may
+include multiple lines).
+
+
+func main() {
+fmt.Println("Hello, World")
+}
+
+All functions start with the
+keyword func followed by the name of the function (main, in this case), a list of zero
+or more parameters surrounded by parentheses, an optional return type, and a body
+which is surrounded by curly braces. This function has no parameters, doesn’t return
+anything, and has only one statement. The name main is special because it’s the function
+that gets called when you execute the program.
+
+fmt.Println("Hello, World")
+This statement is made of three components. First, we access another function inside
+of the fmt package called Println (that’s the fmt.Println piece); Println means
+“print line.” Then we create a new string that contains Hello, World and invoke (also
+known as call or execute) that function with the string as the first and only argument.
+
+godoc fmt Println : Go is a very well-documented programming language, but this documentation can be
+difficult to understand unless you are already familiar with programming languages.
+Nevertheless, the godoc command is extremely useful and a good place to start whenever
+you have a question.
+
+Go is a statically typed programming language. This means that variables always have
+a specific type and that type cannot change.
+
+Go comes with several built-in data types,
+
+Numbers
+Go has several different types to represent numbers. Generally, we split numbers into
+two different kinds: integers and floating-point numbers.
+
+Go’s integer types are uint8, uint16, uint32, uint64, int8, int16, int32, and int64.
+8, 16, 32, and 64 tell us how many bits each of the types use. uint means “unsigned
+integer” while int means “signed integer.” Unsigned integers only contain positive
+numbers (or zero).
+
+There are also three machine dependent integer types: uint,
+int, and uintptr. They are machine dependent because their size depends on the
+type of architecture you are using.
+
+Go has two floating-point types: float32 and float64 (also often referred to as single
+precision and double precision, respectively). It also has two additional types for representing
+complex numbers (numbers with imaginary parts): complex64 and
+complex128. Generally, we should stick with float64 when working with floatingpoint
+numbers.
+
+Floating-point numbers are inexact. Occasionally it is not possible to represent a
+number. For example, computing 1.01 – 0.99 using floating-point arithmetic
+results in 0.020000000000000018—a number extremely close to what we would
+expect, but not exactly the same.
+
+In addition to numbers, there are several other values that can be represented:
+“not a number” (NaN, for things like 0/0) and positive and negative infinity (+∞
+and −∞).
+
+Go supports the following standard arithmetic operators:
++
+Addition
+-
+Subtraction
+*
+Multiplication
+/
+Division
+%
+Remainder
+This small set of basic operators, along with some of the helper functions available in
+the math package, is sufficient to create surprisingly sophisticated programs.
+
+Strings
+
+String literals can be created using double quotes "Hello, World" or backticks
+`Hello, World`. The difference between these is that double-quoted strings cannot
+contain newlines and they allow special escape sequences. For example, \n gets
+replaced with a newline and \t gets replaced with a tab character.
+The following are some common operations on strings:
+len("Hello, World")
+Finds the length of a string
+"Hello, World"[1]
+Accesses a particular character in the string (in this case, the second character)
+"Hello, " + World"
+Concatenates two strings together
+
+
+
+Chapter-7
+
+type Circle struct {
+x float64
+y float64
+r float64
+}
+
+Fields are like a set of grouped variables. Each field has a name and a type and is
+stored adjacent to the other fields in the struct. Like with functions, we can collapse
+fields that have the same type:
+
+type Circle struct {
+x, y, r float64
+}
+
+Initialization
+We can create an instance of our new Circle type in a variety of ways:
+var c Circle
+Like with other data types, this will create a local Circle variable that is by default set
+to zero. For a struct, zero means each of the fields is set to their corresponding zero
+value (0 for ints, 0.0 for floats, "" for strings, nil for pointers, etc.) We can also
+use the new function:
+c := new(Circle)
+
+c := Circle{x: 0, y: 0, r: 5}
+c := Circle{0, 0, 5}
+
+If you want a pointer to the
+struct, use &:
+c := &Circle{0, 0, 5}
+
+
+

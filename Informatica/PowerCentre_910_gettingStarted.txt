@@ -1,0 +1,1359 @@
+PowerCentre_910_gettingStarted
+
+PowerCenter Repository : The PowerCenter repository resides in a relational database. The repository stores information required to extract, transform, and load data. It also stores administrative information such as permissions and privileges for users and groups that have access to the repository. PowerCenter applications access the PowerCenter repository through the Repository Service.
+
+You administer the repository through Informatica Administrator and command line programs. You can develop global and local repositories to share metadata:
+
+¨ Global repository. The global repository is the hub of the repository domain. Use the global repository to store common objects that multiple developers can use through shortcuts. These objects may include operational or application source definitions, reusable transformations, mapplets, and mappings.
+
+¨ Local repositories. A local repository is any repository within the domain that is not the global repository. Use local repositories for development. From a local repository, you can create shortcuts to objects in shared folders in the global repository. These objects include source definitions, common dimensions and lookups, and enterprise standard transformations. You can also create copies of objects in non-shared folders.
+
+You can view repository metadata in the Repository Manager. Informatica Metadata Exchange (MX) provides a set of relational views that allow easy SQL access to the PowerCenter metadata repository.
+
+PowerCenter Client : The PowerCenter Client application consists of the tools to manage the repository and to design mappings, mapplets, and sessions to load the data. The PowerCenter Client application has the following tools:
+¨ Designer. Use the Designer to create mappings that contain transformation instructions for the Integration Service.
+¨ Mapping Architect for Visio. Use the Mapping Architect for Visio to create mapping templates that generate multiple mappings.
+¨ Repository Manager. Use the Repository Manager to assign permissions to users and groups and manage folders.
+¨ Workflow Manager. Use the Workflow Manager to create, schedule, and run workflows. A workflow is a set of instructions that describes how and when to run tasks related to extracting, transforming, and loading data.
+¨ Workflow Monitor. Use the Workflow Monitor to monitor scheduled and running workflows for each Integration Service.
+
+PowerCenter Designer : The Designer has the following tools that you use to analyze sources, design target schemas, and build source-to target mappings:
+
+¨ Source Analyzer. Import or create source definitions.
+¨ Target Designer. Import or create target definitions.
+¨ Transformation Developer. Develop transformations to use in mappings. You can also develop user-defined functions to use in expressions.
+¨ Mapplet Designer. Create sets of transformations to use in mappings.
+¨ Mapping Designer. Create mappings that the Integration Service uses to extract, transform, and load data.
+You can display the following windows in the Designer:
+¨ Navigator. Connect to repositories and open folders within the Navigator. You can also copy objects and create shortcuts within the Navigator.
+¨ Workspace. Open different tools in this window to create and edit repository objects, such as sources, targets, mapplets, transformations, and mappings.
+¨ Output. View details about tasks you perform, such as saving your work or validating a mapping.
+
+Mapping Architect for Visio : Use Mapping Architect for Visio to create mapping templates using Microsoft Office Visio. When you work with a mapping template, you use the following main areas:
+
+¨ Informatica stencil. Displays shapes that represent PowerCenter mapping objects. Drag a shape from the Informatica stencil to the drawing window to add a mapping object to a mapping template.
+¨ Informatica toolbar. Displays buttons for tasks you can perform on a mapping template. Contains the online help button.
+¨ Drawing window. Work area for the mapping template. Drag shapes from the Informatica stencil to the drawing window and set up links between the shapes. Set the properties for the mapping objects and the rules for data movement and transformation.
+
+Repository Manager : Use the Repository Manager to administer repositories. You can navigate through multiple folders and repositories, and complete the following tasks:
+
+¨ Manage user and group permissions. Assign and revoke folder and global object permissions.
+¨ Perform folder functions. Create, edit, copy, and delete folders. Work you perform in the Designer and Workflow Manager is stored in folders. If you want to share metadata, you can configure a folder to be shared.
+¨ View metadata. Analyze sources, targets, mappings, and shortcut dependencies, search by keyword, and view the properties of repository objects.
+The Repository Manager can display the following windows:
+¨ Navigator. Displays all objects that you create in the Repository Manager, the Designer, and the Workflow Manager. It is organized first by repository and by folder.
+¨ Main. Provides properties of the object selected in the Navigator. The columns in this window change depending on the object selected in the Navigator.
+¨ Output. Provides the output of tasks executed within the Repository Manager.
+
+Repository Objects : You create repository objects using the Designer and Workflow Manager client tools. You can view the following objects in the Navigator window of the Repository Manager:
+¨ Source definitions. Definitions of database objects such as tables, views, synonyms, or files that provide source data.
+¨ Target definitions. Definitions of database objects or files that contain the target data.
+¨ Mappings. A set of source and target definitions along with transformations containing business logic that you build into the transformation. These are the instructions that the Integration Service uses to transform and move data. 
+¨ Reusable transformations. Transformations that you use in multiple mappings.
+¨ Mapplets. A set of transformations that you use in multiple mappings.
+¨ Sessions and workflows. Sessions and workflows store information about how and when the Integration Service moves data. A workflow is a set of instructions that describes how and when to run tasks related to extracting, transforming, and loading data. A session is a type of task that you can put in a workflow. Each session corresponds to a single mapping.
+
+Workflow Manager : In the Workflow Manager, you define a set of instructions to execute tasks such as sessions, emails, and shell commands. This set of instructions is called a workflow.
+The Workflow Manager has the following tools to help you develop a workflow:
+¨ Task Developer. Create tasks you want to accomplish in the workflow.
+¨ Worklet Designer. Create a worklet in the Worklet Designer. A worklet is an object that groups a set of tasks. A worklet is similar to a workflow, but without scheduling information. You can nest worklets inside a workflow.
+¨ Workflow Designer. Create a workflow by connecting tasks with links in the Workflow Designer. You can also create tasks in the Workflow Designer as you develop the workflow.
+When you create a workflow in the Workflow Designer, you add tasks to the workflow. The Workflow Manager includes tasks, such as the Session task, the Command task, and the Email task so you can design a workflow. The Session task is based on a mapping you build in the Designer. You then connect tasks with links to specify the order of execution for the tasks you created. Use conditional links and workflow variables to create branches in the workflow. 
+When the workflow start time arrives, the Integration Service retrieves the metadata from the repository to execute the tasks in the workflow. You can monitor the workflow status in the Workflow Monitor. 
+
+The Workflow Manager display the following windows: Navigator, main, output
+
+Workflow Monitor : You can monitor workflows and tasks in the Workflow Monitor. You can view details about a workflow or task in Gantt Chart view or Task view. You can run, stop, abort, and resume workflows from the Workflow Monitor. You can view sessions and workflow log events in the Workflow Monitor Log Viewer. The Workflow Monitor displays workflows that have run at least once. The Workflow Monitor continuously receives information from the Integration Service and Repository Service. It also fetches information from the repository to display historic information.
+The Workflow Monitor consists of the following windows: 
+¨ Navigator window. Displays monitored repositories, servers, and repositories objects.
+¨ Output window. Displays messages from the Integration Service and Repository Service.
+¨ Time window. Displays progress of workflow runs.
+¨ Gantt Chart view. Displays details about workflow runs in chronological format.
+¨ Task view. Displays details about workflow runs in a report format.
+
+PowerCenter Repository Service
+The PowerCenter Repository Service manages connections to the PowerCenter repository from repository clients. A repository client is any PowerCenter component that connects to the repository. The Repository Service is a separate, multi-threaded process that retrieves, inserts, and updates metadata in the repository database tables. The Repository Service ensures the consistency of metadata in the repository. The Repository Service accepts connection requests from the following PowerCenter components:
+¨ PowerCenter Client. Create and store mapping metadata and connection object information in the repository with the PowerCenter Designer and Workflow Manager. Retrieve workflow run status information and session logs with the Workflow Monitor. Create folders, organize and secure metadata, and assign permissions to users and groups in the Repository Manager.
+¨ Command line programs. Use command line programs to perform repository metadata administration tasks and service-related functions.
+¨ PowerCenter Integration Service. When you start the PowerCenter Integration Service, the service connects to the repository to schedule workflows. When you run a workflow, the Integration Service retrieves workflow task and mapping metadata from the repository. The Integration Service writes workflow status to the repository.
+¨ Web Services Hub. When you start the Web Services Hub, it connects to the repository to access webenabled workflows. The Web Services Hub retrieves workflow task and mapping metadata from the repository and writes workflow status to the repository.
+¨ SAP BW Service. Listens for RFC requests from SAP NetWeaver BI and initiates workflows to extract from or load to SAP NetWeaver BI. You install the Repository Service when you install PowerCenter Services. After you install the PowerCenter Services, you can use Informatica Administrator to manage the Repository Service.
+
+PowerCenter Integration Service
+The PowerCenter Integration Service reads workflow information from the repository. The Integration Service connects to the repository through the Repository Service to fetch metadata from the repository. A workflow is a set of instructions that describes how and when to run tasks related to extracting, transforming, and loading data. The Integration Service runs workflow tasks. A session is a type of workflow task. A session is a set of instructions that describes how to move data from sources to targets using a mapping. A session extracts data from the mapping sources and stores the data in memory while it applies the transformation rules that you configure in the mapping. The Integration Service loads the transformed data into the mapping targets.
+Other workflow tasks include commands, decisions, timers, pre-session SQL commands, post-session SQL commands, and email notification. The Integration Service can combine data from different platforms and source types. For example, you can join data from a flat file and an Oracle source. The Integration Service can also load data to different platforms and target types. You install the PowerCenter Integration Service when you install PowerCenter Services. After you install the PowerCenter Services, you can use Informatica Administrator to manage the Integration Service.
+
+Web Services Hub
+The Web Services Hub is the application service in the Informatica domain that is a web service gateway for external clients. The Web Services Hub processes SOAP requests from client applications that access PowerCenter functionality through web services. Web service clients access the PowerCenter Integration Service and PowerCenter Repository Service through the Web Services Hub.
+The Web Services Hub hosts the following web services:
+¨ Batch web services. Includes operations to run and monitor the sessions and workflows. Batch web services also include operations that can access repository metadata. Batch web services install with PowerCenter.
+¨ Real-time web services. Workflows enabled as web services that can receive requests and generate responses in SOAP message format. Create real-time web services when you enable PowerCenter workflows as web services.
+
+Data Analyzer
+Data Analyzer is a PowerCenter web application that provides a framework to extract, filter, format, and analyze data stored in a data warehouse, operational data store, or other data storage models. The Reporting Service in the Informatica domain runs the Data Analyzer application. You can create a Reporting Service in the Administrator tool.
+Design, develop, and deploy reports with Data Analyzer. Set up dashboards and alerts. You also use Data Analyzer to run PowerCenter Repository Reports, Metadata Manager Reports, Data Profiling Reports. Data Analyzer can access information from databases, web services, or XML documents. You can also set up reports to analyze real-time data from message streams.
+Data Analyzer maintains a repository to store metadata to track information about data source schemas, reports, and report delivery.
+If you have a PowerCenter data warehouse, Data Analyzer can read and import information about the PowerCenter data warehouse directly from the PowerCenter repository. Data Analyzer also provides a PowerCenter Integration utility that notifies Data Analyzer when a PowerCenter session completes. You can set up reports in Data Analyzer to run when a PowerCenter session completes.
+
+Data Analyzer Components
+Data Analyzer includes the following components:
+¨ Data Analyzer repository. The Data Analyzer repository stores metadata about objects and processes that it requires to handle user requests. The metadata includes information about schemas, user profiles, personalization, reports and report delivery, and other objects and processes. You can use the metadata in the repository to create reports based on schemas without accessing the data warehouse directly. Data Analyzer connects to the repository through Java Database Connectivity (JDBC) drivers.
+¨ Application server. Data Analyzer uses a third-party application server to manage processes. The application server provides services such as database access, server load balancing, and resource management.
+¨ Web server. Data Analyzer uses an HTTP server to fetch and transmit Data Analyzer pages to web browsers.
+¨ Data source. For analytic and operational schemas, Data Analyzer reads data from a relational database. It connects to the database through JDBC drivers. For hierarchical schemas, Data Analyzer reads data from an XML document. The XML document may reside on a web server or be generated by a web service operation. Data Analyzer connects to the XML document or web service through an HTTP connection.
+
+Metadata Manager
+Informatica Metadata Manager is a PowerCenter web application to browse, analyze, and manage metadata from disparate metadata repositories. Metadata Manager helps you understand how information and processes are derived, how they are related, and how they are used.
+
+Metadata Manager extracts metadata from application, business intelligence, data integration, data modeling, and relational metadata sources. Metadata Manager uses PowerCenter workflows to extract metadata from metadata sources and load it into a centralized metadata warehouse called the Metadata Manager warehouse. You can use Metadata Manager to browse and search metadata objects, trace data lineage, analyze metadata usage, and perform data profiling on the metadata in the Metadata Manager warehouse. You can also create and manage business glossaries. You can use Data Analyzer to generate reports on the metadata in the Metadata Manager warehouse. The Metadata Manager Service in the Informatica domain runs the Metadata Manager application. Create a Metadata Manager Service in the Informatica Administrator to configure and run the Metadata Manager application.
+
+Metadata Manager Components
+The Metadata Manager web application includes the following components:
+¨ Metadata Manager Service. An application service in an Informatica domain that runs the Metadata Manager application and manages connections between the Metadata Manager components. You create and configure the Metadata Manager Service in the Administrator tool.
+¨ Metadata Manager application. Manages the metadata in the Metadata Manager warehouse. Create and load resources in Metadata Manager. After you use Metadata Manager to load metadata for a resource, you can use the Metadata Manager application to browse and analyze metadata for the resource. You can also create custom models and manage security on the metadata in the Metadata Manager warehouse.
+¨ Metadata Manager Agent. Runs within the Metadata Manager application or on a separate machine. Metadata Exchanges uses the Metadata Manager Agent to extract metadata from metadata sources and convert it to IME interface-based format.
+¨ Metadata Manager repository. A centralized location in a relational database that stores metadata from disparate metadata sources. The repository also stores Metadata Manager metadata and the packaged and custom models for each metadata source type.
+¨ PowerCenter repository. Stores the PowerCenter workflows that extract source metadata from IME-based files and load it into the Metadata Manager warehouse.
+¨ PowerCenter Integration Service. Runs the workflows that extract the metadata from IME-based files and load it into the Metadata Manager warehouse.
+¨ PowerCenter Repository Service. Manages connections to the PowerCenter repository. The repository stores the workflows that extract metadata from IME interface-based files.
+¨ Custom Metadata Configurator. Creates custom resource templates to extract metadata from metadata sources for which Metadata Manager does not package a resource type.
+
+¨ Create a group with all privileges on a PowerCenter Repository Service. The privileges allow users to design mappings and run workflows in the PowerCenter Client.
+¨ Create a user account and assign it to the group. The user inherits the privileges of the group.
+
+Informatica Domain Information : Domain Name, Gateway Host, Gateway Port
+PowerCenter Repository Login : Repository Name, User Name, Password, Security Domain = Native? - where you can create the folder, mappings, and workflows in this tutorial.
+
+PowerCenter Source and Target
+The PowerCenter Client uses ODBC drivers to connect to the relational tables.
+ODBC Data Source Information
+Source Connection : ODBC Data Source Name, Database User Name, Database Password
+Target Connection : ODBC Data Source Name, Database User Name, Database Password
+
+Use the following table to record the information you need to create database connections in the Workflow Manager: Database Type, User Name, Password, Connect String, Code Page, Database Name, Server Name, Domain Name. You may not need all properties.
+
+Creating a Pass-Through Mapping
+The source qualifier represents the rows that the Integration Service reads from the source when it runs a session
+The source provides information, so it contains only output ports, one for each column. Each output port is connected to a corresponding input port in the Source Qualifier transformation. The Source Qualifier transformation contains both input and output ports. The target contains input ports.
+
+When you design mappings that contain different types of transformations, you can configure transformation ports as inputs, outputs, or both. You can rename ports and change the datatypes.
+
+Creating Sessions and Workflows
+A session is a set of instructions that tells the Integration Service how to move data from sources to targets. A session is a task, similar to other tasks available in the Workflow Manager. You create a session for each mapping that you want the Integration Service to run. The Integration Service uses the instructions configured in the session and mapping to move data from sources to targets.
+
+A workflow is a set of instructions that tells the Integration Service how to execute tasks, such as sessions, email notifications, and shell commands. You create a workflow for sessions you want the Integration Service to run. You can include multiple sessions in a workflow to run sessions in parallel or sequentially.
+
+--------------------------------
+Difference Between Informatica 9.1 and 8.6.1
+
+Informatica 9 empowers line-of-business managers and business analysts to identify bad data and fix it faster. Architecture wise there are no differences between Informatica 8 and 9 but there are some new features added in powercenter 9.
+
+New Client tools
+Informatica 9 includes the Informatica Developer and Informatica Analyst client tools.
+The Informatica Developer tool is eclipse-based and supports both data integration and data quality for enhanced productivity.
+The Informatica Analyst tool is a browser-based tool for analysts, stewards and line of business managers.  This tool supports data profiling, specifying and validating rules (Scorecards), and monitoring data quality.
+
+Informatica Administrator
+The powercenter Administration Console has been renamed the Informatica Administrator.
+The Informatica Administrator is now a core service in the Informatica Domain that is used to configure and manage all Informatica Services, Security and other domain objects (such as connections) used by the new services.
+The Informatica Administrator has a new interface. Some of the properties and configuration tasks from the powercenter Administration Console have been moved to different locations in Informatica Administrator. The Informatica Administrator is expanded to include new services and objects.
+
+Cache Update in Lookup Transformation
+You can update the lookup cache based on the results of an expression. When an expression is true, you can add to or update the lookup cache. You can update the dynamic lookup cache with the results of an expression.
+
+Database deadlock resilience
+In previous releases, when the Integration Service encountered a database deadlock during a lookup, the session failed. Effective in 9.0, the session will not fail. When a deadlock occurs, the Integration Service attempts to run the last statement in a lookup. You can configure the number of retry attempts and time period between attempts.
+
+Multiple rows return
+Lookups can now be configured as an Active transformation to return Multiple Rows.We can configure the Lookup transformation to return all rows that match a lookup condition. A Lookup transformation is an active transformation when it can return more than one row for any given input row.
+
+Limit the Session Log 
+You can limit the size of session logs for real-time sessions. You can limit the size by time or by file size. You can also limit the number of log files for a session.
+
+Auto-commit 
+We can enable auto-commit for each database connection. Each SQL statement in a query defines a transaction. A commit occurs when the SQL statement completes or the next statement is executed, whichever comes first. 
+
+Passive transformation
+We can configure the SQL transformation to run in passive mode instead of active mode. When the SQL transformation runs in passive mode, the SQL transformation returns one output row for each input row.
+
+Connection management
+Database connections are centralized in the domain. We can create and view database connections in Informatica Administrator, Informatica Developer, or Informatica Analyst. Create, view, edit, and grant permissions on database connections in Informatica Administrator.
+
+Monitoring
+We can monitor profile jobs, scorecard jobs, preview jobs, mapping jobs, and SQL Data Services for each Data Integration Service. View the status of each monitored object on the Monitoring tab of Informatica Administrator.
+
+Deployment
+We can deploy, enable, and configure deployment units in the Informatica Administrator. Deploy Deployment units to one or more Data Integration Services. Create deployment units in Informatica Developer.
+
+Model Repository Service
+Application service that manages the Model repository. The Model repository is a relational database that stores the metadata for projects created in Informatica Analyst and Informatica Designer. The Model repository also stores run-time and configuration information for applications deployed to a Data.
+
+Data Integration Service
+Application service that processes requests from Informatica Analyst and Informatica Developer to preview or run data profiles and mappings. It also generates data previews for SQL data services and runs SQL queries against the virtual views in an SQL data service. Create and enable a Data Integration Service on the Domain tab of Informatica Administrator.
+
+XML Parser 
+The XML Parser transformation can validate an XML document against a schema. The XML Parser transformation routes invalid XML to an error port. When the XML is not valid, the XML Parser transformation routes the XML and the error messages to a separate output group that We can connect to a target.
+
+Enforcement of licensing restrictions
+Powercenter will enforce the licensing restrictions based on the number of CPUs and repositories.
+Also Informatica 9 supports data integration for the cloud as well as on premise. You can integrate the data in cloud applications, as well as run Informatica 9 on cloud infrastructure.
+
+------------------------------
+
+I worked on 9.1. Informatica architect for visio (an automated tool) supports on 9.1 and later version .through which we can able to generate more mappings and workflows in our project we had 597 mappings and workflows and its fixed bid project and with that automated tool we could able to get good names from the clients :)  Even try get information on GENIFA which is also a automated mapping and workflow tool.
+
+-------------------------------
+
+When you use a third-party ODBC data source to import a source definition, the Designer displays a message indicating that the third-party driver is not listed in powermart.ini.
+
+----------
+
+Tools > Source Analyzer
+Click Sources > Import from Database.
+Click Targets > Generate/Execute SQL.
+Tools > Mapping Designer
+Layout > Autolink.
+
+Workflow Manager > Connections > Relational > Click New in the Relational Connection Browser > Select the appropriate database type > 
+Provide details like uid, pwd, for source and target databases.
+
+Reusable session and non reusable session.
+
+Reusable session can be used in any workflow, where as non-reusable sessions can only be used in that workflow.
+
+Tools > Task Developer, Tasks > create, select session type > select session from list > ok
+
+double click on the session item > on the mapping tab > select source from left side pane > connection settings on the right > select the appropriate connection
+
+Creating a Workflow
+Tools > Workflow Designer
+in the navigator expand the appropriate folder > expand the session node > drag the appropriate session to the work flow designer pallete > create workflow dialogue appears > provide the workflow name > choose an integration service > click on properties tab > give the logfile name > 
+
+go to scheduler tab if you want to set a scheduler, by default on demand > 
+
+finally click repository > save
+
+You can configure the workflow manager to open workflow monitor when you run a workflow from the workflow manager. This option is set by default. 
+Tools > option > on General tab select option Launch Workflow Monitor When Workflow Is Started.
+
+Running a workflow
+verify the workflow is opened > Workflows > Start Workflow alternately you can right click and start a workflow from navigator
+
+Using Transformations
+
+creating target tables
+create the source or target definition > select it > target/source > Generate/Execute SQL.
+
+mapping designer > mappings > create > provide name , drag source and target definition 
+transformation -> create > select transformation type > give a name > 
+
+Click Layout > Link Columns : designer copies the link description and links the original port to its copy.
+Layout > Copy Columns : every port you drag is copied, but not linked.
+
+drag the ports from source to transformer
+double click on the transformer and go to ports tab. Clear the Output (O) column for the ports which are not required in the output.
+create new additonal ports required only for output by adding new ports.
+edit the expression value of all output ports.
+
+Note : You cannot enter expressions in input/output ports.
+Transformation Names > LKP_, EXP_, AGG_
+transformations > create -> lookup > source > select source
+
+add input port and connect the column to be searched > 
+in the condition tab add the look up table column operator transformation port
+now layout> link columns 
+
+Note : By default, the Lookup transformation queries and stores the contents of the lookup table before the rest of the transformation runs, so it performs the join through a local copy of the table that it has cached.
+
+connecting to the target
+drag the output ports to the corresponding input port of terget definition
+
+Designer Tips
+Toggle Overview Window icon > if the mapping is big to fit into the designer pane , go to the over view window which will display a small window showing the compact version of the mapping and hover around this window to view the enlarged version of that area in designer pane.
+
+While connecting sessions in a work flow, if you connect multiple sessions to start then these sessions will be executed simulteneously
+You can view workflow and session logs after you run the workflow.
+To view the session log, click the session and select Get Session Log.
+To view the workflow log, click the workflow and select Get Workflow Log.
+
+Designer Guide
+
+You can open one mapping at a time in a folder.
+You can view link paths to a port in a mapping. You can view the forward path, the backward path, or both.
+You can view from which source columns a target column receives data.
+You can link columns to a target definition in a mapping, but you cannot copy columns into a target definition in a mapping. Use the Target Designer to add columns to a target definition.
+You can also link multiple ports at the same time. Use the Ctrl or Shift key to select a range of ports to link to another transformation. The Designer links the ports, beginning with the top pair. It links all ports that meet the validation requirements.
+Configuring the Target Update Override
+Pre- and Post-Session SQL Commands: , Use a semicolon (;) to separate multiple statements. The Integration Service issues a commit after each
+statement, you can enter a parameter or variable within the command. Or, you can use a session parameter, $ParamMyCommand, as the SQL command,
+Overriding the Target Table Name
+
+General ETL development tips
+The administrator or lead developer should gather all of the potential Sources, Targets and Reusable objects and place these in a shared folder accessible to all who may need access to them. 
+mapping should include required Sources, Targets and additional information regarding derived ports and finally how the ports relate from the source to the target. 
+Filter early and often. Only manipulate data that needs to be moved and transformed. Reduce the number non-essential records that are passed through the mapping. 
+Reduce the number of transformations. Excessive number of transformations will increase overhead. 
+Watch the data types. The Informatica engine converts compatible data types automatically. Excessive number of conversions is inefficient.
+
+SQ->EXP->AGGR->TGT
+
+Here, For AGGR the EXP is Upstream Transformation and TGT is the downstream Transformation.
+
+Transformation Guide - Study
+-----------------------------
+
+Transformations can be active or passive.
+Active Transformations
+Change the number of rows that pass through the transformation - e.g filter, multigroup trnsformation
+Change the transaction boundary - which commits or rollback, e.g Transaction Control transformation
+Change the row type. For example, the Update Strategy transformation is active because it flags rows for insert, delete, update, or reject.
+
+The Designer does not allow you to connect multiple active transformations or an active and a passive transformation to the same downstream transformation. The Sequence Generator transformation is an exception to the rule.
+
+Passive Transformations
+A passive transformation does not change the number of rows that pass through the transformation, maintains the transaction boundary, and maintains the row type.
+
+Transformations can be connected to the data flow, or they can be unconnected. An unconnected transformation is not connected to other transformations in the mapping. An unconnected transformation is called within another transformation, and returns a value to that transformation.
+
+Active > Aggregator(connected), Filter(connected), Joiner(connected), lookup(connected/unconnected),
+Passive > Data Masking(connected),  Expression(connected), lookup(connected/unconnected),
+
+¨ Input ports. Receive data.
+¨ Output ports. Pass data.
+¨ Input/output ports. Receive data and pass it unchanged.
+¨ Variable ports store data temporarily and can store values across the rows.
+
+Multi-Group Transformations
+Transformations have input and output groups. A group is a set of ports that define a row of incoming or outgoing data. 
+
+The following table lists the transformations with multiple groups:
+Transformation : Description
+
+Custom : Contains any number of input and output groups.
+Joiner : Contains two input groups, the master source and detail source, and one output group.
+Router : Contains one input group and multiple output groups.
+Union  : Contains multiple input groups and one output group.
+
+Unstructured Data : Can contain multiple output groups.
+XML Source Qualifier : Contains multiple input and output groups.
+XML Target Definition : Contains multiple input groups.
+XML Parser : Contains one input group and multiple output groups.
+XML Generator : Contains multiple input groups and one output group.
+
+All multi-group transformations are active transformations. You cannot connect multiple active transformations or an active and a passive transformation to the same downstream transformation or transformation input group.
+
+Transaction Control Transformation
+
+You might want to define transactions based on a
+group of rows ordered on a common key, such as employee ID or order entry date. In PowerCenter, you define transaction control at the following levels:
+¨ Within a mapping. Within a mapping, you use the Transaction Control transformation to define a transaction. You define transactions using an expression in a Transaction Control transformation. Based on the return value of the expression, you can choose to commit, roll back, or continue without any transaction changes.
+¨ Within a session. When you configure a session, you configure it for user-defined commit. You can choose to commit or roll back a transaction if the Integration Service fails to transform or write any row to the target.
+
+If the mapping has a flat file target you can generate an output file each time the Integration Service starts a new
+transaction. You can dynamically name each target flat file.
+
+On the Properties tab, you can configure the following properties:
+¨ Transaction control expression
+¨ Tracing level
+Enter the transaction control expression in the Transaction Control Condition field. The transaction control
+expression uses the IIF function to test each row against the condition. Use the following syntax for the expression:
+IIF (condition, value1, value2)
+
+Use the following built-in variables in the Expression Editor when you create a transaction control
+expression:
+¨ TC_CONTINUE_TRANSACTION. The Integration Service does not perform any transaction change for this
+row. This is the default value of the expression.
+¨ TC_COMMIT_BEFORE. The Integration Service commits the transaction, begins a new transaction, and writes
+the current row to the target. The current row is in the new transaction.
+¨ TC_COMMIT_AFTER. The Integration Service writes the current row to the target, commits the transaction,
+and begins a new transaction. The current row is in the committed transaction.
+¨ TC_ROLLBACK_BEFORE. The Integration Service rolls back the current transaction, begins a new
+transaction, and writes the current row to the target. The current row is in the new transaction.
+¨ TC_ROLLBACK_AFTER. The Integration Service writes the current row to the target, rolls back the
+transaction, and begins a new transaction. The current row is in the rolled back transaction.
+
+If the transaction control expression evaluates to a value other than commit, roll back, or continue, the Integration
+Service fails the session.
+
+Example
+You want to ensure that all orders entered on any given date are committed to the target in the same transaction. To accomplish this, you can create a mapping with the following transformations:
+¨ Sorter transformation. Sort the source data by order entry date.
+¨ Expression transformation. Use local variables to determine whether the date entered is a new date.
+The following table describes the ports in the Expression transformation:
+
+Port Name : Expression : Description
+DATE_ENTERED : DATE_ENTERED Input/Output port. : Receives and passes the date entered.
+NEW_DATE : IIF(DATE_ENTERED=PREVDATE, 0,1) : Variable port. Tests current value for DATE_ENTERED against the stored value for DATE_ENTERED in the variable port, PREV_DATE.
+PREV_DATE : DATE_ENTERED : Variable port. Receives the value for DATE_ENTERED after the Integration Service evaluates the NEW_DATE port.
+DATE_OUT : NEW_DATE Output port. Passes the flag from NEW_DATE to the Transaction Control transformation.
+
+Note: The Integration Service evaluates ports by dependency. The order in which ports display in a transformation must match the order of evaluation: input ports, variable ports, output ports.
+
+¨ Transaction Control transformation. Create the following transaction control expression to commit data when the Integration Service encounters a new order entry date:
+IIF(NEW_DATE = 1, TC_COMMIT_BEFORE, TC_CONTINUE_TRANSACTION)
+
+Transaction Control transformations are transaction generators. They define and redefine transaction boundaries in a mapping. They drop any incoming transaction boundary from an upstream active source or transaction generator, and they generate new transaction boundaries downstream.
+You can also use Custom transformations configured to generate transactions to define transaction boundaries.
+
+¨ You can connect only one effective Transaction Control transformation to a target.
+¨ You cannot place a Transaction Control transformation in a pipeline branch that starts with a Sequence Generator transformation.
+¨ If you use a dynamic Lookup transformation and a Transaction Control transformation in the same mapping, a rolled-back transaction might result in unsynchronized target data.
+
+--- Union Transformation Active, connected
+The Union transformation is a multiple input group transformation that you use to merge data from multiple pipelines or pipeline branches into one pipeline branch, the Union transformation does not remove duplicate rows.
+
+You can connect heterogeneous sources to a Union transformation. The transformation merges sources with matching ports and outputs the data from one output group with the same ports as the input groups. The Union transformation is developed using the Custom transformation.
+
+¨ You can create multiple input groups, but only one output group.
+¨ All input groups and the output group must have matching ports. The precision, datatype, and scale must be identical across all groups.
+¨ The Union transformation does not remove duplicate rows. To remove duplicate rows, you must add another transformation such as a Router or Filter transformation.
+¨ You cannot use a Sequence Generator or Update Strategy transformation upstream from a Union transformation.
+¨ The Union transformation does not generate transactions.
+
+You can create ports by copying ports from a transformation, or you can create ports manually. When you create ports on the Group Ports tab, the Designer creates input ports in each input group and output ports in the output group. The Designer uses the port names you specify on the Group Ports tab for each input and output port, and it appends a number to make each port name in the transformation unique. It also uses the same metadata for each port, such as datatype, precision, and scale.
+
+When you add a Union transformation to a mapping, you must verify that you connect the same ports in all input groups. If you connect all ports in one input group, but do not connect a port in another input group, the Integration Service passes NULLs to the unconnected port.
+
+--- SQL Transformation
+
+The SQL transformation processes a query and returns rows and database errors. For example, you might need to create database tables before adding new transactions. You can create an SQL transformation to create the tables in a workflow.
+
+When you create an SQL transformation, you configure the following options:
+
+¨ Mode
+   - Script mode. The SQL transformation runs ANSI SQL scripts that are externally located. You pass a script name to the transformation with each input row. The SQL transformation outputs one row for each input row.
+
+   - Query mode. The SQL transformation executes a query that you define in a query editor. You can pass strings or parameters to the query to define dynamic queries or change the selection parameters. You can output multiple rows when the query has a SELECT statement.
+
+¨ Passive or active transformation. The SQL transformation is an active transformation by default. You can configure it as a passive transformation when you create the transformation.
+
+¨ Database type. The type of database the SQL transformation connects to.
+
+¨ Connection type. Pass database connection information to the SQL transformation or use a connection object.
+
+When you configure an SQL transformation to run in script mode, the Designer adds the ScriptName input port to the transformation. When you create a mapping, you connect the ScriptName port to a port that contains the name of a script to execute for each row.
+
+An SQL transformation configured for script mode has the following default ports:
+Port : Type :Description
+ScriptName : Input : Receives the name of the script to execute for the current row.
+ScriptResult : Output : Returns PASSED if the script execution succeeds for the row. Otherwise contains FAILED.
+ScriptError : Output : Returns errors that occur when a script fails for a row.
+
+Example
+You need to create order and inventory tables before adding new data to the tables. Create a flat file containing the script name e.g C:\81\server\shared\SrcFiles\create_order_inventory.txt . Connect that to the sql transformation. Store the output in a flat file. 
+
+Rules and Guidelines for Script Mode
+To include multiple query statements in a script, you can separate them with a semicolon.
+The script file must be accessible by the Integration Service. The Integration Service must have read permissions on the directory that contains the script. If the Integration Service uses operating system profiles, the operating system user of the operating system profile must have read permissions on the directory that contains the script.
+The Integration Service ignores the output of any SELECT statement you include in the SQL script. The SQL transformation in script mode does not output more than one row of data for each input row.
+You cannot use scripting languages such as Oracle PL/SQL
+You cannot use nested scripts where the SQL script calls another SQL script.
+A script cannot accept run-time arguments.
+
+Query Mode
+
+It executes an SQL query that you define in the transformation. You pass strings or parameters to the query from the transformation input ports to change the query statement or the query data. The transformation can return multiple rows for each input row. Create queries in the SQL transformation SQL Editor. The SQL Editor does not validate the syntax of the SQL query. 
+
+You can create the following types of SQL queries in the SQL transformation:
+
+¨ Static SQL query. The query statement does not change, but you can use query parameters to change the data. The Integration Service prepares the query once and runs the query for all input rows.
+¨ Dynamic SQL query. You can change the query statements and the data. The Integration Service prepares a query for each input row.
+
+You can optimize performance by creating static queries.
+
+Using Static SQL Queries
+When you create a static SQL query, you use parameter binding in the SQL Editor to define parameters for query data.
+
+The following static SQL query has query parameters that bind to the Employee_ID and Dept input ports of an SQL transformation:
+SELECT Name, Address FROM Employees WHERE Employee_Num =?Employee_ID? and Dept = ?Dept?
+
+Selecting Multiple Database Rows
+When the SQL query contains a SELECT statement, the transformation returns one row for each database row it retrieves. You must configure an output port for each column in the SELECT statement. The output ports must be in the same order as the columns in the SELECT statement.
+
+When you configure output ports for database columns, you need to configure the datatype of each database column you select. Select a native datatype from the list. When you select the native datatype, the Designer configures the transformation datatype for you.
+
+The input ports receive the data in the WHERE clause. The output ports return the columns from the SELECT statement.
+
+Using Dynamic SQL Queries
+A dynamic SQL query can execute different query statements for each input row. When you create a dynamic SQL query, you use string substitution to define string parameters in the query and link them to input ports in the transformation.
+
+To change a query statement, configure a string variable in the query for the portion of the query you want to change. To configure the string variable, identify an input port by name in the query and enclose the name with the tilde (~).
+
+You can pass the full query or pass part of the query in an input port:
+¨ Full query. You can substitute the entire SQL query with query statements from source data.
+¨ Partial query. You can substitute a portion of the query statement, such as the table name.
+
+To pass the full query, create a query in the SQL Editor that consists of one string variable to represent the full query: 
+SQL Query > ~Query_Port~
+The transformation receives the query in the Query_Port input port.
+
+You can pass any type of query in the source data. When you configure SELECT statements in the query, you must configure output ports for the database columns you retrieve from the database. When you mix SELECT statements and other types of queries, the output ports that represent database columns contain null values when no database columns are retrieved.
+
+The following dynamic query contains a string variable, ~Table_Port~:
+SELECT Emp_ID, Address from ~Table_Port~ where Dept = ‘HR’
+
+You can add pass-through ports to the SQL transformation. Pass-through ports are input/output ports that pass data through the transformation. The SQL transformation returns data from the pass-through ports whether a SQL query returns rows or not.
+
+When a query returns no rows, the SQL transformation returns the pass-through column data with null values in the output columns.
+
+Passive Mode Configuration
+When you create a SQL transformation, you can configure the SQL transformation to run in passive mode instead of active mode.
+
+Rules and Guidelines for Passive Mode
+If a SELECT query returns more than one row, the Integration Service returns the first row and an error to the SQLError port. The error states that the SQL transformation generated multiple rows.
+If the SQL query has multiple SQL statements, then the Integration Service executes all the statements. The Integration Service returns data for the first SQL statement only.SQLError port contains the errors from all the SQL statements. When multiple errors occur, they are separated by semi-colons in the SQLError port.
+If the SQL query has multiple SQL statements and a statistics port is enabled, the Integration Service returns the data and statistics for the first SQL statement.
+
+Rules and Guidelines for Query Mode
+The number and the order of the output ports must match the number and order of the fields in the query SELECT clause.
+The native datatype of an output port in the transformation must match the datatype of the corresponding column in the database. The Integration Service generates a row error when the datatypes do not match.
+When the SQL query contains an INSERT, UPDATE, or DELETE clause, the transformation returns data to the SQLError port, the pass-through ports, and the NumRowsAffected port when it is enabled. If you add output ports the ports receive NULL data values.
+When the SQL query contains a SELECT statement and the transformation has a pass-through port, the transformation returns data to the pass-through port whether or not the query returns database data. The SQL transformation returns a row with NULL data in the output ports.
+You cannot add the "_output" suffix to output port names that you create.
+You cannot use the pass-through port to return data from a SELECT query.
+When the number of output ports is more than the number of columns in the SELECT clause, the extra ports receive a NULL value.
+When the number of output ports is less than the number of columns in the SELECT clause, the Integration Service generates a row error.
+You can use string substitution instead of parameter binding in a query. However, the input ports must be string datatypes.
+
+You can use a static database connection or you can pass database connection information to the SQL transformation at run time.
+
+Use one of the following types of connections to connect the SQL transformation to a database:
+¨ Static connection. Configure the connection object in the session. You must first create the connection object in Workflow Manager.
+¨ Logical connection. Pass a connection name to the SQL transformation as input data at run time. You must first create the connection object in Workflow Manager. When you configure the transformation to use a logical database connection, the Designer creates the LogicalConnectionObject input port.
+¨ Full database connection. Pass the connect string, user name, password, and other connection information to the SQL transformation input ports at run time. When you configure the SQL transformation to connect to a database with a full connection, the Designer creates input ports for connection components.
+
+Port :Required/Optional : Description
+ConnectString : Required : Contains the database name and database server name. dbname.world (same as TNSNAMES entry) for oracle
+DBUser : Required : Name of the user with permissions to read and write from the database.
+DBPasswd : Required : DBUser password.
+CodePage : Optional : Code page the Integration Service uses to read from or write to the database. Use the ISO code page name, such as ISO-8859-6. The code page name is not case sensitive.
+AdvancedOptions : Optional : Connection attributes. Pass the attributes as name-value pairs. Delimit each attribute from another with a semicolon. Attribute names are not case sensitive.
+
+To improve performance, use a static database connection. When you configure a dynamic connection, the Integration Service establishes a new connection for each input row.
+
+When you configure the SQL transformation to use full connection data, the database password is plain text. You can pass logical connections when you have a limited number of connections you need to use in a session. A logical connection provides the same functionality as the full connection, and the database password is secure.
+
+When you set logging to verbose, the Integration Service writes each SQL query to the session log. Set logging to verbose when you need to debug a session with the SQL transformation.
+
+Transaction Control
+An SQL transformation that runs in script mode drops any incoming transaction boundary from an upstream source or transaction generator. The Integration Service issues a commit after executing the script for each input row in the SQL transformation.
+
+An SQL transformation that runs in query mode commits transactions at different points based on the database connection type:
+¨ Dynamic database connection. The Integration Service issues a commit after executing the SQL for each input row. The transaction is the set of rows affected by the script. You cannot use a Transaction Control
+transformation with dynamic connections in query mode.
+¨ Static connection. The Integration Service issues a commit after processing all the input rows. The
+transaction includes all the database rows to update. You can override the default behavior by using a
+Transaction Control transformation to control the transaction, or by using commit and rollback statements in the
+SQL query
+
+The following transaction control SQL statements are not valid with the SQL transformation:
+¨ SAVEPOINT. Identifies a rollback point in the transaction.
+¨ SET TRANSACTION. Changes transaction options.
+
+Auto-commit mode, a commit occurs when a SQL statement completes. To enable auto-commit, select AutoCommit on the SQL Settings tab of the SQL transformation.
+
+¨ If the Integration Service fails to connect to the database, and the connection is static, the session fails. If the SQL transformation is using a dynamic connection, the session continues.
+¨ If the Integration Service re-connects to the database, it skips processing the current row and continues to the next row.
+
+The SQL transformation is resilient to database deadlock errors in Query mode but it is not resilient to deadlock errors in Script mode. If a deadlock occurs in Query mode, the Integration Service tries to reconnect to the database for the number of deadlock retries that you configure. Configure the Integration Service to set the number of deadlock retries and the deadlock sleep time period.
+
+When a deadlock occurs, the Integration Service retries the SQL statements in the current row if the current row has no DML statements. If the row contain a DML statement such as INSERT, UPDATE, or DELETE, the Integration Service does not process the current row again.
+
+The NumRowsAffected output port contains the total number of rows affected by updates, inserts, or deletes for one input row.
+
+The type of query determines how many rows the SQL transformation returns.
+Query Statement : Output Rows
+UPDATE, INSERT, DELETE : only Zero rows.
+One or more SELECT statements : Total number of database rows retrieved.
+DDL queries such as CREATE, DROP, TRUNCATE : Zero rows.
+
+You can enable the NumRowsAffected output port to return the number of rows affected by the INSERT, UPDATE, or DELETE query statements in each input row. The Integration Service returns the NumRowsAffected for each statement in the query. NumRowsAffected is disabled by default.
+
+When you enable NumRowsAffected in query mode, and the SQL query does not contain an INSERT, UPDATE, or DELETE statement, NumRowsAffected is zero in each output row.
+
+Query Statement : Output Rows
+UPDATE, INSERT, DELETE : only One row for each statement with the NumRowsAffected for the statement.
+One or more SELECT statements : Number of rows is same as total number of database rows retrieved. NumRowsAffected is zero in each row.
+DDL queries such as CREATE, DROP, TRUNCATE : One row with zero NumRowsAffected.
+
+The SQL transformation has the following default ports to output error text:
+¨ SQLError. Returns database errors when the SQL transformation runs in query mode.
+¨ ScriptError. Returns database errors when the SQL transformation runs in script mode.
+
+You can choose to ignore an SQL error in a statement by enabling the Continue on SQL Error within a Row option. The Integration Service continues to run the rest of the SQL statements for the row. The Integration Service does not generate a row error. However, the SQLError port contains the failed SQL statement and error messages.
+
+Tip: Disable the Continue on SQL Error option to debug database errors. Otherwise, you might not be able to associate errors with the query statements that caused them.
+
+Properties Tab
+Transformation Scope : The method in which the Integration Service applies the transformation logic to incoming data. Use the following options:
+- Row
+- Transaction
+- All Input
+Set transaction scope to transaction when you use transaction control in static query mode.
+Default is Row for script mode transformations.
+Default is All Input for query mode transformations.
+
+The following table lists the attributes you can configure on the SQL Setting tab:
+
+Option : Description
+Continue on SQL Error within row : Continues processing the remaining SQL statements in a query after an SQL error occurs.
+Add Statistic Output Port : Adds a NumRowsAffected output port. The port returns the total number of database rows affected by INSERT, DELETE, and UPDATE query statements for an input row.
+AutoCommit : Enables auto-commit for each database connection. Each SQL statement in a query defines a transaction. A commit occurs when the SQL statement completes or the next statement is executed, whichever comes first
+Max Output Row Count : Defines the maximum number of rows the SQL transformation can output from a SELECT query. To configure unlimited rows, set Max Output Row Count to zero.
+Scripts Locale : Identifies the code page for a SQL script. Choose the code page from the list. Default is operating system locale.
+Use Connection Pooling : Maintain a connection pool for database connections. You can enable connection pooling for dynamic connections only.
+Maximum Number of Connections in Pool: Maximum number of active connections
+
+Using the SQL Transformation in a Mapping
+
+Static Connection Example
+
+PPrices.dat file
+ProductID, PriceCode, UnitPrice, PkgPrice
+100,M,100,110
+100,W,120,200
+100,R,130,300
+200,M,210,400
+200,W,220,500
+200,R,230,600
+300,M,310,666
+300,W,320,680
+
+-- M, W, or R. Defines whether the prices are Manufactured, Wholesale, or Retail prices.
+
+Prod_Cost relational table
+(ProductID, WUnitPrice, WPkgPrice, RUnitPrice, RPkgPrice, MUnitPrice, MPkgPrice)
+
+Create table Prod_Cost (
+ProductId varchar (10), 
+WUnitPrice number, 
+WPkgPrice number, 
+RUnitPrice number,
+RPkgPrice number,
+MUnitPrice number, 
+MPkgPrice number );
+
+insert into Prod_Cost values('100',0,0,0,0,0,0);
+insert into Prod_Cost values('200',0,0,0,0,0,0);
+insert into Prod_Cost values('300',0,0,0,0,0,0);
+commit;
+
+stages
+
+Flatfile -> SQ Flat File -> Expression -> SQL Transformation -> Target FF
+
+Target FF stores the error string returned from SQL Transfor, only one input columns DataString
+expression stage has two output columns
+
+Expression Stage
+UnitPrice_Query = DECODE(PriceCode,'M', 'MUnitPrice','R', 'RUnitPrice','W', 'WUnitPrice')
+PkgPrice_Query  = DECODE(PriceCode,'M', 'MPkgPrice', 'R', 'RPkgPrice', 'W', 'WPkgPrice')
+
+SQL Transformation stage
+query mode and static connection
+
+SQL Query should be:
+Update Prod_Cost set 
+~UnitPrice_Query~= ?UnitPrice?, 
+~PkgPrice_Query~ = ?PkgPrice? 
+where ProductId = ?ProductId?;
+
+Dynamic Connection Example
+
+Suppose you have a customer database for the United States, United Kingdom, and Canada. You need to insert customer data from a transaction file into a database based on where the customer is located.
+
+Source
+Customer.dat file in Srcfiles
+CustomerID, CustomerName, PhoneNumber, Email, Location
+1,John Smith,6502345677,jsmith@catgary.com,US
+2,Nigel Whitman,5123456754,nwhitman@nwhitman.com,UK
+3,Girish Goyal,5674325321,ggoyal@netcompany.com,CAN
+4,Robert Gregson,5423123453,rgregson@networkmail.com,US
+
+Target
+Error_File is a flat file target definition that receives database error messages from the SQL transformation.
+
+Create table Cust (
+CustomerId number,
+CustomerName varchar2(25),
+PhoneNumber varchar2(15),
+Email varchar2(25));
+
+Database : Connection Object Name
+US : DBORA_US
+UK : DBORA_UK
+CAN : DBORA_CAN
+
+Flatfile -> SQ Flat File -> Expression -> SQL Transformation -> Target FF
+
+The expression transformation have one output port 
+connection = Decode(Location, 'US', 'DBORA_US','UK','DBORA_UK','CAN','DBORA_CAN','DBORA_US')
+
+SQL Transformation
+with the following properties
+Query Mode.
+Dynamic Connection.
+Connection Object. The SQL transformation has a LogicalConnectionObject port that receives the connection object name. The connection object must be defined in the Workflow Manager connections.
+
+INSERT INTO CUST VALUES (?CustomerId?,?CustomerName?,?PhoneNumber?,?Email?);
+
+--- Stored Procedure Transformation
+
+-- Transformation Language Reference
+Reference Qualifiers in Transformation Language
+:LKP
+Required when you create an expression that includes the return value from an unconnected Lookup transformation. The general syntax is:
+:LKP. lookup_transformation(argument1, argument2, ...) The arguments are the local ports used in the lookup condition. The order must
+:SEQ Required when you create an expression that includes a port in a Sequence Generator transformation. The general syntax is: :SEQ.sequence_generator_transformation.CURRVAL
+:SP Required when you write an expression that includes the return value from an unconnected Stored Procedure transformation. The general syntax is:
+:SP.stored_procedure_transformation( argument1, argument2, [, PROC_RESULT])
+
+To return a string containing a single quote, use the CHR function:
+'Joan' || CHR(39) || 's car'
+
+The transformation language provides two comment specifiers to let you insert comments in expressions:
+?Two dashes, as in:
+-- These are comments
+?Two slashes, as in:
+// These are comments
+
+Multiline comments are not supported
+
+Note: You cannot use a reserved word to name a port or local variable. You can only use reserved words within transformation and workflow expressions.
+
+Constants
+DD_INSERT : Flags records for insertion in an update strategy expression. DD_INSERT is equivalent to the integer literal 0.
+DD_UPDATE : Flags records for update in an update strategy expression. DD_UPDATE is equivalent to the integer literal 1.
+DD_DELETE : Flags records for deletion in an update strategy expression. DD_DELETE is equivalent to the integer literal 2.
+DD_REJECT : Flags records for rejection in an update strategy expression. DD_REJECT is equivalent to the integer literal 3.
+
+
+IIF( ITEM_ID = 1001, DD_DELETE, DD_INSERT )
+This update strategy expression uses numeric literals to produce the same result:
+IIF( ITEM_ID = 1001, 2, 0 )
+Note: The expression using constants is easier to read than the expression using numeric literals.
+
+FALSE : Clarifies a conditional expression. FALSE is equivalent to the integer 0.
+
+NULL
+Indicates that a value is either unknown or undefined.
+
+Null Values in Boolean Expressions
+?NULL AND TRUE = NULL
+?NULL AND FALSE = FALSE
+
+Nulls with Operators
+Any expression that uses operators (except the string operator ||) and contains a null value always evaluates to NULL.
+
+Null Values in Aggregate Functions
+By default, the Integration Service treats null values as nulls in aggregate functions. You can have the Integration Service treat null values as 0 in aggregate functions or as NULLs.
+
+Working with Null Values in Comparison Expressions
+By default, when you use a null value in an expression containing a comparison operator, the Integration Service produces a null value. However, you can also configure the Integration Service to treat null values as high or low in comparison operations.
+
+Use the Treat Null In Comparison Operators As property to configure how the Integration Service handles null values in comparison expressions.
+
+TRUE
+Returns a value based on the result of a comparison. TRUE is equivalent to the integer 1.
+
+Operators
+If you write an expression that includes multiple operators, the Integration Service evaluates the expression in the following order:
+1.Arithmetic operators
+2.String operators
+3.Comparison operators
+4.Logical operators
+
+Use the || string operator to concatenate two strings.
+
+Logical Operators, NOT, AND, OR
+
+Variables
+
+? Built-in Variables,
+? Transaction Control Variables,
+? Local Variables,
+
+The transformation language provides built-in variables. Built-in variables return either run-time or system information. Run-time variables return information such as source and target table name, folder name, session run mode, and workflow run instance name. System variables return session start time, system date, and workflow start time.
+
+The following built-in variables provide run-time information:
+? $PM<SourceName>@TableName, $PM<TargetName>@TableName - Return the source and target table names for relational source and target instances as string values.
+? $PMFolderName - Returns the name of the repository folder as a string value.
+? $PMIntegrationServiceName - eturns the name of the Integration Service that runs the session.
+? $PMMappingName - Returns the mapping name as a string value.
+? $PMRepositoryServiceName - 
+? $PMRepositoryUserName - Returns the name of the repository user that runs the session.
+? $PMSessionName - Returns the session name as a string value.
+? $PMSessionRunMode - Returns the session run mode, normal or recovery, as a string value.
+? $PMWorkflowName
+? $PMWorkflowRunId
+? $PMWorkflowRunInstanceName
+
+The following built-in variables provide system information:
+? $$$SessStartTime - Returns the session start time as a string value. The format of the string depends on the database you are using. Oracle MM/DD/YYYY HH24:MI:SS.
+? SESSSTARTTIME - SESSSTARTTIME returns the current date and time value on the machine that runs the session when the Integration Service initializes the session.
+? SYSDATE - SYSDATE returns the current date and time up to seconds on the machine that runs the session for each row passing through the transformation. To capture a static system date, use the SESSSTARTTIME variable instead of SYSDATE.
+E.g IIF( TRUNC( DATE_DIFF( SYSDATE, DATE_SHIPPED, 'DD' ),0 ) > 2, DD_REJECT, DD_INSERT)
+? WORKFLOWSTARTTIME - WORKFLOWSTARTTIME returns the current date and time on the machine hosting the Integration Service when the Integration Service initializes the workflow.
+
+Transaction Control Variables
+
+IIF (NEWTRAN=1, TC_COMMIT_BEFORE, TC_CONTINUE_TRANSACTION)
+If NEWTRAN=1, the TC_COMMIT_BEFORE variable causes a commit to occur before the current row processes. Otherwise, the TC_CONTINUE_TRANSACTION variable forces the row to process in the current transaction.
+
+? TC_CONTINUE_TRANSACTION. The Integration Service does not perform any transaction change for the current row. This is the default transaction control variable value.
+? TC_COMMIT_BEFORE. The Integration Service commits the transaction, begins a new transaction, and writes the current row to the target. The current row is in the new transaction.
+? TC_COMMIT_AFTER. The Integration Service writes the current row to the target, commits the transaction, and begins a new transaction. The current row is in the committed transaction.
+? TC_ROLLBACK_BEFORE. The Integration Service rolls back the current transaction, begins a new transaction, and writes the current row to the target. The current row is in the new transaction.
+
+The transformation language provides a set of date functions and built-in date variables to perform transformations on dates.
+
+The following expression converts a string port to datetime values and then adds one month to each date:
+ADD_TO_DATE( TO_DATE( STRING_PORT, 'MM/DD/RR'), 'MM', 1 )
+
+By default, the date format is MM/DD/YYYY HH24:MI:SS.US.
+
+Because PowerCenter stores dates in binary format, the Integration Service uses the default date format when you perform the following actions:
+
+? Convert a date to a string by connecting a date/time port to a string port. The Integration Service converts the date to a string in the date format defined in the session configuration object.
+
+? Convert a string to a date by connecting a string port to a date/time port. The Integration Service expects the string values to be in the date format defined by the session configuration object. If an input value does not match this format, or if it is an invalid date, the Integration Service skips the row. If the string is in this format, the Integration Service converts the string to a date value.
+
+? Use TO_CHAR(date, [format_string]) to convert dates to strings. If you omit the format string, the Integration Service returns the string in the date format defined in the session properties. If you specify a format string, the Integration Service returns a string in the specified format.
+
+? Use TO_DATE(date, [format_string]) to convert strings to dates. If you omit the format string, the Integration Service expects the string in the date format defined in the session properties. If you specify a format string, the Integration Service expects a string in the specified format.
+
+
+Date Functions that Use Date Format Strings
+
+Function : Description
+ADD_TO_DATE : The part of the date you want to change.
+   Adds a specified amount to one part of a datetime value, 
+   The following expression adds 10 years to all dates in the SHIP_DATE port:
+   ADD_TO_DATE ( SHIP_DATE, 'YY', 10 )
+   The following expression subtracts 10 months: ADD_TO_DATE( SHIP_DATE, 'MONTH', -10 )
+   Add 14 hours: ADD_TO_DATE ( SHIP_DATE, 'HH', 14 )
+   Add 125 mili second : ADD_TO_DATE( SHIP_DATE, 'MS', 125 )
+   Add 125 micro second : ADD_TO_DATE( SHIP_DATE, 'US', 125 )
+   Add 125 nano second : ADD_TO_DATE( SHIP_DATE, 'NS', 125 )
+   
+   For example, if you add one month to Jan 31 1998, the Integration Service returns Feb 28 1998.
+   
+   ADD_TO_DATE( DATE_SHIPPED, 'MM', 1 )
+   ADD_TO_DATE( DATE_SHIPPED, 'MON', 1 )
+   ADD_TO_DATE( DATE_SHIPPED, 'MONTH', 1 )
+
+DATE_DIFF : The part of the date to use to calculate the difference between two dates.
+GET_DATE_PART : The part of the date you want to return. This function returns an integer value based on the default date format.
+IS_DATE : The date you want to check.
+ROUND : The part of the date you want to round.
+SET_DATE_PART :The part of the date you want to change.
+SYSTIMESTAMP : The timestamp precision.
+TO_CHAR (Dates) : The character string.
+TO_DATE : The character string.
+TRUNC (Dates) : The part of the date you want to truncate.
+
+IS_DATE indicates if a value is a valid date. If a string does not match the specified format string or is not a valid date, the function returns FALSE (0). If the string matches the format string and is a valid date, the function returns TRUE (1).
+
+Understanding Date Arithmetic
+ADD_TO_DATE. Add or subtract a specific portion of a date.
+DATE_DIFF. Subtract two dates.
+SET_DATE_PART. Change one part of a date.
+
+You cannot use numeric arithmetic operators (such as + or -) to add or subtract dates.
+
+Function
+
+Aggregate Functions
+?AVG
+?COUNT
+?FIRST
+?LAST
+?MAX (Date)
+?MAX (Number)
+?MAX (String)
+?MEDIAN
+?MIN (Date)
+?MIN (Number)
+?MIN (String)
+?PERCENTILE
+?STDDEV
+?SUM
+?VARIANCE
+
+Filter Conditions
+A filter limits the rows returned in a search. You can apply a filter condition to all aggregate functions and to CUME, MOVINGAVG, and MOVINGSUM. The filter condition must evaluate to TRUE, FALSE, or NULL. If the filter condition evaluates to NULL or FALSE, the Integration Service does not select the row.
+
+You can enter any valid transformation expression. For example, the following expression calculates the median salary for all employees who make more than $50,000:
+MEDIAN( SALARY, SALARY > 50000 )
+
+Character Functions
+?ASCII
+?CHR
+?CHRCODE
+?CONCAT
+?INITCAP
+?INSTR
+?LENGTH
+?LOWER
+?LPAD
+?LTRIM
+?METAPHONE
+?REPLACECHR
+?REPLACESTR
+?RPAD
+?RTRIM
+?SOUNDEX
+?SUBSTR
+?UPPER
+
+Conversion Functions
+?TO_BIGINT
+?TO_CHAR(Number)
+?TO_DATE
+?TO_DECIMAL
+?TO_FLOAT
+?TO_INTEGER
+
+Data Cleansing Functions
+?BETWEEN
+?GREATEST
+?IN
+?INSTR
+?IS_DATE
+?IS_NUMBER
+?IS_SPACES
+?ISNULL
+?LEAST
+?LTRIM
+?METAPHONE
+?REG_EXTRACT
+?REG_MATCH
+?REG_REPLACE
+?REPLACECHR
+?REPLACESTR
+?RTRIM
+?SOUNDEX
+?SUBSTR
+?TO_BIGINT
+?TO_CHAR
+?TO_DATE
+?TO_DECIMAL
+?TO_FLOAT
+?TO_INTEGER
+
+Date Functions
+?ADD_TO_DATE
+?DATE_COMPARE
+?DATE_DIFF
+?GET_DATE_PART
+?IS_DATE
+?LAST_DAY
+?MAKE_DATE_TIME
+?MAX
+?MIN
+?ROUND(Date)
+?SET_DATE_PART
+?SYSTIMESTAMP
+?TO_CHAR(Date)
+?TRUNC(Date)
+
+Encoding Functions
+
+?AES_DECRYPT
+?AES_ENCRYPT
+?COMPRESS
+?CRC32
+?DEC_BASE64
+?DECOMPRESS
+?ENC_BASE64
+?MD5
+
+Special Functions
+?ABORT
+?DECODE
+?ERROR
+?IIF
+?LOOKUP
+
+All Functions
+
+AES_DECRYPT : AES_DECRYPT ( value, key )
+E.g AES_DECRYPT( SSN_ENCRYPT, SUBSTR( SSN,1,3 ))
+AES_ENCRYPT : AES_ENCRYPT ( value, key )
+AES_ENCRYPT( SSN, SUBSTR( SSN,1,3 ))
+Tip : If the target does not support binary data, use AES_ENCRYPT with the ENC_BASE64 function to store the data in a format compatible with the database.
+
+ASCII : ASCII ( string )
+Return Value is Integer. The ASCII or Unicode value of the first character in the string.
+AVG : AVG( numeric_value [, filter_condition ] )
+If a value is NULL, AVG ignores the row. However, if all values passed from the port are NULL, AVG returns NULL.
+AVG( WHOLESALE_COST, ITEM_NAME='Flashlight' ) - Calculates average only for the Flashlight item and return a single value.
+You can perform arithmetic on the values passed to AVG before the function calculates the average. For example: AVG( QTY * PRICE - DISCOUNT )
+CHOOSE : CHOOSE( index, string1 [, string2, ..., stringN] )
+Return Value : The string that matches the position of the index value.(Index th string from the list of strings) NULL if no string matches the position of the index value.
+
+Returns the string ‘flashlight’ based on an index value of 2 : CHOOSE( 2, 'knife', 'flashlight', 'diving hood' )
+Returns NULL based on an index value of 4 : CHOOSE( 4, 'knife', 'flashlight', 'diving hood' )
+
+CHR : CHR( numeric_value )
+Return Value - ASCII or Unicode character. A string containing one character.
+
+COMPRESS : Compresses data using the zlib 1.2.1 compression algorithm. Use the COMPRESS function before you send large amounts of data over a wide area network.
+Return Value - Compressed binary value of the input value.
+
+CONCAT : CONCAT( first_string, second_string )
+Return Value - The concatenated string. If one of the strings is NULL, CONCAT ignores it and returns the other string. If both strings are NULL, CONCAT returns NULL.
+
+COUNT : COUNT( value [, filter_condition] )
+Return Value - Integer. 0 if all values passed to this function are NULL (unless you include the asterisk argument).
+
+CUME : CUME( numeric_value [, filter_condition] )
+Returns a running total. A running total means CUME returns a total each time it adds a value.
+
+Use CUME and similar functions (such as MOVINGAVG and MOVINGSUM) to simplify reporting by calculating running values.
+
+DATE_COMPARE : DATE_COMPARE( date1, date2 )
+Returns an integer indicating which of two dates is earlier.
+Return Value
+-1 if the first date is earlier.
+0 if the two dates are equal.
+1 if the second date is earlier.
+NULL if one of the date values is NULL.
+
+DATE_DIFF : DATE_DIFF( date1, date2, format )
+
+Format string specifying the date or time measurement. You can specify years, months, days, hours, minutes, seconds, milliseconds, microseconds, or
+nanoseconds. You can specify only one part of the date, such as 'mm'. Enclose the format strings within single quotation marks. The format string is not case sensitive.
+
+Return Value
+Double value. If date1 is later than date2, the return value is a positive number. If date1 is earlier than date2, the return value is a negative number.
+
+The following expressions return the number of hours between the DATE_PROMISED and DATE_SHIPPED ports:
+DATE_DIFF( DATE_PROMISED, DATE_SHIPPED, 'HH' )
+DATE_DIFF( DATE_PROMISED, DATE_SHIPPED, 'HH12' )
+DATE_DIFF( DATE_PROMISED, DATE_SHIPPED, 'HH24' )
+
+The following expressions return the number of months between the DATE_PROMISED and DATE_SHIPPED ports:
+DATE_DIFF( DATE_PROMISED, DATE_SHIPPED, 'MM' )
+DATE_DIFF( DATE_PROMISED, DATE_SHIPPED, 'MON' )
+DATE_DIFF( DATE_PROMISED, DATE_SHIPPED, 'MONTH' )
+
+DECODE : DECODE( value, first_search, first_result [, second_search, second_result]...[,default])
+
+DECOMPRESS : DECOMPRESS( value, precision)
+
+Decompresses data using the zlib 1.2.1 compression algorithm. Use the DECOMPRESS function on data that has been compressed with the COMPRESS function or a compression tool that uses the zlib 1.2.1 algorithm.
+
+ERROR : ERROR( string )
+
+Causes the Integration Service to skip a row and issue an error message, which you define. The error message displays in the session log. The Integration Service does not write these skipped rows to the session reject file.
+
+IIF( SALARY < 0, ERROR ('Error. Negative salary found. Row skipped.', EMP_SALARY )
+
+FIRST : FIRST( value [, filter_condition ] )
+Returns the first value found within a port or group. Optionally, you can apply a filter to limit the rows the Integration Service reads.
+
+GET_DATE_PART : GET_DATE_PART( date, format )
+A format string specifying the portion of the date value you want to return. Enclose format strings within single quotation marks, for example, 'mm'. The format string is not case sensitive. Each format string returns the entire part of the date based on the date format specified in the session. For example, if you pass the date Apr 1 1997 to GET_DATE_PART, the format strings 'Y', 'YY', 'YYY', or 'YYYY' all return 1997.
+
+GET_DATE_PART( DATE_SHIPPED, 'HH' )
+GET_DATE_PART( DATE_SHIPPED, 'HH12' )
+GET_DATE_PART( DATE_SHIPPED, 'HH24' )
+
+GREATEST : GREATEST( value1, [value2, ..., valueN,] CaseFlag )
+Returns the greatest value from a list of input values.
+
+IIF : IIF( condition, value1 [,value2] )
+Returns one of two values you specify, based on the results of a condition.
+
+Return Value
+value1 if the condition is TRUE.
+value2 if the condition is FALSE.
+
+If the FALSE (value2) condition in the IIF function is not required. If you omit value2, the function returns the following when the condition is FALSE:
+? 0 if value1 is a Numeric datatype.
+? Empty string if value1 is a String datatype.
+? NULL if value1 is a Date/Time datatype.
+
+Use nested IIF statements to test multiple conditions. The following example tests for various conditions and returns 0 if sales is 0 or negative:
+IIF( SALES > 0, IIF( SALES < 50, SALARY1, IIF( SALES < 100, SALARY2, IIF( SALES < 200,
+SALARY3, BONUS))), 0 )
+
+You can make this logic more readable by adding comments:
+IIF( SALES > 0,
+   --then test to see if sales is between 1 and 49:
+   IIF( SALES < 50,
+      --then return SALARY1
+      SALARY1,
+      --else test to see if sales is between 50 and 99:
+         IIF( SALES < 100,
+         --then return
+         SALARY2,
+         --else test to see if sales is between 100 and 199:
+            IIF( SALES < 200,
+               --then return
+               SALARY3,
+               --else for sales over 199, return
+               BONUS)
+         )
+   ),
+   --else for sales less than or equal to zero, return
+   0
+)
+
+Use IIF in update strategies. For example:
+IIF( ISNULL( ITEM_NAME ), DD_REJECT, DD_INSERT)
+
+Alternative to IIF
+Use DECODE instead of IIF in many cases. DECODE may improve readability.
+
+DECODE( TRUE,
+SALES > 0 and SALES < 50, SALARY1,
+SALES > 49 AND SALES < 100, SALARY2,
+SALES > 99 AND SALES < 200, SALARY3,
+SALES > 199, BONUS)
+
+You can often use a Filter transformation instead of IIF to maximize session performance.
+
+IN : IN( valueToSearch, value1, [value2, ..., valueN,] CaseFlag )
+Matches input data to a list of values. By default, the match is case sensitive.
+
+valueToSearch : Required : Can be a string, date, or numeric value. Input value you want to match against a comma-separated list of values.
+value : Required : Can be a string, date, or numeric value. Comma-separated list of values you want to search for. Values can be ports in a transformation. There is no maximum number of values you can list.
+CaseFlag : Optional : Must be an integer. Determines whether the arguments in this function are case sensitive. You can enter any valid transformation expression.
+When CaseFlag is a number other than 0, the function is case sensitive.
+When CaseFlag is a null value or 0, the function is not case sensitive.
+
+Example
+The following expression determines if the input value is a safety knife, chisel point knife, or medium titanium knife. The input values do not have to match the case of the values in the comma-separated list:
+IN( ITEM_NAME, ‘Chisel Point Knife’, ‘Medium Titanium Knife’, ‘Safety Knife’, 0 )
+
+INDEXOF : INDEXOF( valueToSearch, string1, [string2, ..., stringN,] CaseFlag )
+
+Finds the index of a value among a list of values. By default, the match is case sensitive.
+
+Return Value
+1 if the input value matches string1, 2 if the input value matches string2, and so on.
+0 if the input value is not found.
+NULL if the input is a null value.
+
+Example : The following expression determines if values from the ITEM_NAME port match the first, second, or third string:
+INDEXOF( ITEM_NAME, ‘diving hood’, ‘flashlight’, ‘safety knife’)
+
+INITCAP : INITCAP( string )
+Capitalizes the first letter in each word of a string and converts all other letters to lowercase.
+
+INSTR : INSTR( string, search_value [,start [,occurrence [,comparison_type ]]] )
+Returns the position of a character set in a string, counting from left to right.
+
+comparison_type - Must be an integer value, either 0 or 1:
+- 0: INSTR performs a linguistic string comparison.
+- 1: INSTR performs a binary string comparison.
+Default is 0.
+
+Examples : The following expression returns the position of the first occurrence of the letter ‘a’, starting at the beginning of each company name. Because the search_value argument is case sensitive, it skips the ‘A’ in ‘Blue Fin Aqua Center’, and returns the position for the ‘a’ in ‘Aqua’:
+INSTR( COMPANY, 'a' )
+
+COMPANY                RETURN VALUE
+Blue Fin Aqua Center   13
+
+ISNULL : ISNULL( value )
+Returns whether a value is NULL. ISNULL evaluates an empty string as FALSE.
+
+Return Value
+TRUE (1) if the value is NULL.
+FALSE (0) if the value is not NULL.
+
+Note: To test for empty strings, use LENGTH.
+
+IS_DATE : IS_DATE( value [,format] )
+Returns whether a string value is a valid date.
+Return Value
+TRUE (1) if the row is a valid date.
+FALSE (0) if the row is not a valid date.
+
+Examples
+The following expression checks the INVOICE_DATE port for valid dates:
+IS_DATE( INVOICE_DATE )
+The following IS_DATE expression specifies a format string of ‘YYYY/MM/DD’:
+IS_DATE( INVOICE_DATE, 'YYYY/MM/DD' )
+
+IS_NUMBER : IS_NUMBER( value )
+
+Return Value
+TRUE (1) if the row is a valid number.
+FALSE (0) if the row is not a valid number.
+NULL if a value in the expression is NULL.
+
+IS_SPACES : IS_SPACES( value )
+Returns whether a string value consists entirely of spaces.
+Return Value
+TRUE (1) if the row consists entirely of spaces.
+FALSE (0) if the row contains data.
+NULL if a value in the expression is NULL.
+
+LAST : LAST( value [, filter_condition ] )
+Returns the last row in the selected port. Optionally, you can apply a filter to limit the rows the Integration Service reads. You can nest only one other aggregate function within LAST.
+Return Value
+Last row in a port.
+NULL if all values passed to the function are NULL, or if no rows are selected (for example, the filter condition evaluates to FALSE or NULL for all rows).
+
+Example
+The following expression returns the last row in the ITEMS_NAME port with a price greater than $10.00:
+LAST( ITEM_NAME, ITEM_PRICE > 10 )
+
+LAST_DAY : LAST_DAY( date )
+Returns the date of the last day of the month for each date in a port.
+
+Return Value
+Date. The last day of the month for that date value you pass to this function.
+NULL if a value in the selected port is NULL.
+
+LEAST : LEAST( value1, [value2, ..., valueN,] CaseFlag )
+
+LENGTH : LENGTH( string )
+Returns the number of characters in a string, including trailing blanks.
+Return Value
+Integer representing the length of the string.
+NULL if a value passed to the function is NULL.
+
+LOOKUP : LOOKUP( result, search1, value1 [, search2, value2]... )
+
+Searches for a value in a lookup source column.
+The LOOKUP function compares data in a lookup source to a value you specify. When the Integration Service finds the search value in the lookup table, it returns the value from a specified column in the same row in the lookup table.
+
+When you create a session based on a mapping that uses the LOOKUP function, you must specify the database connections for $Source Connection Value and $Target Connection Value in the session properties. To validate a lookup function in an Expression transformation, verify that the lookup definition is in the mapping.
+Note: This function is not supported in mapplets.
+
+Using the Lookup Transformation or the LOOKUP Function
+Use the Lookup transformation rather than the LOOKUP function to look up values in PowerCenter mappings. If you use the LOOKUP function in a mapping, you need to enable the lookup caching option for 3.5 compatibility in the session properties. This option exists expressly for PowerMart 3.5 users who want to continue using the LOOKUP function, rather than creating Lookup transformations.
+
+Return Value
+Result if all searches find matching values. If the Integration Service finds matching values, it returns the result from the same row as the search1 argument.
+NULL if the search does not find any matching values.
+Error if the search finds more than one matching value.
+
+Example
+The following expression searches the lookup source :TD.SALES for a specific item ID and price, and returns the item name if both searches find a match: LOOKUP( :TD.SALES.ITEM_NAME, :TD.SALES.ITEM_ID, 10, :TD.SALES.PRICE, 15.99 )
+
+LOWER : LOWER( string )
+LPAD : LPAD( first_string, length [,second_string] )
+LTRIM : LTRIM( string [, trim_set] )
+
+MAKE_DATE_TIME : MAKE_DATE_TIME( year, month, day, hour, minute, second, nanosecond)
+
+Return Value
+Date as MM/DD/YYYY HH24:MI:SS. Returns a null value if you do not pass the function a year, month, or day.
+
+Example
+The following expression creates a date and time from the input ports:
+MAKE_DATE_TIME( SALE_YEAR, SALE_MONTH, SALE_DAY, SALE_HOUR, SALE_MIN, SALE_SEC )
+
+MAX (Dates) : MAX( date [, filter_condition] )
+MAX (Numbers) : MAX( numeric_value [, filter_condition] )
+MAX (String) : MAX( string [, filter_condition] )
+
+
+MD5 : MD5( value )
+Calculates the checksum of the input value. The function uses Message-Digest algorithm 5 (MD5). MD5 is a one-way cryptographic hash function with a 128-bit hash value. You can conclude that input values are different when the checksums of the input values are different.
+
+Return Value
+Unique 32-character string of hexadecimal digits 0-9 and a-f.
+NULL if the input is a null value.
+
+MOVINGAVG : MOVINGAVG( numeric_value, rowset [, filter_condition] )
+Returns the average (row-by-row) of a specified set of rows. Optionally, you can apply a condition to filter rows before calculating the moving average.
+
+
+Example
+The following expression returns the average order for a Stabilizing Vest, based on the first five rows in the Sales port, and thereafter, returns the average for the last five rows read: MOVINGAVG( SALES, 5 )
+
+this calculates the moving average based on last five records from the current row(Inclusive).
+
+MOVINGSUM : MOVINGSUM( numeric_value, rowset [, filter_condition] )
+Example
+The following expression returns the sum of orders for a Stabilizing Vest, based on the first five rows in the Sales port, and thereafter, returns the average for the last five rows read: MOVINGSUM( SALES, 5 )
+
+POWER : POWER( base, exponent )
+
+RAND : RAND( seed )
+Returns a random number between 0 and 1.
+
+REG_EXTRACT : REG_EXTRACT( subject, pattern, subPatternNum )
+Extracts subpatterns of a regular expression within an input value. For example, from a regular expression pattern for a full name, you can also extract the first name or last name.
+
+Subject is the value you want to compare against the regular expression pattern.
+Pattern is the Regular expression pattern that you want to match. You must use perl compatible regular expression syntax. Enclose the pattern in single quotation marks.
+Subpattern number of the regular expression you want to match. Use the following guidelines to determine the subpattern number:
+- no value or 1. Extracts the entire regular expression pattern.
+- 2. Extracts the first regular expression subpattern.
+- 3. Extracts the second regular expression subpattern.
+- n. Extracts the n-1 regular expression subpattern.
+Default is 1.
+
+Example
+You might use REG_EXTRACT in an expression to extract first names from a regular expression that matches first name and last name. For example, the following expression returns the first name of a regular expression:
+REG_EXTRACT( Employee_Name, '((\w+)\s+(\w+))', 2 )
+
+REG_MATCH : REG_MATCH( subject,pattern )
+Return Value
+TRUE if the data matches the pattern.
+FALSE if the data does not match the pattern.
+NULL if the input is a null value or if the pattern is NULL.
+
+Example
+You might use REG_MATCH in an expression to validate telephone numbers. For example, the following expression matches a 10-digit telephone number against the pattern and returns a Boolean value based on the match:
+REG_MATCH (Phone_Number, '(\d\d\d-\d\d\d-\d\d\d\d)' )
+
+Phone_Number  Return Value
+408-555-1212  TRUE
+              NULL
+510-555-1212  TRUE
+92 555 51212  FALSE
+
+Tip
+You can also use REG_MATCH for the following tasks:
+? To verify that a value matches a pattern. This use is similar to the SQL LIKE function.
+? To verify that values are characters. This use is similar to the SQL IS_CHAR function.
+
+REG_REPLACE : REG_REPLACE( subject, pattern, replace, numReplacements )
+Replaces characters in a string with a another character pattern. By default, REG_REPLACE searches the input string for the character pattern you specify and replaces all occurrences with the replacement pattern. You can also indicate the number of occurrences of the pattern you want to replace in the string.
+
+Example
+The following expression removes additional spaces from the Employee name data for each row of the Employee_name port:
+REG_REPLACE( Employee_Name, ‘\s+’, ‘ ’)
+
+REPLACECHR : REPLACECHR( CaseFlag, InputString, OldCharSet, NewChar )
+CaseFlag : Required : anything other thn 0 then case sensitive else case insensitive.
+OldCharSet : Required : The characters you want to replace. You can enter one or more characters.
+NewChar : Required : If NewChar is NULL or empty, REPLACECHR removes all occurrences of all characters in OldCharSet in InputString. If NewChar contains more than one character, REPLACECHR uses the first character to replace OldCharSet.
+
+REPLACESTR : REPLACESTR ( CaseFlag, InputString, OldString1, [OldString2, ... OldStringN,] NewString )
+
+REVERSE :  REVERSE( string )
+
+ROUND (Dates) : ROUND( date [,format] )
+Examples
+The following expressions round the year portion of dates in the DATE_SHIPPED port:
+ROUND( DATE_SHIPPED, 'Y' )
+ROUND( DATE_SHIPPED, 'YY' )
+ROUND( DATE_SHIPPED, 'YYY' )
+ROUND( DATE_SHIPPED, 'YYYY' )
+
+ROUND (Numbers) : ROUND( numeric_value [, precision] )
+
+SETCOUNTVARIABLE : SETCOUNTVARIABLE( $$Variable )
+
+Example
+You have a mapping that updates a slowly changing dimension table containing distributor information. The following expression counts the number of current distributors with the mapping variable $$CurrentDistributors and returns the current value to the CUR_DIST port. It increases the count by one for each inserted row, decreases the count for each deleted row, and keeps the count the same for all updated or rejected rows. The initial value of $$CurrentDistributors from the previous session run is 23.
+
+(row marked for...) DIST_ID DISTRIBUTOR CUR_DIST
+(update) 000015 MSD Inc. 23
+(insert) 000024 Darkroom Co. 24
+(insert) 000025 Howard's Supply 25
+(update) 000003 JNR Ltd. 25
+(delete) 000024 Darkroom Co. 24
+(insert) 000026 Supply.com 25
+
+SUBSTR : SUBSTR( string, start [,length] )
+

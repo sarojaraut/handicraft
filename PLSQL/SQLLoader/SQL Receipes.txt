@@ -1,0 +1,1055 @@
+select employee_id, 
+last_name, 
+salary,
+scn_to_timestamp(ora_rowscn) Change_Timestamp from hr.employees;
+
+The ORA_ROWSCN is a pseudo-column Oracle has supported since the release of Oracle 10g. By default, its value is taken from the block-level System Change Number (SCN) on the block storing the row or rows in question. This SCN can be seen directly with the next SQL that returns the SCN for the rows in our HR.EMPLOYEES table. Where the SCN is older than the oldest SCN still tracked by the instance, you will receive a “ORA-08181: specified number is not a valid system change number” error message. This means that SCN values months or years in the past may not be translatable using this technique.
+
+One limitation of our recipe might have struck you from the description of the SQL used, or the results. Our use of the ORA_ROWSCN pseudo-column is returning the block-level SCN, which is Oracle’s default level of SCN tracking. This means that any value updated for a row on a given block, or any new row inserted into the block, will set the ORA_ROWSCN value to the SCN of the relevant transaction.
+
+Detecting Leap Years
+
+select to_number(to_char(sysdate,'YYYY')) Year,
+case
+when mod(to_number(to_char(sysdate,'YYYY')),400) = 0 then 'Leap Year'
+when mod(to_number(to_char(sysdate,'YYYY')),100) = 0 then 'Not Leap Year'
+when mod(to_number(to_char(sysdate,'YYYY')),4) = 0 then 'Leap Year'
+else 'Not Leap Year'
+end as "Leap Year?"
+from dual;
+
+Computing the Last Date in a Month
+
+select last_day(sysdate) from dual;
+
+Determining the First Date or Day in a Month
+
+select trunc(sysdate,'mm') from dual;
+
+Calculating the Day of the Week
+
+select to_char(sysdate,'Day') Day_Of_Week,
+case
+when to_char(sysdate,'D') in (1,7) then 'Weekend'
+else 'Weekday'
+end Day_Type
+from dual;
+
+
+To find out which street addresses are more than three words, use the following:
+select location_id, street_address,
+city, postal_code
+from locations
+where regexp_count(street_address,'\s') >= 3
+;
+
+This example performs basic address standardization by converting all variations of “Road” to “RD” at the end of the string:
+update locations
+set street_address =
+regexp_replace(street_address,'\s(road|rd|roade)$',' RD',1,0,'i')
+where regexp_instr(street_address,'\s(road|rd|roade)$',1,1,0,'i') > 0
+;
+
+
+Identifying Blocking Transactions
+
+select s1.username blkg_user, s1.machine blkg_ws, s1.sid blkg_sid,
+s2.username wait_user, s2.machine wait_ws, s2.sid wait_sid,
+lo.object_id blkd_obj_id, do.owner, do.object_name
+from v$lock l1, v$session s1, v$lock l2, v$session s2,
+v$locked_object lo, dba_objects do
+where s1.sid = l1.sid
+and s2.sid = l2.sid
+and l1.id1 = l2.id1
+and s1.sid = lo.session_id
+and lo.object_id = do.object_id
+and l1.block = 1
+and l2.request > 0
+;
+
+alter table employees drop constraint emp_job_fk;
+alter table employees
+add constraint emp_job_fk
+foreign key (job_id)
+references hr.jobs(job_id)
+initially deferred deferrable
+enable
+;
+Future inserts or updates to the EMPLOYEES table will not validate the value inserted into the JOB_ID column against the JOBS table until a COMMIT is issued. If the constraint is not valid at COMMIT time, the entire transaction is rolled back with an error message.
+
+Any schema with the CREATE SESSION system privilege can select schema information from the
+ALL_USERS view. For example:
+select
+username
+,created
+from all_users
+order by username;
+
+select
+sys_context('USERENV','CURRENT_USER') usr
+,sys_context('USERENV','AUTHENTICATION_METHOD') auth_mth
+,sys_context('USERENV','HOST') host
+,sys_context('USERENV','INSTANCE_NAME') inst
+from dual;
+
+Run the following query to view table privileges that have been granted to your current user account:
+select grantee, table_name, privilege
+from user_tab_privs
+where grantee = sys_context('USERENV','CURRENT_USER')
+order by table_name, privilege;
+
+Displaying a Table’s Disk Space Usage
+
+The next query is handy when you want to view the space consumption of a table:
+UNDEFINE owner
+UNDEFINE tab_name
+SET linesize 200
+COL table_name FORMAT A25
+COL tablespace_name FORMAT A20
+COL partition_name FORMAT A25
+COL file_name FORMAT A35
+COL meg_space_used FORMAT 999,999,999.999
+--
+SELECT
+a.table_name
+,b.tablespace_name
+,b.partition_name
+,c.file_name
+,SUM(b.bytes)/1024/1024 meg_space_used
+FROM dba_tables a
+,dba_extents b
+,dba_data_files c
+WHERE a.owner = UPPER('&&owner')
+AND a.table_name = UPPER('&&tab_name')
+AND a.owner = b.owner
+AND a.table_name = b.segment_name
+AND b.file_id = c.file_id
+GROUP BY
+a.table_name
+,b.tablespace_name
+,b.partition_name
+,c.file_name
+ORDER BY a.table_name, b.tablespace_name;
+
+Displaying Table Row Counts
+
+UNDEFINE user
+SPOOL tabcount_&&user..sql
+SET LINESIZE 132 PAGESIZE 0 TRIMSPO OFF VERIFY OFF FEED OFF TERM OFF
+SELECT
+'SELECT RPAD(' || '''' || table_name || '''' ||',30)'
+|| ',' || ' COUNT(*) FROM &&user..' || table_name || ';'
+FROM dba_tables
+WHERE owner = UPPER('&&user')
+ORDER BY 1;
+SPO OFF;
+SET TERM ON
+@@tabcount_&&user..sql
+
+alter table cluster_buckets disable all triggers;
+
+alter table cluster_buckets enable all triggers;
+
+Traversing Hierarchical Data from Top to Bottom
+
+select employee_id, level,
+lpad(' ',(level-1)*3) || last_name || ', ' || first_name full_name
+from employees
+start with manager_id is null
+connect by manager_id = prior employee_id
+
+Sorting Nodes Within a Hierarchical Level
+
+If you want to sort the employees by last name within each manager, the standard ORDER BY clause will not work, since it will sort on the last name independent of the level within the tree hierarchy. Instead, you must use the ORDER SIBLINGS BY clause, as in this example:
+select employee_id, level,
+lpad(' ',(level-1)*3) || last_name || ', ' || first_name full_name
+from employees
+start with manager_id is null
+connect by manager_id = prior employee_id
+order siblings by last_name, first_name
+
+Generating Pathnames from Hierarchical Tables
+Use the SYS_CONNECT_BY_PATH operator in a hierarchical query against the EMPLOYEES table. Here’s an example of how to do that:
+select
+'/u01/empl' ||
+sys_connect_by_path(lower(last_name)||'.'||lower(first_name),'/') mgmt_path
+from employees
+start with manager_id is null
+connect by prior employee_id = manager_id;
+MGMT_PATH
+-------------------------------------------------------------------------
+/u01/empl/king.steven
+/u01/empl/king.steven/kochhar.neena
+/u01/empl/king.steven/kochhar.neena/greenberg.nancy
+/u01/empl/king.steven/kochhar.neena/greenberg.nancy/faviet.daniel
+/u01/empl/king.steven/kochhar.neena/greenberg.nancy/chen.john
+/u01/empl/king.steven/kochhar.neena/greenberg.nancy/sciarra.ismael
+/u01/empl/king.steven/kochhar.neena/greenberg.nancy/urman.jose manuel
+/u01/empl/king.steven/kochhar.neena/greenberg.nancy/popp.luis
+/u01/empl/king.steven/kochhar.neena/whalen.jennifer
+
+Identifying Leaf Data in a Hierarchical Table
+
+Use the CONNECT_BY_ISLEAF pseudo-column to identify rows that are not parents of any other rows—in other words, to identify leaf nodes. Here’s an example showing how to do that:
+select
+lpad(' ',(level-1)*3) || last_name || ', ' || first_name full_name,
+level, connect_by_isleaf is_leaf
+from employees
+start with manager_id is null
+connect by prior employee_id = manager_id
+;
+FULL_NAME LEVEL IS_LEAF
+----------------------------------- ----------------- ---------
+King, Steven 1 0
+Kochhar, Neena 2 0
+Greenberg, Nancy 3 0
+Faviet, Daniel 4 1
+
+Detecting Cycles in Hierarchical DataUpdates were made to a hierarchical table and now any hierarchical query run against the table generates this error message:
+SQL Error: ORA-01436: CONNECT BY loop in user data
+
+Use the CONNECT_BY_ISCYCLE pseudo-column and the NOCYCLE keyword in the CONNECT BY clause to force Oracle to run the query but stop returning rows that cause a cycle in the hierarchy structure. For
+example:
+select employee_id, manager_id, level lvl,
+connect_by_iscycle is_cycle,
+lpad(' ',(level-1)*3) || last_name || ', ' || first_name full_name
+from employees
+start with last_name = 'Kochhar'
+connect by nocycle manager_id = prior employee_id
+;
+
+Generating a Fixed Number of Sequential Primary Keys
+
+select level new_pk from dual connect by level <= 1000;
+
+Determining if a Table Should be Partitioned
+Here are some rules of thumb for determining whether to partition a table:
+• Tables that are over 2 gigabytes in size
+• Tables that have more than 10 million rows and SQL operations are getting slower as more data is added
+• Tables you know will grow large; it’s better to create a table as partitioned rather than rebuild as partitioned when performance begins to suffer as the table grows
+• Rows can be divided in a way that facilitates parallel operations like loading, archiving, retrieval, or backup and recovery
+
+
+Dropping a Database
+shutdown immediate;
+startup mount exclusive restrict;
+drop database;
+
+Creating Tablespaces
+
+create tablespace inv_data
+datafile '/ora02/RMDB11/invdata01.dbf'
+size 100m
+extent management local
+uniform size 256k
+segment space management auto;
+
+Dropping a Tablespace
+alter tablespace inv_data offline;
+drop tablespace inv_data including contents and datafiles;
+
+Adjusting Tablespace Size
+
+You’re getting this error when attempting to insert data into a table:
+ORA-01653: unable to extend table INVENTORY by 128 in tablespace INV_IDX
+
+
+Solution
+There are two common techniques for resizing a tablespace:
+• Increasing (or decreasing) the size of an existing datafile
+• Adding an additional datafile
+
+select name, bytes from v$datafile;
+
+Once you determine which datafile you want to resize, use the ALTER DATABASE DATAFILE ... RESIZE command to increase its size. 
+alter database datafile '/ora01/oradata/INVREP/reg_data01.dbf' resize 1g;
+
+To add a datafile to an existing tablespace, use the ALTER TABLESPACE ... ADD DATAFILE statement:
+alter tablespace reg_data add datafile '/ora01/oradata/INVREP/reg_data02.dbf' size 100m;
+
+Limiting Database Resources per Session
+
+First you need to ensure that the RESOURCE_LIMIT initialization parameter is set to TRUE for your database. You can do this either in the initialization file (init.ora or spfile) or use the ALTER SYSTEM command. Issue the following SQL statement to view the current setting of RESOURCE_LIMIT in your database:
+select name, value from v$parameter where name='resource_limit';
+
+create profile user_profile_limit
+limit
+sessions_per_user 20
+cpu_per_session 240000
+logical_reads_per_session 1000000
+connect_time 480
+idle_time 120;
+After a profile has been created, you can assign it to a user. In the next example, user HEERA is assigned the USER_PROFILE_LIMIT:
+alter user heera profile user_profile_limit;
+
+Creating Users
+create user heera identified by chaya
+default tablespace users
+temporary tablespace temp;
+
+Dropping Users
+drop user heera;
+This command won’t work if the user owns any database objects. Use the CASCADE clause to remove
+a user and have its objects dropped:
+drop user heera cascade;
+
+create database link mss connect to e123 identified by e123
+using 'oss.east:1521/BRDSTN';
+
+You want to identify in real time SQL statements consuming the most resources.
+
+select * from (
+select
+a.sid session_id
+,a.sql_id
+,a.status
+,a.cpu_time/1000000 cpu_sec
+,a.buffer_gets
+,a.disk_reads
+,b.sql_text sql_text
+from v$sql_monitor a
+,v$sql b
+where a.sql_id = b.sql_id
+order by a.cpu_time desc)
+where rownum <=20;
+
+You can modify the previous query to order by the statistic of your choice like disk_reads, buffer_gets.
+
+The statistics in V$SQL_MONITOR are updated every second so you can view resource consumption as it changes. These statistics are gathered by default if a SQL statement runs in parallel or consumes more than 5 seconds of CPU or I/O time. The V$SQL_MONITOR view includes a subset of statistics contained in the V$SQL, V$SQLAREA, and V$SQLSTATS views. The V$SQL_MONITOR view displays real-time statistics for each execution of a resource intensive SQL statement, whereas V$SQL, V$SQLAREA, and V$SQLSTATS contain cumulative sets of statistics over several executions of a SQL statement. Once the SQL statement execution ends, the run time statistics are not immediately flushed from V$SQL_MONITOR. Depending on activity in your database, the statistics can be available for some period of time.
+
+You want to view exactly where Oracle is taking time within a SQL execution plan. You are using Oracle Database 11g.
+
+select
+a.sid
+,a.status
+,to_char(a.sql_exec_start,'yymmdd hh24:mi') start_time
+,a.plan_line_id
+,a.plan_operation
+,a.plan_options
+,a.output_rows
+,a.workarea_mem mem_bytes
+,a.workarea_tempseg temp_bytes
+from v$sql_plan_monitor a
+,v$sql_monitor b
+where a.status NOT LIKE '%DONE%'
+and a.key = b.key
+order by a.sid, a.sql_exec_start, a.plan_line_id;
+Here is a partial listing of the output (the memory columns have been removed to fit the output on
+the page):
+SID STATUS START_TIME Plan ID PLAN_OPERATION PLAN_OPTIONS OUTPUT_ROWS
+------ --------- ------------ ------- ---------------- ------------- -----------
+184 EXECUTING 090326 17:31 0 SELECT STATEMENT 0
+1 SORT ORDER BY 0
+2 HASH GROUP BY 0
+3 HASH JOIN 693940
+4 TABLE ACCESS FULL 7
+5 TABLE ACCESS FULL 693940
+You can now watch Oracle step through each line in the explain plan and update the relevant
+number of rows, bytes used in memory, and bytes used in temporary space.
+
+select dbms_sqltune.report_sql_monitor(session_id=>185) from dual;
+
+Determining How Much SQL Work Is Left
+
+Use the V$SESSION_LONGOPS view to approximate how much time a query has left to run.
+
+select
+	a.username
+	,a.opname
+	,b.sql_text
+	,to_char(a.start_time,'DD-MON-YY HH24:MI') start_time
+	,a.elapsed_seconds how_long
+	,a.time_remaining secs_left
+	,a.sofar
+	,a.totalwork
+	,round(a.sofar/a.totalwork*100,2) percent
+from v$session_longops a
+	,v$sql b
+where 
+	a.sql_address = b.address
+	and a.sql_hash_value = b.hash_value
+	and a.sofar <> a.totalwork
+	and a.totalwork != 0;
+
+Identifying Resource-Intensive SQL Statements
+select * from(
+select
+sql_text
+,buffer_gets
+,disk_reads
+,sorts
+,cpu_time/1000000 cpu_sec
+,executions
+,rows_processed
+from v$sqlstats
+order by cpu_time DESC)
+where rownum < 11;
+
+
+How will Oracle Corp. find out if you are using AWR reports or other extra cost options? A simple query will answer the question, if your database is audited by Oracle Corp.:
+
+SELECT
+  NAME,
+  VERSION,
+  DETECTED_USAGES,
+  TOTAL_SAMPLES,
+  CURRENTLY_USED,
+  FIRST_USAGE_DATE,
+  LAST_USAGE_DATE,
+  LAST_SAMPLE_DATE
+FROM
+  DBA_FEATURE_USAGE_STATISTICS;
+  
+   How to tell if you are licensed to use AWR
+
+SQL> show parameter CONTROL_MANAGEMENT_PACK_ACCESS
+
+NAME TYPE VALUE
+------------------------------------ ----------- ---------------
+control_management_pack_access       string    DIAGNOSTIC+TUNING 
+
+Using AWR
+An AWR report is good for viewing the entire system performance and identifying the top resource consuming SQL queries. Run the following script to generate an AWR report:
+
+SQL> @?/rdbms/admin/awrrpt
+
+You can also generate an AWR report for a specific SQL statement by running the awrsqrpt.sql report. When you run the following script, you will be prompted for the SQL_ID of the query of interest:
+SQL> @?/rdbms/admin/awrsqrpt.sql
+
+Using the Operating System to Identify Resource-Intensive Queries
+ps utility to identify the operating system sessions consuming the most CPU:
+
+ps -e -o pcpu,pid,user,tty,args | sort -n -k 1 -r | head
+Here is some sample output:
+7.8 14028 oracle ? oracleDW11 (DESCRIPTION=(LOCAL=YES)(ADDRESS=(PROTOCOL=beq)))
+0.1 17012 oracle ? ora_j003_SCDEV
+0.1 17010 oracle ? ora_j002_SCDEV
+
+From the output, the operating system session of 14028 is consuming the most CPU resources at 7.8 percent. 
+
+select
+'USERNAME : ' || s.username|| chr(10) ||
+'OSUSER : ' || s.osuser || chr(10) ||
+'PROGRAM : ' || s.program || chr(10) ||
+'SPID : ' || p.spid || chr(10) ||
+'SID : ' || s.sid || chr(10) ||
+'SERIAL# : ' || s.serial# || chr(10) ||
+'MACHINE : ' || s.machine || chr(10) ||
+'TERMINAL : ' || s.terminal
+from v$session s,
+v$process p
+where s.paddr = p.addr
+and p.spid = '&PID_FROM_OS';
+
+Next run the following query to display the SQL statement associated with the operating system process ID (in this example, the SPID is 14028):
+
+select
+'USERNAME : ' || s.username || chr(10) ||
+'OSUSER : ' || s.osuser || chr(10) ||
+'PROGRAM : ' || s.program || chr(10) ||
+'SPID : ' || p.spid || chr(10) ||
+'SID : ' || s.sid || chr(10) ||
+'SERIAL# : ' || s.serial# || chr(10) ||
+'MACHINE : ' || s.machine || chr(10) ||
+'TERMINAL : ' || s.terminal || chr(10) ||
+'SQL TEXT : ' || q.sql_text
+from v$session s
+,v$process p
+,v$sql q
+where s.paddr = p.addr
+and p.spid = '&PID_FROM_OS'
+and s.sql_id = q.sql_id;
+
+Displaying an Execution Plan Using AUTOTRACE
+
+Setting up AUTOTRACE
+1. Ensure that the PLAN_TABLE table exists. To see if your schema has a PLAN_TABLE, try to describe it:
+SQL> desc plan_table;
+If the PLAN_TABLE doesn’t exist, you need to create one. Run this script to create the PLAN_TABLE in your schema:
+SQL> @?/rdbms/admin/utlxplan
+2. Your schema also needs access to the PLUSTRACE role. You can verify access tothe PLUSTRACE role using the following:
+select username,granted_role from user_role_privswhere granted_role='PLUSTRACE';
+If you don’t have access to the PLUSTRACE role, run steps 3 and 4 as the SYS schema:
+3. Connect as SYS and run the plustrce.sql script:
+SQL> conn / as sysdba
+SQL> @?/sqlplus/admin/plustrce
+4. Grant the PLUSTRACE role to developers (or to a specific role) who want to use the AUTOTRACE facility:
+SQL> grant plustrace to star1;
+
+Generating an Execution Plan
+
+Option(s) Result
+SET AUTOTRACE ON Query output, explain plan, statistics
+SET AUTOTRACE OFF Turns AUTOTRACE off
+SET AUTOTRACE ON EXPLAIN STAT Query output, explain plan, statistics
+SET AUTOTRACE ON STAT Query output, statistics, no explain plan
+SET AUTOTRACE TRACE Explain plan, statistics, result generated but not displayed
+SET AUTOTRACE TRACE EXPLAIN Explain plan only, no result set generated
+SET AUTOTRACE TRACE STAT Statistics only, result set generated but not displayed.
+
+Generating an Execution Plan Using DBMS_XPLAN
+
+select * from table(dbms_xplan.display_awr('413xuwws268a3'));
+Procedure Purpose
+DISPLAY Displays execution plan for PLAN_TABLE contents.
+DISPLAY_AWR Displays execution plan for a SQL statement stored in AWR repository.
+DISPLAY_CURSOR Displays execution for a cursor.
+DISPLAY_SQL_PLAN_BASELINE Displays execution plan for SQL identified by SQL handle.
+DISPLAY_SQLSET Displays execution plan for SQL contained in SQL tuning set.
+
+
+An execution plan is a line-by-line description of how Oracle will retrieve and process a result set for a SQL statement. Each line in the execution plan describes how Oracle will physically retrieve rows from the database or process rows that have been retrieved in previous steps.
+
+• If there are two steps at the same level of indentation then the topmost step is executed first.
+• For a given step, the most heavily indented substep is executed first.
+• When the operation completes, it passes its results up to the next level.
+
+Tracing All SQL Statements for a Session
+
+exec dbms_session.set_sql_trace(sql_trace=>true);
+
+Note The TIMED_STATISTICS initialization parameter must be set to TRUE (the default setting) before you can generate SQL trace statistics.
+
+tkprof RMDB11_ora_21846.trc readable.txt explain=heera/foo sys=no
+
+If you are using Oracle Database 10g or higher, we recommend using the DBMS_MONITOR package, which offers a high degree of flexibility, for facilitating tracing.
+SQL> exec dbms_monitor.session_trace_enable(session_id=>1234, serial_num=>12345);
+SQL> -- run sql statements that you want to trace...
+SQL> exec dbms_monitor.session_trace_disable(session_id=>1234, serial_num=>12345);
+Use the WAIT and BINDS parameters to enable tracing with wait and bind variable information:
+SQL> exec dbms_monitor.session_trace_enable(waits=>TRUE, binds=>TRUE);
+
+To enable SQL tracing in another session, you can use the DBMS_SYSTEM package. You first must identify the session you want to trace:
+select username,sid,serial# from v$session;
+
+SQL> exec dbms_system.set_ev(si=>123, se=>1234, ev=>10046, le=>8, nm=>' ');
+SQL> exec dbms_system.set_ev(si=>123, se=>1234, ev=>10046, le=>0, nm=>' ');
+
+The DBMS_TRACE package isn’t a SQL tracing utility, it’s a PL/SQL debugging tool. To prepare an environment to use DBMS_TRACE, first run the following SQL scripts as SYS:
+SQL> @?/rdbms/admin/tracetab.sql
+SQL> @?/rdbms/admin/dbmspbt.sql
+
+You can now enable PL/SQL tracing in either of two ways. The first method is with the ALTER SESSION command:
+SQL> alter session set plsql_debug=true;
+The second method is to use the ALTER command to compile with the DEBUG option:
+SQL> alter <procedure | function | package body> compile debug;
+Now you can trace the PL/SQL code by calling the DBMS_TRACE package as follows:
+SQL> exec dbms_trace.set_plsql_trace(dbms_trace.trace_all_lines);
+Any PL/SQL you run will now be traced. Issue the following to turn tracing off:
+SQL> exec dbms_trace.clear_plsql_trace();
+To view PL/SQL tracing information, query the SYS-owned PLSQL_TRACE_EVENTS table:
+select
+event_seq, stack_depth, event_kind,
+event_unit, event_line, event_comment
+from sys.plsql_trace_events;
+
+
+
+Generating Statistics
+SQL> exec dbms_stats.gather_schema_stats(ownname => 'STAR1',-
+estimate_percent => DBMS_STATS.AUTO_SAMPLE_SIZE,-
+degree => DBMS_STATS.AUTO_DEGREE,-
+cascade => true);
+
+SQL> exec dbms_stats.gather_table_stats(ownname=>'STAR2',tabname=>'D_DOMAINS',-
+> cascade=>true, estimate_percent=>20, degree=4);
+
+Database Troubleshooting
+
+The following query will show the currently open cursors per session:
+select
+a.value
+,c.username
+,c.machine
+,c.sid
+,c.serial#
+from v$sesstat a
+,v$statname b
+,v$session c
+where a.statistic# = b.statistic#
+and c.sid = a.sid
+and b.name = 'opened cursors current'
+and a.value != 0
+and c.username IS NOT NULL
+order by 1,2;
+
+Determining If Online Redo Logs Are Sized Properly
+select count(*)
+,to_char(first_time,'YYYY:MM:DD:HH24')
+from v$log_history
+group by to_char(first_time,'YYYY:MM:DD:HH24')
+order by 2;
+
+The V$LOG_HISTORY derives its data from the control file. Each time there is a log switch, an entry is recorded in this view that details information, such as the time of the switch and system change number (SCN).
+
+A general rule of thumb is that you should size your online redo log files so that they switch about two or three times per hour. You don’t want them switching too often because there is overhead with the log switch. Oracle initiates a checkpoint as part of a log switch. During a checkpoint, the database writer background process writes all modified (dirty) blocks to disk, which is resource-intensive.
+
+On the other hand, you don’t want online redo log files to never switch because there are transactions in the current online redo log that you may need in the event of a recovery. If you were to have a disaster that caused a media failure in your current online redo log, you could lose those transactions that haven’t been archived yet.
+
+You can view the current size of your online redo log files by issuing the following query:
+select a.group#
+,a.member
+,b.status
+,b.bytes/1024/1024 meg_bytes
+from v$logfile a,
+v$log b
+where a.group# = b.group#
+order by a.group#;
+
+You can also query the OPTIMAL_LOGFILE_SIZE column from the V$INSTANCE_RECOVERY view to
+determine if your online redo log files have been sized correctly:
+select optimal_logfile_size from v$instance_recovery;
+OPTIMAL_LOGFILE_SIZE
+--------------------
+349
+This reports the redo log file size (in megabytes) that is considered optimal based on the initialization parameter setting of FAST_START_MTTR_TARGET. Oracle recommends you configure all online redo logs to be at least the value of OPTIMAL_LOGFILE_SIZE. However, when sizing your online redo logs, you must take into consideration information about your environment (such as the frequency of the switches).
+
+Determining If Undo Is Sized Properly
+You have a long-running SQL statement that is throwing an ORA-01555 “snapshot too old” error. You want to determine if you have properly sized your undo tablespace.
+
+select
+to_char(begin_time,'MM-DD-YYYY HH24:MI') begin_time
+,ssolderrcnt ORA_01555_cnt
+,nospaceerrcnt no_space_cnt
+,txncount max_num_txns
+,maxquerylen max_query_len
+,expiredblks blck_in_expired
+from v$undostat
+where begin_time > sysdate - 1
+order by begin_time;
+
+The ORA_01555_CNT column indicates the number of times your database has encountered the ORA-01555 “snapshot too old” error. If this column reports a non-zero value, you need to do one or more of the following:
+• Ensure that code does not contain COMMIT statements within cursor loops.
+• Tune the SQL statement throwing the error so that it runs faster.
+• Ensure that you have good statistics (so your SQL runs efficiently).
+• Increase the UNDO_RETENTION initialization parameter.
+
+The NO_SPACE_CNT column displays the number of times space was requested in the undo tablespace but none was to be found. If the NO_SPACE_CNT is reporting a non-zero value, you may need to add more space to your undo tablespace.
+
+The following
+query displays the current undo size and the recommended size for an undo retention setting of 900
+seconds:
+select
+sum(bytes)/1024/1024 cur_mb_size
+,dbms_undo_adv.required_undo_size(900) req_mb_size
+from dba_data_files
+where tablespace_name LIKE 'UNDO%';
+
+Determining If Temporary Tablespace Is Sized Correctly
+You’re trying to build an index and Oracle is throwing this error:
+ORA-01652: unable to extend temp segment by 128 in tablespace TEMP
+
+If you are using Oracle Database 11g or higher, run the following query to show both the allocated and free space within the temporary tablespace:
+select
+tablespace_name
+,tablespace_size/1024/1024 mb_size
+,allocated_space/1024/1024 mb_alloc
+,free_space/1024/1024 mb_free
+from dba_temp_free_space;
+
+There is no exact formula for determining if your temporary tablespace is sized correctly. It depends on the number and types of queries, index build operations, parallel operations, and size of your memory sort space (program global area).
+
+The following resizes a temporary datafile to 12 gigabytes:
+alter database tempfile '/ora03/DWREP/temp03.dbf' resize 12g;
+You can add a datafile to a temporary tablespace as follows:
+alter tablespace temp add tempfile '/ora04/DWREP/temp04.dbf' size 2g;
+
+Showing Object Sizes
+select * from
+(
+select
+segment_name
+,partition_name
+,segment_type
+,owner
+,bytes/1024/1024 mb
+from dba_segments
+order by bytes desc)
+where rownum <=20;
+
+
+
+Working with XML Data
+
+Storing XML in Native Form
+
+Store a new warehouse definition in the OE.WAREHOUSES table
+Name Null? Type
+--------------- -------- ------------------
+WAREHOUSE_ID NOT NULL NUMBER(3)
+WAREHOUSE_SPEC SYS.XMLTYPE
+WAREHOUSE_NAME VARCHAR2(35)
+LOCATION_ID NUMBER(4)
+WH_GEO_LOCATION MDSYS.SDO_GEOMETRY
+
+insert into oe.warehouses
+(warehouse_id, warehouse_spec, warehouse_name, location_id)
+values
+(10,
+xmltype('
+<?xml version="1.0"?>
+<Warehouse>
+<Building>Owned</Building>
+<Area>15000</Area>
+<Docks>1</Docks>
+<DockType>Side load</DockType>
+<WaterAccess>Y</WaterAccess>
+<RailAccess>Y</RailAccess>
+<Parking>Street</Parking>
+<VClearance>10 ft</VClearance>
+</Warehouse>'),
+'London',
+2300);
+
+Note that the call to XMLTYPE has been formatted for easy reading on the printed page. In use, casting to XMLTYPE will throw an ORA-31011: XML parsing failed error if you include carriage returns, new lines, and spaces between your elements.
+
+Shredding XML for Relational Use
+
+Solution
+Oracle provides the XMLTABLE function to manipulate XML documents using XQuery and column mapping to traditional Oracle datatypes. Using XMLTABLE, we can identify and use data elements in an XML document in a relational way.
+
+select
+shredded_warehouses."Building",
+shredded_warehouses."FloorArea",
+shredded_warehouses."#Docks",
+shredded_warehouses."DockType",
+shredded_warehouses."WaterAccess",
+shredded_warehouses."RailAccess",
+shredded_warehouses."Parking",
+shredded_warehouses."VertClearance"
+from oe.warehouses,
+xmltable
+('/Warehouse'
+passing warehouses.warehouse_spec
+columns
+"Building" varchar2(8) path '/Warehouse/Building',
+"FloorArea" number path '/Warehouse/Area',
+"#Docks" number path '/Warehouse/Docks',
+"DockType" varchar2(10) path '/Warehouse/DockType',
+"WaterAccess" varchar2(8) path '/Warehouse/WaterAccess',
+"RailAccess" varchar2(7) path '/Warehouse/RailAccess',
+"Parking" varchar2(7) path '/Warehouse/Parking',
+"VertClearance" varchar(9) path '/Warehouse/VClearance'
+) shredded_warehouses;
+
+output
+
+Building FloorArea #Docks DockType WaterAcc RailAcc Parking VertClear
+-------- ---------- ---------- ---------- -------- ------- ------- ---------
+Owned 25000 2 Rear load Y N Street 10 ft
+Rented 50000 1 Side load Y N Lot 12 ft
+Rented 85700 N N Street 11.5 ft
+Owned 103000 3 Side load N Y Lot 15 ft
+
+Extracting Key XML Elements from an XML Document
+
+You need to extract subsections of XML in other processing, including element names, attributes, and values.
+
+Solution
+Oracle’s EXTRACT function includes support for the XMLTYPE datatype, and provides the ability to preserveXML element name and attribute constructs by returning the results as an XMLTYPE value.
+
+select
+extract(warehouse_spec, 'Warehouse/VClearance') as VClearance_XML from oe.warehouses;
+VCLEARANCE_XML
+--------------------------------
+<VClearance>10 ft</VClearance>
+<VClearance>12 ft</VClearance>
+<VClearance>11.5 ft</VClearance>
+<VClearance>15 ft</VClearance>
+
+
+Generating Complex XML Documents
+
+Solution
+Oracle has a bewildering array of functions and procedures for generating XML from regular data.
+
+select XMLRoot(
+XMLElement("Employee",
+XMLAttributes(employee_id as "Employee_ID"),
+XMLElement("FirstName", first_name),
+XMLElement("LastName", last_name),
+XMLElement("Salary",
+XMLAttributes('Monthly' as "Period"),
+XMLElement("Amount", salary),
+XMLElement("Currency", 'USD'))
+),
+VERSION '1.0') Employee_XML
+from hr.employees
+where employee_id = 205;
+
+The results yield our required data in a well-formed XML document, including the correct XML
+header.
+<?xml version="1.0"?>
+<Employee Employee_ID="205">
+<FirstName>Shelley</FirstName>
+<LastName>Higgins</LastName>
+<Salary Period="Monthly">
+<Amount>12000</Amount>
+<Currency>USD</Currency>
+</Salary>
+</Employee>
+
+xmlforest is similar to xmlelement several times.
+
+select XMLRoot(
+XMLElement("Employee",
+XMLAttributes(employee_id as "Employee_ID"),
+xmlforest(first_name,last_name),
+XMLElement("Salary",
+XMLAttributes('Monthly' as "Period"),
+XMLElement("Amount", salary),
+XMLElement("Currency", 'USD'))
+),
+VERSION '1.0') Employee_XML
+from hr.employees
+where employee_id = 205;
+
+Without the where clause this query prepares individual xml content for each candidate row.
+To prepare a single  xml for the entire result set use function sys_xmlagg.
+
+select (sys_xmlagg(sys_xmlgen(first_name))).getstringval() from employees;
+
+(sys_xmlagg(sys_xmlgen(first_name))) returns xmltype data which is treated as clob we have used the function getstringval().
+
+select sys_xmlagg(
+xmlroot(xmlelement("departmentid",
+xmlagg(xmlforest(department_id,first_name,last_name)))
+)
+)
+from employees
+group by department_id
+
+xmlagg is used when a group by is aggregating the rows.
+
+select sys_xmlagg(
+		xmlroot(
+			xmlelement("departmentid",
+				xmlattributes(department_id as "id"),
+				xmlagg(
+					xmlelement("ROWS",
+						xmlforest(first_name as fname,last_name as lname)
+					)
+				)
+			)
+		)
+	)
+from employees
+group by department_id
+
+<?xml version="1.0"?>
+<ROWSET>
+<departmentid id="20">
+  <ROWSET>
+    <ROWS>
+      <FIRST_NAME>Michael</FIRST_NAME>
+      <LAST_NAME>Hartstein</LAST_NAME>
+    </ROWS>
+    <ROWS>
+      <FIRST_NAME>Pat</FIRST_NAME>
+      <LAST_NAME>Fay</LAST_NAME>
+    </ROWS>
+  </ROWSET>
+</departmentid>
+.....
+
+Our recipe uses the XMLROOT, XMLELEMENT, and XMLATTRIBUTES functions to build the required XML structure to represent our employee data.
+Using XMLROOT provides the necessary XML header to turn our results from an XML fragment into a fully formed XML document.
+
+
+Finding a Node using SQL/XML Function XMLExists
+
+SELECT OBJECT_VALUE FROM purchaseorder WHERE XMLExists('/PurchaseOrder[SpecialInstructions="Expedite"]' PASSING OBJECT_VALUE);
+
+Extracting the Scalar Value of an XML Fragment using XMLCAST, without xml cast this would return along with node name in xml tag.
+
+SELECT XMLCast(
+	XMLQuery('/PurchaseOrder/Reference' PASSING OBJECT_VALUE RETURNING CONTENT)
+	AS VARCHAR2(100)
+	) "REFERENCE"
+FROM purchaseorder
+WHERE XMLExists('/PurchaseOrder[SpecialInstructions="Expedite"]'PASSING OBJECT_VALUE);
+
+SELECT 
+	XMLCast(
+		XMLQuery('$p/PurchaseOrder/Reference' PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT)
+	AS VARCHAR2(30)) reference,
+	XMLCast(
+		XMLQuery('$p/PurchaseOrder/*//User' PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT)
+	AS VARCHAR2(30)) userid,
+	CASE
+	WHEN XMLExists('$p/PurchaseOrder/Reject/Date' PASSING po.OBJECT_VALUE AS "p")
+	THEN 'Rejected'
+	ELSE 'Accepted'
+	END "STATUS",
+	XMLCast(
+		XMLQuery('$p//Date' PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT)
+	AS VARCHAR2(12)) status_date
+FROM 
+	purchaseorder po
+WHERE 
+	XMLExists('$p//Date' PASSING po.OBJECT_VALUE AS "p")
+ORDER BY 
+	XMLCast(XMLQuery('$p//Date' PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT)
+		AS VARCHAR2(12));
+
+INSERT INTO purchaseorder VALUES (XMLType(bfilename('XMLDIR', 'SMCCAIN-2002091213000000PDT.xml'), nls_charset_id('AL32UTF8')));
+
+Querying Transient XMLTYPE Data using a PL/SQL Cursor
+
+DECLARE
+	xNode XMLType;
+	vText VARCHAR2(256);
+	vReference VARCHAR2(32);
+	CURSOR getPurchaseOrder(reference IN VARCHAR2) IS
+	SELECT OBJECT_VALUE XML
+	FROM purchaseorder
+	WHERE XMLExists('$p/PurchaseOrder[Reference=$r]'
+	PASSING OBJECT_VALUE AS "p",
+	reference AS "r");
+BEGIN
+	vReference := 'EABEL-20021009123335791PDT';
+	FOR c IN getPurchaseOrder(vReference) LOOP
+		xNode := c.XML.extract('//Requestor');
+		SELECT XMLSerialize(CONTENT
+		XMLQuery('//text()' PASSING xNode RETURNING CONTENT))
+		INTO vText FROM DUAL;
+		DBMS_OUTPUT.put_line('The Requestor for Reference '|| vReference || ' is '|| vText);
+	END LOOP;
+	vReference := 'PTUCKER-20021009123335430PDT';
+	FOR c IN getPurchaseOrder(vReference) LOOP
+		xNode := c.XML.extract('//LineItem[@ItemNumber="1"]/Description');
+		SELECT XMLSerialize(CONTENT
+		XMLQuery('//text()' PASSING xNode RETURNING CONTENT))
+		INTO vText FROM DUAL;
+		DBMS_OUTPUT.put_line('The Description of LineItem[1] for Reference '|| vReference || ' is '|| vText);
+	END LOOP;
+END;
+/
+
+CREATE TABLE purchaseorder_table (
+	reference 			VARCHAR2(28) PRIMARY KEY,
+	requestor 			VARCHAR2(48),
+	actions 			XMLType,
+	userid 				VARCHAR2(32),
+	costcenter 			VARCHAR2(3),
+	shiptoname 			VARCHAR2(48),
+	address 			VARCHAR2(512),
+	phone 				VARCHAR2(32),
+	rejectedby 			VARCHAR2(32),
+	daterejected 		DATE,
+	comments 			VARCHAR2(2048),
+	specialinstructions VARCHAR2(2048));
+
+CREATE TABLE purchaseorder_lineitem (
+	reference, FOREIGN KEY ("REFERENCE") REFERENCES "PURCHASEORDER_TABLE" ("REFERENCE") ON DELETE CASCADE,
+	lineno 		NUMBER(10), PRIMARY KEY ("REFERENCE", "LINENO"),
+	upc 		VARCHAR2(14),
+	description VARCHAR2(128),
+	quantity 	NUMBER(10),
+	unitprice 	NUMBER(12,2));
+	
+INSERT INTO purchaseorder_table (
+	reference, 
+	requestor, 
+	actions, 
+	userid, 
+	costcenter, 
+	shiptoname, 
+	address,
+	phone, 
+	rejectedby, 
+	daterejected, 
+	comments, 
+	specialinstructions)
+SELECT 
+	t.reference, 
+	t.requestor, 
+	t.actions, 
+	t.userid, 
+	t.costcenter, 
+	t.shiptoname, 
+	t.address,
+	t.phone, 
+	t.rejectedby, 
+	t.daterejected, 
+	t.comments, 
+	t.specialinstructions
+FROM purchaseorder p,
+	XMLTable('/PurchaseOrder' PASSING p.OBJECT_VALUE
+		COLUMNS 
+		reference 	VARCHAR2(28) PATH 'Reference',
+		requestor 	VARCHAR2(48) PATH 'Requestor',
+		actions 	XMLType PATH 'Actions',
+		userid 		VARCHAR2(32) PATH 'User',
+		costcenter 	VARCHAR2(3) PATH 'CostCenter',
+		shiptoname 	VARCHAR2(48) PATH 'ShippingInstructions/name',
+		address 	VARCHAR2(512) PATH 'ShippingInstructions/address',
+		phone 		VARCHAR2(32) PATH 'ShippingInstructions/telephone',
+		rejectedby 	VARCHAR2(32) PATH 'Reject/User',
+		daterejected DATE PATH 'Reject/Date',
+		comments 	VARCHAR2(2048) PATH 'Reject/Comments',
+		specialinstructions VARCHAR2(2048) PATH 'SpecialInstructions') t
+WHERE t.reference = 'EABEL-20021009123336251PDT';
+
+INSERT INTO purchaseorder_lineitem (
+	reference, 
+	lineno, 
+	upc, 
+	description, 
+	quantity, 
+	unitprice)
+SELECT 
+	t.reference, 
+	li.lineno, 
+	li.upc, 
+	li.description, 
+	li.quantity, 
+	li.unitprice
+FROM purchaseorder p,
+	XMLTable('/PurchaseOrder' PASSING p.OBJECT_VALUE
+		COLUMNS 
+		reference VARCHAR2(28) PATH 'Reference',
+		lineitem XMLType PATH 'LineItems/LineItem') t,
+	XMLTable('LineItem' PASSING t.lineitem
+		COLUMNS lineno NUMBER(10) PATH '@ItemNumber',
+		upc VARCHAR2(14) PATH 'Part/@Id',
+		description VARCHAR2(128) PATH 'Description',
+		quantity NUMBER(10) PATH 'Part/@Quantity',
+		unitprice NUMBER(12,2) PATH 'Part/@UnitPrice') li
+WHERE t.reference = 'EABEL-20021009123336251PDT';
+
+Searching XML Data using SQL/XML Functions
+
+SELECT 
+XMLCast(XMLQuery('$p/PurchaseOrder/Requestor' PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT) AS VARCHAR2(128)) name,
+count(*)
+FROM purchaseorder po
+WHERE
+	XMLExists('declare namespace ora="http://xmlns.oracle.com/xdb"; (: :) 
+	$p/PurchaseOrder/ShippingInstructions[ora:contains(address/text(), "Shores") > 0]'
+	PASSING po.OBJECT_VALUE AS "p")
+AND 
+	XMLCast(XMLQuery('$p/PurchaseOrder/Requestor/text()'
+	PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT)
+	AS VARCHAR2(128)) LIKE '%ll%'
+GROUP BY 
+	XMLCast(XMLQuery('$p/PurchaseOrder/Requestor'
+	PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT)
+	AS VARCHAR2(128));
+	
+Extracting Fragments from an XMLTYPE Instance using XMLQUERY
+
+SELECT 
+	XMLCast(XMLQuery('$p/PurchaseOrder/Reference' PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT) AS VARCHAR2(30)) reference,
+	count(*)
+FROM 
+	purchaseorder po, 
+	XMLTable('$p//LineItem[Part/@Id="37429148327"]' PASSING OBJECT_VALUE AS "p")
+WHERE 
+	XMLQuery('$p/PurchaseOrder/LineItems/LineItem[Part/@Id="37429148327"]' PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT).isFragment() = 1
+GROUP BY 
+	XMLCast(XMLQuery('$p/PurchaseOrder/Reference' PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT) AS VARCHAR2(30))
+ORDER BY 
+	XMLCast(XMLQuery('$p/PurchaseOrder/Reference' PASSING po.OBJECT_VALUE AS "p" RETURNING CONTENT) AS VARCHAR2(30));
+	
+

@@ -1,0 +1,950 @@
+ls -lah ~/Library/Containers/com.docker.docker/Data/com.docker.driver.amd64-linux/Docker.qcow2
+
+exec itsr.s_slack_util.send_message ('Hello *Slack* World!');
+
+G_both_cntt_type
+G_delivery_cntt_type
+G_both_addr_type
+G_delivery_addr_type
+
+/usr/share/zoneinfo/Europe/Londonh
+
+
+RUN ln -s -f /usr/share/zoneinfo/Europe/London /etc/localtime
+RUN ln -s -f /usr/share/zoneinfo/Europe/London /etc/timezone
+
+docker build --build-arg CORE_ENV=prod -t tom_shared_ords_prod .
+
+docker run -p 8282:8080 -e CORE_ENV=prod tom_shared_ords_prod
+
+http://ords-alb.prod.transit.ri-tech.io/ords/cmsprd/api/demo-api/dbdetails
+
+http://ords-alb.prod.transit.ri-tech.io/ords/omsprd/api/demo-api/dbdetails
+
+http://ords-alb.prod.transit.ri-tech.io/ords/wmsprd/api/demo-api/dbdetails
+
+http://localhost:8282/ords/cmsprd/api/demo-api/dbdetails
+
+http://localhost:8282/ords/omsprd/api/demo-api/dbdetails
+
+http://localhost:8282/ords/wmsprd/api/demo-api/dbdetails
+
+select count(*) from v$session where username='ORDS_PUBLIC_USER';
+
+select distinct osuser, machine from v$session where username='ORDS_PUBLIC_USER';
+
+docker build --build-arg CORE_ENV=dev -t tom_shared_ords .
+
+docker run -p 8181:8080 -e CORE_ENV=dev tom_shared_ords
+
+docker build --build-arg CORE_ENV=dev -t shared_ords_char_set .
+
+docker run -p 8282:8080 -e CORE_ENV=dev shared_ords_char_set
+
+docker build --build-arg CORE_ENV=dev -t shared_ords_char_set_uk .
+
+docker run -p 8282:8080 -e CORE_ENV=dev shared_ords_char_set_uk
+
+docker build --build-arg CORE_ENV=dev -t new_shared_ords .
+
+docker run -p 8383:8080 -e CORE_ENV=dev new_shared_ords
+
+docker run -p 8383:8080 -e CORE_ENV=staging new_shared_ords
+
+Cannot find '/usr/local/tomcat/'/bin/setclasspath.sh
+
+/usr/local/tomcat/bin/catalina.sh: line 394: /usr/local/tomcat/'/docker-java-home/jre'/bin/java: No such file or directory
+
+http://localhost:8282/ords/cmsdev/api/demo-api/dbdetails/
+
+http://ords-alb.dev.transit.ri-tech.io/ords/wmsts4/api/ordermanagement-test/v1//orderheaders/7644312447
+
+http://ords-alb.dev.transit.ri-tech.io/ords/wmsts4/api/ordermanagement-test/v1/orderheaders/551936698
+
+http://ords-alb.dev.transit.ri-tech.io/ords/wmsts4/api/ordermanagement-test/v1/orderheaders/5396184302
+
+http://ords-alb.dev.transit.ri-tech.io/ords/wmsts4/api/ordermanagement-test/v1/orderheaders/4177940307
+
+export CORE_ENV=dev
+
+docker run -p 8181:8080 -e CORE_ENV=staging tom_shared_ords
+
+Monitoring the container, memory usage,
+
+How many rest calls you are component will be making for day, per hour,
+
+Max and average, Is there any pre-defined peak/off peak period,
+
+Total number of rest end points, there avg response time.
+
+As much info you can share, so that we can do a proper capacity planing.
+
+Tomcat will only assign 512m of ram to the JVM (and ORDS), even if you have more available
+
+https://www.jmjcloud.com/blog/tuning-tomcat-for-apexords-in-production
+
+Add the following values:
+export CATALINA_OPTS="$CATALINA_OPTS -Xms1536m"
+export CATALINA_OPTS="$CATALINA_OPTS -Xmx1536m"
+export CATALINA_OPTS="$CATALINA_OPTS -server"
+
+<Service name="Catalina">
+  <Connector port="8080" protocol="HTTP/1.1"
+    acceptorThreadCount="2"
+    acceptCount="10"
+    maxConnections="200"
+    maxThreads="200"
+    minSpareThreads="10"
+    connectionTimeout="30000"
+    disableUploadTimeout="false"
+    connectionUploadTimeout="300000"
+  redirectPort="8443" />
+</Service>
+
+I would start by putting ORDS into debug mode
+Also check your version of ORDS. There are some significant performance enhancements included in 3.0.10 for large pagesizes...so if you were returning 10k rows in a single GET, that would be faster.
+
+3.0.9.348.07.16
+
+docker tag flask how2dock/flask
+
+Using ONBUILD Images
+An image containing ONBUILD directives is
+called a parent image. When a parent image is used as a base image (i.e., using the
+FROM directive), the image being built—also called the child—triggers the directives
+defined by ONBUILD in the parent.
+
+In other words, the parent image tells the child image what to do at build time.
+You can still add directives in the Dockerfile of the child, but the ONBUILD directives
+of the parent will be executed first.
+
+docker export 77d9619a7a71 > update.tar
+
+docker import - update < update.tar
+
+$ docker run -d --name nginx nginx
+$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' nginx
+172.17.0.2
+
+You could also check the /etc/hosts file in the container, assuming the image does set it
+properly:
+$ docker run -d --name foobar -h foobar busybox sleep 300
+$ docker exec -ti foobar cat /etc/hosts | grep foobar
+172.17.0.4 foobar
+
+Get started with Docker for Mac
+https://docs.docker.com/docker-for-mac/
+
+docker --version
+docker-compose --version
+docker-machine --version
+
+docker run -d -p 80:80 --name webserver nginx
+
+http://127.0.0.1/ works but http://localhost/ does not
+
+curl -XGET localhost:80
+
+curl -XGET 127.0.0.1:80
+
+--list of processes listening on port 80
+lsof -i :80
+
+netstat -p tcp | grep 80
+
+You can easily build on this to extract the PID itself. For example:
+
+lsof -t -i :80
+which is also equivalent (in result) to this command:
+
+lsof -i :80 | awk '{ print $2; }' | head -n 2 | grep -v PID
+
+docker login
+
+sarojraut
+pwd : default without
+
+An image is a lightweight, stand-alone, executable package that includes everything needed to run a piece of software, including the code, a runtime, libraries, environment variables, and config files.
+
+A container is a runtime instance of an image—what the image becomes in memory when actually executed. It runs completely isolated from the host environment by default, only accessing host files and ports if configured to do so.
+
+Containers run apps natively on the host machine’s kernel. They have better performance characteristics than virtual machines that only get virtual access to host resources through a hypervisor. Containers can get native access, each one running in a discrete process, taking no more memory than any other executable.
+
+Virtual machines run guest operating systems
+
+Containers can share a single kernel, and the only information that needs to be in a container image is the executable and its package dependencies, which never need to be installed on the host system.
+
+Stack
+Services
+Container (you are here)
+
+Define a container with Dockerfile
+Dockerfile will define what goes on in the environment inside your container. Access to resources like networking interfaces and disk drives is virtualized inside this environment, which is isolated from the rest of your system, so you have to map ports to the outside world, and be specific about what files you want to “copy in” to that environment. However, after doing that, you can expect that the build of your app defined in this Dockerfile will behave exactly the same wherever it runs.
+
+create docker file : Dockerfile
+
+docker build -t image_name .
+
+docker images
+
+docker run -p 4000:80 image_name
+
+curl http://localhost:4000
+
+docker tag friendlyhello sarojraut/demo:part2
+
+docker images
+
+REPOSITORY              TAG                 IMAGE ID            CREATED             SIZE
+friendlyhello           latest              96d5c23df3c1        4 hours ago         148MB
+sarojraut/demo          part2               96d5c23df3c1        4 hours ago         148MB
+sarojraut/get-started   part2               96d5c23df3c1        4 hours ago         148MB
+
+
+docker push sarojraut/demo:part2
+
+-- part2 is the name visible in the docker repo website.
+
+docker pull sarojraut/demo:part2
+
+docker run --name gettingstarted -p 4000:80 -itd sarojraut/demo:part2
+
+docker-compose.yml
+
+version: "3"
+services:
+  web:
+    image: sarojraut/demo:part2
+    deploy:
+      replicas: 5
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 50M
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "4000:80"
+    networks:
+      - webnet
+networks:
+  webnet:
+
+
+docker swarm init
+
+docker stack deploy -c docker-compose.yml getstartedlab
+    Creating network getstartedlab_webnet
+    Creating service getstartedlab_web
+docker service ls
+
+A single container running in a service is called a task. Tasks are given unique IDs that numerically increment, up to the number of replicas you defined in docker-compose.yml. List the tasks for your service:
+
+docker service ps getstartedlab_web
+
+You can scale the app by changing the replicas value in docker-compose.yml, saving the change, and re-running the docker stack deploy command:
+
+Docker will do an in-place update, no need to tear the stack down first or kill any containers.
+
+Take the app down with docker stack rm:
+
+docker stack rm getstartedlab
+
+Take down the swarm : docker swarm leave --force
+
+Understanding Swarm clusters
+A swarm is a group of machines that are running Docker and joined into a cluster. After that has happened, you continue to run the Docker commands you’re used to, but now they are executed on a cluster by a swarm manager. The machines in a swarm can be physical or virtual. After joining a swarm, they are referred to as nodes.
+
+Swarm managers are the only machines in a swarm that can execute your commands, or authorize other machines to join the swarm as workers. Workers are just there to provide capacity and do not have the authority to tell any other machine what it can and cannot do.
+
+run docker swarm init to enable swarm mode and make your current machine a swarm manager, then run docker swarm join on other machines to have them join the swarm as workers. Choose a tab below to see how this plays out in various contexts. We’ll use VMs to quickly create a two-machine cluster and turn it into a swarm.
+
+-- end Get started with Docker for Mac
+
+-----
+
+“A container is a self-contained execution environment that
+shares the kernel of the host system and which is (optionally) isolated from other
+containers in the system.” The major advantages are around efficiency of resources
+because you don’t need a whole operating system for each isolated function. Since you
+are sharing a kernel,
+
+-----
+
+ln -s /export/space/common/archive /archive
+
+Docker uploads the files and directories under the path supplied to the docker build command.
+Each build step of docker file is numbered sequentially from 0 and output with the command.
+Each command results in a new image being created, and the image ID is output.
+To save space, each intermediate container is removed before continuing.
+Final image ID for this build, ready to tag
+
+docker tag 66c76cea05bb todoapp
+
+docker build -t friendlyname .  # Create image using this directory's Dockerfile
+docker run -p 4000:80 friendlyname  # Run "friendlyname" mapping port 4000 to 80
+docker run -d -p 4000:80 friendlyname         # Same thing, but in detached mode
+docker container ls                                # List all running containers
+docker container ls -a             # List all containers, even those not running
+docker container stop <hash>           # Gracefully stop the specified container
+docker container kill <hash>         # Force shutdown of the specified container
+docker container rm <hash>        # Remove specified container from this machine
+docker container rm $(docker container ls -a -q)         # Remove all containers
+docker image ls -a                             # List all images on this machine
+docker image rm <image id>            # Remove specified image from this machine
+docker image rm $(docker image ls -a -q)   # Remove all images from this machine
+docker login             # Log in this CLI session using your Docker credentials
+docker tag <image> username/repository:tag  # Tag <image> for upload to registry
+docker push username/repository:tag            # Upload tagged image to registry
+docker run username/repository:tag                   # Run image from a registry
+docker ps -s # shows the size of container
+Use volumes
+-----------
+
+docker stack ls                                            # List stacks or apps
+docker stack deploy -c <composefile> <appname>  # Run the specified Compose file
+docker service ls                 # List running services associated with an app
+docker service ps <service>                  # List tasks associated with an app
+docker inspect <task or container>                   # Inspect task or container
+docker container ls -q                                      # List container IDs
+docker stack rm <appname>                             # Tear down an application
+docker swarm leave --force      # Take down a single node swarm from the manager
+
+--------------
+
+volume’s contents exist outside the lifecycle of a given container.
+
+docker volume create my-vol
+creates directory : /var/lib/docker/volumes/my-vol
+docker volume ls
+docker volume inspect my-vol
+docker volume rm my-vol
+You can remove unused volumes using docker volume prune.
+
+Volumes are only removed when you explicitly remove them.
+
+docker run -d -it --name=nginxtest -v nginx-vol:/usr/share/nginx/html  nginx:latest
+
+docker run -d -it --name=nginxtest1 -v /root/test:/usr/share/nginx/html  nginx:latest
+
+"Mounts": [
+     {
+         "Type": "volume",
+         "Name": "nginx-vol",
+         "Source": "/var/lib/docker/volumes/nginx-vol/_data",
+         "Destination": "/usr/share/nginx/html",
+         "Driver": "local",
+         "Mode": "z",
+         "RW": true,
+         "Propagation": ""
+     }
+
+
+Shared Volumes
+docker run --volumes-from r1 -it ubuntu ls /data
+
+Read-only Volumes
+docker run -v /docker/redis-data:/data:ro -it ubuntu rm -rf /data
+
+Choose the -v or –mount flag :
+The biggest difference is that the -v syntax combines all the options together in one field, while the --mount syntax separates them. New users should use the --mount syntax. Experienced users may be more familiar with the -v or --volume syntax, but are encouraged to use --mount, because research has shown it to be easier to use.
+
+-v or --volume: Consists of three fields, separated by colon characters (:). The fields must be in the correct order, and the meaning of each field is not immediately obvious.
+In the case of named volumes, the first field is the name of the volume, and is unique on a given host machine. For anonymous volumes, the first field is omitted.
+The second field is the path where the file or directory will be mounted in the container.
+The third field is optional, and is a comma-separated list of options, such as ro. These options are discussed below.
+
+--mount: Consists of multiple key-value pairs, separated by commas and each consisting of a <key>=<value> tuple. The --mount syntax is more verbose than -v or --volume, but the order of the keys is not significant, and the value of the flag is easier to understand.
+The type of the mount, which can be bind, volume, or tmpfs.
+The source of the mount. For named volumes, this is the name of the volume. For anonymous volumes, this field is omitted. May be specified as source or src.
+The destination takes as its value the path where the file or directory will be mounted in the container. May be specified as destination, dst, or target.
+The readonly option, if present, causes the bind mount to be mounted into the container as read-only.
+The volume-opt option, which can be specified more than once, takes a key-value pair consisting of the option name and its value.
+
+
+If you start a container with a volume that does not yet exist, Docker creates the volume for you. The following example mounts the volume myvol2 into /app/ in the container.
+
+docker run -d -it --name devtest --mount source=myvol2,target=/app nginx:latest
+
+docker run -d -it --name devtest2 -v nginx-vol:/usr/share/nginx/html nginx:latest
+
+------- Use volumes
+------- About images, containers, and storage drivers
+To view the approximate size of a running container, you can use the docker ps -s command. Two different columns relate to size.
+
+size: the amount of data (on disk) that is used for the writable layer of each container
+
+virtual size: the amount of data used for the read-only image data used by the container plus the container’s writable layer size. Multiple containers may share some or all read-only image data. Two containers started from the same image share 100% of the read-only data, while two containers with different images which have layers in common share those common layers. Therefore, you can’t just total the virtual sizes. This will over-estimate the total disk usage by a potentially non-trivial amount.
+
+---------- end of About images, containers, and storage drivers
+A customizable open source text editor that's almost infinitely expandable
+You can develop lot faster compared to legacy method of using notepad++
+Atom is community driven tool, lots of packages/plugins are out there
+
+preference> packages > install
+It's almost like NMP > Node package manager of NodeJs
+
+Auto complete Oracle > Code completion
+language oracle >
+Build Oracle > Compile Code into oracle schema
+Code Peek : This package allows you to quickly peek and edit functions contained in other files instead of having to open the file separately.
+
+File Icon
+Highlight
+
+pretty json : for formating json file
+
+command pallet : cmd + shift + p
+
+file icons
+
+command + p : show all files in your project
+command + r shows all procedures in your package
+
+Why should not you change code in Toad/Sql developer
+
+In multi developer environment if two persons work on the same package then you overwrite each other. It's not only that if you refresh your changes are gone for ever. File based code change is safe and risk free from risk perspective. You own your code change and I own my code change. I think toad has feature of locking but again that forces restriction that no else can change that code and you don't need that because that's over killing.
+
+That locks you into toad or sql developer, you loose a lots of functionality that everyone else has,
+
+Third problem is once you are done you need to find a way to take the changed code and chuck it in the version control tool. That reminds me how many of you introduced new line character in loader file and end up screwing test environment.
+
+it's not specific to oracle it's for every other development environment
+
+So whether you still want to continue with your old style of coding or latest trend is your call but I would make a sincere request to give it a try , it's dramatic thing but it's worth.
+
+---- Docker
+
+Docker is an open source containerization engine, which automates the packaging, shipping, and deployment of any software applications that are presented as lightweight, portable, and self-sufficient containers, that will run virtually anywhere.
+
+A Docker container is a software bucket comprising everything necessary to run the software independently. There can be multiple Docker containers in a single machine and containers are completely isolated from one another as well as from the host machine.
+
+The Docker engine is built on top of the Linux kernel and it extensively leverages its features.
+
+It's important to understand Docker's components and their versions, storage, execution drivers, file locations, and so on.
+
+docker version
+Client:
+ Version:      17.06.2-ce
+ API version:  1.30
+ Go version:   go1.8.3
+ Git commit:   cec0b72
+ Built:        Tue Sep  5 20:12:06 2017
+ OS/Arch:      darwin/amd64
+
+Server:
+ Version:      17.06.2-ce
+ API version:  1.30 (minimum version 1.12)
+ Go version:   go1.8.3
+ Git commit:   cec0b72
+ Built:        Tue Sep  5 19:59:19 2017
+ OS/Arch:      linux/amd64
+ Experimental: true
+
+If we dissect the internals of the docker version subcommand, then it will first list the client-related information that is stored locally. Subsequently, it will make a REST API call to the server over HTTP to obtain the server-related details.
+
+Docker images and containers
+A Docker image is a collection of all of the files that make up a software application. Each change that is made to the original image is stored in a separate layer. To be precise, any Docker image has to originate from a base image according to the various requirements. Additional modules can be attached to the base image for deriving the various images that can exhibit the preferred behaviour. Each time you commit to a Docker image you are creating a new layer on the Docker image,
+
+Every image has a unique ID, as explained in the following section. The base images can be enhanced such that they can create the parent images, which in turn can be used for creating the child images.
+
+A Docker layer
+A Docker layer could represent either read-only images or read-write images. However, the top layer of a container stack is always the read-write (writable) layer, which hosts a Docker container.
+
+Docker Registry
+A Docker Registry is a place where the Docker images can be stored in order to be publicly found, accessed, and used by the worldwide developers. Using the Docker push command, you can dispatch your Docker image to the Registry so that it is registered and deposited. As a clarification, the registry is for registering the Docker images, whereas the repository is for storing those registered Docker images in a publicly discoverable and centralized place. A Docker image is stored within a Repository in the Docker Registry. Each Repository is unique for each user or account.
+
+Docker Repository
+A Docker Repository is a namespace that is used for storing a Docker image. For instance, if your app is named helloworld and your username or namespace for the Registry is thedockerbook then, in the Docker Repository, where this image would be stored in the Docker Registry would be named thedockerbook/helloworld.
+
+docker run -i -t ubuntu:14.04 /bin/bash
+-t and -i flags to the docker run subcommand in order to make the container interactive. The -i flag is the key driver, which makes the container interactive by grabbing the standard input (STDIN) of the container. The -t flag allocates a pseudo-TTY or a pseudo terminal (terminal emulator) and then assigns that to the container. The container will be launched along with the
+ubuntu:14.04 image. It will also launch a bash shell within the container, because we have specified /bin/bash as the command to be executed.
+
+We can detach it from our container by using the Ctrl + P and Ctrl + Q escape sequence. This escape sequence will detach the TTY from the container and land us in the Docker host prompt, however the container will continue to run. The docker ps subcommand will list all the running containers and their important properties, as shown here:
+
+$ sudo docker ps
+CONTAINER ID IMAGE COMMAND CREATED
+STATUS PORTS NAMES
+742718c21816 ubuntu:14.04 "/bin/bash" About a
+minute ago Up About a minute jolly_lovelace
+
+Can attach it back to our container by using the docker attach subcommand
+
+docker attach jolly_lovelace
+
+As soon as the bash exit command is issued to the interactive container, it will terminate the bash shell process, which in turn will stop the container. As a result, we will land on the Docker Host's prompt
+
+Dockerfile's syntax
+
+A Dockerfile is made up of instructions, comments, and empty lines,
+# Comment
+
+INSTRUCTION arguments
+
+• A valid Dockerfile comment line always begins with a # symbol as the first character of the line:
+# This is my first Dockerfile comment
+• The # symbol can be a part of an argument: CMD echo ### Welcome to Docker ###
+• If the # symbol is preceded by a whitespace, then it is considered as an unknown instruction by the build system:
+# this is an invalid comment line
+
+
+An open-source project that automates the deployment of software applications inside containers by providing an additional layer of abstraction and automation of OS-level virtualization on Linux.
+
+In simpler words, Docker is a tool that allows developers, sys-admins etc. to easily deploy their applications in a sandbox (called containers) to run on the host operating system i.e. Linux. The key benefit of Docker is that it allows users to package an application with all of its dependencies into a standardized unit for software development. Unlike virtual machines, containers do not have the high overhead and hence enable more efficient usage of the underlying system and resources.
+
+Images - The blueprints of our application which form the basis of containers. In the demo above, we used the docker pull command to download the busybox image.
+Containers - Created from Docker images and run the actual application. We create a container using docker run which we did using the busybox image that we downloaded. A list of running containers can be seen using the docker ps command.
+
+docker images
+
+docker ps
+
+docker ps --help
+
+docker ps -a : same as docker ps --all
+docker ps -l : latest created container - docker
+docker ps -n 3 : Show last 3 created docker container
+
+docker ps -a -f "name=MyOrcl12"
+
+docker ps -a --filter 'exited=137'
+
+docker ps --filter status=running
+
+docker ps --filter ancestor=ubuntu
+
+docker ps -f before=9c3527ed70ce : containers created before a image
+
+docker ps -f since=6e63f6ff38b0 : containers created since a image
+
+docker run -d --publish=80
+
+docker ps --filter publish=80 : The publish and expose filters show only containers that have published or exposed port with a given port number, port range, and/or protocol. The default protocol is tcp when not specified. docker run -d --publish=80 busybox top, docker run -d --expose=8080 busybox top
+
+Dockerfile
+
+A Dockerfile is a simple text-file that contains a list of commands that the Docker client calls while creating an image. It's a simple way to automate the image creation process.
+
+We start with specifying our base image. Use the FROM keyword to do that -
+
+FROM python:3-onbuild
+
+EXPOSE 5000 : specify is the port number that needs to be exposed.
+
+Handling Docker Containers : Learning Docker.pdf
+
+Docker images and containers : A Docker image is a collection of all of the files that make up a software application.
+
+Searching Docker images
+$sudo docker search mysql
+
+Working with an interactive container
+The docker run subcommand takes an image as an input and launches it as a container. You have to pass the -t and -i flags to the docker run subcommand in order to make the container interactive. The -i flag is the key driver, which makes the container interactive by grabbing the standard input (STDIN) of the container. The -t flag allocates a pseudo-TTY or a pseudo terminal (terminal emulator) and then assigns that to the container.
+
+In the following example, we are going to launch an interactive container by using the ubuntu:14.04 image and /bin/bash as the command:
+$ sudo docker run -i -t ubuntu:14.04 /bin/bash
+
+We can detach it from our container by using the Ctrl + P and Ctrl + Q escape sequence. This escape sequence will detach the TTY from the container and land us in the Docker host prompt $, however the container will continue to run.
+
+The docker attach subcommand takes us back to the container prompt.
+
+docker start -a MyOrcl12
+
+Building images from containers
+
+sudo docker run -i -t ubuntu:14.04 /bin/bash
+
+root@472c96295678:/# apt-get update
+
+root@472c96295678:/# apt-get install -y wget
+
+root@472c96295678:/#which wget
+/usr/bin/wget
+
+sudo docker commit 472c96295678  learningdocker/ubuntu_wget
+
+The most elegant and the most recommended way of creating an image is to use the Dockerfile method.
+
+The docker run subcommand supports an option -d, which will launch a container in a detached mode, that is, it will launch a container as a daemon.
+
+Chapter 3 : Building Images
+
+As we discussed in the previous chapter, we could craft an image manually by launching a container from a base image, install all the required applications, make the necessary configuration file changes, and then commit the container as an image.
+
+As a better alternative, we could resort to the automated approach of crafting the images by using Dockerfile. Dockerfile is a text-based build script that contains special instructions in a sequence for building the right and relevant images from the base images.
+
+$ cat Dockerfile
+FROM busybox:latest
+CMD echo Hello World!!
+
+Now, let's proceed towards generating a Docker image by using the preceding Dockerfile by calling docker build along with the path of Dockerfile. In our example, we will invoke the docker build subcommand from the directory where we have stored Dockerfile.
+
+$ sudo docker build .
+
+The build process would continue and, after completing itself, it will display the following:
+Successfully built 0a2abe57c325
+
+$ sudo docker run 0a2abe57c325
+Hello World!!
+
+Now let's look at the image details by using the docker images subcommand, as shown here:
+$ sudo docker images
+
+REPOSITORY TAG IMAGE ID CREATED VIRTUAL SIZE
+<none> <none> 0a2abe57c325 2 hours ago 2.433 MB
+
+You could specify an IMAGE name and optionally a TAG name by using the docker tag subcommand, as shown here:
+$ sudo docker tag 0a2abe57c325 busyboxplus
+
+The alternative approach is to build the image with an image name during the build time by using the -t option for the docker build subcommand, as shown here:
+$ sudo docker build -t busyboxplus .
+
+
+A quick overview of the Dockerfile's syntax
+A Dockerfile is made up of instructions, comments, and empty lines, as shown here:
+
+# Comment
+
+INSTRUCTION arguments
+
+
+The instruction could be written in any case, in other words, it is case-insensitive. However, the standard practice or convention is to use uppercase in order to differentiate it from the arguments.
+
+The comment line in Dockerfile must begin with the # symbol. The # symbol after an instruction is considered as an argument. If the # symbol is preceded by a whitespace, then the docker build system would consider that as an unknown instruction and skip the line.
+
+• A valid Dockerfile comment line always begins with a # symbol as the first character of the line:
+# This is my first Dockerfile comment
+• The # symbol can be a part of an argument:
+CMD echo ### Welcome to Docker ###
+• If the # symbol is preceded by a whitespace, then it is considered as an unknown instruction by the build system:
+   # this is an invalid comment line
+
+The FROM instruction
+The FROM instruction is the most important one and it is the first valid instruction of a Dockerfile. It sets the base image for the build process. The subsequent instructions would use this base image and build on top of it.
+
+The FROM instruction has the following syntax:
+FROM <image>[:<tag>]
+In the preceding code statement, note the following:
+• <image>: This is the name of the image which will be used as the base image.
+• <tag>: This is the optional tag qualifier for that ima
+
+The MAINTAINER instruction
+The MAINTAINER instruction is an informational instruction of a Dockerfile. This instruction capability enables the authors to set the details in an image. Docker does not place any restrictions on placing the MAINTAINER instruction in Dockerfile. However, it is strongly recommended that you should place it after the FROM instruction.
+
+MAINTAINER Dr. Peter <peterindia@gmail.com>
+
+The COPY instruction
+The COPY instruction enables you to copy the files from the Docker host to the filesystem of the new image. The following is the syntax of the COPY instruction:
+COPY <src> ... <dst>
+
+The preceding code terms bear the explanations shown here:
+• <src>: This is the source directory, the file in the build context, or the directory from where the docker build subcommand was invoked.
+• ...: This indicates that multiple source files can either be specified directly or be specified by wildcards.
+• <dst>: This is the destination path for the new image into which the source file or directory will get copied. If multiple files have been specified, then the destination path must be a directory and it must end with a slash /.
+
+In the following example, we will copy the html directory from the source build context to /var/www/html, which is in the image filesystem, by using the COPY instruction, as shown here:
+COPY html /var/www/html
+
+Here is another example of the multiple files (httpd.conf and magic) that will be copied from the source build context to /etc/httpd/conf/, which is in the image filesystem:
+COPY httpd.conf magic /etc/httpd/conf/
+
+The ADD instruction
+The ADD instruction is similar to the COPY instruction. However, in addition to the functionality supported by the COPY instruction, the ADD instruction can handle the TAR files and the remote URLs. We can annotate the ADD instruction as COPY on steroids.
+The following is the syntax of the ADD instruction:
+ADD <src> ... <dst>
+
+The next line in the Dockerfile content has an ADD instruction for copying the TAR file (web-page-config.tar) to the target image and extracting the TAR file from the root directory (/) of the target image, as shown here:
+
+ADD web-page-config.tar /
+
+Thus the TAR option of the ADD instruction can be used for copying multiple files to the target image.
+
+The ENV instruction
+The ENV instruction sets an environment variable in the new image. An environment variable is a key-value pair, which can be accessed by any script or application. The Linux applications use the environment variables a lot for a starting configuration. The following line forms the syntax of the ENV instruction:
+ENV <key> <value>
+Here, the code terms indicate the following:
+• <key>: This is the environment variable
+• <value>: This is the value that is to be set for the environment variable
+
+ENV DEBUG_LVL 3
+ENV APACHE_LOG_DIR /var/log/apache
+
+The USER instruction
+The USER instruction sets the start up user ID or user Name in the new image. By default, the containers will be launched with root as the user ID or UID. Essentially, the USER instruction will modify the default user ID from root to the one specified in this instruction.
+The syntax of the USER instruction is as follows:
+USER <UID>|<UName>
+The USER instructions accept either <UID> or <UName> as its argument:
+• <UID>: This is a numerical user ID
+• <UName>: This is a valid user Name
+
+The user Name must match with a valid user name in the /etc/passwd file, otherwise the docker run subcommand will fail and it will display the following error message:
+finalize namespace setup user get supplementary groups Unable to find user
+
+The WORKDIR instruction
+The WORKDIR instruction changes the current working directory from / to the path specified by this instruction. The ensuing instructions, such as RUN, CMD, and ENTRYPOINT will also work on the directory set by the WORKDIR instruction. The following line gives the appropriate syntax for the WORKDIR instruction:
+WORKDIR <dirpath>
+
+The VOLUME instruction
+The VOLUME instruction creates a directory in the image filesystem, which can later be used for mounting volumes from the Docker host or the other containers.
+
+The VOLUME instruction has two types of syntax, as shown here:
+• The first type is either exec or JSON array (all values must be within doublequotes (")):
+VOLUME ["<mountpoint>"]
+• The second type is shell, as shown here:
+VOLUME <mountpoint>
+In the preceding line, <mountpoint> is the mount point that has to be created in the new image.
+
+The EXPOSE instruction
+The EXPOSE instruction opens up a container network port for communicating between the container and the external world.
+The syntax of the EXPOSE instruction is as follows:
+EXPOSE <port>[/<proto>] [<port>[/<proto>]...]
+
+Here, the code terms mean the following:
+• <port>: This is the network port that has to be exposed to the outside world.
+• <proto>: This is an optional field provided for a specific transport protocol, such as TCP and UDP. If no transport protocol has been specified, then TCP is assumed to be the transport protocol.
+
+The following is an example of the EXPOSE instruction inside a Dockerfile exposing the port number 7373 as a UDP port and the port number 8080 as a TCP port.
+EXPOSE 7373/udp 8080
+
+The RUN instruction
+The RUN instruction is the real workhorse during the build time, and it can run any command. The general recommendation is to execute multiple commands by using one RUN instruction. This reduces the layers in the resulting Docker image because the Docker system inherently creates a layer for each time an instruction is called in Dockerfile.
+
+-----
+Docker Cook Book
+If you have a lot of stopped containers that you would like to remove, use a subshell to do it in one command. The -q option of docker ps will return only the containers’ IDs:
+$ docker rm $(docker ps -a -q)
+
+docker restart a842945e2414
+
+$ docker images
+
+It promotes the isolation of concerns using containers and helps create a microservices-based design for your sapplication (see Building Microservices). Ultimately, this will help with scale and resiliency.
+
+Sharing Data in Your Docker Host with Containers
+Use the -v option of docker run to mount a host volume into a container.
+
+$ ls
+data
+$ docker run -ti -v "$PWD":/cookbook ubuntu:14.04 /bin/bash
+root@11769701f6f7:/# ls /cookbook
+data
+
+In this example, you mount the working directory in the host into the /cookbook directory in the container. If you create files or directories within the container, the changes will be written directly to the host working directory,
+
+to mount the previous working directory to /cookbook as read-only, you
+would use -v "$PWD":/cookbook:ro.
+
+$ docker inspect -f {{.Mounts}} 44d71a605b5b
+[{ /Users/sebastiengoasguen/Desktop /cookbook true}]
+
+The ENTRYPOINT instruction tells you which command to run when a container based on this image is started.
+
+FROM ubuntu:14.04
+ENTRYPOINT ["/bin/echo"]
+
+FROM ubuntu:14.04
+ENTRYPOINT ["/bin/echo"]
+
+docker images
+
+$ docker run e778362ca7cf Hi Docker !
+
+$ docker run e778362ca7cf
+
+RUN command allows you to execute specific shell commands during the container
+image build time.
+
+To copy the application inside the container image, you use the ADD command. It
+copies the file hello.py in the /tmp/ directory.
+The application uses port 5000, and you expose this port on the Docker host.
+
+You want to follow best practices to write your Dockerfiles and optimize your Docker
+images.
+
+1. Run a single process per container. Although you can run multiple processes per
+container (e.g., Recipe 1.15), building images that will run only one process or at
+least one functional service per container will help you build decoupled applications
+that can scale.
+
+2. Do not assume that your containers will live on; they are ephemeral and will be
+stopped and restarted. You should treat them as immutable entities, which means
+that you should not modify them but instead restart them from your base image.
+Therefore, manage runtime configuration and data outside the containers and
+hence the image.
+
+5. Finally, minimize the number of layers of your images and take advantage of the
+image cache. Docker uses union filesystems to store images. This means that
+each image is made of a base image plus a collection of diffs that adds the
+required changes. Each diff represents an additional layer of an image. This has a
+direct impact on how your write your Dockerfile
+
+FROM ubuntu:14.04
+RUN apt-get update
+RUN apt-get install -y python
+RUN apt-get install -y python-pip
+RUN apt-get clean
+RUN pip install flask
+ADD hello.py /tmp/hello.py
+
+However, you then proceeded
+to install a few packages using multiple RUN commands. This is bad practice,
+as it will add unnecessary layers to the image.
+You also used the ADD command to
+copy a simple file. Instead in this example, you should use the COPY command (ADD
+allows more-complex file copy scenarios).
+
+Optimised version
+
+FROM ubuntu:14.04
+RUN apt-get update && apt-get install -y \
+python
+python-pip
+RUN pip install flask
+COPY hello.py /tmp/hello.py
+
+It could even be made better with the use of a Python official image:
+FROM python:2.7.10
+RUN pip install flask
+COPY hello.py /tmp/hello.py
+
+This is not meant to be exhaustive, but gives you a taste of how to optimize your
+Dockerfile.
+
+Problem
+You are creating multiple images and multiple versions of the same image. You would
+like to keep track of each image and its versions easily, instead of using an image ID.
+
+Solution
+Tag the image with the docker tag command. This allows you to rename an existing
+image, or create a new tag for the same name.
+
+The naming convention for images is that everything after a colon is a tag. A tag is optional. If you do not specify a tag, Docker will implicitly try to use a tag called latest.
+
+For example, let’s rename the ubuntu:14.04 image to foobar. You will not specify a tag, just change the name; hence Docker will use the latest tag automatically:
+
+$ docker images
+REPOSITORY TAG IMAGE ID CREATED VIRTUAL SIZE
+ubuntu 14.04 9bd07e480c5b 12 days ago 192.7 MB
+
+$ docker tag ubuntu foobar
+2014/12/17 09:57:48 Error response from daemon: No such id: ubuntu
+
+That is because the ubuntu image has only a 14.04 tag and no latest tag.
+
+$ docker tag ubuntu:14.04 foobar
+
+$ docker images
+REPOSITORY TAG IMAGE ID CREATED VIRTUAL SIZE
+foobar latest 9bd07e480c5b 12 days ago 192.7 MB
+ubuntu 14.04 9bd07e480c5b 12 days ago 192.7 MB
+
+If you specify a tag by using a colon after the new name for the image, you get this:
+$ docker tag ubuntu:14.04 foobar:cookbook
+
+
+$ docker images
+REPOSITORY TAG IMAGE ID CREATED VIRTUAL SIZE
+foobar cookbook 9bd07e480c5b 12 days ago 192.7 MB
+foobar latest 9bd07e480c5b 12 days ago 192.7 MB
+ubuntu 14.04 9bd07e480c5b 12 days ago 192.7 MB
+
+Using ONBUILD Images
+
+An image containing ONBUILD directives is
+called a parent image. When a parent image is used as a base image (i.e., using the
+FROM directive), the image being built—also called the child—triggers the directives
+defined by ONBUILD in the parent.
+In other words, the parent image tells the child image what to do at build time.
+You can still add directives in the Dockerfile of the child, but the ONBUILD directives
+of the parent will be executed first.
+This is handy for building minimalistic Dockerfiles and providing consistency across
+all your images.
+
+For Node.js applications, for instance, you can use a parent image defined by this Dockerfile:
+
+FROM node:0.12.6
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+ONBUILD COPY package.json /usr/src/app/
+ONBUILD RUN npm install
+ONBUILD COPY . /usr/src/app
+CMD [ "npm", "start" ]
+
+Your child image would be defined like this (at a minimum):
+FROM node:0.12.6-onbuild
+
+When building your child image, Docker would automatically copy the package.json file from your local context to /usr/src/app, it would execute npm install and copy the entire context to usr/src/app.
+
+CHAPTER 3 : Docker Networking
+
+Finding the IP Address of a Container
+There are many ways to find the IP address of a container started with the default Docker networking.
+$ docker run -d --name nginx nginx
+$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' nginx
+172.17.0.2
+
+$ docker exec -ti nginx ip add | grep global
+inet 172.17.0.2/16 scope global eth0
+
+$ docker run -d --name foobar -h foobar busybox sleep 300
+$ docker exec -ti foobar cat /etc/hosts | grep foobar
+172.17.0.4 foobar
+
+$ docker exec -ti nginx bash
+root@a3c1f7edb00a:/# cat /etc/hosts
+
+Exposing a Container Port on the Host, You want to access a service running in a container over the network.
+
+Docker can dynamically map a network port in a container to a port on the host by using the -P option of docker run. You can also manually specify a mapping by using the -p option.
+
+$ docker run -d -p 5000 --name foobar flask
+$ docker ps
+CONTAINER ID IMAGE COMMAND ... PORTS NAMES
+2cc258827b34 flask "python /tmp/hello.p ... 0.0.0.0:32768->5000/tcp foobar
+
+You see that the PORTS column of docker ps now returns a mapping between port 32768 and port 5000 of the container. The host listens on interface 0.0.0.0, TCP port 32768 and forwards the requests to port 5000 of the container. Try to curl the sDocker host on port 32768, and you will see that you reach the Flask application.
+
+docker stats myritox
+docker top myritox
+
+Can you please enable  supplimental logging with primary key for  CURRATEE table in CMSTS4, CMSUST and CMSPRD?
+
+Enabling Supplimental logging on CURRATEE table for DMS replication - CMSUAT
+
+
+MySQL
+
+docker pull mysql
+mkdir -p /Users/itsr/mysql/data
+chmod -R 777 /Users/itsr/mysql/data
+
+docker run -v /Users/itsr/mysql/data:/var/lib/mysql -p 3306:3306 --name mysqldb -e MYSQL_DATABASE='mysqldb' -e MYSQL_USER='mysql' -e MYSQL_PASSWORD='mysql' -e MYSQL_ALLOW_EMPTY_PASSWORD='yes' -e MYSQL_ROOT_PASSWORD='' -d mysql
+
+mysql -h localhost -u mysql -p
+or
+mysql  -u mysql -p
+
+both will prompt for password.
+
+SELECT VERSION(), CURRENT_DATE;
+Keywords may be entered in any lettercase. The following queries are equivalent:
+SeLeCt vErSiOn(), current_DATE;
+
+
+Prompt	Meaning
+mysql>	Ready for new query
+->	Waiting for next line of multiple-line query
+'>	Waiting for next line, waiting for completion of a string that began with a single quote (')
+">	Waiting for next line, waiting for completion of a string that began with a double quote (")
+`>	Waiting for next line, waiting for completion of an identifier that began with a backtick (`)
+/*>	Waiting for next line, waiting for completion of a comment that began with /*
+
+mysql> SHOW DATABASES;
+
+mysql> USE test
+Database changed
+
+USE, like QUIT, does not require a semicolon. (You can terminate such statements with a semicolon if you like; it does no harm.) The USE statement is special in another way, too: it must be given on a single line.
+
+https://dev.mysql.com/doc/refman/5.7/en/creating-database.html

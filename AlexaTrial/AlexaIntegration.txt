@@ -1,0 +1,60 @@
+Alexa Integration
+
+Labmda > create function
+
+Select the Alexa Skills Kit trigger in the Designer.
+
+Click on the Alexa Skills Kit box that has appeared in the designer.
+
+Click the orange Add button at the bottom of the screen.
+
+Copy the ARN location of your function from the top of the page. arn:aws:lambda:eu-west-1:460402331925:function:SilverBulletsDemo
+
+Creating an Amazon Alexa Skill
+https://developer.amazon.com
+
+Skill Invocation name : silverbulletsdemo
+
+    {
+        "interactionModel": {
+            "languageModel": {
+                "invocationName": "silverbulletsdemo",
+                "intents": [
+                    {
+                    "intent": "NumberOfOrders"
+                    },   
+                    {
+                    "intent": "AMAZON.PauseIntent"
+                    },
+                    {
+                    "intent": "AMAZON.ResumeIntent"
+                    }
+                ],
+                "types": []
+            }
+        }
+    }
+
+{
+  "intents": [
+    {
+      "intent": "NumberOfOrders"
+    },   
+    {
+      "intent": "AMAZON.PauseIntent"
+    },
+    {
+      "intent": "AMAZON.ResumeIntent"
+    }
+  ]
+}
+
+Explorer : http://www.explorer.uk.com/querying-an-oracle-database-using-amazon-alexa/
+
+Without Amazon Lambda : https://apexutil.blogspot.com/2018/03/oracle-apex-amazon-alexa-integration.html
+
+https://apex.oracle.com/pls/apex/csykes_dev/hr/orders/
+
+
+RG2300823
+

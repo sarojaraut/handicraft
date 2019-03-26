@@ -1,0 +1,191 @@
+Chapter 2 - Exploring the Database Architecture
+
+Distributed Systems Architectures : In the single-instance environment, one instance opens one database. In a distributed environment, there are various possibilities for grouping instances and databases.
+Principally:
+1. Real Application Clusters (RAC), where multiple instances open one database
+2. Streams, where multiple Oracle servers propagate transactions between each other
+3. Data guard, where a primary database updates a standby database
+
+Combinations of these options can (according to the marketing) result in a system that can achieve the goals of one hundred percent uptime and zero percent data loss, with limitless scalability and performance.
+
+Real Application Clusters (RAC) : RAC gives amazing capabilities for performance, fault tolerance, and scalability (and possibly cost savings) and is integral to the Oracle’s concept of the Grid. 
+
+Determine if the instance is part of an RAC database: select parallel from v$instance; This will return NO if it is a single-instance database.
+
+Streams : There are various circumstances that make it desirable to transfer data from one database to another. 
+Fault tolerance is one: if an organization has two (or more) geographically separated databases, both containing identical data and both available at all times for users to work on, then no matter what goes wrong at one site, work should be able to continue uninterrupted at the other. Another reason is tuning: the two databases can be configured for different types of work, such as a transaction processing database and a data warehouse. 
+
+Determine if Streams has been configured in the database: select * from dba_streams_administrator; This will return no rows, if Streams has never been configured.
+
+Data Guard : Data guard systems have one primary database against which transactions are executed, and one or more standby databases used for fault tolerance or for query processing.
+The standbys are instantiated from a backup of the primary, and updated (possibly in real time) with all changes applied to the primary. 
+
+Determine if the database is protected against data loss by a standby database: select protection_level from v$database; This will return UNPROTECTED if the database is indeed unprotected.
+
+Explain the Memory Structures
+An Oracle instance consists of a block of shared memory known as the system global area, or SGA, and a number of background processes. At a minimum, the SGA will contain three data structures: The database buffer cache, The log buffer, The shared pool and It may, optionally, also contain A large pool, A Java pool, A Streams pool.
+
+User sessions also need memory on the server side. This is nonshareable and is known as the program global area, or PGA. Each session will have its own private PGA.
+
+The Database Buffer Cache
+
+The database buffer cache is Oracle’s work area for executing SQL. When updating data, users’ sessions don’t directly update the data on disk. The data blocks containing the data of interest are first copied into the database buffer cache. Changes (such inserting new rows and deleting or modifying existing rows) are applied to these copies of the data blocks in the database buffer cache. The blocks will remain in the cache for some time afterward,  until the buffer they are occupying is needed for caching another block.
+
+Take note of the term block. Datafiles are formatted into fixed-sized blocks.Table rows, and other data objects such as index keys, are stored in these blocks.The database buffer cache is formatted into memory buffers each sized to hold one block.
+
+A buffer storing a block whose image in the cache is not the same as the image on disk is often referred to as a dirty buffer. A buffer will be clean when a block is first copied into it:
+
+Note that there is no correlation between the frequency of updates to a buffer (or the number of COMMITs) and when it gets written back to the datafiles. The write to the datafiles is done by the database writer background process.
+
+The Log Buffer/ Redo Log Buffer
+The log buffer is a small, short-term staging area for change vectors before they are written to the redo log on disk. A change vector is a modification applied to something; executing DML statements generates change vectors applied to data. The redo log is the database’s guarantee that data will never be lost: whenever a data block is changed, the change vectors applied to the block are written out to the redo log, from where they can be extracted and applied to datafile backups if it is ever necessary to restore a datafile.
+
+There is no need for it to be more than a few megabytes at the most, and indeed making it much bigger than the default value can be seriously bad for performance. It is not possible to create a log buffer smaller than the default. If you attempt to, it will be set to the default size anyway. It is possible to create a log buffer larger than the default, but this is often not a good idea. The problem is that when a COMMIT statement is issued, part of the commit processing involves writing the contents of  the log buffer to the redo log files on disk. This write occurs in real time, and while it is in progress, the session that issued the COMMIT will hang. The log buffer is allocated at instance startup, and it can never be resized subsequently without restarting the instance. The process of flushing the log buffer to disk is one of the ultimate bottlenecks in the Oracle architecture. You cannot do DML faster than the LGWR can flush the change vectors to the online redo log files. If redo generation is the limiting factor in a database’s performance, the only option is to go to RAC. In a RAC database, each instance has its own log buffer, and its own LGWR. This is the only way to parallelize writing redo data to disk.
+
+The Shared Pool
+The shared pool is the most complex of the SGA structures. It is divided into dozens of substructures, all of which are managed internally by the Oracle server. and these only briefly:
+The library cache - The library cache is a memory area for storing recently executed code, in its parsed form.
+The data dictionary cache - It stores recently used object definitions: descriptions of tables, indexes, users, and other metadata definitions.
+The PL/SQL area - The stored PLSQL objects are stored in the data dictionary, as source code and also in their compiled form. When a stored PL/SQL object is invoked by a session, it must be read from the data dictionary. To prevent repeated reading, the objects are then cached in the PL/SQL area of the shared pool. The first time a PL/SQL object is used, it must be read from the data dictionary tables on disk, but subsequent invocations will be much faster, because the object will already be available in the PL/SQL area of the shared pool. 
+
+The SQL query and PL/SQL function result caches
+
+The result cache is a release 11g new feature. In many applications, the same query is executed many times, by either the same session or many different sessions. Creating a result cache lets the Oracle server store the results of such queries in memory. The next time the query is issued, rather than running the query the server can retrieve the cached result.
+
+The Large Pool
+The large pool is an optional area that, if created, will be used for transactions that interact with more than one database, message buffers for processes performing parallel  queries, and RMAN parallel backup and restore operations. As the name implies, the large pool makes available large blocks of memory for operations that need to allocate large blocks of memory at a time.
+
+The Java pool is only required if your application is going to run Java-stored procedures within the database: it is used for the heap space needed to instantiate the Java objects. However, a number of Oracle options are written in Java, so the Java pool is considered standard nowadays. Note that Java code is not cached in the Java pool: it is cached in the shared pool, in the same way that PL/SQL code is cached. The optimal size of the Java pool is dependent on the Java application, and how many sessions are running it. Each session will require heap space for its objects. If the Java pool is undersized, performance may degrade due to the need to continually reclaim space.
+
+PGA
+Is a private memory region containing the data and control information of a server process. Each server proces has a distinct PGA and access to this area is readonly for the code acting on behalf of server process. For dedicated connection PGA contains a subdivision of memory called as user global area(UGA). UGA contains
+cursor area - For storing run time info about cursors.
+user session data storage area for control information about session. 
+SQL working area for processing sqls consisting sorting, hash join, bitmap area
+
+In a shared server process multiple clients share the same server process and UGA is moved into SGA. 
+
+In a shared server environment, the SGA holds the session information for a user instead of the PGA. Shared server environments are ideal for a large number of simultaneous connections to the database with infrequent or short-lived requests.
+
+Investigate the Memory Structures of the Instance
+Show the current, maximum, and minimum sizes of the SGA components that can be dynamically resized:
+select COMPONENT,CURRENT_SIZE,MIN_SIZE,MAX_SIZE from v$sga_dynamic_components;
+
+Determine how much memory has been, and is currently, allocated to program global areas:
+select name,value from v$pgastat where name in ('maximum PGA allocated','total PGA allocated');
+
+Describe the Process Structures
+
+SMON, the System Monitor
+SMON initially has the task of mounting and opening a database. SMON mounts a database by locating and validating the database controlfile. It then opens a database by locating and validating all the datafiles and online log files. Once the database is opened and in use, SMON is responsible for various housekeeping tasks, such as collating free space in datafiles in case of dictionary managed tablespaces.
+
+PMON, the Process Monitor
+A user session is a user process that is connected to a server process. The server process is launched when the session is created and destroyed when the session ends. An orderly exit from a session involves the user logging off. When this occurs, any work he/she was doing will be completed in an orderly fashion, and his/her server process will be terminated. If the session is terminated in a disorderly manner (perhaps because the user’s PC is rebooted), then the session will be left in a state that must be cleared up. PMON monitors all the server processes and detects any problems with the sessions. If a session has terminated abnormally, PMON will destroy the server process, return its PGA memory to the operating system’s free memory pool, and roll back any incomplete transaction that may have been in progress.
+
+DBWn, the Database Writer - Writes the dirty buffers to the disk. It is possible for an instance to have several database writers (upto 36). The default number is one database writer per eight CPUs, rounded up.
+
+DBWn writes according to a very lazy algorithm: as little as possible, as rarely as possible. Using an LRU algorithm, DBWn writes the oldest, least active blocks first. As a result, the most commonly requested blocks, even if they are dirty blocks, are in memory.
+There are four circumstances that will cause DBWn to write: 
+1. No free buffers - When the server process cann't find a clean reusable buffer after scaning threshhold numbers of buffer. 
+2. Too many dirty buffers- "too many" is oracles internal threshhold. Interal server process might not have problem in finding free buffer but overall there could be large number of dirty buffers.
+3. A three-second timeout - every three seconds, DBWn will clean a few buffers. In practice, this event may not be significant in a production system
+because the two previously described circumstances will be forcing the writes, but the timeout does mean that even if the system is idle, the database buffer cache will eventually be cleaned.
+4. When there is a checkpoint - The three reasons already given will cause DBWn to write a limited number of dirty buffers to the datafiles. When a checkpoint occurs, all dirty buffers are written. This could mean hundreds of thousands of them. During a checkpoint, disk I/O rates will hit the roof, CPU usage may go to 100 percent, end user sessions will experience degraded performance.
+So why have checkpoints? The short answer is, don’t have them unless you have to. The only moment when a checkpoint is absolutely necessary is as the database is closed and the instance is shut down. but a checkpoint can be forced at any time with this statement:
+alter system checkpoint;
+
+Note that from release 8i onward, checkpoints do not occur on log switch. Partial checkpoints that force DBWn to write all the dirty buffers containing blocks from just one or more datafiles rather than the whole database, occur more frequently: when a datafile or tablespace is taken offline; when a tablespace is put into backup mode; when a tablespace is made read only. These are less drastic than full checkpoints, and occur automatically whenever the relevant event happens.
+
+LGWR, the Log Writer
+LGWR writes the contents of the log buffer to the online log files on disk. A write of the log buffer to the online redo log files is often referred to as flushing the log buffer. LGWR is one of the ultimate bottlenecks in the Oracle architecture. It is impossible to do DML faster than LGWR can write the change vectors to disk. There are three circumstances that will cause LGWR to flush the log buffer: if a session issues a COMMIT; if the log buffer is one-third full; if DBWn is about to write dirty buffers.
+
+To process a COMMIT, the server process inserts a commit record into the log buffer. It will then hang, while LGWR flushes the log buffer to disk. Only when this write has completed is a commit-complete message returned to the session, and the server process can then continue working. This is the guarantee that transactions will never be lost: every change vector for a committed transaction will be available in the redo log on disk and can therefore be applied to datafile backups. Thus, if the database is ever damaged, it can be restored from backup and all work done since the backup was made can be redone.
+
+Second, when the log buffer is one-third full, LGWR will flush it to disk. This is about performance. If the log buffer is small (as it usually should be) this one-thirdfull trigger will force LGWR to write the buffer to disk in very nearly real time even if no one is committing transactions. The log buffer for many applications will be optimally sized at only a few megabytes. The application will generate enough redo to fill one third of this in a fraction of a second, so LGWR will be forced to stream the change vectors to disk continuously, in very nearly real time.
+
+Third, when DBWn needs to write dirty buffers from the database buffer cache to the datafiles, before it does so it will signal LGWR to flush the log buffer to the online redo log files. This is to ensure that it will always be possible to reverse an uncommitted transaction.
+
+Note that it can be said that there is a threesecond timeout that causes LGWR to write. In fact, the timeout is on DBWR—but because LGWR will always write just before DBWn, in effect there is a three-second timeout on LGWR as well.
+
+CKPT, the Checkpoint Process
+
+Checkpoint is a datastructure that defines the SCN in redo thread. Records the check point information in control file and each datafile header. Checkpoints were necessary at regular intervals to make sure that in the event of an instance failure (for example, if the server machine should be rebooted) the database could be recovered quickly. These checkpoints were initiated by CKPT.
+
+From 8i onward the DBWn makes incremental checkpoints instead of full checkpoints. The incremental checkpoint mechanism instructs DBWn to write out
+dirty buffers at a constant rate, so that there is always a predictable gap between DBWn (which writes blocks on a lazy algorithm) and LGWR (which writes change vectors in near real time).
+
+When do full checkpoints occur? Only on request, or as part of an orderly database shutdown.
+
+MMON, the Manageability Monitor
+MMON is a process that was introduced with database release 10g and is the enabling process for many of the self-monitoring and self-tuning capabilities of the database.
+
+The database instance gathers a vast number of statistics about activity and performance. These statistics are accumulated in the SGA, and their current values can be interrogated by issuing SQL queries. MMON regularly (by default, every hour) captures statistics from the SGA and writes them to the data dictionary, where they can be stored indefinitely (though by default, they are kept for only eight days). Every time MMON gathers a set of statistics (known as a snapshot), it also launches the Automatic Database Diagnostic Monitor, the ADDM. The ADDM is a tool that analyses database activity using an expert system developed over many years by many DBAs. It observes two snapshots (by default, the current and previous snapshots) and makes observations and recommendations regarding performance.
+
+MMNL, the Manageability Monitor Light
+MMNL is a process that assists the MMON. There are times when MMON’s scheduled activity is not enough. 
+
+MMAN, the Memory Manager
+MMAN is a process that was introduced with database release 10g. It enables the automatic management of memory allocations.
+
+Prior to release 9i of the database, memory management in the Oracle environment was far from satisfactory. The PGA memory associated with session server processes was non-transferable: a server process would take memory from the operating system’s free memory pool and never return it—even though it might only have been needed for a short time. The SGA memory structures were static: defined at instance startup time, and unchangeable unless the instance were shut down and restarted.
+
+Release 9i changed that: PGAs can grow and shrink, with the server passing out memory to sessions on demand while ensuring that the total PGA memory allocated stays within certain limits. The SGA and the components within it (with the notable exception of the log buffer) can also be resized, within certain limits. Release 10g automated the SGA resizing: MMAN monitors the demand for SGA memory structures and can resize them as necessary.
+
+ARCn, the Archiver
+This is an optional process as far as the database is concerned, but usually a required process for the business.
+
+The online log files must be copied as they are filled and before they are reused. The ARCn is responsible for doing this. Provided that these copies, known archive redo log files, are available, it will always be possible to recover from any damage to the database by restoring datafile backups and applying change vectors to them extracted from all the archive log files generated since the backups were made. Then the final recovery, to bring the backup right up to date, will come from the online redo log files.
+
+select program from v$process order by program;
+
+On Linux, run this command from an operating system prompt:
+ps –ef|grep oracle|wc -l
+
+The Physical Database Structures
+
+There are three file types that make up an Oracle database. The required files are the controlfile, the online redo log files, and the datafiles.
+
+There are others, needed for advanced options are the initialization parameter file, the password file, the archive redo log files, and the log and trace files.
+
+The Controlfile
+Oracle database has one controlfile, of which there may be multiple copies. It contains pointers to the rest of the database: the locations of the online redo log files and of the datafiles, and of the more recent archive log files if the database is in archive log mode. It also stores information required to maintain database integrity: various critical sequence numbers and timestamps, for example. If the Recovery Manager tool is being used for backups, then details of these backups will also be stored in the controlfile. The controlfile will usually be no more than a few megabytes big, but you can’t survive without it.
+If you get the number of copies, or their location, wrong at database creationtime, you can add or remove copies later, or move them around—but you should bear in mind that any such operations will require down time, so it is a good idea to get it right at the beginning. Damage to any controlfile copy will cause the database instance to terminate immediately.
+
+The Online Redo Log Files
+The redo log stores a continuous chain in chronological order of every change vector applied to the database. This will be the bare minimum of information required to reconstruct, or redo, all work that has been done. If a datafile (or the whole database) is damaged or destroyed, these change vectors can be applied to datafile backups to redo the work, bringing them forward in time until the moment that the damage occurred.
+
+Every database has at least two online redo log files, but as with the controlfile, a good DBA creates multiple copies of each online redo log file. The online redo log consists of groups of online redo log files, each file being known as a member. An Oracle database requires at least two groups of at least one member each to function. You may create more than two groups for performance reasons, and more than one member per group for security
+
+The Datafiles
+The third required file type making up a database is the datafile. At a minimum, you must have two datafiles, to be created at database creation time. With previous releases of Oracle, you could create a database with only one datafile—10g and 11g require two, at least one each for the SYSTEM tablespace (that stores the data dictionary) and the SYSAUX tablespace (that stores data that is auxiliary to the data dictionary).
+
+Other Database Files
+These files exist externally to the database. They are, for practical purposes, necessary—but they are not strictly speaking part of the database.
+
+The Instance Parameter File When an Oracle instance is started, the SGA structures build in memory and the background processes start according to settings in the parameter file. This is the only file that needs to exist in order to start an instance. There are several hundred parameters, but only
+one is required: the DB_NAME parameter. All others have defaults. So the parameter file can be quite small, but it must exist. 
+
+The Password File Users establish sessions by presenting a username and a password. The Oracle server authenticates these against user definitions stored
+in the data dictionary. The data dictionary is a set of tables in the database; it is therefore inaccessible if the database is not open. There are occasions when a user needs to be authenticated before the data dictionary is available: when he needs to start the database, or indeed to create it. An external password file  is one means of doing this.
+
+Alert Log and Trace Files The alert log is a continuous stream of messages regarding certain critical operations affecting the instance and the database. Not everything is logged: only events that are considered to be really important, such as startup and shutdown; changes to the physical structures of the database; changes to the parameters that control the instance. Trace files are generated by background processes when they detect error conditions, and sometimes to report certain actions.
+
+The Logical Database Structures
+Oracle abstracts the logical storage from the physical storage by means of the tablespace. A tablespace is logically a collection of one or more segments, and physically a collection of one or more datafiles. one table may be cut across many datafiles, one datafile may contain bits of many tables. By inserting the tablespace entity between the segments and the files,
+
+A number of segments must be created at database creation time: these are the segments that make up the data dictionary. These segments are stored in two
+tablespaces, called SYSTEM and SYSAUX. The SYSAUX tablespace was new with release 10g: in previous releases, the whole of the data dictionary went into
+SYSTEM. The database creation process must create at least these two tablespaces,  with at least one datafile each, to store the data dictionary.
+An extent is a series of blocks that are consecutively numbered within a datafile, and segments will grow by adding new extents to them. These extents need not be adjacent to each other, or even in the same datafile; they can come from any datafile that is part of the tablespace within which the segment resides.
+
+create table tab24 (c1 varchar2(10));
+
+select tablespace_name, extent_id, bytes, file_id, block_id from dba_extents where owner='SYSTEM' and segment_name='TAB24';
+
+select name from v$datafile where file#=&file_id;
+
+V$DATABASE On what operating system is the database is running?
+V$CONTROLFILE Where is the controlfile? Is it multiplexed?
+V$LOG, V$LOGFILE How many online log file groups are there? How many members are in each group, and what are they called? How big are they?
+V$TABLESPACE, V$DATAFILE What tablespaces exist in the database? What datafiles are assigned to each tablespace? What are they called, and how big are they?
+

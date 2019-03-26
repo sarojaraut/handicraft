@@ -1,0 +1,166 @@
+Oracle XML DB
+
+A URL uses a path through a folder hierarchy to identify a document, whereas XPath uses a path through the node hierarchy of an XML document to access part of an XML document.
+
+XMLType Data Type
+
+You can use XMLType as you would any other SQL data type. For example, you can use XMLType when you do any of the following:
+Create a column in a relational table
+Declare a PL/SQL variable
+Define or call a PL/SQL procedure or function
+XMLType is an Oracle Database object type, so you can also create a table of XMLType object instances. By default, an XMLType table or column can contain any well-formed XML document.
+
+The W3C (Worldwide Web Consortium) Schema Working Group publishes a particular XML schema, often referred to as the schema for schemas, that provides the definition, or vocabulary, of the XML Schema language. An XML schema definition (XSD1), also called an XML schema, is an XML document that is compliant with the vocabulary defined by the schema for schemas.
+
+XMLType tables and columns can be stored in these ways:
+Structured storage – XMLType data is stored as a set of objects. This is also referred to as object-relational storage and object-based persistence.
+Unstructured storage – XMLType data is stored in Character Large Object (CLOB) instances. This is also referred to as CLOB storage and text-based persistence.
+Binary XML storage – XMLType data is stored in a post-parse, binary format specifically designed for XML data. Binary XML is compact, post-parse, XML schema-aware XML. This is also referred to as post-parse persistence.
+
+Structured (object-relational) storage advantages over the other storage models include near-relational query and update performance, optimized memory management, reduced storage requirements, B-tree indexing, and in-place updates. These advantages are at a cost of increased processing overhead during ingestion and full retrieval of XML data, and reduced flexibility in the structure of the XML that can be managed by a given XMLType table or column. Structural flexibility is reduced because data and metadata (such as column names) are separated in object-relational storage. Instance structures cannot vary easily. Structured storage is particularly appropriate for highly structured data whose structure does not vary, if this maps to a manageable number of database tables and joins.
+
+
+Unstructured (CLOB) storage enables higher throughput than structured storage w en inserting and retrieving entire XML documents. No data conversion is needed, so the same format can be used outside the database. Unstructured storage also provides greater flexibility than structured storage in the structure of the XML that can be stored. Unstructured storage is particularly appropriate for document-centric use cases. These advantages can come at the expense of certain aspects of intelligent processing: in the absence of indexing, there is little that the database can do to optimize queries or updates on XML data that is stored in a CLOB instance. In particular, the cost of XML parsing (often implicit) can significantly impact query performance. Indexing with XMLIndex can improve the performance of queries against unstructured storage.
+
+Binary XML storage provides more efficient database storage, updating, indexing, and fragment extraction than unstructured storage. It can provide better query performance than unstructured storage—it does not suffer from the XML parsing bottleneck (it is a post-parse persistence model). Like structured storage, binary XML storage is aware of XML Schema data types and can take advantage of native database data types. Like structured storage, binary XML storage allows for piecewise updates. Because binary XML data can also be used outside the database, it can serve as an efficient XML exchange medium, and you can off load work from the database to increase overall performance in many cases. Like unstructured storage, binary XML data is kept in document order. Like structured storage, data and metadata can, using binary storage, be separated at the database level, for efficiency. Like unstructured storage, however, binary XML storage allows for intermixed data and metadata, which lets instance structures vary. Binary XML storage allows for very complex and variable data, which in the structured-storage model could necessitate using many database tables. Unlike the other XMLType storage models, you can use binary storage for XML schema-based data even if the XML schema is not known beforehand, and you can store multiple XML schemas in the same table and query across common elements.
+
+XML/SQL Duality 
+A key objective of Oracle XML DB is to provide XML/SQL duality. XML/SQL duality means that the same data can be exposed as rows in a table and manipulated using SQL or exposed as nodes in an XML document and manipulated using techniques such as DOM and XSL transformation. Access and processing techniques are independent of the underlying storage format.
+
+SQL/XML Standard Functions
+
+Functions that you can use to generate XML data from the result of a SQL query, these are called SQL/XML publishing functions. They are also sometimes called SQL/XML generation functions.
+
+Functions that you can use to query and access XML content as part of normal SQL operations, these are called SQL/XML query and access functions.
+
+You can determine whether or not Oracle XML DB is already installed.
+Database schema (user account) XDB exists. To check that, run this query:
+SELECT * FROM ALL_USERS;
+View RESOURCE_VIEW exists. To check that, use this command:
+DESCRIBE RESOURCE_VIEW
+
+Creating a Table with an XMLType Column
+CREATE TABLE mytable1 (key_column VARCHAR2(10) PRIMARY KEY, xml_column XMLType);
+
+Creating a Table of XMLType
+CREATE TABLE mytable2 OF XMLType;
+
+Loading XML Content into Oracle XML DB
+You can load XML content into Oracle XML DB using these techniques:
+■ Table-based loading:
+■ Loading XML Content using SQL or PL/SQL
+■ Loading XML Content using Java
+■ Loading XML Content using C
+■ Loading Large XML Files that Contain Small XML Documents
+■ Loading Large XML Files using SQL*Loader
+■ Path-based repository loading techniques:
+■ Loading XML Documents into the Repository using DBMS_XDB
+■ Loading Documents into the Repository using Protocols
+
+Loading XML Content using SQL or PL/SQL
+Convert the xml into an XMLType instance using one of the XMLType constructors and use a simple INSERT operation in SQL or PL/SQL to load. 
+
+CREATE DIRECTORY xmldir AS path_to_folder_containing_XML_file;
+
+INSERT INTO mytable2 VALUES (XMLType(bfilename('XMLDIR', 'purchaseOrder.xml'),
+nls_charset_id('AL32UTF8')));
+
+Loading Large XML Files that Contain Small XML Documents
+When loading large XML files consisting of a collection of smaller XML documents, it is often more efficient to use Simple API for XML (SAX) parsing to break the file into a set of smaller documents, and then insert those documents.
+
+http://www.oracle.com/technetwork/database/features/xmldb/index.html
+
+Loading Large XML Files using SQL*Loader
+
+Loading XML Documents into the Repository using DBMS_XDB
+You can also store XML documents in Oracle XML DB Repository, and access these documents using path-based rather than table-based techniques. To load an XML document into the repository under a given path, use PL/SQL function DBMS_XDB.createResource.
+
+DELARE
+	res BOOLEAN;
+BEGIN
+	res := DBMS_XDB.createResource('/home/QUINE/purchaseOrder.xml',
+	bfilename('XMLDIR', 'purchaseOrder.xml'),
+	nls_charset_id('AL32UTF8'));
+END;
+/
+
+
+XMLType Operations
+
+Searching XML Documents using XPath Expressions
+The XPath language is a W3C Recommendation for navigating XML documents. It is a subset of the XQuery language, in the sense that an XPath expression is also an XQuery expression.
+
+Oracle SQL functions and XMLType methods respect the W3C XPath recommendation, which states that if an XPath expression targets no nodes when applied to XML data, then an empty sequence must be returned. An error must not be raised in this case.
+
+Common XPath Constructs
+/ - Denotes the root of the tree in an XPath expression. For example, /PO refers to the child of the root node whose name is PO.
+
+/ - Also used as a path separator to identify the children node of any given node. For example, /PurchaseOrder/Reference identifies the purchase-order name element Reference, a child of the root element.
+
+// - Used to identify all descendants of the current node. For example, PurchaseOrder//ShippingInstructions matches any ShippingInstructions element under the PurchaseOrder element.
+
+* - Used as a wildcard to match any child node. For example, /PO/*/STREET matches any street element that is a grandchild of the PO element.
+
+[ ] - Used to denote predicate expressions. XPath supports a rich list of binary operators such as or, and, and not. For example, /PO[PONO = 20 and PNAME = "PO_2"]/SHIPADDR selects the shipping address element of all purchase orders whose purchase-order number is 20 and whose purchase-order name is PO_2. Brackets are also used to denote a position (index). For example, /PO/PONO[2] identifies the second purchase-order number element under the PO root element.
+
+Functions - XPath and XQuery support a set of built-in functions such as substring, round, and not. In addition, these languages provide for extension functions through the use of namespaces. Oracle XQuery extension functions use the namespace prefix ora, for namespace http://xmlns.oracle.com/xdb. See "Oracle XQuery Extension Functions" on page 5-11.
+
+The XPath must identify a single node, or a set of element, text, or attribute nodes. The result of the XPath cannot be a Boolean expression. You can also use XMLType method getNumberVal() to retrieve XML data as a NUMBER.
+
+
+Querying XMLType Data using SQL/XML Functions XMLExists and XMLCast
+You can query XMLType data and extract portions of it using SQL/XML standard functions XMLQuery, XMLTable, XMLExists, and XMLCast.
+
+XMLEXISTS SQL/XML Function- This function checks whether a given XQuery expression returns a non-empty XQuery sequence. If so, the function returns TRUE. Otherwise, it returns FALSE.
+XMLEXISTS ( XQuery_string XML_passing_clause)
+
+SQL/XML standard function XMLExists to select rows with SpecialInstructions set to Expedite.
+
+SELECT OBJECT_VALUE FROM purchaseorder
+WHERE XMLExists('/PurchaseOrder[SpecialInstructions="Expedite"]' PASSING OBJECT_VALUE);
+
+XMLCAST SQL/XML Function - SQL/XML standard function XMLCast casts its first argument to the scalar SQL data type specified by its second argument. The first argument is a SQL expression that is evaluated. Second argument is SQL data type.
+
+XMLCAST ( value_expression AS datatype )
+
+SELECT XMLCast(XMLQuery('/PurchaseOrder/Reference' PASSING OBJECT_VALUE RETURNING CONTENT)
+AS VARCHAR2(100)) "REFERENCE"
+FROM purchaseorder
+WHERE XMLExists('/PurchaseOrder[SpecialInstructions="Expedite"]' PASSING OBJECT_VALUE);
+
+SQL/XML Functions XMLQUERY and XMLTABLE
+XMLQuery and XMLCast are typically used in a SELECT list.
+XMLTable is typically used in a SQL FROM clause.
+XMLExists is typically used in a SQL WHERE clause.
+
+http://grow-n-shine.blogspot.co.uk/2011/11/one-of-biggest-change-that-oracle-has.html
+
+http://www.oracle.com/technetwork/articles/jain-xmldb-086052.html
+
+http://www.oracle.com/webfolder/technetwork/tutorials/obe/db/11g/r2/prod/appdev/xmldb/xmldb_perf/xmldb_perf.htm
+
+CREATE TABLE XML_FILES
+(
+FILENAME VARCHAR2(1000),
+FILECONTENT XMLTYPE
+);
+
+Note, I did not specify binary type. Under the hood, Oracle created XMLType as binary.
+
+CREATE TABLE HR.XML_FILES
+(
+FILENAME VARCHAR2(1000 BYTE),
+FILECONTENT SYS.XMLTYPE
+)
+XMLTYPE FILECONTENT STORE AS BINARY XML (
+TABLESPACE USERS
+ENABLE STORAGE IN ROW
+CHUNK 8192;
+
+
+
+
+
+
+
+

@@ -1,0 +1,246 @@
+Log writer flushes the contents of the redo log buffer when any of the following are true:
+• A COMMIT is issued.
+• A log switch occurs.
+• Three seconds go by.
+• The redo log buffer is one-third full.
+• The redo log buffer fills to one megabyte.
+
+Try to size the online redo logs so that they switch anywhere from two to six times per hour. The V$LOG_HISTORY contains a history of how frequently the online redo logs have switched.
+
+select count(*)
+,to_char(first_time,'YYYY:MM:DD:HH24')
+from v$log_history
+group by to_char(first_time,'YYYY:MM:DD:HH24')
+order by 2;
+
+Every time a log switch occurs, it initiates a checkpoint. As part of a checkpoint the database writer writes all modified (dirty) blocks from the SGA to the data files on disk. Also recall that the online redo logs are written to in a round-robin fashion and that eventually the information in a given log is overwritten. Before the log writer can begin to overwrite information in an online redo log, all modified blocks in the SGA associated with the redo log must first be written to a data file. If not all modified blocks have been written to the data files, you see this message in the alert.log file:
+
+Thread 1 cannot allocate new log, sequence <sequence number>
+Checkpoint not complete
+
+There are a few ways to resolve this issue:
+
+• Add more redo log groups.
+• Lower the value of FAST_START_MTTR_TARGET. Doing so causes the database writer process to write older modified blocks to disk in a shorter time frame.
+• Tune the database-writer process (modify DB_WRITER_PROCESSES).
+
+To resize an online redo log, you have to first add online redo log groups that are the size you want, and then drop the online redo logs that are the old size.
+
+alter database add logfile group 4
+('/u01/oraredo/o12c/redo04a.rdo',
+'/u02/oraredo/o12c/redo04b.rdo') SIZE 200M;
+
+SQL> alter system set log_archive_dest_1='location=/u01/oraarch/o12c' scope=both;
+SQL> alter system set log_archive_format='o12c_%t_%s_%r.arc' scope=spfile;
+
+------------ chapter 8
+
+There is a database-wide default tablespace that will be applied to all user accounts if a default tablespace is not specified when creating the user. The default can be set when creating the database and changed later with
+
+ALTER DATABASE DEFAULT TABLESPACE tablespace_name ; -- it will be set to the SYSTEM tablespace if not explicitly mentioned
+
+A quota is the amount of space in a tablespace that a user is allowed to occupy. The query against DBA_TS_QUOTAS confirms the quota of a user; the figure “–1” is how “unlimited” is represented.
+
+To determine to whom the SYSDBA and SYSOPER privileges have been granted, query the view V$PWFILE_USERS.
+
+drop user scott cascade;
+
+System Privileges
+There are about two hundred system privileges. Most apply to actions that affect the data dictionary, such as creating tables or users. Others affect the database or
+the instance, such as creating tablespaces, adjusting instance parameter values, or establishing a session. System priv granted by a user with ADMIN OPTION are not revoked recursevily. But object privileges granted by user with GRANT OPTION are revoked recursevily.
+
+SELECT_CATALOG_ROLE Has over 2000 object privileges against data dictionary objects, but no system privileges or privileges against user data. Useful for junior administration staff who must monitor and report on the database but not be able to see user data.
+
+--------------------- Chapter 9 - Managing Schema Objects
+
+¦ Unique or non-unique
+¦ Reverse key
+¦ Compressed
+¦ Composite
+¦ Function based
+¦ Ascending or descending
+
+All these six variations apply to B*Tree indexes, but only the last three can be applied to bitmap indexes:
+
+A reverse key index is built on a version of the key column with its bytes reversed: rather than indexing “John,” it will index “nhoJ.” This is a powerful technique for avoiding contention in multiuser systems. For instance, if many users are concurrently inserting rows with primary keys based on a sequentially increasing number, all their index inserts will concentrate on the high end of the index.
+
+If an index was created implicitly by creating a constraint, then dropping the constraint will also drop the index. If the index had been created explicitly and the constraint created later, then if the constraint were dropped the index would survive.
+
+The difference between normal and temporary table is that the data is transient and private to the session, and that all SQL commands against it will be far faster than commands against permanent tables.
+
+The first reason for the speed is that temporary tables are not segments in permanent tablespaces. Ideally, they exist only in the PGAs of the sessions that are using them, so there is no disk activity or even database buffer cache activity involved.
+If the PGA cannot grow sufficiently to store the temporary table (which will be the case if millions of rows are being inserted—not unusual in complex report generation), then the table gets written out to a temporary segment in the user’s temporary tablespace. I/O on temporary tablespaces is much faster than I/O on
+permanent tablespaces, because it does not go via the database buffer cache; it is all performed directly on disk by the session’s server process.
+
+A second reason for speed is that DML against temporary tables does not generate redo. Since the data only persists for the duration of a session (perhaps only for the duration of a transaction), there is no purpose in generating redo. This gives the dual benefit of fast DML for the session working on the table.
+
+Here is an example of creating a table with a virtual column:
+create table inv(
+inv_id number
+,inv_count number
+,inv_status generated always as (
+case when inv_count <= 100 then 'GETTING LOW'
+when inv_count > 100 then 'OKAY'
+end)
+);
+
+The main use for an invisible column is to ensure that adding a column to a table won’t disrupt any of the existing application code. If the application code doesn’t explicitly access the invisible column, then it appears to the application as if the column doesn’t exist.
+
+Creating a Table with an Autoincrementing (Identity) Column
+Starting with Oracle Database 12c, you can define a column that is automatically populated and incremented when inserting data. This feature is ideal for automatically populating primary key columns.
+
+create table inv(
+inv_id number generated as identity
+,inv_desc varchar2(30 char));
+
+The NOLOGGING feature can significantly reduce redo generation for the following types of operations:
+• SQL*Loader direct-path load
+• Direct-path INSERT /*+ append */
+• CREATE TABLE AS SELECT
+• ALTER TABLE MOVE
+• Creating or rebuilding an index
+
+If your database is in FORCE LOGGING mode, then redo is generated for all operations, regardless of whether you specify NOLOGGING. Likewise, when you’re loading a 
+
+table, if the table has a referential foreign key constraint defined, then redo is generated regardless of whether you specify NOLOGGING.
+
+Suppose you accidentally drop a table, and you want to restore it. First, verify that the table you want to restore is in the recycle bin:
+SQL> show recyclebin;
+SQL> flashback table inv to before drop;
+
+------------- 11 Managing Undo Data
+alter system set undo_management=auto scope =spfile;
+select tablespace_name from dba_tablespaces  where contents='UNDO';
+Which undo tablespaces are in use -- select value from v$parameter where name='undo_tablespace'; 
+Determine what undo segments are in use in the database, and how big they are: select tablespace_name,segment_name,segment_id,status from dba_rollback_segs;
+
+Find out how much undo data was being generated in your database in the recent past:
+
+alter session set nls_date_format='dd-mm-yy hh24:mi:ss';
+select begin_time, end_time,
+(undoblks * (select value from v$parameter where
+name='db_block_size'))
+undo_bytes from v$undostat;
+
+Oracle guarantees absolutely the A, for atomicity, of the ACID test, meaning that all the undo data must be retained until a transaction commits. If necessary, the DBWn will write the changed blocks of undo data to the undo segment in the datafiles.
+
+Active undo is undo data that might be needed to roll back transactions in progress.
+Expired undo is undo data from committed transactions, which Oracle is no longer obliged to store.
+Unexpired undo is an intermediate category; it is neither active nor expired: the transaction has committed, but the undo data might be needed for consistent reads.
+
+If a transaction runs out of undo space, it will fail with the error ORA-30036, “unable to extend segment in undo tablespace.” The statement that hit the problem is rolled back, but the rest of the transaction remains intact and uncommitted. this error condition will only arise if the undo tablespace is absolutely full of active undo data.
+
+If a query encounters a block that has been changed since the query started, it will go to the undo segment to find the preupdate version of the data. If, when it goes to the undo segment, that bit of undo data has been overwritten, the query fails on consistent read with a famous Oracle error ORA-1555, “snapshot too old.”
+
+If the undo tablespace is undersized for the transaction volume and the length of queries, Oracle has a choice: either let transactions succeed and risk queries failing with ORA-1555 or let queries succeed and risk transactions failing with ORA-30036. The default behaviour is to let the transactions succeed, to allow them to overwrite unexpired undo.
+
+UNDO_RETENTION, set in seconds, is usually optional. It specifies a target for keeping inactive undo data and determines when it becomes classified as expired rather than unexpired. If, for example, your longest running query is thirty minutes, you would set this parameter to 1800. Oracle will then attempt to keep all undo data for at least 1800 seconds, and your query should therefore never fail with ORA-1555.
+
+Creating and Managing Undo Tablespaces
+CREATE UNDO TABLESPACE tablespace_name
+DATAFILE datafile_name SIZE size
+[ RETENTION NOGUARANTEE | GUARANTEE ] ;
+
+Chapter 12 - Implementing Oracle Database Security
+
+The O7_DICTIONARY_ACCESSIBILITY instance parameter controls the effect of granting object privileges with the ANY keyword.
+rather than setting O7_DICTIONARY_ACCESSIBILITY to true, consider granting them the SELECT ANY DICTIONARY privilege.
+The V$PWFILE_USERS view shows you which users have their passwords entered in the password file, and whether they have the SYSOPER privilege, the SYSDBA privilege, or both.
+
+Chapter 13 Database Maintenance
+
+■ The clustering factor—how closely the natural order of the rows follows the order of the keys
+
+The CLUSTERING_FACTOR is an indication of how ordered the table is with respect to the index itself
+
+• If the value is near the number of blocks, then the table is very well ordered. In this case, the index entries in a single leaf block tend to point to rows in the same data blocks.
+• If the value is near the number of rows, then the table is very randomly ordered. In this case, it is unlikely that index entries in the same leaf block point to rows in the same data blocks.
+
+For unordered table optimizer may choose full table scan as opposed to index range scan depending on the the number of estimated rows of output. 
+
+select a.index_name, b.num_rows, b.blocks, a.clustering_factor 
+from user_indexes a, user_tables b 
+where index_name in (ʹCOLOCATED_PKʹ, ʹDISORGANIZED_PKʹ ) and a.table_name = b.table_name
+
+Chapter 13 Database Maintenance
+
+The MMON has direct access to the memory structures that make up the SGA, and therefore the statistics within them. It can extract data from the SGA without the need to go via a session.
+The AWR is a set of tables located in the SYSAUX tablespace—these tables cannot be relocated. They exist in the SYSMAN schema.
+
+An AWR snapshot can be thought of as a copy of the contents of many V$ views  at the time the snapshot was taken. Snapshots of statistics data are kept in the AWR, by default, for eight days. This period is configurable.
+
+The view V$SYSAUX_OCCUPANTS shows all the components installed into the SYSAUX tablespace. Find out how much space the AWR is taking up:
+
+select occupant_desc,space_usage_kbytes from v$sysaux_occupants where occupant_name='SM/AWR';
+
+Gather an AWR snapshot:
+execute dbms_workload_repository.create_snapshot;
+
+Rerun the above query and calculate the increase in size caused by taking the manual snapshot.
+
+Find out how many snapshot there are, and what date range they cover:
+
+select min(begin_interval_time), max(begin_interval_time),count(snap_id) from dba_hist_snapshot;
+
+You can enable and disable the automatic optimizer statistics gathering by using the DBMS_AUTO_TASK package.
+
+BEGIN
+DBMS_AUTO_TASK_ADMIN.DISABLE (
+client_name=>’auto optimizer stats collection’,
+operation=>NULL, window_name=>NULL);
+END;
+
+BEGIN
+DBMS_AUTO_TASK_ADMIN.ENABLE (
+client_name=>’auto optimizer stats collection’,
+operation=>NULL, window_name=>NULL);
+END;
+
+SELECT client_name, status FROM dba_autotask_client;
+
+In Oracle 11g, you can tell the optimizer the relationship between columns by using the extended statistics feature (multicolumn statistics). The extended statistics feature also includes statistics on columns where a function is applied (function-based statistics). By collecting extended statistics on columns, the optimizer will be able to estimate the selectivity better.
+
+To define the extension and collect statistics in one step, you can do the following:
+
+SQL> exec dbms_stats.gather_table_stats(null, ‘customers’,	method_opt=>’for all columns size skewonly for columns (cust_country, cust_state)’);
+	
+To activate the AWR feature, you must set the pfile/spfile’s parameter STATISTICS_LEVEL to the appropriate value.
+
+Once gathered, the statistics are stored in the AWR for a default duration of eight days. However, you can modify both the frequency of the snapshots and the duration for which they are saved in the AWR.
+
+SQL> execute dbms_workload_repository.modify_snapshot_settings (interval=>60,retention=>43200); -- 60 minutes per hour × 24 hours per day × 30 days = 43,200 minutes.
+
+
+BEGIN
+DBMS_MONITOR.SESSION_TRACE_ENABLE(session_id=>324,
+serial_num=>54385,
+waits=>TRUE,
+binds=>TRUE);
+END;
+
+BEGIN
+DBMS_MONITOR.SESSION_TRACE_DISABLE(session_id=>324,
+serial_num=>54385);
+END;
+
+If you want to know the size of all the AMM memory components
+SELECT component, current_size, min_size, max_size FROM v$memory_dynamic_components;
+
+MEMORY_TARGET (MT) and  SGA_TARGET (ST)
+
+
+Automatic PGA memory management is enabled with two instance parameters:
+¦ WORKAREA_SIZE_POLICY
+¦ PGA_AGGREGATE_TARGET
+
+The WORKAREA_SIZE_POLICY will default to AUTO, meaning that Oracle can assign PGA to sessions on demand, while attempting to keep the total allocated PGA within the PGA_AGGREGATE_TARGET. This parameter defaults to the greater of 10 MB or 20 percent of the size of the SGA
+
+
+SELECT 
+PGA_TARGET_FOR_ESTIMATE, 
+PGA_TARGET_FACTOR, 
+ESTD_EXTRA_BYTES_RW  
+FROM 
+V$PGA_TARGET_ADVICE;
+	
+	

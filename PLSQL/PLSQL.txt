@@ -1,0 +1,319 @@
+PROCEDURE [schema.]name[( parameter[, parameter...] ) ]
+[AUTHID DEFINER | CURRENT_USER]
+IS
+[declarations]
+BEGIN
+executable statements
+[ EXCEPTION
+exception handlers]
+END [name];
+
+Interestingly, PL/SQL also allows you to use a RETURN statement in a procedure. The procedure version of the RETURN does not take an expression; it therefore cannot pass a value back to the calling program unit. The RETURN simply halts execution of the procedure and returns control to the calling code.
+
+You do not see this usage of RETURN very often, and for good reason. Use of the RETURN in a procedure usually leads to unstructured code because there would then be at least two paths out of the procedure, making execution flow harder to understand and maintain. Avoid using both RETURN and GOTO to bypass proper control structures and process flow in your program units.
+
+FUNCTION [schema.]name[( parameter[, parameter...] ) ]
+RETURN return_datatype
+[AUTHID DEFINER | CURRENT_USER]
+[DETERMINISTIC]
+[PARALLEL_ENABLE ...]
+[PIPELINED]
+[RESULT_CACHE ...]
+IS
+[declaration statements]
+BEGIN
+executable statements
+[EXCEPTION
+exception handler statements]
+END [name];
+
+DETERMINISTIC clause : An optimization hint that lets the system use a saved copy of the function’s return result, if available. The query optimizer can choose whether to use the saved copy or re-call the function.
+PARALLEL_ENABLE clause : An optimization hint that enables the function to be executed in parallel when called from within a SELECT statement.
+PIPELINED clause : Specifies that the results of this table function should be returned iteratively via the PIPE ROW command.
+
+If a function has no parameters, the function call can be written with or without parentheses.
+
+Read consistency and user-defined functions
+The read consistency model of the Oracle database is simple and clear: once I start a query, that query will only see data as it existed (was committed in the database) at the time the query was started. So if my query starts at 9:00 a.m. and runs for an hour, then even if another user comes along and changes data, my query will not see those changes. Yet unless you take special precautions with user-defined functions in your queries, it is quite possible that your query will violate (or, at least, appear to violate) the read consistency model of the Oracle database, you will probably need to issue the following command to enforce read-consistency between SQL statements in the current transaction: SET TRANSACTION READ ONLY
+
+To Return table type from plsql and calthis function from sql
+I must create an object type that mimics the structure of my relational table, and then define a nested table TYPE against that object type.
+
+TYPE TickerType AS OBJECT (
+ticker VARCHAR2(10),
+pricedate DATE
+pricetype VARCHAR2(1),
+price NUMBER);
+
+TYPE TickerTypeSet AS TABLE OF TickerType;
+
+I create a package to hold the REF CURSOR type based on my new nested table type:
+PACKAGE refcur_pkg
+IS
+TYPE refcur_t IS REF CURSOR RETURN StockTable%ROWTYPE;
+END refcur_pkg;
+
+1 FUNCTION stockpivot (dataset refcur_pkg.refcur_t)
+2 RETURN tickertypeset
+3 IS
+4 l_row_as_object tickertype := tickertype (NULL, NULL, NULL, NULL);
+5 l_row_from_query dataset%ROWTYPE;
+6 retval tickertypeset := tickertypeset ();
+7 BEGIN
+8 LOOP
+9 FETCH dataset
+10 INTO l_row_from_query;
+11
+12 EXIT WHEN dataset%NOTFOUND;
+13 --
+14 l_row_as_object.ticker := l_row_from_query.ticker;
+15 l_row_as_object.pricetype := 'O';
+16 l_row_as_object.price := l_row_from_query.open_price;
+17 l_row_as_object.pricedate := l_row_from_query.trade_date;
+18 retval.EXTEND;
+19 retval (retval.LAST) := l_row_as_object;
+20 --
+21 l_row_as_object.pricetype := 'C';
+22 l_row_as_object.price := l_row_from_query.close_price;
+23 retval.EXTEND;
+24 retval (retval.LAST) := l_row_as_object;
+25 END LOOP;
+26
+27 CLOSE dataset;
+28
+29 RETURN retval;
+30 END stockpivot;
+
+can use it inside my query to stream data from one table to another:
+BEGIN
+INSERT INTO tickertable
+SELECT *
+FROM TABLE (stockpivot (CURSOR (SELECT *
+FROM stocktable)));
+END;
+
+Creating a pipelined function
+A pipelined function is a table function that returns a result set as a collection but does so asynchronous to the termination of the function. In other words, the database no longer waits for the function to run to completion, storing all the rows it computes in the PL/SQL collection, before it delivers the first rows. Instead, as each row is ready to be assigned into the collection, it is piped out of the function.
+
+Let’s take a look at a rewrite of the stockpivot function and see more clearly what is needed to build pipelined functions:
+
+1 FUNCTION stockpivot (dataset refcur_pkg.refcur_t)
+2 RETURN tickertypeset PIPELINED
+3 IS
+4 l_row_as_object tickertype := tickertype (NULL, NULL, NULL, NULL);
+5 l_row_from_query dataset%ROWTYPE;
+6 BEGIN
+7 LOOP
+8 FETCH dataset INTO l_row_from_query;
+9 EXIT WHEN dataset%NOTFOUND;
+10
+11 -- first row
+12 l_row_as_object.ticker := l_row_from_query.ticker;
+13 l_row_as_object.pricetype := 'O';
+14 l_row_as_object.price := l_row_from_query.open_price;
+15 l_row_as_object.pricedate := l_row_from_query.trade_date;
+16 PIPE ROW (l_row_as_object);
+17
+18 -- second row
+19 l_row_as_object.pricetype := 'C';
+20 l_row_as_object.price := l_row_from_query.close_price;
+21 PIPE ROW (l_row_as_object);
+22 END LOOP;
+23
+24 CLOSE dataset;
+25 RETURN;
+26 END;
+
+Deterministic Functions
+A function is considered to be deterministic if it returns the same result value whenever it is called with the same values for its IN and IN OUT arguments. Another way to think about deterministic programs is that they have no side effects. Everything the program changes is reflected in the parameter list.
+
+FUNCTION betwnstr (
+string_in IN VARCHAR2, start_in IN PLS_INTEGER, end_in IN PLS_INTEGER)
+RETURN VARCHAR2 DETERMINISTIC
+ The decision to use a saved copy of the function’s return result (if such a copy is available) is made by the Oracle query optimizer. Saved copies can come from a materialized view, a function-based index, or a repetitive call to the same function in the same SQL statement.
+
+Creating a DML Trigger
+To create (or replace) a DML trigger, use the syntax shown here:
+1 CREATE [OR REPLACE] TRIGGER trigger_name
+2 {BEFORE | AFTER}
+3 {INSERT | DELETE | UPDATE | UPDATE OF column_list } ON table_name
+4 [FOR EACH ROW]
+5 [WHEN (...)]
+6 [DECLARE ... ]
+7 BEGIN
+8 ...executable statements...
+9 [EXCEPTION ... ]
+10 END [trigger_name];
+
+
+The “:” in front of the OLD and NEW names are only applicable inside the body of the trigger PL/SQL code, but cannot be used in the WHEN clause.
+Remember that field values in the NEW records can be changed only in BEFORE row triggers.
+
+To ensure proper ordering of multiple triggers on the same table clause "follows" can be used.
+
+TRIGGER increment_by_two
+BEFORE INSERT ON incremented_values
+FOR EACH ROW
+FOLLOWS increment_by_one
+BEGIN
+
+Mutating Table Errors
+When something mutates, it is changing. Something that is changing is hard to analyze and to quantify. A mutating table error (ORA-4091) occurs when a row-level trigger tries to examine or change a table that is already undergoing change (via an INSERT, UPDATE, or DELETE statement).
+In particular, this error occurs when a row-level trigger attempts to read or write the table from which the trigger was fired.
+
+If you make your trigger an autonomous transaction (by adding the PRAGMA AUTONOMOUS TRANSACTION statement and committing inside the body of the trigger), then you will be able to query the contents of the firing table. However, you will still not be allowed to modify the contents of the table.
+
+Creating a DDL Trigger
+To create (or replace) a DDL trigger, use the syntax shown here:
+1 CREATE [OR REPLACE] TRIGGER trigger name
+2 {BEFORE | AFTER } { DDL event} ON {DATABASE | SCHEMA}
+3 [WHEN (...)]
+4 DECLARE
+5 Variable declarations
+6 BEGIN
+7 ...some code...
+8 END;
+
+SQL> CREATE OR REPLACE TRIGGER town_crier
+2 AFTER CREATE ON SCHEMA
+3 BEGIN
+4 -- use event attributes to provide more info
+5 DBMS_OUTPUT.PUT_LINE('I believe you have created a ' ||
+6 ORA_DICT_OBJ_TYPE || ' called ' ||
+7 ORA_DICT_OBJ_NAME);
+8 END;
+9 /
+
+Lists the DDL events for which triggers can be coded
+
+DDL event Fires when...
+ALTER Any database object is altered using the SQL ALTER command
+ANALYZE Any database object is analyzed using the SQL ANALYZE command
+ASSOCIATE STATISTICS Statistics are associated with a database object
+AUDIT Auditing is turned on using the SQL AUDIT command
+COMMENT Comments are applied to a database object
+CREATE Any database object is created using the SQL CREATE command
+DDL Any of the events listed here occur
+DISASSOCIATE STATISTICS Statistics are disassociated from a database object
+DROP Any database object is dropped using the SQL DROP command
+GRANT Privileges are granted using the SQL GRANT command
+NOAUDIT Auditing is turned off using the SQL NOAUDIT command
+RENAME A database object is renamed using the SQL RENAME command
+REVOKE Privileges are revoked using the SQL REVOKE command
+TRUNCATE A table is truncated using the SQL TRUNCATE command
+
+Available Attributes
+ORA_CLIENT_IP_ADDRESS IP address of the client.
+ORA_DICT_OBJ_NAME Name of the database object affected by the firing DDL.
+ORA_DICT_OBJ_OWNER Owner of the database object affected by the firing DDL.
+ORA_IS_DROP_COLUMN TRUE if the specified COLUMN_NAME argument is indeed being dropped, or FALSE if not.
+ORA_LOGIN_USER Name of the Oracle user for which the trigger fired.
+ORA_SQL_TXT Number of lines in the SQL statement firing the trigger. The SQL_TXT argument returns each line of the statement, which is an argument of type DBMS_STANDARD.ORA_NAME_LIST_T.
+
+Creating a Database Event Trigger
+The syntax used to create these triggers is quite similar to that used for DDL triggers:
+1 CREATE [OR REPLACE] TRIGGER trigger_name
+2 {BEFORE | AFTER} {database_event} ON {DATABASE | SCHEMA}
+3 DECLARE
+4 Variable declarations
+5 BEGIN
+6 ...some code...
+7 END;
+
+STARTUP
+Fires when the database is opened.
+SHUTDOWN
+Fires when the database is shut down normally.
+SERVERERROR
+Fires when an Oracle error is raised.
+LOGON
+Fires when an Oracle database session begins.
+LOGOFF
+Fires when an Oracle database session terminates normally.
+DB_ROLE_CHANGE
+Fires when a standby database is changed to be the primary database or vice versa.
+
+No BEFORE STARTUP triggers, AFTER SHUTDOWN triggers, BEFORE LOGON triggers, AFTER LOGOFF triggers. Any attempt to create such triggers are stopped with appropriate error message like : ORA-30500: database open triggers and server error triggers cannot have BEFORE type
+
+INSTEAD OF Triggers
+INSTEAD OF triggers control insert, update, merge, and delete operations on views, not tables. They can be used to make nonupdateable views updateable and to override the default behavior of views that are updateable.
+
+1 CREATE [OR REPLACE] TRIGGER trigger_name
+2 INTEAD OF operation
+3 ON view_name
+4 FOR EACH ROW
+5 BEGIN
+6 ...code goes here...
+7 END;
+
+The USER_OBJECT_SIZE view gives you the following information about the size of
+the programs stored in the database:
+SOURCE_SIZE: Size of the source in bytes. This code must be in memory during compilation (including dynamic/automatic recompilation).
+PARSED_SIZE : Size of the parsed form of the object in bytes. This representation must be in memory when any object that references this object is compiled.
+CODE_SIZE : Code size in bytes. This code must be in memory when the object is executed.
+
+SELECT RPAD (' ', 3*(LEVEL-1)) || name || ' (' || type || ') '
+FROM user_dependencies
+CONNECT BY PRIOR RTRIM(name || type) =
+RTRIM(referenced_name || referenced_type)
+START WITH referenced_name = 'name' AND referenced_type = 'type'
+
+ALTER SYSTEM SET PLSQL_WARNINGS='ENABLE:ALL';
+
+What tracing utilities already do exist?
+DBMS_APPLICATION_INFO.SET_MODULE (module_name => 'DEPARTMENT FIXES' ,action_name => null);
+DBMS_APPLICATION_INFO.SET_ACTION (action_name => 'GET COUNT IN DEPT');
+<some block of code>
+DBMS_APPLICATION_INFO.SET_ACTION (action_name => 'REASSIGN EMPLOYEES');
+<some block of code>
+DBMS_APPLICATION_INFO.SET_ACTION (action_name => 'DROP DEPT');
+DELETE FROM departments WHERE department_id = deptno_IN;
+COMMIT;
+DBMS_APPLICATION_INFO.SET_MODULE(null,null);
+exception
+..
+
+
+To turn on tracing from all programs executed in your session, issue this call:
+DBMS_TRACE.SET_PLSQL_TRACE (DBMS_TRACE.trace_all_calls);
+To turn on tracing for all exceptions raised during the session, issue this call:
+DBMS_TRACE.SET_PLSQL_TRACE (DBMS_TRACE.trace_all_exceptions);
+You then run your code. When you are done, you stop the trace session by calling:
+DBMS_TRACE.CLEAR_PLSQL_TRACE;
+
+The trace files produced by DBMS_TRACE can get really big. To enable a specific program for tracing, you can alter the session to enable any programs
+that are created or replaced in the session. To take this approach, issue this command:
+ALTER SESSION SET PLSQL_DEBUG=TRUE;
+
+If you don’t want to alter your entire session, you can recompile a specific program unit in debug mode as follows (not applicable to anonymous blocks):
+ALTER [PROCEDURE | FUNCTION | PACKAGE BODY] program_name COMPILE DEBUG;
+
+After you have enabled the programs you’re interested in, issue the following call to initiate tracing just for those program units:
+DBMS_TRACE.SET_PLSQL_TRACE (DBMS_TRACE.trace_enabled_calls);
+
+You can also restrict the trace information to only those exceptions raised within enabled programs with this call:
+DBMS_TRACE.SET_PLSQL_TRACE (DBMS_TRACE.trace_enabled_exceptions);
+
+
+
+Here is an example that looks at the memory required by objects in the shared pool
+immediately after database startup:*
+SQL> SET SERVEROUTPUT ON SIZE 1000000
+SQL> EXEC DBMS_SHARED_POOL.sizes(minsize => 125)
+SIZE(K) KEPT NAME
+------- ------ ---------------------------------------------------------------
+433 SYS.STANDARD (PACKAGE)
+364 SYS.DBMS_RCVMAN (PACKAGE BODY)
+249 SYSMAN.MGMT_JOB_ENGINE (PACKAGE BODY)
+224 SYS.DBMS_RCVMAN (PACKAGE)
+221 SYS.DBMS_STATS_INTERNAL (PACKAGE)
+220 SYS.DBMS_BACKUP_RESTORE (PACKAGE)
+125 MERGE INTO cache_stats_1$ D USING (select * from table(dbms_sta
+ts_internal.format_cache_rows(CURSOR((select dataobj# o, st
+atistic# stat, nvl(value, 0) val from gv$segstat where stat
+istic# in (0, 3, 5) and obj# > 0 and inst_id = 1) union all
+(select obj# o, 7 stat,nvl(sum(num_buf), 0) val from x$kcb
+oqh x where inst_id = 1 group by obj#) order by o))) wh
+(20B5C934,3478682418) (CURSOR)
+
+The “minsize => 125” means “show only objects that are 125K or larger.” This output shows that the package STANDARD occupies the most shared memory, 433K.
