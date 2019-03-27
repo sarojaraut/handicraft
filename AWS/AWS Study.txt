@@ -14,58 +14,6 @@ PaaS is more of a development solution than a production environment solution. A
 Planning for too much capacity is better than for not enough, but getting the configuration as close as possible to what you need will always help financially.
 
 
-
-
-select ri_ut_run( i_package_name => 'ut_ords_valid_order', i_package_name => 'ITTR1') from dual
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-I had detailed discussion with my current sponsor for my resignation and It will be extremely difficult for me to resign before 31st March. The earliest I can join RI as a permanent employee is 1st April 2018. Not sure if the date is still acceptable by you, if not then do let me know at the earliest I'll go back to the damage control mode. I don't want to ruin the relationship with them
-
-I am really sorry for the incovinience, but this is the worst case scenario I've anticipated for.
-
-
-three months notice. 
-
-
 internal-transit-dev-ecs-1-1590837308.eu-west-1.elb.amazonaws.com
 internal-transit-dev-ecs-1-1590837308.eu-west-1.elb.amazonaws.com
 
