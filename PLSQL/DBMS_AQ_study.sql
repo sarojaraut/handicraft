@@ -123,8 +123,6 @@ select count(*) from aq$_<queue_table>_t;
 select count(*) from aq$_<queue_table>_p; (optional / spill / Streams related)
 select count(*) from aq$_<queue_table>_d; (optional / spill / Streams related)
 
-
-
 ------------------
 http://docstore.mik.ua/orelly/oracle/bipack/ch05_04.htm
 
@@ -305,3 +303,32 @@ message_properties:
   https://docs.oracle.com/database/121/ARPLS/t_aq.htm#ARPLS71690
 payload : Not interpreted by Oracle Database Advanced Queuing. 
 msgid : System generated identification of the message. 
+
+
+Administrative Views Configuration
+   DBA_QUEUE_TABLES
+   DBA_QUEUES
+   DBA_QUEUE_SUBSCRIBERS
+   DBA_QUEUE_SCHEDULES
+Run-time
+   V$AQ
+   V$BUFFERED_QUEUES
+   V$BUFFERED_PUBLISHERS
+   V$BUFFERED_SUBSCRIBERS
+
+PL/SQL Interface
+DBMS_AQADM – Administrative control
+   Create/Alter/Drop Queue Table
+   Create/Drop Queue
+   Start/Stop Queue
+   Enable/Disable Propagation
+   Schedule/Unschedule Propagation
+   Add Subscriber, 
+   Remove Subscriber  ...
+DBMS_AQ– Run-time control
+   Enqueue/Dequeue,
+   Enqueue_array/Dequeue_array
+   ListenRegister,
+   Post, ...
+DBMS_TRANSFORM
+   Create transformation  [between 2 queues of differing types]
