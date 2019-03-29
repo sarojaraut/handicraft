@@ -1,23 +1,3 @@
-select j.PO_DOCUMENT.CostCenter, count(*)
-from J_PURCHASEORDER j
-group by j.PO_DOCUMENT.CostCenter
-order by j.PO_DOCUMENT.CostCenter
-/
-
-select j.PO_DOCUMENT
-from J_PURCHASEORDER j
-where j.PO_DOCUMENT.PONumber = 450
-/
-
-select j.PO_DOCUMENT.Reference,
-j.PO_DOCUMENT.Requestor,
-j.PO_DOCUMENT.CostCenter,
-j.PO_DOCUMENT.ShippingInstructions.Address.city
-from J_PURCHASEORDER j
-where j.PO_DOCUMENT.PONumber = 450
-/
-
-
 JSON_VALUE:  to select one scalar value in the JSON data and return it to SQL. (JSON_VALUE is the ‘bridge’ from a JSON value to a SQL value).
 JSON_EXISTS: a Boolean operator typically used in the WHERE clause to filter rows based on properties in the JSON data.
 JSON_QUERY: an operator to select (scalar or complex) value in the JSON data. In contrast to JSON_VALUE which always returns one scalar value, JSON_QUERY returns a JSON value (object or array). With JSON_QUERY a user can also select multiple values and have them wrapped inside a JSON array.
@@ -176,7 +156,7 @@ WHERE JSON_EXISTS (custData, '$.status?(@ == "Gold")');
 -- 2
 
 why you cannot use JSON_VALUE or JSON_QUERY in the WHERE clause in stead of JSON_EXISTS? There are a couple of reasons:
-1. JSON_EXISTS checks for the existence of a value. Since JSON can have a ‘null’ value one could not differentiate a JSON ‘null’ from a missing value in JSON_VALUEJSON_EXISTS checks for the existence of a value. Since JSON can have a ‘null’ value one could not differentiate a JSON ‘null’ from a missing value in JSON_VALUE
+1. JSON_EXISTS checks for the existence of a value. Since JSON can have a ‘null’ value one could not differentiate a JSON ‘null’ from a missing value in JSON_VALUE.
 2. JSON_QUERY is not suitable to compare the selected value(s) with one scalar value on contrary JSON_VALUE can only select and return scalar
 values so it is practically impossible to check every element of an array like in third row of above example.
 
@@ -252,7 +232,7 @@ select
 }
 ' as json_data from dual)
 SELECT jt.*
-FROM feed_data fd,
+FROM feeddata fd,
      JSON_TABLE(json_data,
         '$.data[*]'              -- we need to tell it when to start a new row. 
         -- this row path expr selects every item of the collection (array) that we want to project as a separate row
@@ -264,7 +244,7 @@ FROM feed_data fd,
         "Type"           VARCHAR2(20)               PATH '$.type',
         "ShareCount"     NUMBER                     PATH '$.shares.count' DEFAULT 0 ON ERROR,
         "HasComments"    NUMBER EXISTS              PATH '$.comments',
-        "Comments"       VARCHAR2(4000) FORMAT JSON PATH '$.comments'
+        "Comments"       VARCHAR2(4000) FORMAT JSON PATH '$.comments' -- FORMAT JSON is must here if returning json segment, otherwise it would return/error
         )
     ) jt;
 -- Query extracts the values of the fields and gives us one row per value.
@@ -272,13 +252,13 @@ FROM feed_data fd,
 --So how do we drill down into nested array? The answer is to add a NESTED PATH with a new COLUMNS clause to the JSON_TABLE:
 
 SELECT jt.*
-   FROM feed_data,
+   FROM feeddata,
         JSON_TABLE(json_data, '$.data[*]' 
         COLUMNS (
           "Message"                     PATH '$.message',
           "Type"           VARCHAR2(20) PATH '$.type',
           "ShareCount"      NUMBER      PATH '$.shares.count' DEFAULT 0 ON ERROR,
-          NESTED                 PATH '$.likes.data[*]' 
+          NESTED PATH '$.likes.data[*]' 
           COLUMNS (
             "Author"             PATH '$.name'
 ))) "JT";
@@ -327,13 +307,12 @@ ADD CONSTRAINT ensure_json CHECK (color IS JSON STRICT);
 
 INSERT INTO colorTab
 VALUES(1, utl_raw.cast_to_raw ('
-
 {
 "color": "black",
 "rgb": [0,0,0],
 "hex": "#000000"
 
-} '));
+}'));
 
 --  ‘utl_raw.cast_to_raw’ performs the type casting so that the insert succeeds if you issue the insert operation inside SQL (e.g. in SQL-Plus or SQLDeveloper). 
 
@@ -369,12 +348,66 @@ INTO colorTab VALUES(1, clobToBlob ('
 
 }'));
 
-
-https://blogs.oracle.com/jsondb/the-new-sqljson-query-operators-part4%3a-jsontable
-https://blogs.oracle.com/jsondb/the-new-sqljson-query-operators-part5%3a-jsontable%2c-nested-path%2c-ordinality-column
-
 --JSON_EXISTS takes a path expression (potentially with a predicate) and checks if such path selects one (or multiple) values in the JSON data.
 --The Address object is returned as JSON text in a VARCHAR2(4000).
+
+CREATE TABLE j_purchaseorder(
+    id RAW (16) NOT NULL,
+    date_loaded TIMESTAMP(6) WITH TIME ZONE,
+    po_document CLOB CONSTRAINT ensure_json_1 CHECK (po_document IS JSON)
+);
+
+INSERT INTO j_purchaseorder
+  VALUES (
+    SYS_GUID(),
+    SYSTIMESTAMP,
+    '{"PONumber"              : 1600,
+      "Reference"             : "ABULL-20140421",
+       "Requestor"            : "Alexis Bull",
+       "User"                 : "ABULL",
+       "CostCenter"           : "A50",
+       "ShippingInstructions" : {"name"   : "Alexis Bull",
+                                 "Address": {"street"   : "200 Sporting Green",
+                                              "city"    : "South San Francisco",
+                                              "state"   : "CA",
+                                              "zipCode" : 99236,
+                                              "country" : "United States of America"},
+                                 "Phone" : [{"type" : "Office", "number" : "909-555-7307"},
+                                            {"type" : "Mobile", "number" : "415-555-1234"}]},
+       "Special Instructions" : null,
+       "AllowPartialShipment" : true,
+       "LineItems" : [{"ItemNumber" : 1,
+                       "Part" : {"Description" : "One Magic Christmas",
+                                 "UnitPrice"   : 19.95,
+                                 "UPCCode"     : 13131092899},
+                       "Quantity" : 9.0},
+                      {"ItemNumber" : 2,
+                       "Part" : {"Description" : "Lethal Weapon",
+                                 "UnitPrice"   : 19.95,
+                                 "UPCCode"     : 85391628927},
+                       "Quantity" : 5.0}]}');
+
+
+
+select j.PO_DOCUMENT.CostCenter, count(*)
+from J_PURCHASEORDER j
+group by j.PO_DOCUMENT.CostCenter
+order by j.PO_DOCUMENT.CostCenter
+/
+
+select j.PO_DOCUMENT
+from J_PURCHASEORDER j
+where j.PO_DOCUMENT.PONumber = 450
+/
+
+select j.PO_DOCUMENT.Reference,
+j.PO_DOCUMENT.Requestor,
+j.PO_DOCUMENT.CostCenter,
+j.PO_DOCUMENT.ShippingInstructions.Address.city
+from J_PURCHASEORDER j
+where j.PO_DOCUMENT.PONumber = 450
+/
+
 select j.PO_DOCUMENT.ShippingInstructions.Address
 from J_PURCHASEORDER j
 where j.PO_DOCUMENT."PONumber" = 450
@@ -430,17 +463,15 @@ where JSON_VALUE(PO_DOCUMENT ,'$.PONumber' returning NUMBER(10)) = 450
 -- Relational access to JSON content using JSON_TABLE
 select M.*
 from J_PURCHASEORDER p,
-JSON_TABLE(
-p.PO_DOCUMENT ,
-'$'
-columns
-PO_NUMBER NUMBER(10) path '$.PONumber',
-REFERENCE VARCHAR2(30 CHAR) path '$.Reference',
-REQUESTOR VARCHAR2(32 CHAR) path '$.Requestor',
-USERID VARCHAR2(10 CHAR) path '$.User',
-COSTCENTER VARCHAR2(16 CHAR) path '$.CostCenter',
-TELEPHONE VARCHAR2(16 CHAR) path '$.ShippingInstructions.Phone[0].number'
-) M
+    JSON_TABLE( p.PO_DOCUMENT , '$'
+    COLUMNS
+        PO_NUMBER   NUMBER(10)        path '$.PONumber',
+        REFERENCE   VARCHAR2(30 CHAR) path '$.Reference',
+        REQUESTOR   VARCHAR2(32 CHAR) path '$.Requestor',
+        USERID      VARCHAR2(10 CHAR) path '$.User',
+        COSTCENTER  VARCHAR2(16 CHAR) path '$.CostCenter',
+        TELEPHONE   VARCHAR2(16 CHAR) path '$.ShippingInstructions.Phone[0].number'
+    ) M
 where PO_NUMBER between 450 and 455
 /
 
@@ -531,7 +562,7 @@ JSON_VALUE( PO_DOCUMENT, '$.ShippingInstructions.Address.zipCode' returning NUMB
 )
 /
 
---JSON Generation
+--*** JSON Generation ***
 
 -- JSON_ARRAY : JSON_ARRAY returns each row of data generated by the SQL query as a JSON Array
     -- JSON_ARRAY(expr FORMAT JSON NULL ON NULL RETURNING CLOB)
@@ -548,9 +579,14 @@ JSON_VALUE( PO_DOCUMENT, '$.ShippingInstructions.Address.zipCode' returning NUMB
     -- [10]
     -- [20]
     -- [30]
+    SELECT JSON_ARRAY(department_id, DEPARTMENT_NAME,MANAGER_ID RETURNING VARCHAR2(100)) ID_NUMBERS FROM departments where department_id <= 30;
+    -- [10,"Administration",200]
+    -- [20,"Marketing",201]
+    -- [30,"Purchasing",114]
+    --! multiple columns like above is not liked by json_arrayagg
 
 -- JSON_OBJECT : takes one or more property key-value pairs as input. returns object member for each of those key-value pairs. 
-    -- JSON_OBJECT(KEY string VALUE expr FORMAT JSON NULL ON NULL RETURNING CLOB)
+    -- JSON_OBJECT(KEY key_expr VALUE value_expr FORMAT JSON NULL ON NULL RETURNING CLOB)
     -- KEY is optional and is provided for semantic clarity. 
     -- string specifies the property key name as a case-sensitive text literal. 
     -- expr is any expression that evaluates to a SQL numeric literal or text literal.
@@ -561,8 +597,11 @@ JSON_VALUE( PO_DOCUMENT, '$.ShippingInstructions.Address.zipCode' returning NUMB
     --* select json_object('name' value 'saroj' format json null on null returning clob) from dual;
     --* select json_object('name' is 'saroj' format json null on null returning clob) from dual;
     --* select json_object('name' is 'Saroj', 'surname' is 'Raut' format json null on null returning clob) from dual;
+    -- {"name":"Saroj","surname":Raut}
 -- JSON_OBJECTAGG :  makes it easy to generate a JSON object from data that has been stored using Key, Value pair storage.
-    -- JSON_OBJECT(KEY string VALUE expr FORMAT JSON NULL ON NULL RETURNING CLOB)
+    -- JSON_OBJECTAGG(KEY key_expr VALUE value_expr FORMAT JSON NULL ON NULL RETURNING CLOB)
+    -- Similar to JSON_OBJECT but consolidates all key value pais for each row into one object. Unlike JSON_OBJECT
+    -- this will only accept two columns if KEY key_expr VALUE value_expr is selected by a select query
 
     SELECT JSON_OBJECT(KEY department_name VALUE department_id) "Department Numbers"
     FROM departments
@@ -573,26 +612,23 @@ JSON_VALUE( PO_DOCUMENT, '$.ShippingInstructions.Address.zipCode' returning NUMB
 
     SELECT JSON_OBJECTAGG(KEY department_name VALUE department_id) "Department Numbers"
     FROM departments
-    -- WHERE department_id <= 30;
+    WHERE department_id <= 30;
     -- {"Administration":10,"Marketing":20,"Purchasing":30}
-
     select 
         json_object( 
             'departments' is (
-                select 
-                    json_arrayagg(
-                    json_object( 
-                        'departmentid' is d.department_id, 
-                        'name'         is d.department_name, 
-                        'manager'      is d.manager_id,
-                        'location'     is d.location_id 
-                        )
-                    )  
-                from hr.departments d
-                where department_id <=20
+                json_arrayagg(
+                json_object( 
+                    'departmentid' is d.department_id, 
+                    'name'         is d.department_name, 
+                    'manager'      is d.manager_id,
+                    'location'     is d.location_id 
+                    )
+                )  
             )
         )
-    from dual
+    from hr.departments d
+    where department_id <=20
     /
     --{"departments":[{"departmentid":10,"name":"Administration","manager":200,"location":1700},{"departmentid":20,"name":"Marketing","manager":201,"location":1800}]}
 
@@ -1142,10 +1178,6 @@ $.friends[3].addresses?(@.city == "San Francisco" && @.state == "Nevada") – An
 https://docs.oracle.com/en/database/oracle/oracle-database/18/adjsn/json-path-expressions.html#GUID-D951D27D-6918-40E8-8A0D-8D60AB83FD4A
 
 https://docs.oracle.com/en/database/oracle/oracle-database/18/adjsn/function-JSON_TABLE.html#GUID-0172660F-CE29-4765-BF2C-C405BDE8369A
-
-
-
-
 
 -- Create new pluggable database. You may not need that if you are running in a non-CDB environment.
 CREATE PLUGGABLE DATABASE TEST ADMIN USER ADMIN IDENTIFIED BY ADMIN
