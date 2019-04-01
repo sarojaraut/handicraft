@@ -43,7 +43,23 @@ SELECT XMLELEMENT("employee",
 FROM   emp e
 WHERE  e.deptno = 10;
 
+SELECT XMLELEMENT("employee",
+         XMLFOREST(
+           e.employee_id AS "works_number",
+           e.first_name  AS "name")
+       ) AS employees
+FROM   employees e
+WHERE  e.department_id <= 20;
+
 -- Above query returns as three fragments in three separate rows.
+
+SELECT XMLAGG(XMLELEMENT("employee",
+         XMLFOREST(
+           e.employee_id AS "works_number",
+           e.first_name  AS "name")
+       )) AS employees
+FROM   employees e
+WHERE  e.department_id <= 20;
 
 -- Below query 
 SELECT XMLAGG(
