@@ -1,0 +1,332 @@
+ Computing Service Models
+• Infrastructure as a Service (IaaS) : Provides physical/virtual server, storage, firewall, vlan. the consumer is responsible for patching and maintaining the operating system and the application software.
+• Platform as a Service (PaaS) : the consumer is not responsible for managing the underlying infrastructure and doesn’t administer the underlying cloud components such as the operating system,
+• Software as a Service (SaaS) : you just pay for usage
+
+Cloud Deployment Models
+
+• Public cloud : 
+    computing resources are present in the cloud service provider’s datacenter and are shared with various consumers in a multi-tenant architecture. The disadvantage is that you don’t have full control of your computing resources. You can’t use this model when there are local laws that prevent you from keeping your data outside your premises.
+
+    Oracle provides the following services in Oracle cloud:
+    • Oracle Database Cloud Service, Virtual Image: IaaS offering to run Oracle database
+    • Oracle Database Cloud Service: IaaS/PaaS offering to run Oracle database
+    • Oracle Database Exadata Cloud Service: IaaS offering for running Oracle on Exadata machines
+    • Schema as a Service: SaaS offering to run Oracle database
+
+• Private cloud
+    In this deployment model, computing resources are placed on-premise. There is one more option here in which computing resources are placed at the cloud provider’s premises, but all of these are dedicated for consumers. The major advantage of this model is that you have full control of your resources and you can meet any local laws requiring data be kept in your datacenter.
+• Hybrid cloud
+    This deployment model provides the best of the public and private cloud options. For example, some applications can’t move to a public cloud since they are running on end-of-life software, so they remain in a private cloud. This model is the future of cloud computing and world is moving toward it.
+• Community cloud
+    In the community cloud model, cloud infrastructure is provisioned for the community. Here community refers to organizations that have shared objectives. This cloud deployment model is not very popular, but it does fall into the official NIST definition, hence it is mentioned here.
+
+Metering and Chargeback : Oracle database pricing (chargeback) is divided into two categories:
+    • Metered: A pay-as-you-go model where no upfront payment is required and invoices are generated on a monthly basis for actual use on an hourly basis.
+    • Non-metered: A monthly pricing. Per hour pricing is not applicable here.
+
+Within each of these categories, there are three options:
+1. Oracle Database as a Service
+2. Oracle Database Exadata cloud service
+3. Oracle Database Virtual Image
+In Oracle Database as a Service, Oracle software is installed and Oracle database is created using the option you provide. The database management tools are available for backup, recovery, and patching.
+In Oracle Database Virtual Image, you get Oracle software pre-installed on Oracle cloud virtual machine. Database instances are not created automatically, but you can do that using DBCA or manually. Here, you don’t get any additional cloud tools.
+In the Exadata cloud service, you get Exadata quarter, half, and full rack in a hosted environment.
+
+-- Chapter 2 : Introduction to Database as a Service DBaaS
+DBaaS is offered in IaaS, PaaS, and SaaS models.
+
+Oracle Public Cloud Offering : Oracle offers the following three DB-related services in the cloud. They are all categorized into Platform as a Service, except for Oracle Database Virtual Image option, which is an IaaS offering.
+• Schema as a Service
+• Database as a Service
+• Oracle Database Cloud Exadata Service
+
+
+Schema as a Service
+    In this scenario, you can get one schema of 5, 20, or 50GB. This schema is encrypted and created on an 11g (11.2.0.4) database. This is fully managed by Oracle. As a DBA, you don’t need to perform any administration tasks. To access and work on this schema, you get three options—via APEX, by using RESTful web services, or by SQL Developer. You don’t get direct connectivity using SQL*Net. This service runs on Exadata and it is very good for faster application development. It is highly scalable and available.
+
+    Some of the limitations of this offering are as follows:
+    • No instance-level changes allowed
+    • No access to underlying hardware or OS
+    • No storing of files on a filesystem
+    • No installation of any application
+    • No access using Oracle net services
+
+Database as a Service
+In this service, you have two service levels : Oracle Database Cloud Service: Virtual Image and Oracle Database Cloud Service
+
+Oracle Database Cloud Service: Virtual Image
+
+    In this offering, you get Oracle software pre-installed on Oracle cloud virtual machine. You can get started by simply creating the database using DBCA or using a silent installation. This is more of IaaS offering, but Oracle classifies it as PaaS since Oracle binaries are also preinstalled. Here, all the DB maintenance operation is your responsibility. Besides using Oracle’s given tools, you can use third-party tools and custom scripts to manage your database.
+
+Oracle Database Cloud Service
+    In this offering, you get software along with Oracle database. This database is created as per the specifications you provide. This option also gives you cloud tools for doing backups, recovery, patching, upgrading, and monitoring. These tools are as follows:
+    • bkup_api
+    • orec subcommand of the dbaascli utility
+    • dbpatchm subcommand of the dbaascli utility
+    • DBaaS monitor
+    • raccli utility
+
+    In both of these service levels, you have two billing options:
+    • Hourly
+    • Monthly
+
+    From an Edition perspective, you have four choices:
+    • Standard Edition (SE): Full database instance with up to 16 OCPUs
+    • Enterprise Edition (EE): Comes with all standard features of Enterprise Edition (EE), plus DataGuard and Transparent Data Encryption (TDE)
+    • High Performance: Comes with all EE packs and options except RAC, RAC One node, in-memory, and Active DataGuard
+    • Extreme Performance: Comes with all EE packs and options except RAC One node
+
+    Category Shape  Name    Size
+    General Purpose OC3     1 OCPU, 7.5GB RAM
+    General Purpose OC4     2 OCPUs, 15GB RAM
+    General Purpose OC5     4 OCPUs, 30GB RAM
+    General Purpose OC6     8 OCPUs, 60GB RAM
+    General Purpose OC7     16 OCPUs, 120GB RAM
+    High Memory OC1M    1 OCPUs, 15GB RAM
+    High Memory OC2M    2 OCPUs, 30GB RAM
+    High Memory OC3M    4 OCPUs, 60GB RAM
+    High Memory OC4M    8 OCPUs, 120GB RAM
+    High Memory OC5M    16 OCPUs, 240GB RAM
+
+Oracle Database Cloud Exadata Service
+In this offering, you get database hosting on Exadata machines on Oracle cloud. This is very useful for mission-critical databases where you need consistently good performance.
+There are three configuration options:
+• Quarter rack: Two compute nodes and three storage cells
+• Half rack: Four compute nodes and six storage cells
+• Full rack: Eight compute nodes and 12 storage cells
+
+--* CHAPTER 3 Provisioning
+Database Provisioning in Oracle Cloud : At a high level, this can be divided into the following steps.
+1. Create Oracle Cloud subscription.
+2. Select Oracle Database Cloud offering.
+3. Create the service.
+
+1. Create Oracle Cloud subscription.
+    Subscribe and login to your oracle ccount https://cloud.oracle.com/home
+    Click on Database under the Platform (PaaS)
+2. Select Oracle Database Cloud offering.
+    There are two offerings available. The Database as a Service option will let you create database instances, whereas the Database Schema Service option will let you create a schema to be used as per your requirements.
+    you need to sign up for the subscription of Oracle Cloud services and move onto the next step.
+    After providing all the mandatory information a success message will be displayed.
+    That will also trigger an email with all details including temp password.
+    Now you are ready to create your database using Oracle Public cloud services. Select Oracle Database Cloud Service
+    You can choose to follow the tutorials or directly jump to DB creation by clicking Go to Console button.
+    Once you’re inside Oracle Database Cloud Service, you have to click on the Create Service button to start the DB provisioning process
+3. Create the service.
+    Service creation is five-step process:
+        1. Subscription : Oracle Database Cloud Service or Oracle Database Cloud Service Virtual Image and choose billing frequency, hourly or monthly
+        2. Release : 11g, 12c or 
+        3. Edition : SE, EE, EE- High availability, EE - Extreme Performance
+        4. Configuration Details : Service name, Description, shape(OC3, OC4 etc), Timezone and ssh pub key. Usable data storage, total storage, sid, pdb name, admin password, char set, back destination, cloud storage user name, cloud storage password. 
+        Once you provide all this information, a summary will be displyed for review before submitting the actual database creation request.
+        5. Confirmation :         Once you click the Create button, the request is submitted for creating your database. The progress is updated under the Services page. It takes around half an hour to get your database ready. Once it’s ready, public IP and port information is available at the service page
+        You can access your database with different methods, including local SQL Plus, SQL Developer, DBaaS monitor, APEX, and EM Console.
+You now need to enable access rules for DBaaS and DB Listener so that you can access your database using DBaaS Monitor and SQL Developer.
+
+Database Provisioning in AWS
+
+AWS has an offering under Relational Database Services (RDS) where you can create your Oracle database. There is also option to create your database using EC2. RDS is a managed service offering where Amazon handles most of the administration tasks, including DB backup, space allocation, etc.
+    go to http://aws.amazon.com/ and sign up or sign in by providing the required details.
+    select RDS under Database from the Amazon Web Services page.
+    Select Launch DB Instance from the Instances menu to start the DB provisioning steps
+    It is four-step process
+    1. Engine Selection : EE, SE, SE One, SE Two. Only SE One has the option of license included. for all others, you need to bring your own Oracle DB license (BYOL).
+    2. DB environment specification : You can choose bring-your-own-license (BYOL) and use the DB instance for non-production purposes with no need to pay for a license
+    3. Specifying the DB details : version, CPU and memory details, storage type and size, along with a username and password for DB administrator. DB Instance Class allows you to select the CPU and memory requirements for your instance.
+        • Micro
+        • Small
+        • Medium
+        • Large
+        • Extra Large
+    4. Configuring the advanced settings :you can go with default virtual private cloud or let AWS create a new one for you. The public accessibility setting needs to be set to Yes or No, based on the connectivity and access requirements. You should select Yes if you want the public IP address to be assigned to your DB server so that it is accessible from outside of the VPC. Select the database options and backup settings, which are self-explanatory
+    Once you submit the request for DB provisioning, the instance creation process will start. After your instance is created, you can start monitoring it online or access it remotely using SQL Developer and other tools. As RDS is a managed service offering, there are lots of metrics provided by AWS in terms of ready-made monitoring. You can monitor CPU utilization, read-write operations, storage space, session count, free memory, and more.
+Accessing Your AWS RDS Instance
+To access your newly created database instance remotely, its Publically Accessible configuration should be set to Yes. You need to use the endpoint string as hostname when connecting using SQL Developer.
+Additionally, you need to edit the inbound rules to allow specific IPs for the port where the listener services are running. Inbound settings can be opened using the following navigation path. Choose EC2 Dashboard ➤ Network & Security ➤ Security Groups and then click the Inbound tab on the lower half of the page.
+
+-- * CHAPTER 4 : High Availability Options
+Cloud service providers have built-in high availability at every layer, including the hardware level, the network level, the storage level, and so on, so the obvious question that comes to one’s mind is, why do we need to consider Oracle database high availability for our cloud databases?
+
+Although the infrastructure provided by Oracle Cloud, AWS, and other cloud providers is highly available, it doesn’t protect you from all kind of failures. For example, consider an availability zone failure in AWS, which would cause your DB to go down if your database is running in only one availability zone. Similarly, a region-level failure (admittedly a very unlikely event) would cause your DB to go down even if you have used a Multi-AZ deployment.
+
+To protect from such failures and to keep your application available, you need to think about high availability (HA) and disaster recovery options.
+
+The following are key terms related to high availability:
+• Recovery Time Objective (RTO): Specifies the time that is allowed for recovery. Higher RTO is good for DBAs but critical businesses require near zero or zero RTO by using Active-Active configuration across datacenters.
+• Recovery Point Objective (RPO): This specifies the amount of data loss that is allowed. For mission-critical financial systems, for example, an RPO value would be zero. However, for systems such as business warehouses, a few hours of data loss could be manageable since data can be reloaded from the source.
+
+Following are key considerations for choosing the right HA option:
+• RTO and RPO requirements around unplanned outages and planned maintenance
+• Total cost of ownership (TCO)
+• Enterprise architecture and IT architecture strategy
+• Return on investment (ROI)
+
+HA Options in Oracle Cloud
+Higher RTO, rolling upgrades and patching, transparent application failovers, and many more features make Oracle RAC, one of the best HA options for Oracle database.
+Oracle RAC is available in Oracle Cloud. The following section describes the step-by-step process for provisioning Oracle RAC.
+
+1. Log in to Oracle Database cloud service to launch the service console.
+2. Click on Create Service from services.
+3. Select the service level. Oracle database could service or Oracle database could service - virtual image
+4. Select the software release. : Oracle 12C or higher
+5. Select the software edition. : EE EXtreme performance
+6. Select the database clustering with RAC option. : Check the Database Clustering with RAC option, which is present under Database configuration on the Service Details page.
+7. Provide details for the service configuration and database configuration.: If you are using a trial account, select Shape with two OCPUs; otherwise you will get the error
+8. Verify the details and click on Create.
+9. Check the RAC DB creation status.
+
+To manage this RAC database, Oracle has provided the raccli utility. Be sure to note the public IP of these nodes.
+
+Connecting to Your RAC Database Servers Using PuTTY : Connect using SSH and give the key file path under SSH -> AUTH. Host IP of bpth the nodes can be used here to connect to the desired node.
+
+After connecting, you can run the raccli commands (Figure 4-12) to see the RAC system details. The raccli utility is covered in detail in the “Manage and Monitor” chapter (Chapter 9).
+
+To connect using sql developer we need to eneble the access rules for ora_p2_scan_listener rule: Action -> Access Rules.
+
+HA Options in AWS
+In AWS, you have Oracle RAC (in IaaS) and Multi-AZ deployment (in Amazon RDS) options to make your database highly available. This section includes Oracle RAC provisioning overview. You will also learn how to set up Oracle in Multi-AZ deployment. RAC provisioning in AWS is a very complex process with several manual steps. Oracle doesn’t certify and support this.
+
+Overview of the Multi-AZ Deployment Option
+AWS has a feature called Multiple Availability Deployment for Oracle RDS. In this deployment option, you can deploy your primary database instance in one availability zone and standby database instance in another availability zone, all in the same region. These DB instances utilize synchronous replication. Automatic failover occurs during planned maintenance, primary DB failure, or availability zone failure situations. This is a snapshot-based replication and not related to DataGuard. Implementation of the Multi-AZ deployment is a very simple one-click operation. You can specify this during the instance provisioning or can do this change afterward, Select YES for "Multi-AZ deployment" during instance provisioning.
+
+Amazon RDS does automatic failover in case of any failure of the primary DB. It also changes the DNS record of the DB instance and points it to a standby instance. Hence, you don’t need any changes at the application end to connect to the standby instance. Automatic failover occurs in the following conditions:
+• Availability zone outage
+• DB instance failure
+• OS patching of DB server
+• DB server type change
+
+You have the option of performing a manual failover by doing the DB reboot using the failover option. Instance action -> reboot -> select the check box restart with failover
+
+-- * CHAPTER 5 Disaster Recovery Options
+
+Do we need DR in cloud? Same answer as do we need HA?
+
+The cloud is entirely built on commodity hardware, hence failures are likely there. These failures could be as big as a site failure, where the entire datacenter/availability zone/ region is unavailable, or the failure could be related to the DB server compute node failure or storage failure. Based on the criticality of your database, you can choose to have DR options for your database.
+
+DR Options in Oracle Cloud : DataGuard is an effective DR solution. Oracle Cloud can be used in two ways to provision your standby database:
+• Primary on-premise, DR in Oracle Cloud
+• Primary and DR both in Oracle Cloud
+The first option, using Oracle cloud as a DR, has the obvious benefits related to provisioning and maintaining a DR site, but it has its own challenges and complexities related to network latency, administration, and performance.
+
+At a high level, the following steps are performed to do "Primary on-premise, DR in Oracle Cloud" kind of configuration:
+1. Create Oracle instance in Oracle Cloud.
+2. Perform network configuration to enable on-premise DB connectivity with Cloud DB.
+3. Drop the database created as part of step 1.
+4. Instantiate a standby database using primary DB backup.
+5. Configure the standby database.
+
+In the second option, Oracle Cloud provides a fully automated setup of your primary and standby databases. Here, your primary and DR databases both reside in Oracle Cloud.
+
+Standby Database with DataGuard comes with two options:
+• High availability
+• Disaster recovery
+In high availability mode, you get DataGuard without disaster recovery, whereas in disaster recovery mode, you get DataGuard with disaster recovery. In other words, Data Guard with HA option ensures that your standby database is provisioned in different hardware in same data center whereas Data Guard with DR option ensures that your standby database is provisioned in different hardware in different data center.
+
+Step 1: Log in to Oracle database Cloud Service wizard.
+Step 2: Select Create Service and Choose Oracle Database Cloud Service in Service Level.
+Step 3: Select the required software release
+Step 4: Select the required software edition (anything except Standard Edition)
+Step 5: Fill in the required details in the Service Details page and select Standby Database with DataGuard.
+
+DataGuard Administration in Oracle Cloud : All of dataguard operations (e.g status check, switchover, failover, and reinstating failed primary databases.) can be done using the dbaascli utility or with Oracle database cloud service console. Let's say Oracle created two hosts—CloudDBDG-dg01 and CloudDBDG-dg02—with exactly the same configuration (1 OCPU, 15GB memory, and 187GB storage). SID ORCL is running as the primary DB on the CloudDBDG-dg01 server and as standby on the CloudDBDG-dg02 server.
+
+Performing DB Switchover Using the Console : Select switchover from action menu and click ok on confirmation menu. During the switchove(usually takes a few minutes), your DG setup will be shown in maintenance mode. During maintenance mode, application users won’t be able to connect to the database. After completion of the switchover, you will see the roles reversed.
+
+Performing DB Switchover Using dbaascli : connect to sqlplus as sysdba and run > dbaascli dataguard status --details yes
+This would return details of all inetsnce in JSON with database type for one as "PRIMARY" and other as "PHYSICAL_STANDBY".Now we can run
+> dbaascli dataguard switchover. After running the switchover command, you need to restart ORDS using the root user. ORDS stands for Oracle REST Data Service and is used to access the services over the Internet. /etc/init.d/ords restart 
+
+Performing DB Failover Using the Console : Click on Failover and click on on confirmation dialog box. It will take few minutes to complete the failover. Afterwards, the status of your primary database will be Reinstate, whereas your standby database will become Primary.
+
+Reinstating Failed Primary Database : You need to reinstate the old primary database after the failover, in order to make your old primary DB convert to the standby role. You can initiate this process by clicking on Reinstate. After The reinstate operation is completed, you will see that your primary database role has changed to Standby.
+
+DR Options in AWS : There are two DR options available in AWS:
+• Multi-AZ deployment : Details in HA setup section
+• DataGuard configuration : DataGuard configuration works in EC2 kind of setup.
+
+-- * CHAPTER 6 DB Security
+
+Cloud Security Model : It is a shared security model where you and the cloud provider share the responsibility of various components. Securing the datacenters and infrastructure is the cloud provider’s responsibility, whereas security of the database, storage, network, and accounts is the customer’s responsibility. In other words, security “of” the cloud is the cloud provider’s responsibility, whereas security “in” the cloud is your responsibility. Amazon and Oracle take care of following, which is what the cloud is made of:
+
+• Physical security of datacenter premises
+• Access control mechanism
+• Firewall and network security monitoring
+• Hypervisor security
+• OS-level patching and upgrade for managed services offering (such as Amazon RDS and Oracle Cloud) where you don’t get OS-level access
+
+As a DBA, your security responsibilities vary according to the DB hosting model. If you are using an IaaS kind of service, such as Oracle database running on Amazon EC2 instance, then you are responsible for securing your EC2 instance, your EBS/S3 storage, your network like VPC, and your database.
+
+If you are running a database in a managed service kind of offering, such as Amazon RDS or Oracle Schema as a Service then your security related responsibilities are limited to accounts and credential management. In this case, you don’t get OS-level access. This is explained in more detail in the next sections.
+
+Security Task List at Different Layers
+Layer Tasks
+VM • Securing your VM by defining network security policies
+OS • Securing your OS by patching and OS-level hardening
+Network • Securing your network by implementation of security groups,
+    • Network Access Control Lists (NACL)
+Database • Securing data that is stored inside the database by implementing TDE
+    • Securing your backups (RMAN/data pump) by encryption
+    • Securing your database using least privilege mechanism
+    • Securing your access to the database by database access control
+    • Securing data transfer by implementing SQL*Net encryption
+Oracle Cloud has two options for database security:
+    • Transparent Data Encryption (TDE)
+    • SQL*Net Encryption
+Transparent Data Encryption (TDE)
+Oracle Cloud automatically creates all new table spaces as encrypted (with the AES128 algorithm), whereas for on-premise databases, you have to explicitly mention ENCRYPT in the create tablespace clause.
+Security Configurations in AWS : Security in AWS can be categorized into three levels.
+• Security at the account level
+• Security for Oracle running on Amazon RDS
+• Security for Oracle running on Amazon EC2
+
+-- * CHAPTER 7 : DB Migration to the Cloud
+
+One migration method might not be suitable for your entire DB landscape migration to the cloud, hence you’ll need to identify a mix of migration methods to handle different needs.
+Let’s look at the factors/considerations for migrating a database to the cloud:
+• Database size: This is the single most important factor along with available downtime.
+• Database version and edition: Cloud providers do not support all editions or older DB versions like Oracle 10g and below, hence comparing the source DB version and edition with the allowed/available one is important.
+• ARCHIVELOG mode: Migration methods such as RMAN hot backup, DataGuard-based migration, and many other methods require databases to be running in ARCHIVELOG mode. This is why this information should be captured before deciding the migration method.
+• Migration level: Migration can be at different levels, such as DB server, DB schema, or even the table level.
+• OS endianness (Little endian/ big endian): Cloud providers do not support all OSs, hence chances of having to do a cross-platform migration is very high. For cross-platform migration, it is very important to know the OS endianness so that the appropriate migration method can be selected.
+• 32-bit/64-bit: 32-bit servers are not very common, but if you have very old legacy systems running on 32-bit, then you need to consider moving them as-is or converting them to 64-bit systems.
+• Physical/virtual: The cloud is mostly a virtual environment (except where physical hardware is provided by a cloud provider, like the Exadata cloud service, where Exadata is physically hosted in your datacenter). If you are running your Oracle database on a physical server, you will have to convert it into virtual server (P2V migration). Performance, licensing, supportability, certification, and many other factors come into the picture while doing such P2V migration.
+• Law of the land: Certain regulatory requirements might require you to keep your database in your own datacenter or in your country. You should consider such requirements while planning for migrating to the cloud.
+• Data security requirements: Certain databases might have SOX, HIPAA, PCI, or any other regulatory requirement for data security, and this will result in certain migration considerations for data at transit or data at rest.
+• Application nature (mission-critical/performance sensitive/big data): The application nature defines the downtime availability, hence it affects the migration method used.
+• Available downtime and available time for migration: Some database migrations might have zero or very little downtime. This is an important factor to remember while determining the migration method.
+• Network bandwidth between on-premise and the cloud: Network bandwidth plays an important role with large database migrations.
+• Application compatibility: While doing database migration, you need to consider whether the application is compatible with the proposed cloud deployment model.
+• Cloud provider (Oracle Cloud, AWS, or Microsoft Azure): Different cloud vendors have different migration methods. Amazon AWS has a database migration service called DMS, which is not available in Oracle Cloud.
+• Tools availability (OGG, OEM12c cloud control): Tools availability in your DB landscape will also play a critical role in deciding your tool-based migration method.
+• Cloud deployment model (IaaS, PaaS, DBaaS): The migration method depends on the database deployment model, for example, you can’t do a RMAN backup restore in Oracle Schema as a service deployment.
+• Cloud type (public/private): Migration methods for a private cloud in your own datacenter will be different than for a public cloud.
+
+Migration Lifecycle : Migration is multistep process; the different stages of the migration lifecycle are listed here:
+• Analyze
+• Identify
+• Prepare
+• Migrate
+• Validate
+
+These stages are best carried out as a pilot or dry run before planning for actual migration. The process can be iterative and may need multiple runs, as you may encounter issues that need fixing.
+
+At a high level, all DB migration method consists of three phases : Backup, transfer and restore.
+
+Backup : Backup means backup of DB server, database, schema, table, etc. You will go for a DB server level backup when you are moving to an IaaS or PaaS kind of offering. This is also called VM or server-level image. You can take database-level backups as physical or logical. Physical backups consist of RMAN or user-managed backups like hot or cold backups, whereas logical backups consist of database export dumps.
+
+Transfer : The Transfer phase refers to moving the backup to the cloud. The exact transfer method depends on the size and the network bandwidth. If the database is running into the terabytes (TB) and you don’t have sufficient bandwidth to copy it quickly, then special migration methods like hard disk shipping or Amazon Snowball are used. You might also need to apply acceleration methods (such as multipart upload, Tsunami UDP, S3 transfer acceleration, and AWS Direct Connect) to get the optimal migration time.
+
+Restore : The Restore phase refers to restoring the DB server image or restoring the database backups. You don’t see this phase in a few migration methods, such as with DB links or the MView refresh-based migration method.
+
+
+Migration Using Tools
+SQL Developer : has built-in capabilities to connect to the cloud database (Figure 7-3) and can also be used to migrate data from on-premise databases to the cloud.
+
+Migration Using DMS
+
+
+Migration Using AWS Snowball
+When porting your data over a network is a tough and time-consuming task due to data size and bandwidth issues, Snowball from AWS comes to the rescue. It is a travel bag-like device that secures and weatherproofs your data during transport.
+
+Create a data transfer job -> AWS ships the snowball depending on the size of data -> connect snow ball to LAN -> Load databackup -> send back snow ball to AWS -> AWS loads data to s3 -> restore DB to AWS. 

@@ -1,3 +1,7 @@
+sudo adds a log entry of the command(s) run (in /var/log/auth.log). If you mess up, you can go back and see what commands were run. 
+Allowing other users to run sudo : sudo adduser <username> sudo
+sudo --help
+
 Printing th nth line of a file
 head -<n> file.txt | tail -1
 sed �n '4 p' test  -- printing 4th line

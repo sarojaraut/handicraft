@@ -1,0 +1,88 @@
+Logstash is an open source tool designed to manage all of your server logs in a centralized location. Logstash acts as a data pipeline through which it processes the data from multiple servers and systems. Logstash can take inputs from TCP/UDP protocols, files, and log management systems, such as syslog-ng, rsyslog, and many more tools in the field that server administrators install to analyze server events.
+
+let’s say that you have a few servers running at different locations, and these are clusters or load-balancing servers for your web app. The beauty of Logstash is that it can be used in this scenario, as it allows you to have a master server wherein all of these nodes can send log data
+
+Logstash, Elasticsearch, and Kibana Setup
+The servers that are running Logstash agents are called shippers. They send log events of your applications and services to the Logstash server. The central Logstash server running services such as brokers, indexers, and storage interface with Kibana, which is a visualization tool.
+
+Installing Elasticsearch
+    wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+    echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-6.x.list
+
+    sudo apt update && sudo apt install elasticsearch
+
+    sudo vi /etc/elasticsearch/elasticsearch.yml and change value for network as network.host: localhost
+
+    http://localhost:9200/ should return the following json can also test using curl
+
+    curl -X GET "localhost:9200"
+
+    {
+    "name" : "yU2dD6V",
+    "cluster_name" : "elasticsearch",
+    "cluster_uuid" : "uRdPsiOpSUyxZcu4Ld4-Dg",
+    "version" : {
+        "number" : "6.7.0",
+        "build_flavor" : "default",
+        "build_type" : "deb",
+        "build_hash" : "8453f77",
+        "build_date" : "2019-03-21T15:32:29.844721Z",
+        "build_snapshot" : false,
+        "lucene_version" : "7.7.0",
+        "minimum_wire_compatibility_version" : "5.6.0",
+        "minimum_index_compatibility_version" : "5.0.0"
+    },
+    "tagline" : "You Know, for Search"
+    }
+
+    Now that Elasticsearch is up and running, let's install Kibana, the next component of the Elastic Stack.
+
+Installing Kibana
+    sudo apt install kibana
+    sudo systemctl enable kibana
+    sudo systemctl start kibana
+
+    Elastic Search : http://localhost:9200/
+    Kibana : http://localhost:5601/
+
+Installing and Configuring Logstash
+    sudo apt install logstash
+https://www.digitalocean.com/community/tutorials/how-to-install-elasticsearch-logstash-and-kibana-elastic-stack-on-ubuntu-18-04
+
+sudo service elasticsearch restart
+sudo service logstash  start
+
+/var/log/messages
+
+sudo setfacl -m u:logstash:r /var/log/syslog
+
+/etc/logstash/conf.d/05-syslog.conf
+
+input {
+  file {
+  path           => "/var/log/syslog"
+  start_position => beginning
+  }
+}
+output {
+elasticsearch {
+hosts => ["localhost:9200"]
+}
+stdout { codec => rubydebug }
+}
+
+sudo service logstash  stop
+sudo service elasticsearch  stop
+sudo service kibana  stop
+
+sudo service logstash status
+sudo service kibana status
+sudo service elasticsearch status
+
+systemctl is-enabled logstash
+systemctl is-enabled kibana
+systemctl is-enabled elasticsearch
+
+sudo systemctl disable logstash
+sudo systemctl disable kibana
+sudo systemctl disable elasticsearch

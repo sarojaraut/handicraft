@@ -1,0 +1,10 @@
+Continuous Integration, in its simplest form, involves a tool that monitors your version control system for changes. Whenever a change is detected, this tool automatically compiles and tests your application. If something goes wrong, the tool immediately notifies the developers so that they can fix the issue immediately.
+
+But Continuous Integration can do much more than this:
+
+Keep tabs on the health of your code base. The publicly-visible code quality metrics can also encourage devel-
+opers to take pride in the quality of their code and strive to improve it.
+
+Combined with automated end-to-end acceptance tests, CI can also act as a communication tool, pub- lishing a clear picture of the current state of development efforts.
+
+In essence, Continuous Integration is about reducing risk by providing faster feedback. First and foremost, it is designed to help identify and fix integration and regression issues faster, resulting in smoother, quicker delivery, and fewer bugs.
