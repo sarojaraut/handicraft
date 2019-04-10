@@ -1,3 +1,59 @@
+Logstash places the systemd unit files in /etc/systemd/system for both deb and rpm. After installing the package, you can start up Logstash with:
+
+sudo systemctl start logstash.service
+
+sudo service --status-all
+
+sudo systemctl status logstash
+sudo systemctl status kibana
+sudo systemctl status elasticsearch
+sudo systemctl status filebeat
+
+
+sudo systemctl enable logstash
+sudo systemctl enable kibana
+sudo systemctl enable elasticsearch
+
+sudo service logstash       start
+sudo service elasticsearch  start
+sudo service kibana         start
+sudo service filebeat       start
+
+sudo service elasticsearch restart
+sudo service logstash  restart
+
+sudo service logstash       stop
+sudo service elasticsearch  stop
+sudo service kibana         stop
+sudo service filebeat       stop
+
+sudo systemctl disable logstash
+sudo systemctl disable kibana
+sudo systemctl disable elasticsearch
+
+tail -f /var/log/logstash/logstash-plain.log
+tail -f /var/log/filebeat/filebeat
+sudo tail -f /var/log/elasticsearch/elasticsearch.log
+sudo tail -f /var/log/elasticsearch/gc.log.0.current
+sudo tail -f /var/log/elasticsearch/elasticsearch_audit.log
+sudo tail -f /var/log/elasticsearch/elasticsearch_access.log
+sudo tail -f /var/log/elasticsearch/elasticsearch_deprecation.log
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/beat_ls_es_kibana.conf --config.test_and_exit
+
+
+http://localhost:9200/_cat/health?v
+localhost:9200/_cat/health?v
+curl -X GET "localhost:9200/_cat/nodes?v"
+curl -X GET "localhost:9200/_cat/indices?v"
+
+Create an Index
+
+Now let’s create an index named "customer" and then list all the indexes again:
+curl -X PUT "localhost:9200/customer?pretty"
+curl -X GET "localhost:9200/_cat/indices?v"
+
+
 Logstash is an open source tool designed to manage all of your server logs in a centralized location. Logstash acts as a data pipeline through which it processes the data from multiple servers and systems. Logstash can take inputs from TCP/UDP protocols, files, and log management systems, such as syslog-ng, rsyslog, and many more tools in the field that server administrators install to analyze server events.
 
 let’s say that you have a few servers running at different locations, and these are clusters or load-balancing servers for your web app. The beauty of Logstash is that it can be used in this scenario, as it allows you to have a master server wherein all of these nodes can send log data
@@ -46,17 +102,103 @@ Installing Kibana
     Kibana : http://localhost:5601/
 
 Installing and Configuring Logstash
-    sudo apt install logstash
-https://www.digitalocean.com/community/tutorials/how-to-install-elasticsearch-logstash-and-kibana-elastic-stack-on-ubuntu-18-04
+    get -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+    sudo apt-get install apt-transport-https
+    echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-6.x.list
+    sudo apt-get update && sudo apt-get install logstash
 
-sudo service elasticsearch restart
-sudo service logstash  start
+    sudo bin/logstash -e 'input { stdin { } } output { stdout {} }'
+    wait until you see "Pipeline main started" and then enter hello world at the command prompt:
+    Exit Logstash by issuing a CTRL-D command in the shell where Logstash is running.
 
-/var/log/messages
+Installing filebeat
+
+    sudo apt update && sudo apt install filebeat
+    if we want auto start : sudo update-rc.d filebeat defaults 95 10
+
+    sudo vi /etc/filebeat/filebeat.yml
+
+    paths:
+        - /home/ranjan/Downloads/logstash-tutorial.log
+    output.logstash:
+        hosts: ["localhost:5044"]
+
+    and enabled : true
+
+    paths:
+        - /opt/tomcat/logs/catalina.out
+    output.logstash:
+        hosts: ["172.17.0.1:5044"]
+
+    and enabled : true
+
+    sudo /usr/bin/filebeat -e -c /etc/filebeat/filebeat.yml -d "publish"
+
+sudo vi /etc/logstash/conf.d/first-pipeline.conf
+input {
+    beats {
+        port => "5044"
+    }
+}
+# The filter part of this file is commented out to indicate that it is
+# optional.
+# filter {
+#
+# }
+output {
+    stdout { codec => rubydebug }
+}
+
+To verify your configuration, run the following command: sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/first-pipeline.conf --config.test_and_exit
+
+If the configuration file passes the configuration test, start Logstash with the following command: sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/first-pipeline.conf --config.reload.automatic
+
+If needs to be re-started from begning of log file : sudo rm /var/lib/filebeat/registry 
+
+default configuration file location is /usr/share/filebeat/first-pipeline.conf
+
+Reading formatted data
+
+netstat -lntp | grep 5044
 
 sudo setfacl -m u:logstash:r /var/log/syslog
 
 /etc/logstash/conf.d/05-syslog.conf
+
+http://grokconstructor.appspot.com/do/match#result
+31-Mar-2019 13:42:46.907 INFO [localhost-startStop-1] org.apache.catalina.startup.HostConfig.deployWAR Deploying web application archive /opt/tomcat/webapps/ords.war
+
+--
+-- /etc/logstash/conf.d/logstash-filter.conf
+--
+input { stdin { } }
+filter {
+  grok {
+    match => { "message" => "%{COMBINEDAPACHELOG}" }
+  }
+  date {
+    match => [ "timestamp" , "dd/MMM/yyyy:HH:mm:ss Z" ]
+  }
+}
+output {
+    stdout { codec => rubydebug }
+}
+--
+-- sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/logstash-filter.conf --config.test_and_exit
+-- runner - Using config.test_and_exit mode. Config Validation Result: OK. Exiting Logstash
+-- sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/logstash-filter.conf --config.reload.automatic
+-- 127.0.0.1 - - [11/Dec/2013:00:01:45 -0800] "GET /xampp/status.php HTTP/1.1" 200 3891 "http://cadenza/xampp/navi.php" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:25.0) Gecko/20100101 Firefox/25.0"
+
+https://www.elastic.co/guide/en/logstash/current/field-extraction.html
+
+https://www.elastic.co/guide/en/logstash/current/advanced-pipeline.html
+
+bin/logstash-plugin list 
+bin/logstash-plugin list --verbose 
+bin/logstash-plugin list '*namefragment*' 
+bin/logstash-plugin list --group output
+
+bin/logstash-plugin install logstash-output-kafka
 
 input {
   file {
@@ -71,18 +213,454 @@ hosts => ["localhost:9200"]
 stdout { codec => rubydebug }
 }
 
-sudo service logstash  stop
-sudo service elasticsearch  stop
-sudo service kibana  stop
+Practical ELK Stack
+Chapter -2 Shipping, Filtering, and Parsing Events with Logstash
 
-sudo service logstash status
-sudo service kibana status
-sudo service elasticsearch status
+File input configuration typically looks like the following
+input {
+    file {
+        path => #String (path of the files) (required)
+        start_position => #String (optional, default "end")
+        tags => #array (optional)
+        type => #string (optional)
+    }
+}
+path: It is the only mandatory field in the file input plugin and is used to specify the path of the file.
+start_position: It can take the value of “beginning” or “end”. In order to read live streams, specify the default value of “end”. Only if you want to read any historical data do you need to specify a value as “beginning”.
+tags: This field helps in filtering and processing events. Any number of filter strings can be specified as an array for this purpose. type: In order to mark a specific type of events, you can categorize a specific type of events by using this field. Type is added to a document that is indexed in Elasticsearch. It can be later viewed in Kibana under the _type field. For example, you can assign type as “critical” or “warning”.
 
-systemctl is-enabled logstash
-systemctl is-enabled kibana
-systemctl is-enabled elasticsearch
+path => [ "/var/log/*.log", "/var/log/postgresql/*.log" ]
+path => "/var/log/apache/*.log"
 
-sudo systemctl disable logstash
-sudo systemctl disable kibana
-sudo systemctl disable elasticsearch
+Configuring for Events : The Logstash event pipeline consists of three stages: inputs, filters, and outputs. Events are generated by inputs and modified by filters. Events are shipped by outputs.The event properties are referred to as fields by Logstash. The event-specific configuration works only within filter and output blocks.
+
+Field References : [top-level-field][nested field]
+sprintf Format :
+output {
+  statsd {
+    increment => "syslog.%{[response][status]}"
+  }
+Conditionals :
+filter {
+    #Rest of the processing
+    if [type] == "linux-syslog" and [messagetype] in ["DEBUG", "INFO"] {
+        drop {}
+    }
+}
+output {
+  # Send production errors to stdout
+  if [loglevel] == "ERROR" and [type] == "apache-error" {
+    stdout { codec => rubydebug }
+  }
+}
+Metadata : A common use for metadata tag is to handle logs of different applications running on the same machine. Each application emits its own logs in a separate log file.
+# separate-logs.conf
+input {
+  rabbitmq {
+    zk_connect => 'zookeeper.foo.com:3182'
+    topic_id => 'logstash_logs'
+    add_field => { "[@metadata][route]" => "separate-logs" }
+  }
+}
+filter {
+  if [@metadata][route] == "separate-logs" {
+# If error in parsing logs, then drop it.
+if "_jsonparsefailure" in [tags] {
+       drop {}
+    }
+  }
+}
+output {
+  if [@metadata][route] == "separate-logs" {
+      kafka {
+        topic_id => "%{[type]}"
+        broker_list => 'rabbitmq.foo.com:9093'
+      }
+  }
+}
+Filtering Events
+After configuring the input file, the appropriate filter needs to be applied on the input so that only useful fields are picked and analyzed. For this purpose, a filter plugin can be used to perform intermediate processing on the input event. This filter can be applied on selective fields based on conditions. Since your input file is in a CSV format, it is best to use the csv filter. On receiving the input event, the csv filter parses it and stores its individual fields.
+filter {
+    csv {
+        columns => #Array of column names.
+        separator => #String ; default -","
+    }
+}
+filter {
+    csv {
+        columns => ["day_of_year","date_of_record","max_temp"]
+        separator => ","
+    }
+}
+After doing csv filter configuration, the next step is to associate specific data types with columns. The first step is to identify which column is going to represent the date field. This is important as this field can then be explicitly indexed as a date type and the event can be filtered based on date. There is a specific date filter in Logstash and it looks as following:
+filter {
+    date {
+        match =>  # array (optional), default: []
+        target =>  # string (optional), default: "@timestamp"
+        timezone => # string (optional)
+    }
+}
+
+The match attribute is associated with an array in the format [field, formats]. It is followed by a set of time formats which can be applied to the field. If the input events have multiple formats, the following code can be used:
+match => [ "date_field", "MMM dd YYY HH:mm:ss",
+          "ISO8601", "MMddYYYY", "MMM  d YYY HH:mm:ss" ]
+
+Based on the input event date format, the date filter would be the following:
+date{
+    match => ["date_of_record", "yyyy-MM-dd"]
+    target => "@timestamp"
+}
+
+Once the data types of the date fields are updated, the next step is to update the data type of fields, which are required for numeric comparison or operation. The default value is the string data type. It will be converted to integer so that operations like aggregations and comparisons can be performed on the data. For conversion of fields to a specific data type, the mutate filter can be used. This filter performs general mutations such as modification of data types, renaming, replacing fields, and removing fields. It can also perform other advanced functions like merging two fields, performing uppercase and lowercase conversion, split and strip fields, and so on.
+
+Generally, a mutate filter looks like following:
+filter {
+    mutate {
+        convert => # hash of field and data type (optional)
+        join =>  # hash of fields to be joined (optional)
+        lowercase =>  # array of fields to be converted (optional)
+        merge =>  # hash  of fields to be merged (optional)
+        rename =>  # hash of original and rename field (optional)
+        replace => # hash of fields to replaced with (optional)
+        split =>  # hash of fields to be split (optional)
+        strip => # array of fields (optional)
+        uppercase =>  # array of fields (optional)
+    }
+}
+The mutate filter in your case looks like the following:
+mutate {
+    convert => ["max_temp","integer"]
+}
+
+Shipping Events
+After transforming data into a CSV format, configuring Logstash to accept data from a CSV file, and process it based on the specified data type, you are all set to ship the events. In your example, Logstash will fetch the data from the CSV file and ship it to Elasticsearch, where the different fields can be indexed. This will facilitate the visualization of data using the Kibana interface. The output plugin of Logstash can be used to get output in a form acceptable by Elasticsearch.
+Generally, the Elasticsearch plugin configuration looks like the following:
+
+output {
+    elasticsearch {
+        action =>  # string (optional), default: "index"
+        hosts =>  # array
+        document_id =>  # string (optional), default: nil
+        index =>  # string (optional), default: "logstash-%{+YYYY.MM.dd}"
+        path =>  # string (optional), default: "/”
+        timeout =>  # number
+  }
+}
+action: The action to take on incoming documents. The default action is “index” which can be changed to “delete”. For indexing a document,use the “index” value; for deleting a document, use the “delete” value. 
+hosts: IP address or hostname(s) of the node(s) where Elasticsearch is running. If multiple hosts are specified, requests will be load balanced. For example, a single host can be specified as “127.0.0.1” and multiple hosts can be specified as [“127.0.0.1:9200”, “127.0.0.2:9200”].
+document_id: Document id of the index; useful to delete or overwrite the existing entries.index: The index name where incoming events have to be written. The default action is to index based on each day and name it as “logstash-%{+YYYY.MM.dd}”. The timestamp value is based on the filter criteria (event capture time or event raising time).
+path: HTTP path at which Elasticsearch is accessible.
+timeout: The timeout value for network requests and requests send to Elasticsearch.
+
+output{
+    elasticsearch {
+        host => "localhost"
+    }
+}
+
+Multiline Event Configuration
+codec => multi-line {
+  pattern => "^[a-zA-Z]{3} [0-9]{2}"
+  what => "next"
+  negate => true
+}
+pattern: This option specifies a regular expression.
+what: This option can take two values: next or previous. The previous value is used to specify that lines matching the pattern option value are part of the previous line. 
+negate: This option applies the multiline codec to lines not matching the regular expression.
+
+After looking at the configuration of individual plugins in a piecemeal fashion, let's see what the overall Logstash configuration looks like.
+
+/etc/logstash/conf.d/05-syslog.conf
+
+
+
+input {
+    file {
+        path =>"/home/ranjan/Downloads/logstashdata.csv"
+        start_position =>"beginning"
+    }
+}
+filter {
+    csv {
+        columns => ["day_of_year","date_of_record","max_temp"]
+        separator => ","
+    }
+    date {
+        match => ["date_of_record", "YYYY-MM-DD"]
+        target => "@timestamp"
+    }
+    mutate {
+        convert => ["max_temp","integer"]
+    }
+}
+output {
+    elasticsearch {
+        hosts => "localhost"
+    }
+}
+
+Analyzing Events
+Once the events are processed and filtered by Logstash and further shipped to Elasticsearch, it is now time to analyze these events. Kibana is an excellent tool for analyzing events with some amazing visualization.
+
+Kibana is set up to take logstash-* indexes by default, it will show the indexed data as a histogram of counts.
+
+----
+
+Elasticsearch is a highly scalable open-source full-text search and analytics engine. It allows you to store, search, and analyze big volumes of data quickly and in near real time. It is generally used as the underlying engine/technology that powers applications that have complex search features and requirements.
+
+Here are a few sample use-cases that Elasticsearch could be used for:
+You can use Elasticsearch to store your entire product catalog and inventory and provide search and autocomplete suggestions.
+You want to collect log or transaction data and you want to analyze and mine this data to look for trends, statistics, summarizations, or anomalies. 
+You run a price alerting platform which allows price-savvy customers to specify a rule like notify if price drops below x.
+You have analytics/business-intelligence needs and want to quickly investigate, analyze, visualize, and ask ad-hoc questions on a lot of data (think millions or billions of records).
+
+Basic Concepts
+Near Realtime (NRT) : Elasticsearch is a near-realtime search platform. What this means is there is a slight latency (normally one second) from the time you index a document until the time it becomes searchable.
+
+Cluster : A cluster is a collection of one or more nodes (servers) that together holds your entire data and provides federated indexing and search capabilities across all nodes. A cluster is identified by a unique name which by default is "elasticsearch".
+
+Node :A node is a single server that is part of your cluster, stores your data, and participates in the cluster’s indexing and search capabilities. Just like a cluster, a node is identified by a name which by default is a random Universally Unique IDentifier (UUID) that is assigned to the node at startup. 
+
+Index : An index is a collection of documents that have somewhat similar characteristics. For example, you can have an index for customer data, another index for a product catalog,
+
+Document : A document is a basic unit of information that can be indexed. For example, you can have a document for a single customer, another document for a single product
+
+Shards & Replicas : An index can potentially store a large amount of data that can exceed the hardware limits of a single node. For example, a single index of a billion documents taking up 1TB of disk space may not fit on the disk of a single node or may be too slow to serve search requests from a single node alone.
+
+To solve this problem, Elasticsearch provides the ability to subdivide your index into multiple pieces called shards. When you create an index, you can simply define the number of shards that you want. Each shard is in itself a fully-functional and independent "index" that can be hosted on any node in the cluster.
+
+Sharding is important for two primary reasons:
+
+    It allows you to horizontally split/scale your content volume
+    It allows you to distribute and parallelize operations across shards (potentially on multiple nodes) thus increasing performance/throughput 
+
+The mechanics of how a shard is distributed and also how its documents are aggregated back into search requests are completely managed by Elasticsearch and is transparent to you as the user.
+
+In a network/cloud environment where failures can be expected anytime, it is very useful and highly recommended to have a failover mechanism in case a shard/node somehow goes offline or disappears for whatever reason. To this end, Elasticsearch allows you to make one or more copies of your index’s shards into what are called replica shards, or replicas for short.
+
+Replication is important for two primary reasons:
+
+    It provides high availability in case a shard/node fails. For this reason, it is important to note that a replica shard is never allocated on the same node as the original/primary shard that it was copied from.
+    It allows you to scale out your search volume/throughput since searches can be executed on all replicas in parallel. 
+
+index can be split into multiple shards. An index can also be replicated zero (meaning no replicas) or more times. Once replicated, each index will have primary shards (the original shards that were replicated from) and replica shards (the copies of the primary shards).
+
+The number of shards and replicas can be defined per index at the time the index is created. After the index is created, you may also change the number of replicas dynamically anytime. You can change the number of shards for an existing index using the _shrink and _split APIs, however this is not a trivial task and pre-planning for the correct number of shards is the optimal approach.
+
+By default, each index in Elasticsearch is allocated 5 primary shards and 1 replica which means that if you have at least two nodes in your cluster, your index will have 5 primary shards and another 5 replica shards (1 complete replica) for a total of 10 shards per index.
+
+Elasticsearch has three configuration files: /etc/elasticsearch/
+
+    elasticsearch.yml for configuring Elasticsearch
+    jvm.options for configuring Elasticsearch JVM settings
+    log4j2.properties for configuring Elasticsearch logging 
+
+Exploring Your Cluster : Elasticsearch provides a very comprehensive and powerful REST API that you can use to interact with your cluster. Among the few things that can be done with the API are as follows:
+
+    Check your cluster, node, and index health, status, and statistics : 
+        List of nodes : curl -X GET "localhost:9200/_cat/nodes?v"
+        Cluster health : curl -X GET "localhost:9200/_cat/health?v"
+    Administer your cluster, node, and index data and metadata
+        List of all indices : 
+    Perform CRUD (Create, Read, Update, and Delete) and search operations against your indexes
+        Create index : curl -X PUT "localhost:9200/customer?pretty" and curl -X GET "localhost:9200/_cat/indices?v"
+        Index and Query a Document : We’ll index a simple customer document into the customer index, with an ID of 1 as follows: 
+        curl -X PUT "localhost:9200/customer/_doc/1?pretty" -H 'Content-Type: application/json' -d'
+        {
+        "name": "John Doe"
+        }
+        '
+        Now retrive that document : curl -X GET "localhost:9200/customer/_doc/1?pretty"
+        Delete an index : curl -X DELETE "localhost:9200/customer?pretty" and curl -X GET "localhost:9200/_cat/indices?v"
+        Indexing and replacing(merge) : curl -X PUT "localhost:9200/customer/_doc/1?pretty" -H 'Content-Type: application/json' -d'
+        {
+        "name": "John Doe"
+        }
+        '
+        Updating : curl -X POST "localhost:9200/customer/_doc/1/_update?pretty" -H 'Content-Type: application/json' -d'
+        {
+        "doc": { "name": "Jane Doe", "age": 20 }
+        }
+        '
+        Deleting document :curl -X DELETE "localhost:9200/customer/_doc/2?pretty"
+
+    Execute advanced search operations such as paging, sorting, filtering, scripting, aggregations, and many others 
+
+let’s try to work on a more realistic dataset.
+{
+    "account_number": 0,
+    "balance": 16623,
+    "firstname": "Bradshaw",
+    "lastname": "Mckenzie",
+    "age": 29,
+    "gender": "F",
+    "address": "244 Columbus Place",
+    "employer": "Euron",
+    "email": "bradshawmckenzie@euron.com",
+    "city": "Hobucken",
+    "state": "CO"
+}
+
+curl -H "Content-Type: application/json" -XPOST "localhost:9200/bank/_doc/_bulk?pretty&refresh" --data-binary "@accounts.json"
+curl "localhost:9200/_cat/indices?v"
+
+response
+health status index uuid                   pri rep docs.count docs.deleted store.size pri.store.size
+yellow open   bank  l7sSYV2cQXmu6_4rJWVIww   5   1       1000            0    128.6kb        128.6kb
+
+Which means that we just successfully bulk indexed 1000 documents into the bank index (under the _doc type).
+
+There are two basic ways to run searches: one is by sending search parameters through the REST request URI and the other by sending them through the REST request body. The request body method allows you to be more expressive and also to define your searches in a more readable JSON format.
+
+curl -X GET "localhost:9200/bank/_search?q=*&sort=account_number:asc&pretty"
+
+We are searching (_search endpoint) in the bank index, and the q=* parameter instructs Elasticsearch to match all documents in the index. The sort=account_number:asc parameter indicates to sort the results using the account_number field of each document in an ascending order. The pretty parameter, again, just tells Elasticsearch to return pretty-printed JSON results.
+
+In the response, we see the following parts:
+
+    took – time in milliseconds for Elasticsearch to execute the search
+    timed_out – tells us if the search timed out or not
+    _shards – tells us how many shards were searched, as well as a count of the successful/failed searched shards
+    hits – search results
+    hits.total – total number of documents matching our search criteria
+    hits.hits – actual array of search results (defaults to first 10 documents)
+    hits.sort - sort key for results (missing if sorting by score)
+    hits._score and max_score - ignore these fields for now 
+
+Here is the same exact search above using the alternative request body method:
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_all": {} },
+  "sort": [
+    { "account_number": "asc" }
+  ]
+}
+'
+
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match": { "account_number": 20 } }
+}
+'
+
+This example returns all accounts containing the term "mill" or "lane" in the address:
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match": { "address": "mill lane" } }
+}
+'
+This example is a variant of match (match_phrase) that returns all accounts containing the phrase "mill lane" in the address:
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": { "match_phrase": { "address": "mill lane" } }
+}
+'
+This example composes two match queries and returns all accounts containing "mill" and "lane" in the address:
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "address": "mill" } },
+        { "match": { "address": "lane" } }
+      ]
+    }
+  }
+}
+'
+In contrast, this example composes two match queries and returns all accounts containing "mill" or "lane" in the address:
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "should": [
+        { "match": { "address": "mill" } },
+        { "match": { "address": "lane" } }
+      ]
+    }
+  }
+}
+'
+
+This example composes two match queries and returns all accounts that contain neither "mill" nor "lane" in the address:
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "must_not": [
+        { "match": { "address": "mill" } },
+        { "match": { "address": "lane" } }
+      ]
+    }
+  }
+}
+'
+
+This example returns all accounts of anybody who is 40 years old but doesn’t live in ID(aho):
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "age": "40" } }
+      ],
+      "must_not": [
+        { "match": { "state": "ID" } }
+      ]
+    }
+  }
+}
+'
+find accounts with a balance that is greater than or equal to 20000 and less than or equal to 30000.
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "bool": {
+      "must": { "match_all": {} },
+      "filter": {
+        "range": {
+          "balance": {
+            "gte": 20000,
+            "lte": 30000
+          }
+        }
+      }
+    }
+  }
+}
+'
+
+all the accounts by state, and then returns the top 10 (default) states sorted by count descending (also default
+curl -X GET "localhost:9200/bank/_search" -H 'Content-Type: application/json' -d'
+{
+  "size": 0,
+  "aggs": {
+    "group_by_state": {
+      "terms": {
+        "field": "state.keyword"
+      }
+    }
+  }
+}
+'
+
+SELECT state, COUNT(*) FROM bank GROUP BY state ORDER BY COUNT(*) DESC LIMIT 10;
+
+--- Kibana
+Kibana is an open source analytics and visualization platform designed to work with Elasticsearch. You use Kibana to search, view, and interact with data stored in Elasticsearch indices
+
+localhost:5601/status
+
+By default, Kibana connects to the Elasticsearch instance running on localhost. To connect to a different Elasticsearch instance, modify the Elasticsearch URL in the kibana.yml configuration file and restart Kibana. 
+
+To configure the Elasticsearch indices you want to access with Kibana:
+http://localhost:5601 
+Go to management and specify an index pattern that matches the name of one or more of your Elasticsearch indices. 
+Click Next Step to select the index field that contains the timestamp you want to use to perform time-based comparisons.
+Click Create index pattern to add the index pattern. This first pattern is automatically configured as the default. When you have more than one index pattern, you can designate which one to use as the default by clicking on the star icon above the index pattern title from Management > Index Patterns. 
+
+You can interactively explore your data from the Discover page. You have access to every document in every index that matches the selected index pattern. You can submit search queries, filter the search results, and view document data.
+    The time filter restricts the search results to a specific time period. 
+    You can search the indices that match the current index pattern by entering your search criteria in the Query bar. Query Syntax(title:"The Right Way" AND text:go, te?t, test*, You cannot use a * or ? symbol as the first character of a search. mod_date:[20020101 TO 20030101], To escape these character use the \ before the character. For example to search for (1+1):2 use the query: \(1\+1\)\:2)
+
+Visualize enables you to create visualizations of the data in your Elasticsearch indices. You can then build dashboards that display related visualizations.

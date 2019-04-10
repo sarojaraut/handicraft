@@ -1,12 +1,5 @@
 ls -lah ~/Library/Containers/com.docker.docker/Data/com.docker.driver.amd64-linux/Docker.qcow2
 
-exec itsr.s_slack_util.send_message ('Hello *Slack* World!');
-
-G_both_cntt_type
-G_delivery_cntt_type
-G_both_addr_type
-G_delivery_addr_type
-
 /usr/share/zoneinfo/Europe/Londonh
 
 
@@ -101,10 +94,7 @@ export CATALINA_OPTS="$CATALINA_OPTS -server"
   redirectPort="8443" />
 </Service>
 
-I would start by putting ORDS into debug mode
-Also check your version of ORDS. There are some significant performance enhancements included in 3.0.10 for large pagesizes...so if you were returning 10k rows in a single GET, that would be faster.
 
-3.0.9.348.07.16
 
 docker tag flask how2dock/flask
 
@@ -908,10 +898,30 @@ You see that the PORTS column of docker ps now returns a mapping between port 32
 docker stats myritox
 docker top myritox
 
-Can you please enable  supplimental logging with primary key for  CURRATEE table in CMSTS4, CMSUST and CMSPRD?
 
-Enabling Supplimental logging on CURRATEE table for DMS replication - CMSUAT
+View All Network Setting : ifconfig
+View Network Settings of Specific Interface : ifconfig docker0
+Disable an Network Interface : ifconfig eth0 down
+Enable an Network Interface : ifconfig eth0 up
+Assign a IP Address to Network Interface : ifconfig eth0 172.16.25.125
 
+sudo ip addr show docker0 : Run this in the host which also shows the ip for docker0 interface
+  4: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+      link/ether 02:42:3c:14:c5:e5 brd ff:ff:ff:ff:ff:ff
+      inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+        valid_lft forever preferred_lft forever
+      inet6 fe80::42:3cff:fe14:c5e5/64 scope link 
+        valid_lft forever preferred_lft forever
+
+ip addr show eth0 : Run this inside the docker to find out the IP allocated to the docker.
+  5: eth0@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+      link/ether 02:42:ac:11:00:02 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+      inet 172.17.0.2/16 brd 172.17.255.255 scope global eth0
+        valid_lft forever preferred_lft forever
+
+The above example is for docker running using the default bridge network. We can reach docker container from host using ip 172.17.0.2 and can reach docker host from container using IP 172.17.0.2.
+
+route command tells how the packet flows
 
 MySQL
 

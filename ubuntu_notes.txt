@@ -1,0 +1,12 @@
+systemd-analyze blame
+sudo gedit /etc/default/grub
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
+sudo update-grub2
+
+systemd-analyze blame
+
+sudo systemctl disable logstash
+
+sudo systemctl disable docker.service
+
+sudo truncate -s 0 /var/log/syslog

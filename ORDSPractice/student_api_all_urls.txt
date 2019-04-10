@@ -1,0 +1,33 @@
+# Fetch All students
+curl --request GET \
+  --url https://apex.oracle.com/pls/apex/sarojapi/students/v1/
+
+# Fetch students by ID
+curl --request GET \
+  --url https://apex.oracle.com/pls/apex/sarojapi/students/v1/22 
+
+# Delete students by ID
+curl -i --request DELETE \
+  --url https://apex.oracle.com/pls/apex/sarojapi/students/v1/41
+
+# Create students and this returns ID in response JSON
+curl --request POST \
+  --url https://apex.oracle.com/pls/apex/sarojapi/students/v1/ \
+  --header 'content-type: application/json' \
+  --data '{ 
+	"firstname": "x", 
+	"lastname": "X", 
+	"address": "X", 
+	"status": "X"
+}'
+
+# Fetch all course details
+curl --request GET \
+  --url https://apex.oracle.com/pls/apex/sarojapi/courses/v1/
+
+# Fetch all courses and enrolled students
+curl --request GET \
+  --url https://apex.oracle.com/pls/apex/sarojapi/courses/v1/students 
+
+
+
