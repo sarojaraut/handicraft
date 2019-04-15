@@ -123,6 +123,182 @@ select count(*) from aq$_<queue_table>_t;
 select count(*) from aq$_<queue_table>_p; (optional / spill / Streams related)
 select count(*) from aq$_<queue_table>_d; (optional / spill / Streams related)
 
+-- My Experiment
+
+drop table students; -- This needs to eb dropped first
+drop type student_o;
+drop type address_o;
+drop type contact_o;
+
+create type address_o as object (
+   addresstype  varchar2(20)
+   ,address1    varchar2(100)
+   ,address2    varchar2(100)
+   ,towncity    varchar2(50)
+   ,postcode    varchar2(20)
+   ,country     varchar2(20)
+   ,countrycode varchar2(20)
+);
+/
+
+create type address_ot as table of address_o; -- nested table type
+/
+
+create type contact_o as object (
+   contacttype  varchar2(20)
+   ,title        varchar2(5)
+   ,firstname   varchar2(100)
+   ,surname     varchar2(50)
+   ,email       varchar2(100)
+   ,mobile      varchar2(20)
+   ,phone       varchar2(20)
+);
+/
+
+create type contact_ot as table of contact_o; -- nested table type
+/
+
+create type student_o as object (
+   student_id      number
+   ,contacts       contact_ot
+   ,addresses      address_ot
+   );
+/
+
+CREATE TABLE students OF student_o 
+NESTED TABLE contacts STORE AS contacts 
+NESTED TABLE addresses STORE AS addresses;
+/*
+declare 
+   l_student student_o;
+begin
+   insert into students 
+   values (
+      1
+      ,contact_ot(
+         contact_o('Primary','Mr','Saroj','Raut','saroj.temp@gmail.com','07424333121','+447424333121')
+         ,contact_o('Secondary','Mr','Saroj','Raut','saroj.temp@gmail.com','07424333121','+447424333121')
+      ),
+      address_ot(
+         address_o('Primary','Flat-86','Grand Union Heights','Wembley','HA0 1LF','UK','UK')
+         ,address_o('Secondary','Flat-86','Grand Union Heights','Wembley','HA0 1LF','UK','UK')
+      )
+   );
+   select value(s) -- note the value clause
+   into l_student
+   from students s 
+   where id = 1;
+end;
+/
+
+begin
+insert into students 
+values (
+   2
+   ,contact_o('Mr','Saroj','Raut','saroj.temp@gmail.com','07424333121','+447424333121')
+   ,contact_o('Mr','Saroj','Raut','saroj.temp@gmail.com','07424333121','+447424333121')
+   ,address_o('Flat-86','Grand Union Heights','Wembley','HA0 1LF','UK','UK')
+   ,NULL
+);
+end;
+/
+*/
+
+/* Clean UP
+Begin
+   dbms_aqadm.stop_queue (  queue_name  => 'mydba.student_queue');
+   dbms_aqadm.drop_queue (queue_name => 'mydba.student_queue');
+   dbms_aqadm.drop_queue_table ( queue_table  => 'mydba.student_queue_tab');
+end;
+/
+*/
+BEGIN
+   DBMS_AQADM.create_queue_table (
+      queue_table            =>  'mydba.student_queue_tab',
+      queue_payload_type     =>  'mydba.student_o');
+   --dbms_aqadm.drop_queue_table ( queue_table  => 'mydba.student_queue_tab');
+END;
+/   
+
+BEGIN
+   DBMS_AQADM.create_queue (
+      queue_name            =>  'mydba.student_queue',
+      queue_table           =>  'mydba.student_queue_tab');
+   --dbms_aqadm.drop_queue (queue_name => 'mydba.student_queue');
+END;
+/
+
+BEGIN
+   DBMS_AQADM.start_queue (
+      queue_name         => 'mydba.student_queue',
+      enqueue            => TRUE);
+   --dbms_aqadm.stop_queue (  queue_name  => 'mydba.student_queue');
+END;
+/
+--
+-- Enque a message
+--
+DECLARE
+   l_enqueue_options     DBMS_AQ.enqueue_options_t;
+   l_message_properties  DBMS_AQ.message_properties_t;
+   l_message_handle      RAW(16);
+   l_event_msg           mydba.student_o;
+BEGIN
+   l_event_msg := mydba.student_o(
+      1
+      ,contact_o('Mr','Saroj','Raut','saroj.temp@gmail.com','07424333121','+447424333121')
+      ,contact_o('Mr','Saroj','Raut','saroj.temp@gmail.com','07424333121','+447424333121')
+      ,address_o('Flat-86','Grand Union Heights','Wembley','HA0 1LF','UK','UK')
+      ,address_o('Mr','Saroj','Raut','saroj.temp@gmail.com','07424333121','+447424333121')
+   );
+
+   DBMS_AQ.enqueue(
+      queue_name          => 'mydba.student_queue',        
+      enqueue_options     => l_enqueue_options,     
+      message_properties  => l_message_properties,   
+      payload             => l_event_msg,             
+      msgid               => l_message_handle);
+   dbms_output.put_line(l_message_handle);
+   COMMIT;
+END;
+/
+
+--
+-- DEqueue Message : 8680C6BBCD5203C6E0530100007FF258
+--
+set serveroutput on;
+
+DECLARE
+   l_dequeue_options     DBMS_AQ.dequeue_options_t;
+   l_message_properties  DBMS_AQ.message_properties_t;
+   l_message_handle      RAW(16);
+   l_event_msg           mydba.student_o;
+BEGIN
+   DBMS_AQ.dequeue(
+      queue_name          => 'mydba.student_queue',
+      dequeue_options     => l_dequeue_options,
+      message_properties  => l_message_properties,
+      payload             => l_event_msg,
+      msgid               => l_message_handle);
+   insert into students values(l_event_msg);
+   COMMIT;
+END;
+/
+
+select * from aq$student_queue_tab;
+
+select * from STUDENT_QUEUE_TAB;
+
+select count(*), msg_state from aq$student_queue_tab group by msg_state;
+
+select * from AQ$_STUDENT_QUEUE_TAB_F;
+
+
+
+-- JSON Type Queue
+
+https://docs.oracle.com/cd/A97630_01/appdev.920/a96587/qsample.htm
+
 ------------------
 http://docstore.mik.ua/orelly/oracle/bipack/ch05_04.htm
 

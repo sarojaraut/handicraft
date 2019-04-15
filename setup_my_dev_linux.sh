@@ -10,6 +10,7 @@
 # /home/mybriefcase
 
 #VS Code
+# For upgrade sudo apt-get update and sudo apt-get install code
 function install_vs_code(){
     echo ".....Installing VS Code"
     sudo apt update
