@@ -59,15 +59,15 @@ pl_generate_html_email : gets the email content in xml format, get the xsl style
 		   'en-GB')
 	from dual)
 
-select * from s_rawdata where obj_id=2067
+select * from s_rawdata where obj_id=2067;
 
-select * from s_vld_test_email_addr -- validates your email ID
+select * from s_vld_test_email_addr; -- validates your email ID
 
 select wkq.* from io_work_queue wkq where s_delim_str.f_get_string(wkq.key_data,2) ='D' 
 
 select * from carrierconsignmentheader
 
-select * from oms_service_group
+select * from oms_service_group;
 
 exec oms_cust_email.p_desp_canc_emails();
 
@@ -769,3 +769,4 @@ select * from oms_package where consignment_id=33409758
     </font>
 </body>
 </html>
+
