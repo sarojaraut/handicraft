@@ -41,3 +41,23 @@ begin
 
 end;
 /
+
+
+set serveroutput on;
+declare
+    l_var   logger.tab_param;
+    l_clob   clob;
+begin
+    l_var := logger.tab_param (
+         2 => logger.rec_param ('Name-2', 'Val-22'), 
+         1 => logger.rec_param ('Name-1', 'Val-1'), 
+         3 => logger.rec_param ('Name-3', 'Val-3')
+    );
+--    l_clob := logger.get_param_clob( p_params => l_var);
+    for i in 1..l_var.count
+    loop
+        l_clob := l_clob || l_var(i).name||' : '||l_var(i).val||chr(13);
+    end loop;
+    dbms_output.put_line(l_clob);
+end;
+/
