@@ -1,0 +1,30 @@
+Systems Can Be Easily Reproduced
+It should be possible to effortlessly and reliably rebuild any element of an infrastructure. Effortlessly means that there is no need to make any significant decisions about how to rebuild the thing. It removes much of the risk, and fear, when making changes. New services and environments can be provisioned
+with little effort.
+
+One of the benefits of dynamic infrastructure is that resources can be easily created, destroyed, replaced, resized, and moved. In order to take advantage of this, systems should be designed to assume that the infrastructure.
+
+Treat your servers like cattle, not pets.
+
+A fundamental difference between the iron age and cloud age is the move from unreliable software, which depends on the hardware to be very reliable, to software that
+runs reliably on unreliable hardware.
+
+I never make the same mistake twice. I make it five or six times, just to be sure.
+
+Being strong sometimes means being able to let go.
+
+What we call the beginning is often the end. And to make an end is to make a beginning. The end is where we start from.
+
+And as you move on, remember me, remember us and all we used to be
+
+The world is round and the place which may seem like the end, may also be the beginning.
+
+Eng 1992 ru India ki Australia ki Newzealand kahaku harei nathila world cup match re .. janiki yeh world cup re last three matches re yeh samastanku hareichhi
+
+
+terraform init #provider plugin is downloaded and installed in a subdirectory of the current working directory
+terraform plan
+terraform apply
+terraform destroy
+
+

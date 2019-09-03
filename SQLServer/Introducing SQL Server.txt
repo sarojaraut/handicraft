@@ -1,0 +1,148 @@
+Introducing SQL Server
+
+A number of services make up SQL Server. Let’s take a quick look at them: 
+• Database Engine: This is the core service, and most of the things we look at in this book will be using this service. It is responsible for all aspects of data management. If you want to add some data to a table, create a database, or pull some data from your databases, you’ll be interacting with this service.
+• SQL Server Agent: SQL Server’s scheduling tool. You can use Agent to set jobs up to run at different times of the day, week, or month. Jobs are often created to run backups or other regular tasks.
+• SQL Server Browser: If your SQL Server sits on a network, you probably have other machines connecting to it. Connecting remotely requires the SQL Server Browser service to be up and running. This allows other machines on the network to communicate with SQL Server. However, if SQL Server was installed with the default port and instance name configuration, then SQL Server Browser can be safely disabled. This service is disabled by default, so it must be enabled in order to be used.
+• SQL Server Full Text Search: Let’s say our database has a user record named “Mike McQuillan.” I can use the SQL language to directly return this record—but only if I specify the full name. What if I don’t know the full name? Assume all I know is “Mike.” I can still find the
+
+SQL Server uses two types of databases:
+• System databases: These are databases that SQL Server requires to operate correctly. We’ll take a look at these in a moment.
+• User databases: These are created by users of SQL Server, and store any data required by those users or the organizations that own the servers. We’ll be working with user databases for the majority of this book.
+
+There are five system databases.
+• Master: This database stores all of the information needed for your SQL Server to function correctly. Logins and server configurations are two of the items stored here. If this database is unavailable your SQL Server will not start and you will not be able to log in to it.
+• MSDB: This acts as the scheduler for SQL Server. The MSDB database stores details about the jobs executed by the scheduler, along with job history. Backup details and history are also stored in this database. If something goes wrong with this database, your SQL Server will function, but certain aspects of it, such as scheduled jobs and backups, may fail (e.g., backups may complete, but won’t be recorded).
+• Model: The Model database is a template database, and every user database created starts as a copy of the Model database.
+• Resource: This is the only database you cannot see via the Object Explorer in SQL Server Management Studio. It stores system objects, such as the sys tables (you’ll see more of the sys tables as you work through the book).
+• TempDB: You can think of this database as a scratchpad, accessed by all users of the SQL Server. Whenever you do something in SQL Server that requires a temporary object to be created, it will be created in this database. This database is deleted and recreated every time the server is restarted.
+
+Note that if you have sysadmin permissions, you can make changes in any of the preceding databases except for Resource. You should never modify any of these databases, with the possible exception of Model. If your organization has certain standard tables (e.g., an Auditing table), it could be added to the Model database. Any new databases will then automatically contain this table.
+
+There are a number of ways to create a SQL Server database, We’ll take a look at two options:
+• Creating a database through SQL Server Management Studio (SSMS)
+• Creating a database using scripting
+
+There are a few drop-down boxes within the login prompt:
+Server type: Type Database Engine. You could also log in to SSIS, SSRS, and SSAS. Database Engine is the Relational Database Engine.
+Server name: The name you gave the server when you installed SQL Server (e.g., BERTIE1). If you installed the server as a default instance, you can just type (local) (including the parentheses) or a full stop/period here. If you installed the SQL Server as a named instance, as in Figure 3-2, you need to provide the full name of the instance, which is in the format SERVER NAME\INSTANCE NAME, (e.g., BERTIE1\SQLEXPRESS). For more information about default and named instances, refer to Chapter 2.
+Authentication: There are two types of authentication available; Windows Authentication and SQL Server Authentication. As I’ve said, my recommendation is to never use SQL Server Authentication, as you are opening up another potential route into your server. Windows Authentication integrates with your Windows server accounts. If your server runs as part of a larger network domain, any user account within the network’s Active Directory can be granted access to SQL Server. This makes permissions easy to manage as you can allocate permissions to a group in Active Directory, and then just add users to that group as necessary. SQL Server Authentication uses individual usernames and passwords within SQL Server itself. So you would create a user account for yourself through SSMS and use that to log in (you can map logins to a SQL Server user account should you wish). If you followed the instructions in Chapter 2, you should only have configured Windows Authentication, so that is the one to choose.
+
+We’re going to create our database in a folder called c:\temp\sqlbasics. If this folder doesn’t exist on your computer, please create it before we proceed.
+
+Database names can include special characters, numbers, and even spaces. However, using these special characters and spaces is not a good idea. It leads to more typing and may cause issues with any systems that need some level of backward compatibility.
+
+SELECT * FROM AddressBook.dbo.Contacts
+SELECT * FROM [Address Book].dbo.Contacts -- if database name contains space then that needs to e enclosed within square bracket
+
+first part is the database
+second part is the owner name, default is the person creating the objects
+
+Technical support and functional support. This is a aplication almost all the business logic is in the database layer. Oracle is very feature rich and some of the technical feature that's used here might not be available in sql server. 
+
+New database dialogue :
+
+database name : AddressBook
+owner : <default>
+check use full text indexing
+
+Database files section has several columns
+• Logical Name: The name assigned to the file for user identification purposes. This name is used to restore the file, for example.
+• File Type: There are a few file types, but mainly you’ll deal with data files and log files. In the list you can see, one data file (ROWS Data) and one log file (LOG) are present.
+• Filegroup: A filegroup can house multiple files, and is used to split up a database across disks. These are used for performance reasons. We’ll touch on them shortly.
+• Initial Size (MB): How big the files should be when they are created. You need to figure this out by assessing how much data you expect the database to contain. Be aware that the file sizes you can see in Figure 3-4 may differ from the default file sizes assigned to your database files.
+• Autogrowth/Maxsize: If the file reaches the initial size specified, SQL Server will use the values you specify here to autogrow the file, and also to limit the size of the file. You can set Maxsize to unlimited—more on this in the “Creating a Database Using T-SQL” section later in this chapter.
+• Path: The folder where the database files will be created.
+• File Name: The actual name of the physical file. This will be created automatically from the database name (it usually matches the logical name).
+
+Click OK and after a couple of seconds the dialog will disappear. If you look under Databases in Object Explorer now, you’ll see you have an AddressBook database!
+
+Open Windows Explorer and go to c:\temp\sqlbasics. You should see two files
+• AddressBook.mdf
+• AddressBook_Log.ldf
+
+It is highly likely that most of the databases you come across will use this simple structure. The MDF file is a Master Data File, and it is the file where SQL Server will store your data. The LDF file is a Log file that SQL Server uses to keep your database consistent
+
+There is a third type of file, the Secondary Data File (NDF). You need to create a filegroup if you want to use a secondary data file. You would use secondary data files when you want to maximize performance. You could put some of your tables in the Master Data File on Hard Disk 1, some files in a Secondary Data File on Hard Disk 2, and some files in another Secondary Data File on Hard Disk 3. This would maximize data reading and writing to/from the database as three hard disks could be used at the same time. You could also choose to back up or restore individual data files using their filegroups. This kind of configuration is not uncommon, but it is a bit more work to configure and manage.
+
+Dropping a database using SSMS is scarily easy. Right-click the AddressBook database and click Delete in the pop-up menu that appears.
+
+Creating a Database Using T-SQL
+T-SQL is SQL Server’s version of SQL. You
+will find that many SQL statements you write for SQL Server will work in Oracle, and vice versa. But each RDBMS also implements many custom features, such as .NET integration in SQL Server and the FOR LOOP in Oracle.
+
+Press F5 to run a statement in SSMS .
+
+CREATE DATABASE AddressBook;
+
+CREATE DATABASE AddressBook
+ON PRIMARY
+(
+    NAME = 'AddressBook',
+    FILENAME = 'C:\temp\sqlbasics\AddressBook.mdf',
+    SIZE = 10MB,
+    MAXSIZE = UNLIMITED,
+    FILEGROWTH = 50%
+)
+LOG ON
+(
+    NAME = 'AddressBook_Log',
+    FILENAME = 'C:\temp\sqlbasics\AddressBook_Log.ldf',
+    SIZE = 2MB,
+    MAXSIZE = 100MB,
+    FILEGROWTH = 2MB
+);
+
+USE Master;
+IF NOT EXISTS (SELECT 1 FROM sys.databases WHERE [name] = 'AddressBook')
+BEGIN
+CREATE DATABASE AddressBook
+ON PRIMARY
+(
+NAME = 'AddressBook',
+FILENAME = 'C:\temp\sqlbasics\AddressBook.mdf',
+SIZE = 10MB,
+MAXSIZE = UNLIMITED,
+FILEGROWTH = 50%
+)
+LOG ON
+(
+NAME = 'AddressBook_Log',
+FILENAME = 'C:\temp\sqlbasics\AddressBook_Log.ldf',
+SIZE = 2MB,
+MAXSIZE = 100MB,
+FILEGROWTH = 2MB
+);
+END;
+GO
+
+The very last line is GO. SQL Server executes T-SQL code in batches. A batch is just one or more T-SQL statements. The GO command signifies the end of a batch. It is good form to put this in at the end of each batch of commands.
+
+Dropping A Database Using T-SQL
+
+USE Master;
+IF EXISTS (SELECT 1 FROM sys.databases WHERE [name] = 'AddressBook')
+BEGIN
+DROP DATABASE AddressBook;
+END;
+GO
+
+Full syntax for creating  adatabase : https://msdn.microsoft.com/en-us/library/ms176061.aspx
+Full syntax for altering database  : https://msdn.microsoft.com/en-us/library/ms174269.aspx
+
+If you right-click the AddressBook database and choose the Properties option on the context menu, a dialog appears listing lots of information about your database (Figure 3-14): things like last backed up date, the owner of the database, and the size of the database. 
+We’ll take a quick look at three important properties.
+
+Status: The current state of the database. Usually you want this to be Online,, can also be offline, restoring 
+Recovery Model: This setting is key. There are three recovery models, and they dictate how the transaction log works. 
+Full means all data is written to the transaction log. You won’t lose any data if the data file fails. 
+Bulk Logged means normal operations are logged, but bulk copy operations (operations involving lots
+of rows) are minimally logged. You could lose data here if you haven’t backed up
+and a bulk copy operation has occurred. 
+The final option is Simple. This doesn’t log anything and is usually a bad idea. If you plan to execute some pretty large inserts/updates/deletes against the database, consider temporarily switching to Bulk Logged or Simple.
+
+Collation: Collation is shown on the General page, and is also shown on the Options page. There are lots of collation options, which dictate things like case sensitivity and accent sensitivity.
+
+SELECT 
+DATABASEPROPERTYEX('AddressBook', 'Status') AS Status,
+DATABASEPROPERTYEX('AddressBook', 'Collation') AS Collation;

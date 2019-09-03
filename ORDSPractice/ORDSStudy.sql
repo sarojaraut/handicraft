@@ -1976,3 +1976,26 @@ Not ▪ PUT http://example.com/accounts/edit/12345
 ▪ POST http://example.com/accounts/
 NOT ▪ POST http://example.com/accounts/addaccount
 
+
+Enable REST Enabled SQL
+http://localhost:38080/ords/api/user/_/sql
+
+<entry key="restEnabledSql.active">true</entry>
+<entry key="security.verifySSL">false</entry>
+
+URL        : http://ol7-122.localdomain:8080/ords/pdb1/testuser1/_/sql
+Method     : POST
+Header     : Content-Type: application/sql
+Credentials: USERNAME:password
+Payload    : <<Your SQL goes here>>
+
+
+curl --request "POST" "http://localhost:38080/ords/api/_/sql" \
+    --header "Content-Type: application/sql" \
+    --user TESTUSER1:testuser1 \
+    --data $'SELECT * FROM dual;'
+
+curl -s -X "POST" "http://ol7-122.localdomain:8080/ords/pdb1/testuser1/_/sql" \
+       -H "Content-Type: application/sql" \
+       -u TESTUSER1:testuser1 \
+       -d @/tmp/tables.sql | python -mjson.tool

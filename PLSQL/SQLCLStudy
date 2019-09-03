@@ -1,4 +1,13 @@
-
+show tns
+desc emp;
+info emp;
+info+ emp;
+ddl emp;
+set sqlformat ansiconsole;
+set sqlformat csv;
+set sqlformat json;
+-- Note : Not exactly SQL hint syntax
+select /*json*/ * from dept;
 
 alias mysqlcl="sqlcl itsr/itsr@orclpdb1"
 alias cmsdev="sqlcl cms/cms@cmsdev"
@@ -12,7 +21,6 @@ history clear
 cd sequences
 @locations_seq.sql
 instead of @sequences/locations_seq.sql
-
 
 set sqlformat ansiconsole
 with ts_details as
@@ -40,7 +48,6 @@ select /*json*/ * from dept;
 set sqlformat csv
 select * from dept;
 
-
 set sqlformat json
 select * from dept;
 
@@ -58,12 +65,6 @@ fixed – fixed width
 text
 json
 
-desc emp;
-
-info emp;
-
-info+ emp;
-
 
 info dbms_utility.get_time
 
@@ -77,9 +78,6 @@ spool off
 login.sql under root folder of sqlcl with content as below
 
 set sqlprompt "_user '@' _connect_identifier >"
-
-
-
 
 
 /*  Sample Script

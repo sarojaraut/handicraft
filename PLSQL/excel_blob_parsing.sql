@@ -1,3 +1,334 @@
+update c19_test_scenario ts
+set    ts.qualifications = 
+    (
+    select
+        json_object(
+            'QUALIFICATIONS' is (
+                select
+                    json_arrayagg(
+                    json_object(
+                         'QUALIFICATION'       is qualification
+                        ,'SUBJECT'             is nvl(subject,other_qualification)
+                    --                ,'OTHER_QUALIFICATION' is other_qualification
+                        ,'GRADE'               is grade
+                        ,'YEAR'                is year
+                        ,'DISTINCTION'         is distinction
+                        ,'MERIT'               is merit
+                        ,'PASS'                is pass
+                        ,'OVERALL'             is overall
+                        ,'READING'             is reading
+                        ,'WRITING'             is writing
+                        ,'SPEAKING'            is speaking
+                        ,'LISTENING'           is listening
+                        ABSENT ON NULL
+                        )
+                    ) 
+                from c19_test_qualification
+                where id= ts.id
+            )
+        ) 
+    from dual
+    );
+
+
+with json_qual as(
+select
+    id,
+    json_object(
+        'QUALIFICATIONS' is (
+            json_arrayagg(
+            json_object(
+                 'QUALIFICATION'       is qualification
+                ,'SUBJECT'             is nvl(subject,other_qualification)
+--                ,'OTHER_QUALIFICATION' is other_qualification
+                ,'GRADE'               is grade
+                ,'YEAR'                is year
+                ,'DISTINCTION'         is distinction
+                ,'MERIT'               is merit
+                ,'PASS'                is pass
+                ,'OVERALL'             is overall
+                ,'READING'             is reading
+                ,'WRITING'             is writing
+                ,'SPEAKING'            is speaking
+                ,'LISTENING'           is listening
+                ABSENT ON NULL
+                )
+            )
+        )
+    ) quals
+from c19_test_qualification
+group by id
+)
+select
+    j.id,
+    j.quals,
+    t.qualifications
+from json_qual j
+join c19_test_scenario t
+on (t.id=j.id
+and j.quals <> t.qualifications);
+
+CREATE TABLE c19_test_qualification(
+    id                    NUMBER,
+    qualification         VARCHAR2(256BYTE),
+    subject               VARCHAR2(256BYTE),
+    other_qualification   VARCHAR2(256BYTE),
+    grade                 VARCHAR2(256BYTE),
+    year                  VARCHAR2(256BYTE),
+    distinction           VARCHAR2(256BYTE),
+    merit                 VARCHAR2(256BYTE),
+    pass                  VARCHAR2(256BYTE),
+    overall               VARCHAR2(256BYTE),
+    reading               VARCHAR2(256BYTE),
+    writing               VARCHAR2(256BYTE),
+    speaking              VARCHAR2(256BYTE),
+    listening             VARCHAR2(256BYTE)
+);
+
+delete from c19_test_qualification;
+
+insert into c19_test_qualification
+select
+--    line_number,
+    col001,
+    col002,
+    col003,
+    col004,
+    col005,
+    col006,
+    col007,
+    col008,
+    col009,
+    col010,
+    col011,
+    col012,
+    col013,
+    col014
+from generic_file f,
+    table(
+        apex_data_parser.parse(
+            p_content                     => f.file_content,
+            p_skip_rows                   => 1,
+            p_xlsx_sheet_name             => 'sheet2.xml',
+            p_store_profile_to_collection => 'FILE_PARSER_COLLECTION',
+            p_file_name                   => f.file_name
+        )
+    ) data
+where f.id = 1;
+
+update c19_test_qualification set grade = '2.2' where grade='2.2000000000000002';
+
+select
+    json_object(
+        'QUALIFICATIONS' is (
+            json_arrayagg(
+            json_object(
+                 'QUALIFICATION'       is qualification
+                ,'SUBJECT'             is nvl(subject,other_qualification)
+--                ,'OTHER_QUALIFICATION' is other_qualification
+                ,'GRADE'               is grade
+                ,'YEAR'                is year
+                ,'DISTINCTION'         is distinction
+                ,'MERIT'               is merit
+                ,'PASS'                is pass
+                ,'OVERALL'             is overall
+                ,'READING'             is reading
+                ,'WRITING'             is writing
+                ,'SPEAKING'            is speaking
+                ,'LISTENING'           is listening
+                ABSENT ON NULL
+                )
+            )
+        )
+    )
+from c19_test_qualification d
+where id =1;
+
+
+
+insert into c19_test_scenario
+(
+    id
+    ,ucas_personal_id
+    ,gender
+    ,visa
+    ,name1
+    ,name2
+    ,email
+    ,second_year_entry
+    ,tel1
+    ,tel2
+    ,nationality
+    ,applied_to_ucas
+    ,previously_applied_to_city
+    ,over18
+    ,notes
+    ,previous_uni_study
+    ,previous_study_notes
+    ,ucas_code
+    ,supplementary
+    ,expected
+    ,qualifications
+)
+select
+--    line_number,
+    col001,
+    col002,
+    col003,
+    col004,
+    col005,
+    col006,
+    col007,
+    col008,
+    col009,
+    col010,
+    col011,
+    col012,
+    col013,
+--    col014, -- CRIMINAL_RECORD
+--    col015, -- CRIMINAL_RECORD_NOTES
+    col016,
+    col017,
+    col018,
+    col019,
+    col020,
+    col021,
+    col022,
+    col023
+from generic_file f,
+    table(
+        apex_data_parser.parse(
+            p_content                     => f.file_content,
+            p_skip_rows                   => 1,
+            p_xlsx_sheet_name             => 'sheet1.xml',
+            p_store_profile_to_collection => 'FILE_PARSER_COLLECTION',
+            p_file_name                   => f.file_name
+        )
+    ) data
+where f.id = 1;
+
+
+
+
+select
+     sheet_sequence,
+     sheet_display_name,
+     sheet_file_name,
+     gf.id,
+     gf.file_name
+from generic_file gf,
+    table(
+        apex_data_parser.get_xlsx_worksheets(
+            p_content => gf.file_content )
+    );
+
+select
+    line_number,
+    col001,
+    col002,
+    col003,
+    col004,
+    col005,
+    col006,
+    col007,
+    col008,
+    col009,
+    col010,
+    col011,
+    col012,
+    col013,
+    col014,
+    col015,
+    col016,
+    col017,
+    col018,
+    col019,
+    col020,
+    col021,
+    col022,
+    col023
+from generic_file f,
+    table(
+        apex_data_parser.parse(
+            p_content                     => f.file_content,
+            p_skip_rows                   => 1,
+            p_xlsx_sheet_name             => 'sheet1.xml',
+            p_store_profile_to_collection => 'FILE_PARSER_COLLECTION',
+            p_file_name                   => f.file_name
+        )
+    ) data
+where f.id = 1;
+
+
+
+delete from c19_test_scenario;
+
+
+
+with 
+    --
+    -- This function takes work sheet name and file id
+    -- and returns the count of records in excel file
+    --
+    function excel_row_count(
+        i_xlsx_sheet_name   in varchar2,
+        i_file_id           in number )
+    return number
+    is
+        l_row_count   number;
+    begin
+        select
+            count(*)
+        into l_row_count
+        from ref_data_activity_log f,
+            table(
+                apex_data_parser.parse(
+                    p_content                     => f.file_content,
+                    p_skip_rows                   => 1,
+                    p_xlsx_sheet_name             => i_xlsx_sheet_name,
+                    p_store_profile_to_collection => 'FILE_PARSER_COLLECTION',
+                    p_file_name                   => f.file_name
+                )
+            ) data
+        where f.id = i_file_id;
+        return l_row_count;
+    end;
+    --
+    -- This function takes table name as argument
+    -- and returns the count of records using execute immediate
+    --
+    function table_row_count(
+        i_table_name   in varchar2)
+    return number
+    is
+        l_row_count   number;
+    begin
+        execute immediate 'select count(*) from '|| i_table_name into l_row_count;
+        return l_row_count;
+    end;
+select
+    f.id,
+    sheet_display_name excel_work_sheet_name,
+    pd.value_s1        target_table_name,
+--    sheet_file_name,
+--    sheet_sequence,
+--    sheet_path,
+    excel_row_count(sheet_file_name,f.id) excel_record_count,
+    table_row_count(pd.value_s1)          table_record_count
+from ref_data_activity_log f
+    cross join (table(
+        apex_data_parser.get_xlsx_worksheets(
+            p_content => file_content )
+    )) p
+    join param_dtl pd
+        on (p.sheet_display_name = pd.value_s2)
+where f.id=1181
+    and pd.system_name='Clearing' 
+    and pd.param_name='REF_DATA' 
+    and pd.config_name='SRC_TGT';
+
+
+
 https://technology.amis.nl/wp-content/uploads/2011/02/as_xlsx18.txt
 
 Excel parsing
@@ -482,8 +813,6 @@ Declare
     v_source_offset integer := 1; 
 begin 
 
-
-
     dbms_lob.createtemporary(v_blob, true, DBMS_LOB.CALL); 
     sys.htp.init; 
     sys.owa_util.mime_header( 'application/octet-stream', FALSE,'UTF-8' ); 
@@ -528,8 +857,6 @@ select
     sys.dbms_lob.getlength(file_blob) download
 from EBA_DEMO_FILES
 
-
-
 select filename, blob_content
 from
 select 
@@ -545,10 +872,10 @@ where file_name=:P6_FILE_CONTENT
 order by created_on desc
 ) where rownum =1;
 
-
 Name : Saroja Ranjan Raut
 Bank : SBI
 A/C Number : 030913171319
 IFSC Code : SBIN0001612
 030913171319
+
 

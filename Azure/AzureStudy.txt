@@ -1,0 +1,546 @@
+https://www.microsoftazuresponsorships.com/Balance
+https://portal.azure.com
+
+Lift and shift: IAAS : we can create a VM and setup the app. We don't need to pay anything to oracle as license fee. We will go for XE datbase. Now you are using me as an archiect and I'll revise my rate. 
+
+There will be considerable change to the current application. At the moment the application is creating direct sqlnet connections to database. This is a tightly coupled solution to oracle database and dependant on client side binaries like oracle client and java.
+
+schema as service is a saas offering and upto 50 gig of data. we are under 5 gig of data.
+
+I'll support your whole clearing process every year. I'll ask the HR to give you a quote. 
+
+These are compative studies
+
+
+xbkt854@city.ac.uk i8dRGb0g
+https://docs.microsoft.com/en-us/learn/modules/principles-cloud-computing/1-introduction
+
+As and when time and budget permits we will do this.
+
+Install the Azure PowerShell module :
+Install-Module -Name Az -AllowClobber -Scope CurrentUser
+    Press Y and A (yes for all) to continue
+Connect-AzAccount
+
+Get-AzSubscription
+    Name               Id                                   TenantId                             State
+    ----               --                                   --------                             -----
+    Free Trial         71bd5aa1-ebdd-44cb-89a5-a982cc2b6d03 dd615949-5bd0-4da0-ac52-28ef8d336373 Enabled
+    Azure for Students dbcf9719-1f3c-4ae2-9c47-609bd9730c59 dd615949-5bd0-4da0-ac52-28ef8d336373 Enabled
+
+Later after one month free trial subscription got disabled
+        Name               Id                                   TenantId                             State
+    ----               --                                   --------                             -----
+    Free Trial         71bd5aa1-ebdd-44cb-89a5-a982cc2b6d03 dd615949-5bd0-4da0-ac52-28ef8d336373 Disabled
+    Azure for Students dbcf9719-1f3c-4ae2-9c47-609bd9730c59 dd615949-5bd0-4da0-ac52-28ef8d336373 Enabled
+
+Get-AzSubscription -TenantId "aaaa-aaaa-aaaa-aaaa"
+
+Select-AzSubscription "71bd5aa1-ebdd-44cb-89a5-a982cc2b6d03"
+Get-AzVM # returns the status of all VMs in subscription one
+Select-AzureSubscription "dbcf9719-1f3c-4ae2-9c47-609bd9730c59"
+Get-AzVM # returns the status of all VMs in subscription two
+
+$subscription = "[subscription name]"
+Select-AzureSubscription $subscription
+
+Get-AzLocation
+Get-AzStorageAccount
+
+    StorageAccountName       ResourceGroupName               Location    SkuName      Kind      AccessTier CreationTime        ProvisioningState EnableHttpsTrafficOnly
+    ------------------       -----------------               --------    -------      ----      ---------- ------------        ----------------- ----------------------
+    csa71bd5aa1ebddx44cbx89a cloud-shell-storage-northeurope northeurope Standard_LRS StorageV2 Hot        7/15/19 12:16:32 PM Succeeded         True
+
+Test-AzName -Storage -Name "csa71bd5aa1ebddx44cbx89a"
+
+Get-Az.Compute
+
+az vm image list
+
+Get-AzRoleSize
+
+Cloud computing is a term for computing resources and services such as server and network infrastructure, web servers, and databases, hosted by cloud service vendors, rented by tenants, and delivered via the Internet.
+
+There are three types of cloud service models:
+    Infrastructure as a Service (IaaS)
+    Platform as a Service (PaaS)
+    Software as a Service (SaaS). 
+IaaS is the lowest service tier that offers server, storage, and networking infrastructure, which users can build their own systems on. 
+PaaS allows users to create and deploy applications without having to worry about the infrastructure that's hosting it using services and tools designed to streamline the development and deployment processes. 
+SaaS offers on-demand software products, which remove the infrastructure and software installation and setup overhead; web mail providers are an example of SaaS, where users can send and receive mails using a website rather than having to install a mail client on their machine.
+
+There are four main cloud deployment models: public cloud, private cloud, hybrid cloud, and community cloud. 
+Public cloud services are hosted by a vendor and made available to the public for use. 
+Private cloud services emulate public cloud services in terms of features but are only available within a company's domain. 
+Community cloud is a private cloud shared between a number of users. 
+Hybrid cloud is a mixture of the other three.
+
+Microsoft Azure is the collective name for Microsoft's cloud computing services that provide IaaS and PaaS service models.
+
+Microsoft Azure IaaS comprises of a number of globally distributed data centers hat host virtualized servers controlled by the Azure Fabric Controller. When we
+host systems on Azure, we become tenants and pay for our share of processing and network resources that we use through the subscription we choose.
+
+If your business has a heavy investment in its own infrastructure and can support future expansion on a variety of platforms, you may be less likely to want to use a cloud platform, but even then, there may be a service your infrastructure can't provide, or a platform it simply can't support, so it may be cheaper and faster to implement it in the cloud
+
+The steps involved in architecting a system to run on Microsoft Azure are as follows:
+1. Gather System Requirements: Before we do anything, we need to know what the system is supposed to do, who the users are, and what the budget is.
+2. Identify Subsystems: All systems can be broken down into smaller subsystems, making them easier to design and build, and particularly for Azure systems, making them more scalable.
+3. Design Subsystems: Once we have identified the subsystems, we need to design them at a high level, thinking about application types, storage requirements, and security.
+4. Integrate Subsystems: Subsystems need to interact with each other, whether it's through a shared database or messaging across a Service Bus topic. We need to work out the best way to effectively bring the systems together to get them working as an entire system.
+5. Identify Critical Systems: Before we start selecting services, we need to know which of them are business-critical, so we can choose an appropriate service tier and scale it to meet the required SLA.
+6. Select Microsoft Azure Services: This step is where we choose services and service tiers to build the system we've designed.
+
+Customer website design
+The website needs to allow customers to provide the following facilities:
+• Register and log in
+• View products
+• Make orders
+• View order progress
+• View order history
+
+Virtual machines
+Network components
+
+az vm list-sizes --location west-us
+az vm image show --urn westernoceansoftwaresprivatelimited:docker-community-edition-on-ubuntu-16-04-lts:docker-community-edition-on-ubuntu-16-04-lts:1.0.0   --output json
+
+Virtual Machines 
+The name of a VM can be up to 15 characters.
+The location specifies where the virtual hard disks are stored.
+Azure charges an hourly price based on the VM’s size and operating system. For partial hours, Azure charges only for the minutes used.
+The current limit on a per subscription basis is 20 VMs per region.
+Virtual machines use virtual hard disks (VHDs) to store their operating system (OS) and data. VHDs are also used for the images you can choose from to install an OS.
+
+In order for your deployment to qualify for our 99.95 VM Service Level Agreement, you need to deploy two or more VMs running your workload inside an availability set. This configuration ensures your VMs are distributed across multiple fault domains and are deployed onto hosts with different maintenance windows.
+
+For all Virtual Machines that have two or more instances deployed across two or more Availability Zones in the same Azure region, we guarantee you will have Virtual Machine Connectivity to at least one instance at least 99.99% of the time.
+For all Virtual Machines that have two or more instances deployed in the same Availability Set, we guarantee you will have Virtual Machine Connectivity to at least one instance at least 99.95% of the time.
+For any Single Instance Virtual Machine using premium storage for all Operating System Disks and Data Disks, we guarantee you will have Virtual Machine Connectivity of at least 99.9%.
+
+"Availability Set" refers to two or more Virtual Machines deployed across different Fault Domains to avoid a single point of failure.
+"Availability Zone” is a fault-isolated area within an Azure region, providing redundant power, cooling, and networking.
+"Data Disk" is a persistent virtual hard disk, attached to a Virtual Machine, used to store application data.
+"Fault Domain" is a collection of servers that share common resources such as power and network connectivity.
+"Operating System Disk" is a persistent virtual hard disk, attached to a Virtual Machine, used to store the Virtual Machine’s operating system.
+
+
+An Availability Set is a logical grouping capability for isolating VM resources from each other when they're deployed. Azure makes sure that the VMs you place within an Availability Set run across multiple physical hardware resources (physical servers, compute racks, storage units, and network switches). If a hardware or software failure happens, only a subset of your VMs are impacted and your overall solution stays operational. Availability Sets are essential for building reliable cloud solutions.
+
+The hardware in a location is divided in to multiple update domains and fault domains. An update domain is a group of VMs and underlying physical hardware that can be rebooted at the same time. VMs in the same fault domain share common storage as well as a common power source and network switch.
+
+
+Role-based access control (RBAC) for Azure resources?
+A role assignment consists of three elements: security principal, role definition, and scope.
+A security principal is an object that represents a user, group, service principal, or managed identity that is requesting access to Azure resources.
+
+AZURE Commands 
+az account list
+
+ssh-keygen -t rsa -b 2048
+cat ~/.ssh/id_rsa.pub
+
+ssh azureuser@myvm.westus.cloudapp.azure.com
+
+Naming Conventions :
+
+[IT workload]-[location]-[Azure resource] as a prefix
+clearing-eun-vm-dbhost01
+
+Virtual network names are all capital
+
+Does it need to connect to the on premise resources? If no then cloud only VN 
+
+azos-use-vm-web02
+
+ssh-keygen \
+    -t rsa \
+    -b 4096 \
+    -C "azureuser@myserver" \
+    -f ~/.ssh/mykeys/myprivatekey \
+    -N mypassphrase
+
+-t rsa = type of key to create, in this case in the RSA format
+-b 4096 = the number of bits in the key, in this case 4096
+-C "azureuser@myserver" = a comment appended to the end of the public key file to easily identify it. Normally an email address is used as the comment, but use whatever works best for your infrastructure.
+-f ~/.ssh/mykeys/myprivatekey = the filename of the private key file, if you choose not to use the default name. A corresponding public key file appended with .pub is generated in the same directory. The directory must exist.
+-N mypassphrase = an additional passphrase used to access the private key file.
+
+client ID and client secret
+
+Benefits 
+
+https://www.gnu.org/software/make/manual/html_node/index.html#SEC_Contents
+
+Make tutorial
+Make is a unix build tool. Manually compiling hundred files is cumbersome and error prone. 
+
+gcc  main.cpp hello.cpp factorial.cpp -o hello
+
+Makefile - Macros (which are similar to variables)
+
+Example : 
+
+MACROS  = -me
+PSROFF  = groff -Tps
+DITROFF = groff -Tdvi
+CFLAGS  = -O -systype bsd43
+LIBS    = "-lncurses -lm -lsdl"
+MYFACE  = ":*)"
+
+Special Macros
+Before issuing any command in a target rule set, there are certain special macros predefined −
+
+$@ is the name of the file to be made.
+$? is the names of the changed dependents.
+
+For example, we could use a rule as follows −
+
+hello: main.cpp hello.cpp factorial.cpp
+   $(CC) $(CFLAGS) $? $(LDFLAGS) -o $@
+
+Alternatively:
+
+hello: main.cpp hello.cpp factorial.cpp
+   $(CC) $(CFLAGS) $@.cpp $(LDFLAGS) -o $@
+
+In this example, $@ represents hello and $? or $@.cpp picks up all the changed source files.
+
+A simple makefile consists of “rules” with the following shape:
+
+ target … : prerequisites …
+        recipe
+        …
+        …
+
+A target is usually the name of a file that is generated by a program; examples of targets are executable or object files. A target can also be the name of an action to carry out, such as ‘clean’
+A prerequisite is a file that is used as input to create the target. A target often depends on several files.
+A recipe is an action that make carries out. A recipe may have more than one command, either on the same line or each on its own line. Please note: you need to put a tab character at the beginning of every recipe line!
+A rule, then, explains how and when to remake certain files which are the targets of the particular rule. make carries out the recipe on the prerequisites to create or update the target. A rule can also explain how and when to carry out an action. 
+
+A rule tells make two things: when the targets are out of date, and how to update them when necessary.
+
+The criterion for being out of date is specified in terms of the prerequisites, which consist of file names separated by spaces. (Wildcards and archive members (see Archives) are allowed here too.) A target is out of date if it does not exist or if it is older than any of the prerequisites (by comparison of last-modification times).
+
+Rule Example : Here is an example of a rule:
+
+foo.o : foo.c defs.h       # module for twiddling the frobs
+        cc -c -g foo.c
+
+Its target is foo.o and its prerequisites are foo.c and defs.h. It has one command in the recipe: ‘cc -c -g foo.c’. The recipe starts with a tab to identify it as a recipe.
+
+This rule says two things:
+
+How to decide whether foo.o is out of date: it is out of date if it does not exist, or if either foo.c or defs.h is more recent than it.
+How to update the file foo.o: by running cc as stated. The recipe does not explicitly mention defs.h, but we presume that foo.c includes it, and that that is why defs.h was added to the prerequisites.
+
+There are actually two different types of prerequisites understood by GNU make: normal prerequisites such as described in the previous section, and order-only prerequisites. A normal prerequisite makes two statements: first, it imposes an order in which recipes will be invoked: the recipes for all prerequisites of a target will be completed before the recipe for the target is run. Second, it imposes a dependency relationship: if any prerequisite is newer than the target, then the target is considered out-of-date and must be rebuilt.
+
+Normally, this is exactly what you want: if a target’s prerequisite is updated, then the target should also be updated.
+
+Occasionally, however, you have a situation where you want to impose a specific ordering on the rules to be invoked without forcing the target to be updated if one of those rules is executed. In that case, you want to define order-only prerequisites. Order-only prerequisites can be specified by placing a pipe symbol (|) in the prerequisites list: any prerequisites to the left of the pipe symbol are normal; any prerequisites to the right are order-only:
+
+targets : normal-prerequisites | order-only-prerequisites
+
+The normal prerequisites section may of course be empty. Also, you may still declare multiple lines of prerequisites for the same target: they are appended appropriately (normal prerequisites are appended to the list of normal prerequisites; order-only prerequisites are appended to the list of order-only prerequisites). Note that if you declare the same file to be both a normal and an order-only prerequisite, the normal prerequisite takes precedence (since they have a strict superset of the behavior of an order-only prerequisite).
+
+Consider an example where your targets are to be placed in a separate directory, and that directory might not exist before make is run. In this situation, you want the directory to be created before any targets are placed into it but, because the timestamps on directories change whenever a file is added, removed, or renamed, we certainly don’t want to rebuild all the targets whenever the directory’s timestamp changes. One way to manage this is with order-only prerequisites: make the directory an order-only prerequisite on all the targets:
+
+Wildcard Examples
+
+With the following rule in the makefile, ‘make print’ will print all the ‘.c’ files that have changed since the last time you printed them:
+
+print: *.c
+        lpr -p $?
+        touch print
+
+
+Simple Makefile
+
+edit : main.o kbd.o command.o display.o \
+       insert.o search.o files.o utils.o
+        cc -o edit main.o kbd.o command.o display.o \
+                   insert.o search.o files.o utils.o
+
+main.o : main.c defs.h
+        cc -c main.c
+kbd.o : kbd.c defs.h command.h
+        cc -c kbd.c
+command.o : command.c defs.h command.h
+        cc -c command.c
+display.o : display.c defs.h buffer.h
+        cc -c display.c
+insert.o : insert.c defs.h buffer.h
+        cc -c insert.c
+search.o : search.c defs.h buffer.h
+        cc -c search.c
+files.o : files.c defs.h buffer.h command.h
+        cc -c files.c
+utils.o : utils.c defs.h
+        cc -c utils.c
+clean :
+        rm edit main.o kbd.o command.o display.o \
+           insert.o search.o files.o utils.o
+
+The target ‘clean’ is not a file, but merely the name of an action. Since you normally do not want to carry out the actions in this rule, ‘clean’ is not a prerequisite of any other rule. Consequently, make never does anything with it unless you tell it specifically.
+
+----------- Hands On
+
+Terraform need to provide following Azure ARM environment variables using configuration file.
+
+ARM_SUBSCRIPTION_ID
+ARM_CLIENT_ID
+ARM_CLIENT_SECRET
+ARM_TENANT_ID
+
+Cloud Shell on top tool bar and enter : az account list
+“id” represent the Subscription ID
+
+saroj_raut@Azure:~$ az account list
+[
+  {
+    "cloudName": "AzureCloud",
+    "id": "ID1",
+    "isDefault": true,
+    "name": "Free Trial",
+    "state": "Enabled",
+    "tenantId": "dd615949-5bd0-4da0-ac52-28ef8d336373",
+    "user": {
+      "cloudShellID": true,
+      "name": "Saroj.Raut@city.ac.uk",
+      "type": "user"
+    }
+  },
+  {
+    "cloudName": "AzureCloud",
+    "id": "ID2",
+    "isDefault": false,
+    "name": "Azure for Students",
+    "state": "Enabled",
+    "tenantId": "dd615949-5bd0-4da0-ac52-28ef8d336373",
+    "user": {
+      "cloudShellID": true,
+      "name": "Saroj.Raut@city.ac.uk",
+      "type": "user"
+    }
+  }
+]
+
+Next step is to create the Service Principal. In order to do that use,
+
+az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/71bd5aa1-ebdd-44cb-89a5-a982cc2b6d03"
+
+Retrying role assignment creation: 1/36
+Retrying role assignment creation: 2/36
+{
+  "appId": "f8b92c07-77e8-413b-94e5-88db4ee12ab8",
+  "displayName": "azure-cli-2019-07-15-12-26-23",
+  "name": "http://azure-cli-2019-07-15-12-26-23",
+  "password": "f69f64de-22c5-48cb-ab59-85e0dc1bb4a2",
+  "tenant": "dd615949-5bd0-4da0-ac52-28ef8d336373"
+}
+
+• appId is equal to Client ID.
+• Password is equal to Client Secret
+• Tenant is equal to Tenant ID
+
+from powershell prompt : $env:Path +=";C:\saroj\software\terraform_0.12.4"
+
+terraform plan
+terraform apply
+terraform destroy
+
+https://docs.microsoft.com/en-us/learn/modules/principles-cloud-computing/1-introduction
+https://www.microsoft.com/en-us/learning/exam-AZ-900.aspx
+
+----Microsoft Azure Fundamentals
+Cloud computing is renting resources, like storage space or CPU cycles (compute power and storage), on another company's computers. You only pay for what you use. 
+
+Compute power : Computing choices : VM, Container, serverless
+
+Containers provide a consistent, isolated execution environment for applications. They're similar to VMs except they don't require a guest operating system. Instead, the application and all its dependencies is packaged into a "container" and then a standard runtime environment is used to execute the app. This allows the container to start up in just a few seconds because there's no OS to boot and initialize. The portability of the container makes it easy for applications to be deployed in multiple environments, either on-premises or in the cloud, often with no changes to the application.
+
+Serverless computing lets you run application code without creating, configuring, or maintaining a server. The core idea is that your application is broken into separate functions that run when triggered by some action. for example, you can build a serverless process that automatically sends an email confirmation after a customer makes an online purchase. 
+
+The serverless model differs from VMs and containers in that you only pay for the processing time used by each function as it executes. VMs and containers are charged while they're running - even if the applications on them are idle. This architecture doesn't work for every app - but when the app logic can be separated to independent units, you can test them separately, update them separately, and launch them in microseconds, making this approach the fastest option for deployment.
+
+VM : Physical Hardware -> Host Operating System -> Hypervisor Controller -> Virtual Hardware(1.2..) -> Guest OS(1.2..) -> APP
+Container : Physical Hardware -> Host Operating System -> Container Engine -> Container (1.2..) -> Run time Env(1.2..) -> Dependencies(1.2..) -> APP
+Serverless : Physical Hardware -> Host Operating System -> Serverless Run time -> Function (1.2..)
+
+Storage : The advantage to using cloud-based data storage is you can scale to meet your needs. If you find that you need more space to store your movie clips, you can pay a little more and add to your available space.
+
+Benefits of cloud computing : Cloud computing isn't an all-or-nothing service approach. Companies can choose to use the cloud to store their data and execute logic as much, or as little as necessary to fulfill their business requirements. Existing businesses might choose a gradual movement to save money on infrastructure and administration costs (referred to as "lift and shift"), while a new company might start in the cloud.
+
+It’s cost-effective
+Cloud computing provides a pay-as-you-go or consumption-based pricing model. Rather than paying upfront for a pre-defined amount of computing resources or hardware. No upfront costs and ability to pay for additional resources only when needed. 
+
+It's scalable
+You can increase or decrease the resources and services used based on the demand or workload at any given time. 
+Vertical scaling, also known as "scaling up", is the process of adding resources to increase the power of an existing server. Some examples of vertical scaling are: adding more CPUs, or adding more memory.
+Horizontal scaling, also known as "scaling out", is the process of adding more servers that function together as one unit. For example, you have more than one server processing incoming requests.
+It's elastic
+As your workload changes due to a spike or drop in demand, a cloud computing system can compensate by automatically adding or removing resources.
+
+It's current
+Cloud eliminates the burdens of maintaining software patches, hardware setup, upgrades, and other IT management tasks. All of this is automatically done for you to ensure you're using the latest and greatest tools to run your business. Additionally, the computer hardware is maintained and upgraded by the cloud provider. For example, if a disk fails, the disk will be replaced by the cloud provider. If new hardware update becomes available, you don’t have to go through the process of replacing your hardware. The cloud provider will ensure that the hardware updates are made available to you automatically.
+
+It's global
+Cloud providers have fully redundant datacenters located in various regions all over the globe. This gives you a local presence close to your customers to give them the best response time possible no matter where in the world they are.
+
+Microsoft provides the most comprehensive set of compliance offerings (including certifications and attestations) of any cloud service provider.
+
+Economies of scale is the ability to do things more efficiently or at a lower-cost per unit when operating at a larger scale. This cost advantage is an important benefit in cloud computing.
+
+Capital Expenditure (CapEx): CapEx is the spending of money on physical infrastructure up front, and then deducting that expense from your tax bill over time. CapEx is an upfront cost, which has a value that reduces over time.
+
+Operational Expenditure (OpEx): OpEx is spending money on services or products now and being billed for them now. You can deduct this expense from your tax bill in the same year. There's no upfront cost. You pay for a service or product as you use it.
+
+There are four main cloud deployment models: public cloud, private cloud, hybrid cloud, and community cloud. 
+Public cloud services are hosted by a vendor and made available to the public for use. you have no local hardware to manage or keep up-to-date – everything runs on your cloud provider’s hardware. Not all scenarios fit the public cloud. Here are some disadvantages to think about: Specific security requirements that cannot be met by using public cloud, Any government policies, industry standards, or legal requirements which public clouds cannot meet, You don't own the hardware or services and cannot manage them as you may want to, Unique business requirements, such as having to maintain a legacy application might be hard to meet
+Private cloud services emulate public cloud services in terms of features but are only available within a company's domain. This offers a simulation of a public cloud to your users in your own datacenter, but you remain completely responsible for the purchase and maintenance of the hardware and software services you provide.
+Some reasons teams move away from the private cloud are: You have some initial CapEx costs and must purchase the hardware for startup and maintenance Owning the equipment limits the agility - to scale you must buy, install, and setup new hardware Private clouds require IT skills and expertise that's hard to come by
+Community cloud is a private cloud shared between a number of users. 
+
+Hybrid cloud : hybrid cloud combines public and private clouds. 
+
+Types of cloud services
+Infrastructure as a service (IaaS) : is the most flexible category of cloud services. It aims to give you complete control over the hardware that runs your application (IT infrastructure servers and virtual machines (VMs), storage, networks, and operating systems). Instead of buying hardware, with IaaS, you rent it. It's an instant computing infrastructure, provisioned and managed over the internet. When using IaaS, ensuring that a service is up and running is a shared responsibility. Provider ensures infrastructure is available and client ensures applicatin/service is configured properly.
+
+IaaS is commonly used in the following scenarios: 
+Migrating workloads  - provide an easy migration path for moving existing applications to the cloud. 
+Test and development -  Teams can quickly set up and dismantle test and development environments
+Website hosting - Running websites using IaaS can be less expensive compared to traditional web hosting.
+Storage, backup, and recovery - Organizations avoid the capital outlay and complexity of storage management, which typically requires skilled staff to manage data and meet legal and compliance requirements.
+
+Platform as a service (PaaS) : The goal of PaaS is to help you create an application quickly without managing the underlying infrastructure. Cloud providers are typically responsible for everything apart from the application that a user wants to run. 
+
+For example, when deploying a web application using PaaS, you don't have to install an operating system, web server, or even system updates. PaaS is a complete development and deployment environment in the cloud, with resources that enable organizations to deliver everything from simple cloud-based apps to sophisticated cloud-enabled enterprise applications. Resources are purchased from a cloud service provider on a pay-as-you-go basis and accessed over a secure Internet connection.
+
+PaaS is commonly used in the following scenarios:
+
+Development framework. PaaS provides a framework that developers can build upon to develop or customize cloud-based applications.
+Analytics or business intelligence. Tools provided as a service with PaaS allow organizations to analyze and mine their data. They can find insights and patterns, and predict outcomes to improve business decisions such as forecasting, product design, and investment returns.
+
+Software as a service (SaaS) : SaaS is software that is centrally hosted and managed for the end customer. It is usually based on an architecture where one version of the application is used for all customers, and licensed through a monthly or annual subscription. Office 365, Skype, and Dynamics CRM Online are perfect examples of SaaS software. Users just use the application software; they are not responsible for any maintenance or management of that software.
+
+Bangali jhia manakara swara adha andira bhalia .. auu mote ta janichh amo kantha adha mai bhalia.
+
+Management responsibilities 
+
+On premise : User responsible for all (Network, storage, Server, virutalisation, OS, Middleware, runtime, data, application )
+IAAS : vender responsible for (Network, storage, Server, virutalisation) and User responsible for (OS, Middleware, runtime, data, application )
+PAAS : vender responsible for (Network, storage, Server, virutalisation, OS, Middleware, runtime) and User responsible for ( data, application )
+SAAS : vender responsible for all (Network, storage, Server, virutalisation, OS, Middleware, runtime, data, application )
+
+https://docs.microsoft.com/en-us/learn/paths/azure-fundamentals/
+Core Cloud Services - Azure architecture and service guarantees
+
+Microsoft Azure is made up of datacenters located around the globe. Azure organizes them into regions. When you leverage a service or create a resource such as a SQL database or virtual machine, you are using physical equipment in one or more of these locations.
+
+A region is a geographical area on the planet containing at least one, but potentially multiple datacenters that are nearby and networked together with a low-latency network.
+
+Some services or virtual machine features are only available in certain regions, such as specific virtual machine sizes or storage types. Azure has more global regions than any other cloud provider.
+
+Regions are what you use to identify the location for your resources, but there are two other terms you should also be aware of: geographies and availability zones.
+
+Azure divides the world into geographies that are defined by geopolitical boundaries or country borders. An Azure geography is a discrete market typically containing two or more regions that preserve data residency and compliance boundaries. 
+
+Geographies allow customers with specific data residency and compliance needs to keep their data and applications close.
+Geographies ensure that data residency, sovereignty, compliance, and resiliency requirements are honored within geographical boundaries.
+Geographies are fault-tolerant to withstand complete region failure through their connection to dedicated high-capacity networking infrastructure.
+
+Geographies are broken up into the following areas:
+
+Americas
+Europe
+Asia Pacific
+Middle East and Africa
+Each region belongs to a single geography and has specific service availability, compliance, and data residency/sovereignty rules applied to it. 
+
+Availability Zones : Availability Zones are physically separate datacenters within an Azure region. Each Availability Zone is made up of one or more datacenters equipped with independent power, cooling, and networking. It is set up to be an isolation boundary. If one zone goes down, the other continues working. Availability Zones are connected through high-speed, private fiber-optic networks.
+
+Supported regions
+Not every region has support for Availability Zones. The following regions have a minimum of three separate zones to ensure resiliency.
+
+Central US
+East US 2
+West US 2
+West Europe
+France Central
+North Europe
+Southeast Asia
+
+Availability Zones are primarily for VMs, managed disks, load balancers, and SQL databases. Azure services that support Availability Zones fall into two categories:
+
+Zonal services – you pin the resource to a specific zone (for example, virtual machines, managed disks, IP addresses)
+Zone-redundant services – platform replicates automatically across zones (for example, zone-redundant storage, SQL Database).
+
+Resiliency refers to a system's ability to stay operational during abnormal conditions.
+
+These conditions include:
+
+Natural disasters
+System maintenance, both planned and unplanned, including software updates and security patches.
+Spikes in traffic to your site
+Threats made by malicious parties, such as distributed denial of service, or DDoS, attacks
+
+A load balancer distributes traffic evenly among each system in a pool. A load balancer can help you achieve both high availability and resiliency.
+
+Azure Application Gateway
+If all your traffic is HTTP, a potentially better option is to use Azure Application Gateway. Application Gateway is a load balancer designed for web applications. It uses Azure Load Balancer at the transport level (TCP) and applies sophisticated URL-based routing rules to support several advanced scenarios.
+
+Here are some of the benefits of using Azure Application Gateway over a simple load balancer:
+
+Cookie affinity. Useful when you want to keep a user session on the same backend server.
+SSL termination. Application Gateway can manage your SSL certificates and pass unencrypted traffic to the backend servers to avoid encryption/decryption overhead. It also supports full end-to-end encryption for applications that require that.
+Web application firewall. Application gateway supports a sophisticated firewall (WAF) with detailed monitoring and logging to detect malicious attacks against your network infrastructure.
+URL rule-based routes. Application Gateway allows you to route traffic based on URL patterns, source IP address and port to destination IP address and port. This is helpful when setting up a content delivery network.
+Rewrite HTTP headers. You can add or remove information from the inbound and outbound HTTP headers of each request to enable important security scenarios, or scrub sensitive information such as server names.
+
+Latency refers to the time it takes for data to travel over the network. Latency is typically measured in milliseconds. Factors such as the type of connection you use and how your application is designed can affect latency. But perhaps the biggest factor is distance.
+
+Think about your e-commerce site on Azure, which is in the East US region. It would typically take less time to transfer data to Atlanta (a distance of around 400 miles) than to transfer data to London (a distance of around 4,000 miles). How can you reduce latency for users located far away geographically?
+
+One answer is Azure Traffic Manager. Traffic Manager uses the DNS server that's closest to the user to direct user traffic to a globally distributed endpoint.
+
+Azure Load Balancer distributes traffic within the same region to make your services more highly available and resilient. Traffic Manager works at the DNS level, and directs the client to a preferred endpoint. This endpoint can be to the region that's closest to your user.
+
+Docker swarm 
+Kubetnates
+
+Microsoft sql server
+
+https://docs.microsoft.com/en-us/learn/modules/intro-to-azure-networking/3-scale-load-balancer
+
+https://docs.microsoft.com/en-us/learn/modules/explore-azure-infrastructure/5-region-pairs
+
+https://docs.microsoft.com/en-us/learn/modules/monitor-github-events-with-a-function-triggered-by-a-webhook/
+
+https://docs.microsoft.com/en-us/learn/modules/intro-to-containers/
+
+https://docs.microsoft.com/en-us/learn/modules/welcome-to-azure/
+
+https://docs.microsoft.com/en-us/learn/modules/get-started-with-devops/
+
+https://docs.microsoft.com/en-us/learn/paths/work-with-relational-data-in-azure/
+
+https://docs.microsoft.com/en-us/learn/modules/create-linux-virtual-machine-in-azure/
+
+https://docs.microsoft.com/en-us/learn/modules/provision-azure-sql-db/
+
+https://docs.microsoft.com/en-us/learn/modules/secure-your-azure-virtual-machine-disks/
+
+https://docs.microsoft.com/en-us/learn/modules/manage-secrets-with-azure-key-vault/
+
+https://docs.microsoft.com/en-us/learn/modules/choose-a-messaging-model-in-azure-to-connect-your-services/
+
+https://docs.microsoft.com/en-us/learn/paths/connect-your-services-together/
+
+https://docs.microsoft.com/en-us/learn/paths/store-data-in-azure/
+
+https://docs.microsoft.com/en-us/learn/paths/work-with-relational-data-in-azure/
+
+Only data is from clearing 2018 application logic and UI are from recnt code base(Clearing 2019)
+
+
+

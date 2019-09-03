@@ -292,6 +292,41 @@ is
             'USER_ACCESS exported',
             to_char(sysdate,'DD Mon YY hh24:mi:ss')
         );
+        --
+        -- Add course_subject Data
+        --
+        as_xlsx.new_sheet( p_sheetname => 'TEST_SCENARIO');
+        as_xlsx.query2sheet( 
+            p_sql   => 'select
+                id
+                ,ucas_personal_id
+                ,gender
+                ,visa
+                ,name1
+                ,name2
+                ,email
+                ,second_year_entry
+                ,tel1
+                ,tel2
+                ,nationality
+                ,applied_to_ucas
+                ,previously_applied_to_city
+                ,over18
+                ,notes
+                ,previous_uni_study
+                ,previous_study_notes
+                ,ucas_code
+                ,supplementary
+                ,expected
+                ,qualifications 
+            from c19_test_scenario', 
+            p_sheet => 8);
+
+        logger.append_param(
+            l_stats,
+            'TEST_SCENARIO exported',
+            to_char(sysdate,'DD Mon YY hh24:mi:ss')
+        );
 
         l_excel := as_xlsx.finish;
 
@@ -403,7 +438,7 @@ is
             col015,
             --TO_DATE ('1900-01-01','YYYY-MM-DD' ) + col016, -- Changed this to make it more flexible
             sysdate,
-            col017
+            'sbrn521'
         from ref_data_activity_log f,
                 table(
                     apex_data_parser.parse(
@@ -550,8 +585,8 @@ is
 
         insert into c19_subject
         select
-            col001,
-            col002
+            rtrim(col001),
+            rtrim(col002)
         from ref_data_activity_log f,
                 table(
                     apex_data_parser.parse(
@@ -598,11 +633,11 @@ is
 
         insert into c19_course_subject
         select
-            col001,
-            col002,
-            col003,
-            col004,
-            col005
+            rtrim(col001),
+            rtrim(col002),
+            rtrim(col003),
+            rtrim(col004),
+            rtrim(col005)
         from ref_data_activity_log f,
                 table(
                     apex_data_parser.parse(
@@ -756,6 +791,96 @@ is
             raise;
     end load_user_access_data;
     --
+    --
+    --
+    procedure load_test_scenario_data(
+        i_work_sheet_name  in      varchar2,
+        i_file_id          in     number,
+        i_stats            in out logger.tab_param
+        )
+    is
+        l_del_count     number;
+        l_ins_count     number;
+        l_scope         varchar2(60) :=$$plsql_unit||'.load_test_scenario_data' ;
+    begin
+        delete from c19_test_scenario;
+        l_del_count := sql%rowcount;
+
+        insert into c19_test_scenario(
+             id
+            ,ucas_personal_id
+            ,gender
+            ,visa
+            ,name1
+            ,name2
+            ,email
+            ,second_year_entry
+            ,tel1
+            ,tel2
+            ,nationality
+            ,applied_to_ucas
+            ,previously_applied_to_city
+            ,over18
+            ,notes
+            ,previous_uni_study
+            ,previous_study_notes
+            ,ucas_code
+            ,supplementary
+            ,expected
+            ,qualifications
+        )
+        select
+            col001,
+            col002,
+            col003,
+            col004,
+            col005,
+            col006,
+            col007,
+            col008,
+            col009,
+            col010,
+            col011,
+            col012,
+            col013,
+            col014,
+            col015,
+            col016,
+            col017,
+            col018,
+            col019,
+            col020,
+            col021
+        from ref_data_activity_log f,
+                table(
+                    apex_data_parser.parse(
+                        p_content                     => f.file_content,
+                        p_add_headers_row             => 'Y',
+                        p_xlsx_sheet_name             => i_work_sheet_name,
+                        p_store_profile_to_collection => 'FILE_PARSER_COLLECTION',
+                        p_file_name                   => f.file_name
+                    )
+                ) data
+        where f.id = i_file_id
+        and line_number > 1;
+        l_ins_count := sql%rowcount;
+
+        logger.append_param(
+            i_stats,
+            'Course Data',
+            apex_string.format(c_message_template, l_del_count, l_ins_count)
+        );
+    exception
+        when others then
+            logger.log_error(
+                'Course data load failure',
+                l_scope,
+                null,
+                i_stats
+            );
+            raise;
+    end load_test_scenario_data;
+    --
     -- Parse the uploaded excel file and loads
     -- into correpsonding tables
     procedure process_excel(
@@ -884,6 +1009,8 @@ is
                         load_qual_subj_data(i.sheet_file_name, i.id, l_stats);
                     when 'user_access' then
                         load_user_access_data(i.sheet_file_name, i.id, l_stats);
+                    when 'test_scenario' then
+                        load_test_scenario_data(i.sheet_file_name, i.id, l_stats);
                     else
                         NULL;
                 end case;
@@ -1154,59 +1281,97 @@ BEGIN
 END;
 /
 
-http://localhost:38080/ords/api/media_module/media/699
 
-declare
-    l_blob          blob :=null;
-    l_file_name     varchar2(30);
-    l_file_id       number;
-begin
-    l_blob := ref_data_controller.generate_excel(
-        i_created_by        => :APP_USER
-        ,i_user_remark      => :P6_USER_REMARK
-        ,o_file_name        => l_file_name
-        ,o_file_id          => l_file_id
-        );
-    commit;
-end;
+-- create table param_hdr(
+--     system_name           varchar2(20)  -- e.g Clearing
+--     ,param_name           varchar2(20)  -- e.g REF_DATA
+--     ,description          varchar2(255) -- All configurations related to clearing reference data management
+--     ,constraint   param_hdr_pk primary key (system_name, param_name)
+-- );
 
-WEBAPPS_OWNER_DEV
+-- create table param_dtl(
+--     system_name           varchar2(20)  -- e.g Clearing
+--     ,param_name           varchar2(20)  -- e.g REF_DATA
+--     ,config_name          varchar2(20)  -- e.g SRC_TGT
+--     ,config_seq           number        -- e.g 1, 2 , 3
+--     ,value_n1             number        -- e.g NULL
+--     ,value_n2             number        -- e.g NULL
+--     ,value_d1             date          -- e.g NULL
+--     ,value_d2             date          -- e.g NULL
+--     ,value_s1             varchar2(100) -- e.g C19_SUBJECT
+--     ,value_s2             varchar2(100) -- e.g SUBJECT
+--     ,value_extra          varchar2(100) -- e.g @
+--     ,is_active            varchar2(1)   -- Y/N
+--     ,comments             varchar2(255) -- value extra field holds the db link name
+--     ,constraint   param_dtl_fk foreign key(system_name, param_name) references param_hdr(system_name, param_name)
+--     ,constraint   param_dtl_pk primary key (system_name, param_name, config_name, config_seq)
+-- );
+-- REM INSERTING into PARAM_HDR
+-- SET DEFINE OFF;
+-- Insert into PARAM_HDR (SYSTEM_NAME,PARAM_NAME,DESCRIPTION) values ('Clearing','REF_DATA','All configurations related to clearing reference data management, Y''s will be processed and if absent process will throw error, N''s will not be processed and if resent in excel will be ignored. O''s are optional and will be processed if present.');
 
-push_data_to_target_env
-begin
-delete from 
-c19_subject;
-C19_COURSE_SUBJECT;
-C19_QUAL_OPTION;
-C19_QUAL_SUBJ;
-C19_COURSE;
-C19_QUALIFICATION;
+-- REM INSERTING into PARAM_DTL
+-- SET DEFINE OFF;
+-- Insert into PARAM_DTL (SYSTEM_NAME,PARAM_NAME,CONFIG_NAME,CONFIG_SEQ,VALUE_N1,VALUE_N2,VALUE_D1,VALUE_D2,VALUE_S1,VALUE_S2,VALUE_EXTRA,IS_ACTIVE,COMMENTS) values ('Clearing','REF_DATA','SRC_TGT',1,null,null,null,null,'C19_SUBJECT','SUBJECT','WEBAPPS_OWNER_DEV','Y','value extra field holds the db link name');
+-- Insert into PARAM_DTL (SYSTEM_NAME,PARAM_NAME,CONFIG_NAME,CONFIG_SEQ,VALUE_N1,VALUE_N2,VALUE_D1,VALUE_D2,VALUE_S1,VALUE_S2,VALUE_EXTRA,IS_ACTIVE,COMMENTS) values ('Clearing','REF_DATA','SRC_TGT',2,null,null,null,null,'C19_COURSE_SUBJECT','COURSE_SUBJECT','WEBAPPS_OWNER_DEV','Y','value extra field holds the db link name');
+-- Insert into PARAM_DTL (SYSTEM_NAME,PARAM_NAME,CONFIG_NAME,CONFIG_SEQ,VALUE_N1,VALUE_N2,VALUE_D1,VALUE_D2,VALUE_S1,VALUE_S2,VALUE_EXTRA,IS_ACTIVE,COMMENTS) values ('Clearing','REF_DATA','SRC_TGT',3,null,null,null,null,'C19_QUAL_OPTION','QUAL_OPTION','WEBAPPS_OWNER_DEV','Y','value extra field holds the db link name');
+-- Insert into PARAM_DTL (SYSTEM_NAME,PARAM_NAME,CONFIG_NAME,CONFIG_SEQ,VALUE_N1,VALUE_N2,VALUE_D1,VALUE_D2,VALUE_S1,VALUE_S2,VALUE_EXTRA,IS_ACTIVE,COMMENTS) values ('Clearing','REF_DATA','SRC_TGT',4,null,null,null,null,'C19_QUAL_SUBJ','QUAL_SUBJECT','WEBAPPS_OWNER_DEV','Y','value extra field holds the db link name');
+-- Insert into PARAM_DTL (SYSTEM_NAME,PARAM_NAME,CONFIG_NAME,CONFIG_SEQ,VALUE_N1,VALUE_N2,VALUE_D1,VALUE_D2,VALUE_S1,VALUE_S2,VALUE_EXTRA,IS_ACTIVE,COMMENTS) values ('Clearing','REF_DATA','SRC_TGT',5,null,null,null,null,'C19_COURSE','COURSE','WEBAPPS_OWNER_DEV','Y','value extra field holds the db link name');
+-- Insert into PARAM_DTL (SYSTEM_NAME,PARAM_NAME,CONFIG_NAME,CONFIG_SEQ,VALUE_N1,VALUE_N2,VALUE_D1,VALUE_D2,VALUE_S1,VALUE_S2,VALUE_EXTRA,IS_ACTIVE,COMMENTS) values ('Clearing','REF_DATA','SRC_TGT',6,null,null,null,null,'C19_QUALIFICATION','QUALIFICATION','WEBAPPS_OWNER_DEV','Y','value extra field holds the db link name');
+-- Insert into PARAM_DTL (SYSTEM_NAME,PARAM_NAME,CONFIG_NAME,CONFIG_SEQ,VALUE_N1,VALUE_N2,VALUE_D1,VALUE_D2,VALUE_S1,VALUE_S2,VALUE_EXTRA,IS_ACTIVE,COMMENTS) values ('Clearing','REF_DATA','SRC_TGT',7,null,null,null,null,'C19_USER_ACCESS','USER_ACCESS','WEBAPPS_OWNER_DEV','O','value extra field holds the db link name');
+-- Insert into PARAM_DTL (SYSTEM_NAME,PARAM_NAME,CONFIG_NAME,CONFIG_SEQ,VALUE_N1,VALUE_N2,VALUE_D1,VALUE_D2,VALUE_S1,VALUE_S2,VALUE_EXTRA,IS_ACTIVE,COMMENTS) values ('Clearing','REF_DATA','SRC_TGT',8,null,null,null,null,'C19_TEST_SCENARIO','TEST_SCENARIO','WEBAPPS_OWNER_DEV','O','value extra field holds the db link name');
 
--- Working in order
-begin
-    insert into C19_USER@WEBAPPS_OWNER_DEV select * from C19_USER; -- needed for course data
-    insert into C19_dept@WEBAPPS_OWNER_DEV select * from C19_dept; -- needed for course data
-    insert into C19_SUBJECT@WEBAPPS_OWNER_DEV select * from C19_SUBJECT;
-    insert into C19_QUALIFICATION@WEBAPPS_OWNER_DEV select * from C19_QUALIFICATION;
-    insert into C19_QUAL_OPTION@WEBAPPS_OWNER_DEV select * from C19_QUAL_OPTION;
-    insert into C19_COURSE@WEBAPPS_OWNER_DEV select * from C19_COURSE;
-    insert into C19_COURSE_SUBJECT@WEBAPPS_OWNER_DEV select * from C19_COURSE_SUBJECT;
-    insert into C19_QUAL_SUBJ@WEBAPPS_OWNER_DEV select * from C19_QUAL_SUBJ;
-end;
-/
+-- create table generic_file(
+--     id            number,
+--     file_name     varchar2(100),
+--     file_comment  varchar2(255),
+--     created_dtm   date,
+--     file_content  blob
+-- );
 
-select 
-    value_s1,
-    value_s2,
-    value_extra,
-    apex_string.format(
-        'insert into %0@%1 select * from %0' 
-        ,value_s1
-        ,value_extra
-        ,value_s2
-    ) sql_string
-from param_dtl 
-where system_name='Clearing' 
-    and param_name='REF_DATA' 
-    and config_name='SRC_TGT';
+-- create sequence generic_file_seq start with 1;
+
+-- http://localhost:38080/ords/api/media_module/media/699
+
+-- declare
+--     l_blob          blob :=null;
+--     l_file_name     varchar2(30);
+--     l_file_id       number;
+-- begin
+--     l_blob := ref_data_controller.generate_excel(
+--         i_created_by        => :APP_USER
+--         ,i_user_remark      => :P6_USER_REMARK
+--         ,o_file_name        => l_file_name
+--         ,o_file_id          => l_file_id
+--         );
+--     commit;
+-- end;
+
+-- -- Working in order
+-- begin
+--     insert into C19_USER@WEBAPPS_OWNER_DEV select * from C19_USER; -- needed for course data
+--     insert into C19_dept@WEBAPPS_OWNER_DEV select * from C19_dept; -- needed for course data
+--     insert into C19_SUBJECT@WEBAPPS_OWNER_DEV select * from C19_SUBJECT;
+--     insert into C19_QUALIFICATION@WEBAPPS_OWNER_DEV select * from C19_QUALIFICATION;
+--     insert into C19_QUAL_OPTION@WEBAPPS_OWNER_DEV select * from C19_QUAL_OPTION;
+--     insert into C19_COURSE@WEBAPPS_OWNER_DEV select * from C19_COURSE;
+--     insert into C19_COURSE_SUBJECT@WEBAPPS_OWNER_DEV select * from C19_COURSE_SUBJECT;
+--     insert into C19_QUAL_SUBJ@WEBAPPS_OWNER_DEV select * from C19_QUAL_SUBJ;
+-- end;
+-- /
+
+-- select 
+--     value_s1,
+--     value_s2,
+--     value_extra,
+--     apex_string.format(
+--         'insert into %0@%1 select * from %0' 
+--         ,value_s1
+--         ,value_extra
+--         ,value_s2
+--     ) sql_string
+-- from param_dtl 
+-- where system_name='Clearing' 
+--     and param_name='REF_DATA' 
+--     and config_name='SRC_TGT';
 

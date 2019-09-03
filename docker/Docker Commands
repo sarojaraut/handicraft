@@ -1,3 +1,20 @@
+---- Docker Installation in centos Start
+sudo yum install -y yum-utils \
+  device-mapper-persistent-data \
+  lvm2
+
+sudo yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+
+sudo yum install docker-ce docker-ce-cli containerd.io
+
+sudo systemctl start docker
+
+sudo docker run hello-world
+
+---- Docker Installation in centos End
+
 ls -lah ~/Library/Containers/com.docker.docker/Data/com.docker.driver.amd64-linux/Docker.qcow2
 
 /usr/share/zoneinfo/Europe/Londonh
@@ -94,8 +111,6 @@ export CATALINA_OPTS="$CATALINA_OPTS -server"
   redirectPort="8443" />
 </Service>
 
-
-
 docker tag flask how2dock/flask
 
 Using ONBUILD Images
@@ -110,7 +125,11 @@ of the parent will be executed first.
 
 docker export 77d9619a7a71 > update.tar
 
-docker import - update < update.tar
+docker export e48215a4fc86 > e48215a4fc86.tar
+
+scp 403369337ab2.tar node@clr2ap0.city.ac.uk:/var/files
+
+docker import - 403369337ab2 < 403369337ab2.tar
 
 $ docker run -d --name nginx nginx
 $ docker inspect --format '{{ .NetworkSettings.IPAddress }}' nginx
@@ -958,3 +977,5 @@ Database changed
 USE, like QUIT, does not require a semicolon. (You can terminate such statements with a semicolon if you like; it does no harm.) The USE statement is special in another way, too: it must be given on a single line.
 
 https://dev.mysql.com/doc/refman/5.7/en/creating-database.html
+
+

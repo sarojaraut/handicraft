@@ -1,0 +1,2 @@
+https://docs.cloud.oracle.com/iaas/Content/GSG/Reference/overviewworkflow.htm
+https://docs.cloud.oracle.com/iaas/Content/GSG/Tasks/creatingkeys.htm
