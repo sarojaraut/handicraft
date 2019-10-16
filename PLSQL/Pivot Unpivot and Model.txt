@@ -178,7 +178,9 @@ from
             (v1,v2,v3,v4,v5)
     )
 
-    Number of rows in the final output = 5 * number of source rows -- 5 is the number of columns in the unpivot for clause
+Number of rows in the final output = 5 * number of source rows -- 5 is the number of columns in the unpivot for clause
+This is going to add two new columns to the result, value and column_type. 
+Each row of the original data is now going to be split into number of rows same as number of columns in the column list clause. value will hold the column values and column_type will hold the column names.
 
 Output
 
@@ -205,15 +207,53 @@ from
     (
         value
         for column_type in
-            (v1,v2,v3)
+            (v1,v2,v3) --This means each row of main query will be split across three rows, 
+            -- value of v4 and v5 will be repeated for these three rows
+            -- so in total there will be four coulmns v4 and v5 and column_type and value
+            -- Check output below 
     )
-  
+
 V4	V5	COLUMN_TYPE	VALUE
 o	u	   V1	        a
 o	u	   V2	        e
 o	u	   V3	        i
 
 ------------------------------------------------------
+Below example will show eight records, each row will be split into four rows
+
+select * from 
+(
+    select
+        'a' v1,
+        'e' v2,
+        'i' v3,
+        'o' v4
+    from dual
+    union
+    select
+        'A' v1,
+        'E' v2,
+        'I' v3,
+        'O' v4
+    from dual
+    
+)
+unpivot (
+    value
+    for column_type in (v1,v2,v3,v4) -- this will cause each row to be splited across four rows
+    -- Also because all columns of the main data is used here that means only two columns will be available i.e column_type and value
+);
+Column_type  Value
+V1	           A
+V2	           E
+V3	           I
+V4	           O
+V1	           a
+V2	           e
+V3	           i
+V4	           o
+
+-----------------------------------------------------
 
 select * from
 (
@@ -235,13 +275,15 @@ from
             (v1,v2,v3,v4,v5)
     )
 )
-pivot ( min(value) 
-for column_type in
-('V1' as V1,
-'V2' as V2,
-'V3' as V3,
-'V4' as V4,
-'V5' as V5)
+pivot ( 
+    min(value) 
+    for column_type in (
+        'V1' as V1,
+        'V2' as V2,
+        'V3' as V3,
+        'V4' as V4,
+        'V5' as V5
+    )
 )
 
 ------------------------------------------------------
@@ -677,3 +719,6 @@ Oracle Database returns an error if you use FOR year FROM 2005 TO 2001 INCREMENT
 
 The MODEL clause, in its default behavior, requires the PARTITION BY and DIMENSION BY keys to uniquely identify each row in the input to the model. Oracle verifies that and returns an error if the data is not unique. Uniqueness of the input rowset on the PARTITION BY and DIMENSION BY keys guarantees that any single cell reference accesses one and only one cell in the model.
 
+
+
+, with new_col2 contaning the value of the 

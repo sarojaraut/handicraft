@@ -1,3 +1,83 @@
+javascript:$s('P4_PRODUCT_ID',&PRODUCT_ID.); --re directing to a specific url as url syntax
+
+apex_application.g_print_success_message := '<span style="color:green">Computer created</span>';
+
+apex_application.g_print_success_message := '<span style="color:red">No valid computer name</span>';
+
+apex_error.add_error
+        (p_message               => 'No value in the Employee number field.',
+        p_display_location      => apex_error.c_inline_in_notification
+        );
+
+apex_error.add_error
+    (p_message               =>    'Employee No : '
+                                || :p11_empno
+                                || ' already exists.',
+    p_display_location      => apex_error.c_inline_in_notification
+    );
+
+apex_application.g_print_success_message :=
+    '<span style="color : white ">Success :</span>'
+    || TRIM (:p11_empno);
+
+Dynamic action to change text colour :
+
+$v("P3_CHECKBOX") === $v("P3_ANSWER")
+
+APEX Icons : fa fa-thumbs-up fam-check fam-is-success
+fa fa-thumbs-down fam-x fam-is-danger
+
+--------------------------------------------
+server side condition : plsql function body
+
+    if apex_authentication.is_authenticated then
+        return false;
+    else
+        return true;
+    end if;
+--------------------------------------------
+Region type : PLSQL Dynamic content
+sys.htp.p('<p>'||:P50_WARNING_MESSAGE||'</p>');
+
+server side condition = PLSQL Expression : :P50_WARNING_MESSAGE is not null and :P50_CAN_TAKE_YN = 'N'
+
+-------------------------------------------
+To create a editabel link manually in classic report
+
+go to the columns field of primary key column.
+Make the column type as link
+Mark the heading as hidden : <span class="u-VisuallyHidden">Edit</span>
+Then on the link section set link text : <img src="#IMAGE_PREFIX#app_ui/img/icons/apex-edit-pencil.png" class="apex-edit-pencil" alt="">
+
+------------------------------------------
+-- PLSQL Dynamic content to display an image
+
+declare
+   c integer := 0;
+begin
+   for c2 in (
+      select image_height, image_width
+        from EBA_LIVEPOLL_SECTIONS
+       where id = :P38_ID
+         and NVL(dbms_lob.getlength(IMAGE_BLOB),0) > 0
+   ) loop
+      c := c + 1;
+      sys.htp.p('<p><img src="'||apex_util.get_blob_file_src('P38_IMAGE_BLOB',:P38_ID)||'"');
+      if c2.image_height is not null then
+         sys.htp.p(' height="'|| c2.image_height ||'"');
+      end if;
+      if c2.image_width is not null then
+         sys.htp.p(' width="'|| c2.image_width ||'"');
+      end if;
+      sys.htp.p(' /></p>');
+   end loop;
+   if c = 0 then
+       sys.htp.p('<p>No image has been selected click the <strong>choose file</strong> button to add an image.</p>');
+   end if;
+end;
+
+----------------------------------------
+
 select count(*) from APEX_050000.WWV_FLOWS where id = 4000;
 
 If the count is 0 it is a runtime, if the count is 1, it is a full development environment.

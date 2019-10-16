@@ -335,7 +335,6 @@ BEGIN
 END clobToBlob;
 /
 
-
 This insert now looks like this
 
 INSERT
@@ -387,8 +386,6 @@ INSERT INTO j_purchaseorder
                                  "UPCCode"     : 85391628927},
                        "Quantity" : 5.0}]}');
 
-
-
 select j.PO_DOCUMENT.CostCenter, count(*)
 from J_PURCHASEORDER j
 group by j.PO_DOCUMENT.CostCenter
@@ -429,7 +426,6 @@ select JSON_VALUE(PO_DOCUMENT,'$.LineItems[0].Part.UnitPrice' returning NUMBER(5
 from J_PURCHASEORDER p
 where JSON_VALUE(PO_DOCUMENT ,'$.PONumber' returning NUMBER(10)) = 450
 /
-
 
 select JSON_VALUE(PO_DOCUMENT,'$.ShippingInstruction.Address' DEFAULT 'N/A' ON ERROR)
 from J_PURCHASEORDER

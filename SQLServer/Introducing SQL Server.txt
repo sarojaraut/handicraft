@@ -146,3 +146,992 @@ Collation: Collation is shown on the General page, and is also shown on the Opti
 SELECT 
 DATABASEPROPERTYEX('AddressBook', 'Status') AS Status,
 DATABASEPROPERTYEX('AddressBook', 'Collation') AS Collation;
+
+select DBMS_OBFUSCATION_TOOLKIT.MD5 (input => UTL_RAW.CAST_TO_RAW ('sarojraut')) from dual;
+
+set serveroutput on;
+declare
+l clob;
+BEGIN
+l := 'sarojraut';
+  DBMS_OUTPUT.PUT_LINE (
+    'md5 hash => ' ||
+    DBMS_OBFUSCATION_TOOLKIT.MD5 (
+   input => UTL_RAW.CAST_TO_RAW (l)));
+END;
+/
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = 'IX_C_ContactAddresses_ContactIdPostcode')
+BEGIN
+    DROP INDEX IX_C_ContactAddresses_ContactIdPostcode ON dbo.ContactAddresses;
+END;
+
+There is a size limit on the index value in MS Sql Server 
+
+-- Argument
+
+Different Indexes 
+Clustered
+Non-Clustered
+Includes
+
+Indexes
+
+Non-Clustered Indexes And B-Trees
+Non-clustered indexes work in a very similar manner to clustered indexes, except the data is not stored in a sorted order, and indeed is not stored on the data pages. The data pages in a non-clustered index store an identifier that points at the row containing the data. So once the B-Tree has done its work and found the correct data page, there is an additional step as the index hops over to the actual row to retrieve the columns you have requested.
+Included columns can work around this; you can include columns in an index and the values for those columns will be stored right inside the index. This can avoid the additional step required for non-clustered indexes if all of the relevant columns are available.
+
+CREATE INDEX IndexName ON TableName (Columns);
+
+CREATE CLUSTERED INDEX IndexName ON TableName (Columns);
+
+CREATE NONCLUSTERED INDEX IndexName ON TableName (Columns); -- Default non-clustered
+
+CREATE INDEX IndexName ON TableName (Columns) INCLUDE (Columns);
+-- Filtered Index
+CREATE INDEX IndexName ON TableName (Columns) WHERE (Conditions);
+
+A clustered index dictates how the data in a table is sorted on disk. As it’s only possible to sort data on disk in one particular way, you can only have one clustered index per table. Clustered indexes are often the most performant kind of index because the data is returned as soon as it is located by the index. This is because the data is stored with the index.
+
+Usually don't create clustered index on surrogate keys.
+
+USE AddressBook;
+CREATE CLUSTERED INDEX IX_C_ContactAddresses_ContactIdPostcode ON
+dbo.ContactAddresses(Postcode, ContactId);
+GO
+
+Scans are used when the data is not ordered, and seeks are used when the data is ordered.
+You are probably wondering what the difference between an index seek and scan is. A seek will use the B-Tree to locate the data it requires. It will use the search parameters provided to limit the number of pages it searches through. A scan starts at the beginning of the index and moves through each row in order, pulling out matching rows as it finds them. Every row in the index is scanned.
+The general rule to follow is that seeks are usually better for fairly straightforward queries (e.g., queries using JOINs and WHERE clauses), while more complicated queries may benefit from the use of a scan.
+
+Included columns come in useful when you want to store more data alongside the index. You don’t necessarily want to make these columns part of the index key. Indeed, you may not be able to do so—the size of the key is limited to 900 bytes and 16 columns. These columns do not form part of the index—they wouldn’t be used by the index to find data matching a WHERE clause, for example—but they are stored alongside the index, meaning an extra hop over to the row once a match is found is not required. This type of index is also called covering index. This is an index that can be used to return all data for a particular query.
+
+Filtered Indexes
+A filtered index is the same as any other type of index you create, with one big difference: you specify a WHERE clause, limiting the index to certain types of data. Why would you want to do this?
+• Filtered indexes are smaller than normal, full-table indexes
+• Not all DML statements will cause filtered indexes to be updated, reducing the cost of index maintenance
+• Less disk space is required to store a filtered index, as it only stores the rows matching the filter
+
+Target Query
+SELECT 
+    C.ContactId, 
+    C.FirstName, 
+    C.LastName, 
+    C.AllowContactByPhone 
+FROM dbo.Contacts C WHERE
+C.AllowContactByPhone = 1;
+
+CREATE NONCLUSTERED INDEX IX_NC_Contacts_AllowContactByPhone 
+ON dbo.Contacts(AllowContactByPhone) 
+INCLUDE (ContactId, FirstName, LastName) 
+WHERE AllowContactByPhone = 1;
+
+Above query with filter AllowContactByPhone = 1 would use this index but AllowContactByPhone = 0 would not.
+
+Whenever we created a unique constraint, we were actually creating a unique index.
+
+Maintaining Indexes
+Usually, your tables and other database objects require minimal maintenance. Once the object is structured how you want it and has been proven to be working correctly, you can pretty much leave it running, with the occasional check. This isn’t the case with indexes.
+
+Identifying Index Fragmentation
+SQL Server provides a set of Dynamic Management Views, or DMVs for short. This query uses a DMV called sys.dm_db_index_physical_stats to tell you if any of your indexes are fragmented.
+
+SELECT 
+    DB_NAME(PS.[database_id]) AS DatabaseName, 
+    OBJECT_NAME(PS.[object_id]) AS TableOrViewName, 
+    SI.[name] AS IndexName, 
+    PS.[index_type_desc] AS IndexType,
+    PS.[avg_fragmentation_in_percent] AS AmountOfFragementation 
+FROM 
+    sys.dm_db_index_physical_stats(DB_ID(N'AddressBook'), NULL, NULL, NULL, 'DETAILED') PS 
+    INNER JOIN sys.indexes SI
+    ON PS.[object_id] = SI.[object_id] AND 
+    PS.[index_id] = SI.[index_id]
+ORDER BY OBJECT_NAME(PS.[object_id]) ASC;
+
+Altering Indexes
+ALTER INDEX is used for maintenance purposes. Its principal aim is to allow you to either disable, rebuild, or reorganize an index. You can change certain options for the index, but you cannot change its definition—to do that, you need to drop the index and then recreate it.
+
+ALTER INDEX IX_C_ContactAddresses_ContactIdPostcode ON dbo.ContactAddresses DISABLE;
+
+When a clustered index is disabled, other indexes on the table are disabled, too.
+If clustered index is disabled then data can't be retrived from the table
+
+Rebuilding Indexes
+There is no option to re-enable an index. Instead, you must rebuild the index.
+ALTER INDEX IX_C_ContactAddresses_ContactIdPostcode ON dbo.ContactAddresses REBUILD;
+ALTER INDEX ALL ON dbo.ContactAddresses REBUILD;
+
+You rebuild indexes when the index is not performing as expected, probably due to fragmentation. Rebuilding an index causes the index to be dropped and recreated, resolving any fragmentation issues.
+
+Reorganizing Indexes
+Reorganizing causes the leaf level of the index—the level that holds the data (or points to the data in a non-clustered index)—to be, well, reorganized. This eliminates fragmentation. This is similar to rebuilding, but crucially it can be done without impacting access to the table.
+
+ALTER INDEX IX_C_ContactAddresses_ContactIdPostcode ON dbo.ContactAddresses REORGANIZE;
+
+Rebuilding an index on large tables can sometimes take hours. If this happens, rebuilding an index may not be desirable—it could prevent access to the table during the rebuild. It is for this kind of scenario that reorganization was introduced. The index is reorganized but the table is still accessible. You cannot reorganize a disabled index; the index must be active.
+
+ALTER INDEX IX_C_ContactAddresses_ContactIdPostcode ON dbo.ContactAddresses REORGANIZE;
+
+ALTER INDEX ALL ON dbo.ContactAddresses REORGANIZE;
+
+Creating Indexed Views
+Indexed views perform better than normal views because they have a unique clustered index added to them. This means the view exists as a physical object, making it work in a manner very similar to a table. the view definition must meet certain rules.
+If any of these rules are not met, you cannot create a clustered index on the view:
+• The view definition must include WITH SCHEMABINDING
+• All table names must include the schema name (e.g., dbo.Contacts, not Contacts)
+• All expressions in the view must be deterministic; that is, the same value is always returned (GETDATE() is not deterministic as it never returns the same value, but ADDNUMBERS(1,2) would always return 3, so it is deterministic)
+• The view can only include tables, not other views
+• The tables in the view must exist in the same database
+• Most aggregate functions cannot be used (e.g., COUNT(), MIN(), MAX())
+
+CREATE UNIQUE CLUSTERED INDEX IX_C_VerifiedContacts_ContactIdFirstNameLastName
+ON dbo.VerifiedContacts(ContactId, LastName, AllowContactByPhone);
+
+CREATE INDEX IX_NC_VerifiedContacts_DrivingLicenseNumber
+ON dbo.VerifiedContacts(DrivingLicenseNumber);
+
+Indexes are a great thing, but make sure you use them correctly and in moderation. Don’t add them for the sake of it. Performance of DML might get impacted because of excess indexes, covering index in particular.
+
+Transactions
+T-SQL Transaction Statements
+You use BEGIN TRANSACTION to start a transaction. This tells SQL Server that every statement you subsequently run should be seen as part of the current transaction. You can give the transaction an optional name, Giving the transaction a name could be useful if you were nesting transactions; that is, embedding one transaction in another.
+
+BEGIN TRANSACTION;
+or:
+BEGIN TRANSACTION TransactionName;
+
+When you BEGIN a transaction, this causes something called a lock to be opened on the tables involved in the transaction. Normally, this lock prevents other users from accessing the table during the transaction, so you want to run the COMMIT TRANSACTION command as quickly as possible.
+
+COMMIT TRANSACTION;
+To commit a named transaction, you provide the name at the end of the statement:
+COMMIT TRANSACTION TransactionName;
+
+
+ROLLBACK TRANSACTION : When you call ROLLBACK TRANSACTION, all records that have been inserted, updated, or deleted within the transaction to that point are either removed or restored to their original state.
+
+ROLLBACK TRANSACTION;
+Or if you specified a transaction name:
+ROLLBACK TRANSACTION TransactionName;
+
+There are two types of transaction: implicit, and explicit. Take a look at this statement:
+
+INSERT INTO dbo.Roles (RoleTitle) VALUES ('Helpdesk Operator');
+
+This will execute as an implicit transaction. This means SQL Server BEGINs and COMMITs a transaction just for this statement. It does it in the background. Because the BEGIN and COMMIT apply to one statement, there is no way to roll this change back—you would need to delete the row.
+
+Explicit transactions
+BEGIN TRANSACTION;
+INSERT INTO dbo.Roles (RoleTitle) VALUES ('Helpdesk Operator');
+COMMIT TRANSACTION;
+
+If you write to a table noone can read from that.
+
+SELECT @@TRANCOUNT; -- This global system variable shows how many transactions are open for the current session 
+
+EXEC sp_who; -- Show who is blocking whom, if blk column value is not zero that shows that this spid is blocking this session 
+
+Starting a transaction means either it has to be commited or rolledback. Else other users will be blocked even the readers. 
+
+General Transaction Rules
+Keep Transactions Short
+The first and most crucial rule is to keep your transactions short. When you open a transaction, you are locking any objects involved in that transaction. Therefore, the shorter the transaction, the shorter the time SQL Server locks the objects, reducing contention in your database.
+
+Limit Transactions to DML Statements
+There isn’t much point in wrapping a SELECT statement that takes 20 minutes to execute in a transaction. Sometimes you cannot avoid embedding SELECT statements in transactions, but generally you want to limit the contents of a transaction to DML statements.
+
+Don’t Be Afraid to Split Transactions Up
+I’ve often come across developers who feel they must do everything in a single transaction. This is bunk! If you have some code that you feel will take too long to execute in a single transaction, don’t worry about splitting it up into multiple transactions. There are various techniques you can use to roll back the results of previous transactions should a subsequent transaction fail—storing new or updated data in temp tables, for example, before committing it all at the end of the code block. If you assess your code carefully, you’ll see there is seldom a need for a long-running transaction.
+
+USE AddressBook;
+DECLARE @ContactId INT,
+@InsertSuccessful BIT = 0;
+BEGIN TRANSACTION;
+
+    INSERT INTO dbo.Contacts(FirstName, LastName, DateOfBirth, AllowContactByPhone)
+    VALUES('Bryan', 'Ferry', '1945-09-26', 0);
+
+    SELECT @ContactId = SCOPE_IDENTITY();
+
+    PRINT 'Inserted contact ID: ' + CAST(@ContactId AS VARCHAR(10));
+
+    IF (COALESCE(@ContactId, 0) != 0)
+    BEGIN
+        INSERT INTO dbo.ContactVerificationDetails(ContactId, DrivingLicenseNumber, ContactVerified)
+        VALUES (@ContactId, 1033, 1);
+        SELECT @InsertSuccessful = 1;
+    END;
+    IF (@InsertSuccessful = 1)
+    BEGIN
+        COMMIT TRANSACTION;
+        PRINT 'Transaction committed successfully.';
+    END;
+    ELSE
+    BEGIN
+        ROLLBACK TRANSACTION;
+        PRINT 'Transaction rolled back. No changes made.';
+    END;
+
+Functions
+
+Broadly speaking, there are two types of user-defined function in SQL Server:
+• Scalar functions: These are functions that return a standard type of value, such as an INT or a VARCHAR. An addition function that returns the sum of two numbers would be a scalar function.
+• Table-valued functions: These are scalar functions can only return one value, of the defined type. If you need to return multiple values, you can write a TVF. These return a table containing the data you requested.
+
+--deterministic
+CREATE FUNCTION dbo.AddNumbers(
+    @Number1 INT, 
+    @Number2 INT
+)
+RETURNS INT
+AS
+BEGIN
+    RETURN COALESCE(@Number1, 0) + COALESCE(@Number2, 0);
+END;
+
+--non-deterministic
+CREATE FUNCTION dbo.DateWithHoursAdded(
+    @HoursToAdd INT)
+RETURNS DATETIME
+AS
+BEGIN
+    RETURN DATEADD(HOUR, COALESCE(@HoursToAdd, 0), GETDATE());
+END;
+
+SQL Server also provides a set of system functions, e.g getdate(), count() etc. You can see the system functions using SSMS. In the Object Explorer, expand Databases ➤ AddressBook ➤ Programmability ➤ Functions. TVFs and scalar-valued functions are used to house UDFs in this list. Aggregate functions are a special type of UDF that are created in .NET,
+
+The last line of a function must be a RETURN statement. If you are writing a TVF, you just write RETURN. If the function returns a scalar value,  that scalar value must be specified in the RETURN statement.
+
+USE AddressBook;
+GO
+CREATE FUNCTION dbo.ContactName(
+    @FirstName VARCHAR(40), 
+    @LastName VARCHAR(40))
+RETURNS VARCHAR(80)
+AS
+BEGIN
+DECLARE @FullName VARCHAR(80);
+-- Capitalise the first letter of the first name and last name
+    SELECT @FirstName = UPPER(LEFT(@FirstName, 1)) + RIGHT(@FirstName, LEN(@FirstName) - 1),
+    @LastName = UPPER(LEFT(@LastName, 1)) + RIGHT(@LastName, LEN(@LastName) - 1);
+
+    SELECT @FullName = @FirstName + ' ' + @LastName;
+    RETURN @FullName;
+END;
+GO
+
+The above code works fine untill you test with a null value which needs special treatment
+
+select dba.ContactName('saroj',NULL); -- this would throw error invalid lemgth parameter passed to the right function.
+
+we need to add the following code to fix this problem
+
+-- Replace NULL values with empty strings
+SELECT @FirstName = COALESCE(@FirstName, ''), @LastName = COALESCE(@LastName, '');
+
+-- Capitalise the first letter of the first name and last name
+SELECT 
+@FirstName = 
+    CASE WHEN LEN(@FirstName) > 0 
+        THEN UPPER(LEFT(@FirstName, 1)) + RIGHT(@FirstName,LEN(@FirstName) - 1) 
+    ELSE @FirstName END,
+@LastName = 
+    CASE WHEN LEN(@LastName) > 0 
+        THEN UPPER(LEFT(@LastName, 1)) + RIGHT(@LastName,LEN(@LastName) - 1) 
+    ELSE @LastName
+END;
+
+There is nothing like create or replace function in sqlserver
+we can use ALTER FUNCTION or drop and create
+
+IF EXISTS (SELECT 1 FROM sys.objects WHERE [name] = 'ContactName' AND [type] = 'FN')
+BEGIN
+DROP FUNCTION dbo.ContactName;
+END;
+
+SELECT 
+    ContactId, 
+    dbo.ContactName(FirstName, LastName) AS FullName, 
+    DateOfBirth
+FROM dbo.Contacts;
+
+Table-Valued Functions
+
+There are several reasons why TVFs are so great:
+• A view can only contain a single SELECT statement; a TVF can contain multiple statements, all of which combine to produce the end table.
+• TVFs can replace stored procedures. Stored procedures can return result sets, but they cannot be easily used in queries. TVFs can be embedded directly in queries.
+• Bugs in TVFs can be easily fixed, as long as the function signature doesn’t change.
+• TVFs can accept parameters, which allow you to dictate the output of the table.
+• TVFs can hide a lot of complexity and improve code reuse.
+• TVFs are great when a fairly small result set is being returned.
+
+Sometimes, TVFs Are Not So Cool
+• TVFs can greatly affect performance. A TVF is executed for every single row returned by a SELECT statement, so great care needs to be taken in how they are used.
+• Views offer much lower overhead compared to TVFs; if you can do what you need to do in a single SELECT statement, use a view.
+• If you don’t need to use the result set in other queries, use a stored procedure; these generally perform better than TVFs.
+• If a large result set is being returned, a TVF may not offer the best solution due to their procedural nature. Consider a set-based solution instead (we’ll be looking at an example of this in the next two chapters).
+
+USE AddressBook;
+IF EXISTS (SELECT 1 FROM sys.objects WHERE [name] = 'ContactCounts'
+AND [type] = 'TF')
+BEGIN
+    DROP FUNCTION dbo.ContactCounts;
+END;
+GO
+
+-- Table-Valued function to return contact record counts
+-- Acceptable values for @TableName are All, ContactAddresses, ContactNotes, --
+-- ContactPhoneNumbers, and ContactRoles.
+CREATE FUNCTION dbo.ContactCounts(
+    @ContactId INT, 
+    @TableName VARCHAR(40)
+)
+RETURNS @CountsTable TABLE (
+    ContactId        INT, 
+    AddressCount     INT, 
+    NoteCount        INT,
+    PhoneNumberCount INT, 
+    RoleCount        INT)
+AS
+BEGIN
+    -- Variables to hold the counts
+    DECLARE @AddressCount INT, @NoteCount INT, @PhoneNumberCount INT, @RoleCount INT;
+    -- Return address count
+    IF (@TableName IN ('All', 'ContactAddresses'))
+    BEGIN
+        SELECT @AddressCount = COUNT(1)
+        FROM dbo.ContactAddresses CA
+        WHERE CA.ContactId = @ContactId;
+    END;
+    -- Return note count
+    IF (@TableName IN ('All', 'ContactNotes'))
+    BEGIN
+        SELECT @NoteCount = COUNT(1) FROM dbo.ContactNotes CN WHERE CN.ContactId = @ContactId;
+    END;
+    -- Return phone number count
+    IF (@TableName IN ('All', 'ContactPhoneNumbers'))
+    BEGIN
+        SELECT @PhoneNumberCount = COUNT(1) FROM dbo.ContactPhoneNumbers CPN WHERE CPN.ContactId = @
+    ContactId;
+    END;
+    -- Return role count
+    IF (@TableName IN ('All', 'ContactRoles'))
+    BEGIN
+        SELECT @RoleCount = COUNT(1) FROM dbo.ContactRoles CR WHERE CR.ContactId = @ContactId;
+    END;
+    -- If we have at least one valid value, add the row
+    IF (@AddressCount > 0 OR @NoteCount > 0 OR @PhoneNumberCount > 0 OR @RoleCount > 0)
+    BEGIN
+        INSERT INTO @CountsTable (ContactId, AddressCount, NoteCount, PhoneNumberCount, RoleCount)
+        SELECT @ContactId, @AddressCount, @NoteCount, @PhoneNumberCount, @RoleCount;
+    END;
+
+    RETURN; -- Only return without the table name
+
+END;
+GO
+
+Press Ctrl+Shift+R to refresh Intellisense (the pop-up information that appears as you are typing) after creating new objects.
+
+USE AddressBook;
+SELECT * FROM dbo.ContactCounts(1, 'All');
+
+SQL Server treats the function name as a tablename. A value for each parameter must be provided (you can specify default values for parameters, but even if a default is specified, you must provide the DEFAULT keyword)
+
+TVF can be used s a part of join clause but if column value from other tables needs to be passed to the TVF as parameter then APPLY clause must be used. There are two types of APPLY. The CROSS APPLY operator acts like an INNER JOIN. A row is only returned if it exists in both the left- and right-hand sides of a query. A CROSS APPLY doesn’t have an ON clause, so a statement using it looks like this:
+SELECT 
+    dbo.ContactName(C.FirstName, C.LastName) AS ContactName, 
+    C.DateOfBirth,
+    CC.AddressCount, 
+    CC.NoteCount,
+    CC.PhoneNumberCount, 
+    CC.RoleCount 
+FROM dbo.Contacts C 
+CROSS APPLY dbo.ContactCounts(C.ContactId, 'All') CC;
+
+Remember that CROSS APPLY acts as an INNER JOIN, if records are not present in the table referenced in TVF the record will not appear in the output.
+The rows in the left table are evaluated first, and then applied to the TVF on the right-hand side of the query. The eft table can be a TVF as well.
+--- Experiments to be done
+
+1. When no data found for a select record looks like the into variable will be null and this wll not throw any error 
+2. How the outer apply works 
+
+
+OUTER APPLY acts like a LEFT OUTER JOIN. OUTER APPLY
+works in exactly the same manner as CROSS APPLY, except it will return all rows from the table on the left of the query, regardless of whether there are matching rows on the right side.
+
+Stored Procedures—Part 1
+Difference between Function and Stored Procedure. Function is intended to do one simple thing well, like the ContactName function. If you need complexity, stored procedures are the way to go. 
+
+Some great reasons to use them are the following:
+• Performance: Stored procedures will perform better than having the equivalent code running individually every time. SQL Server stores query plans for stored procedures, allowing it to execute them faster than ad hoc queries.
+• Encapsulation: You can embed as much code and logic into a stored procedure as you want. All of this is hidden from the developer calling the stored procedure—they just need to know what parameters they need to pass to execute the stored procedure.
+• Improve maintainability: You can easily change how a stored procedure works internally, without affecting any applications calling it. You just need to make sure you don’t modify the inputs and outputs.
+• Multiple output options: Stored procedures can return one or more record sets, as well as values in output parameters.
+• Stored procedures can call other stored procedures.
+• Stored procedures can call scalar and table-valued functions.
+• You can create any type of procedure you can think of—for searching, inserting, updating, deleting. . . .
+• Almost any valid piece of T-SQL can be called within a stored procedure (and for those that can’t, there is normally a workaround).
+
+CREATE PROCEDURE SchemaName.ProcedureName
+(
+Parameters (optional)
+)
+AS
+BEGIN
+Do something...
+END;
+
+USE AddressBook;
+GO
+CREATE PROCEDURE dbo.InsertContact(
+    @FirstName VARCHAR(40),
+    @LastName VARCHAR(40),
+    @DateOfBirth DATE,
+    @AllowContactByPhone BIT
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRANSACTION;
+        INSERT INTO dbo.Contacts(
+            FirstName, 
+            LastName, 
+            DateOfBirth, 
+            AllowContactByPhone) 
+        VALUES (
+            @FirstName, 
+            @LastName, 
+            @DateOfBirth, 
+            @AllowContactByPhone);
+    COMMIT TRANSACTION;
+    SET NOCOUNT OFF;
+END;
+GO
+
+EXEC dbo.InsertContact 'Joe', 'Beasley', '1959-05-09', 1;
+
+--Named parameter. You cannot mix and match named parameters—if you use named parameters, you must name every parameter (unless it has a default value)
+EXEC dbo.InsertContact
+    @FirstName           = 'Michael',
+    @LastName            = 'Stipe',
+    @DateOfBirth         = '1960-01-04',
+    @AllowContactByPhone = 0;
+
+select top(5) * from dbo.Contacts order by contact_id desc;
+
+SET NOCOUNT ON and OFF
+
+It is advisable to turn these informational messages off(NOCOUNT ON) as that improves performance.
+To turn the messages off, turn SET NOCOUNT to ON. It is good practice to turn this setting back OFF at the end of your procedures.
+
+Returning Data from Stored Procedures
+
+USE AddressBook;
+IF EXISTS (SELECT 1 FROM sys.procedures WHERE [name] = 'InsertContact')
+BEGIN
+    DROP PROCEDURE dbo.InsertContact;
+END;
+
+GO
+GO
+CREATE PROCEDURE dbo.InsertContact(
+    @FirstName VARCHAR(40),
+    @LastName VARCHAR(40),
+    @DateOfBirth DATE,
+    @AllowContactByPhone BIT
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @ContactId INT;
+
+    BEGIN TRANSACTION;
+        INSERT INTO dbo.Contacts(
+            FirstName, 
+            LastName, 
+            DateOfBirth, 
+            AllowContactByPhone) 
+        VALUES (
+            @FirstName, 
+            @LastName, 
+            @DateOfBirth, 
+            @AllowContactByPhone);
+
+        SELECT @ContactId = SCOPE_IDENTITY();
+
+    COMMIT TRANSACTION;
+
+    SELECT @ContactId AS ContactId;
+
+    SET NOCOUNT OFF;
+END;
+GO
+
+Now by calling this procedure returns the contact id value as result.
+
+EXEC dbo.InsertContact
+    @FirstName           = 'Saroj',
+    @LastName            = 'Raut',
+    @DateOfBirth         = '1980-07-09',
+    @AllowContactByPhone = 0;
+
+The SELECT output is really useful if you want a front-end system of some type to call this stored procedure. It isn’t so useful if you want to use the ContactId from within a different SQL Server script (it can be done without too much difficulty, but it involves a temp table and is messy).  Never fear, there is an easier way. We’ll see this during our discussion of parameters.
+
+-- Default parameter set to zero we can skip this while executing the procedure and if we want a different value than zero we can use this parameter.
+CREATE PROCEDURE dbo.InsertContact
+(
+@FirstName VARCHAR(40),
+@LastName VARCHAR(40),
+@DateOfBirth DATE,
+@AllowContactByPhone BIT = 0
+)
+
+To specify an output parameter, add the OUTPUT keyword after the parameter declaration : @ContactId INT OUTPUT
+You can even specify a default value for an output parameter, meaning you don’t have to pass it in. : @ContactId INT = 0 OUTPUT
+
+USE AddressBook;
+IF EXISTS (SELECT 1 FROM sys.procedures WHERE [name] = 'InsertContact')
+BEGIN
+    DROP PROCEDURE dbo.InsertContact;
+END;
+
+GO
+GO
+CREATE PROCEDURE dbo.InsertContact(
+    @FirstName           VARCHAR(40),
+    @LastName            VARCHAR(40),
+    @DateOfBirth         DATE,
+    @AllowContactByPhone BIT = 0,
+    @ContactId           INT = 0 OUTPUT
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    --DECLARE @ContactId INT; --Not needed any more from previous line code
+
+    BEGIN TRANSACTION;
+        INSERT INTO dbo.Contacts(
+            FirstName, 
+            LastName, 
+            DateOfBirth, 
+            AllowContactByPhone) 
+        VALUES (
+            @FirstName, 
+            @LastName, 
+            @DateOfBirth, 
+            @AllowContactByPhone);
+
+        SELECT @ContactId = SCOPE_IDENTITY();
+
+    COMMIT TRANSACTION;
+
+    SELECT @ContactId AS ContactId;
+
+    SET NOCOUNT OFF;
+END;
+GO
+
+DECLARE @ContactIdOut INT
+EXEC dbo.InsertContact
+    @FirstName           = 'Saroj',
+    @LastName            = 'Raut',
+    @DateOfBirth         = '1980-07-09',
+    @AllowContactByPhone = 0
+    @ContactId           = @ContactIdOut OUTPUT; 
+-- OUTPUT needs to be specified during procedure declaration and as well as execution
+
+select @ContactIdOut  as ContactReturnedFromExecution;
+
+Now this procedure has two ways of returning the output.
+
+Output parameters are not used very often, but they give you another one of those extra boosts that many developers I meet seem to be completely unaware of. They are especially useful if you are writing a stored procedure that will be called from other stored procedures.
+
+Basic Debugging with PRINT
+There are far more sophisticated ways of debugging stored procedures, but PRINT offers a quick way to investigate issues (just don’t forget to take the PRINT statements out when you’re done!).
+
+PRINT 'Contact ID inserted: ' + CONVERT(VARCHAR(20), @ContactId);
+
+Stored Procedure Part-2
+
+Creating a UDT
+To create a UDT, call the CREATE TYPE command. There is no corresponding ALTER TYPE command—if you want to modify the type you need to drop it and recreate it.
+
+USE AddressBook;
+IF EXISTS (SELECT 1 FROM sys.types WHERE [name] = 'ContactNote')
+BEGIN
+    DROP TYPE dbo.ContactNote;
+END
+
+CREATE TYPE dbo.ContactNote
+AS TABLE (
+    ContactId   INT, 
+    Note        VARCHAR(200)
+);
+
+GO
+
+USE AddressBook;
+
+DECLARE @IntValue INT, @VarcharValue VARCHAR(10), @ContactNoteValue CONTACTNOTE;
+SELECT @IntValue = 1, @VarcharValue = 'Hello';
+
+INSERT INTO @ContactNoteValue (ContactId, Note) VALUES (@IntValue, @VarcharValue);
+SELECT * FROM @ContactNoteValue;
+
+The important thing to take away is the CONTACTNOTE data type is nothing more than a table, and can be used exactly like any other table. This means we can declare a table, populate it, and then pass the populated table to the InsertContact stored procedure.
+
+--Code with UDT
+
+USE AddressBook;
+
+IF EXISTS (SELECT 1 FROM sys.procedures WHERE [name] = 'InsertContact')
+BEGIN
+    DROP PROCEDURE dbo.InsertContact;
+END;
+GO
+CREATE PROCEDURE dbo.InsertContact
+(
+    @FirstName           VARCHAR(40),
+    @LastName            VARCHAR(40),
+    @DateOfBirth         DATE,
+    @AllowContactByPhone BIT = 0,
+    @Notes               CONTACTNOTE READONLY,
+    @ContactId           INT = 0 OUTPUT
+)
+AS
+    BEGIN
+    SET NOCOUNT ON;
+    -- Add variables to support note processing
+    DECLARE @TempNotes TABLE (
+        NoteId INT IDENTITY(1,1), 
+        Note VARCHAR(200)
+    );
+    DECLARE @RecordCount INT, @LoopCounter INT, @NoteId INT;
+
+    -- Copy the @Notes table, which is readonly, to a table variable so we can
+    -- modify the data
+    INSERT INTO @TempNotes (Note) SELECT Note FROM @Notes;
+
+    -- Set defaults for the loop around the notes
+    SELECT @RecordCount = COUNT(1), @LoopCounter = 0 FROM @TempNotes;
+    
+    -- Remove any notes that are empty
+    DELETE FROM @TempNotes WHERE LTRIM(RTRIM(COALESCE(Note, ''))) = '';
+
+    BEGIN TRANSACTION;
+    INSERT INTO dbo.Contacts(
+        FirstName, 
+        LastName, 
+        DateOfBirth, 
+        AllowContactByPhone)
+    VALUES (
+        @FirstName, 
+        @LastName,
+        @DateOfBirth, 
+        @AllowContactByPhone);
+
+    SELECT @ContactId = SCOPE_IDENTITY();
+    PRINT 'Contact ID inserted: ' + CONVERT(VARCHAR(20), @ContactId);
+
+    -- Insert notes using WHILE loop
+    WHILE (@LoopCounter < @RecordCount)
+    BEGIN
+        SELECT TOP (1) @NoteId = NoteId FROM @TempNotes;
+        INSERT INTO dbo.ContactNotes (ContactId, Notes)
+        SELECT @ContactId, Note FROM @TempNotes WHERE NoteId = @NoteId;
+        
+        DELETE @TempNotes WHERE NoteId = @NoteId;
+        SELECT @LoopCounter = @LoopCounter + 1;
+    END;
+    COMMIT TRANSACTION;
+
+    SELECT @ContactId AS ContactId;
+    SET NOCOUNT OFF;
+END;
+
+GO
+
+Executing the SP 
+USE AddressBook;
+
+DECLARE @ContactIdOUT INT, @ContactNotes CONTACTNOTE;
+
+INSERT INTO @ContactNotes (ContactId, Note)
+VALUES
+    (NULL, 'Mark Kermode contributes to the BBC Radio 5 film programme'),
+    (NULL, 'Mark thinks The Exorcist is the best film ever made.');
+
+EXEC dbo.InsertContact
+    @FirstName = 'Mark',
+    @LastName = 'Kermode',
+    @DateOfBirth = '1963-07-02',
+    @Notes = @ContactNotes,
+    @ContactId = @ContactIdOUT OUTPUT;
+
+SELECT @ContactIdOUT AS ContactIdFromOutputVariable;
+SELECT * FROM dbo.Contacts WHERE ContactId = @ContactIdOUT;
+SELECT * FROM dbo.ContactNotes WHERE ContactId = @ContactIdOUT;
+
+Set-Based Logic : Above code process data one row at a time and that's very unplesant. Thaat's error prone and slow in performance. 
+
+We could have done below in stead of that loop.
+INSERT INTO dbo.ContactNotes (ContactId, Notes) SELECT @ContactId, Note FROM @Notes;
+
+CREATE PROCEDURE dbo.InsertContact(
+    @FirstName           VARCHAR(40),
+    @LastName            VARCHAR(40),
+    @DateOfBirth         DATE,
+    @AllowContactByPhone BIT = 0,
+    @Notes               CONTACTNOTE READONLY,
+    @ContactId           INT = 0 OUTPUT
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRANSACTION;
+    INSERT INTO dbo.Contacts(
+        FirstName, 
+        LastName, 
+        DateOfBirth, 
+        AllowContactByPhone)
+    VALUES (
+        @FirstName, 
+        @LastName,
+        @DateOfBirth, 
+        @AllowContactByPhone);
+
+    SELECT @ContactId = SCOPE_IDENTITY();
+
+    PRINT 'Contact ID inserted: ' + CONVERT(VARCHAR(20), @ContactId);
+
+    INSERT INTO dbo.ContactNotes (ContactId, Notes) SELECT @ContactId, Note FROM @Notes;
+
+    COMMIT TRANSACTION;
+    SELECT @ContactId AS ContactId;
+    SET NOCOUNT OFF;
+END;
+
+Bits and Pieces
+This will be a bit brief, but you can use the overview as a springboard to find out about the things that sound interesting. Okay, let’s roll!
+
+When you first installed SQL Server, you added yourself as an administrator. This meant you were added to a security group called sysadmins. This is a server security group—anybody who is a member of the sysadmins group can perform absolutely any action on the server. This is usually the norm in a development environment, but it certainly is not normal in any other environment
+
+GRANT, DENY, and REVOKE
+GRANT SELECT ON dbo.Contacts TO Dolly;
+There are two other commands: DENY and REVOKE. DENY temporarily removes permissions, REVOKE removes them for good.
+
+Fixed Server Roles
+It is possible to create your own server roles; the nine roles provided as part of SQL Server are known as Fixed Server Roles.
+
+• sysadmin: This is what we have been using throughout the book. A member of this group can perform any action on the SQL Server.
+• serveradmin: Members of this group can shut down the server and modify the server configuration. 
+• securityadmin: This group is used to manage logins and associated permissions at the server level. If a securityadmin user has access to a database they can also manage database permissions. Users in this group can use the GRANT, DENY, and REVOKE statements we saw earlier.
+• processadmin: Do you remember Chapter 15, our transactions chapter, when we blocked our SELECT statement? Members of this group can stop processes, so if you think you need this ability, this is the role to ask for.
+• setupadmin: Not a commonly used role. It is possible to link SQL Server to other servers (this includes SQL Servers, Oracle, and other database systems). This role lets you create these linked servers using T-SQL. Strangely, you have to be a member of the sysadmin group to create a linked server using SSMS.
+• bulkadmin: If you are a member of this group, you can execute the BULK INSERT statement. You can’t do anything else.
+• diskadmin: Do you remember when we were discussing database files way back in the early chapters? We talked about the possibility of splitting your database up across multiple files. If you want to do this, you’ve come to the right group!
+• dbcreator: Despite its name, this role does not limit its users to just creating databases—they can also alter and drop databases, and restore them via backups.
+• public: All SQL Server logins (logins created using SQL Server security) belong to the public role by default. This is a kind of catchall role. If a user is attempting to access a particular object and no specific permissions have been granted on that object, the permissions the public role has for that object are inherited by the user. You should be careful with this role, and only assign permissions on objects you want everybody to have access to.
+
+Fixed Database Roles
+The Fixed Server Roles let you manage server permissions; the Fixed Database Roles manage individual permissions in individual databases. You may be a member of db_owner in one database, and a member of db_datareader in another. If you wish, you can create your own database roles—these are known as flexible database roles.
+
+There are nine Fixed Database Roles:
+• db_owner: Equivalent to sysadmin, but at the database level. If you are in this group you can do anything within the database, even drop it.
+• db_securityadmin: Members can manage database permissions, including role membership.
+• db_accessadmin: Controls who can add or remove access to the database, for all types of user.
+• db_backupoperator: Used to perform database backups.
+• db_ddladmin: If you are in this role, you can run any Data Definition Language (DDL) command. These are the commands that create, alter, or drop objects, like CREATE TABLE.
+• db_datawriter: Gives access to the data in all tables of the database. You can insert, update, and delete data if you are in this role.
+• db_datareader: Allows data in any table to be viewed.
+• db_denydatawriter: Members of this role cannot modify data in any way.
+• db_denydatareader: You guessed it—if you are in this role you won’t be able to read any data.
+If explicit SELECT permissions are granted on tables, it wouldn’t matter that you were a member of db_denydatareader. You would be able to view the data in Contacts, but not in any other table.
+
+Schemas
+Schemas can be used as a further security mechanism, but they are also really useful for logically grouping database objects.
+
+CREATE SCHEMA Reporting;
+
+CREATE PROCEDURE Reporting.SelectAllContacts
+-- To check existance of object on a specific schema
+
+IF EXISTS(SELECT 1 FROM sys.procedures SP
+INNER JOIN sys.schemas SC
+ON SP.schema_id = SC.schema_id
+WHERE SP.[name] = 'SelectAllContacts' AND SC.[name] = 'Reporting')
+
+Creates a DML, DDL, or logon trigger. A trigger is a special type of stored procedure that automatically runs when an event occurs in the database server.
+
+Profiler and Extended Events
+Sometimes, you need to be able to trace what your SQL Server is doing, why a sql is taking time or blocked. There are two tools that can provide the answer. The old way of doing things is to use SQL Server Profiler, which has been with the product for many years. The new way of tracing is to use Extended Events. We’ll take a quick look at both options.
+
+You must be a sysadmin or have ALTER TRACE permissions. You should already be a sysadmin, so Profiler should work for you without any issues.
+
+SQL Profilers
+
+Project development deployment
+
+*** Microsoft SQL Server 2012 T-SQL Fundamentals ***
+Transactions and Concurrency
+
+BEGIN TRAN (or BEGIN TRANSACTION), COMMIT TRAN or ROLLBACK TRAN (or ROLLBACK TRANSACTION)
+
+If you do not mark the boundaries of a transaction explicitly, by default, SQL Server treats each individual statement as a transaction; in other words, by default, SQL Server automatically commits the transaction at the end of each individual statement. You can change the way SQL Server handles implicit transactions with a session option called IMPLICIT_TRANSACTIONS. This option is off by default. When this option is on, you do not have to specify the BEGIN TRAN statement to mark the beginning of a transaction, but you have to mark the transaction’s end with a COMMIT TRAN or a ROLLBACK TRAN statement.
+
+At any point in your code, you can tell programmatically whether you are in an open transaction by querying a function called @@TRANCOUNT. This function re turns 0 if you’re not in an open transaction and returns a value greater than 0 if you are.
+
+SQL Server supports two different models to handle isolation: a traditional one based on locking and a newer one based on row versioning. The model based on locking is the default in an on-premises SQL Server installation. In this model, readers require shared locks. If the current state of the data is inconsistent, readers are blocked until the state of the data becomes consistent. The model based on row versioning is the default in Windows Azure SQL Database. In this model, readers don’t take shared locks and don’t need to wait. If the current state of the data is inconsistent, the reader gets an older consistent state.
+
+Lock Modes and Compatibility : exclusive and shared
+
+In simple terms: data that was modiied by one transaction can neither be modiied nor read (at least by default in an on-premises SQL Server installation) by another transaction until the irst transaction inishes. And while data is being read by one transaction, it cannot be modiied by another (at least by default in an on-premises SQL Server installation).
+
+***programmable Objects
+Variables
+DECLARE @i AS INT;
+SET @i = 10;
+
+DECLARE @i AS INT = 10;
+
+A batch is one or more T-SQL statements sent by a client application to SQL Server for execution as a single unit. The batch undergoes parsing (syntax checking), resolution (checking the existence of referenced objects and columns), permissions checking, and optimization as a unit.
+A variable is local to the batch in which it is deined. If you try to refer to a variable that was deined in another batch, you will get an error saying that the variable was not deined.
+The following statements cannot be combined with other statements in the same batch: CREATE DEFAULT, CREATE FUNCTION, CREATE PROCEDURE, CREATE RULE, CREATE SCHEMA, CREATE TRIGGER, and CREATE VIEW. If some of these needs to be followed after a if statement then insert a GO statement aftre the IF. 
+A Batch as a Unit of resolution: second statement will fail to recognise col2 as new clumn added in the same batch.
+ALTER TABLE dbo.T1 ADD col2 INT;
+SELECT col1, col2 FROM dbo.T1;
+The GO n Option. GO is not really a T-SQL command,it's actually a command used by SQL Server’s client tools, such as SSMS, to denote the end of a batch. This command supports an argument indicating how many times you want to execute the batch.
+
+IF OBJECT_ID('saroj.T1', 'U') IS NOT NULL DROP TABLE saroj.T1;
+create TABLE saroj.T1(col1 INT IDENTITY);
+
+INSERT INTO saroj.T1 DEFAULT VALUES;
+GO 100
+
+SELECT * FROM saroj.T1;
+
+Control Flow 
+
+IF 
+    BEGIN
+    END
+ELSE 
+    BEGIN 
+    IF 
+    BEGIN 
+    END
+    ELSE
+    END
+
+
+Example: Second batch has syntax error "FOM" and hence only first and second will be executed and second batch will throw error.
+-- Valid batch
+PRINT 'First batch';
+USE TSQL2012;
+GO
+-- Invalid batch
+PRINT 'Second batch';
+SELECT custid FROM Sales.Customers;
+SELECT orderid FOM Sales.Orders;
+GO
+-- Valid batch
+PRINT 'Third batch';
+SELECT empid FROM HR.Employees;
+
+
+Operators and Functions
+String Concatenation (plus Sign [+] Operator and CONCAT Function)
+
+SELECT empid, firstname + N' ' + lastname AS fullname
+FROM HR.Employees;
+
+SELECT custid, country, region, city,
+country + N',' + region + N',' + city AS location
+FROM Sales.Customers;
+
+SELECT custid, country, region, city,
+country + COALESCE( N',' + region, N'') + N',' + city AS location
+FROM Sales.Customers;
+
+SELECT custid, country, region, city,
+CONCAT(country, N',' + region, N',' + city) AS location
+FROM Sales.Customers;
+
+SELECT SUBSTRING('abcde', 1, 3);
+
+The LEFT and RIGHT Functions :The LEFT and RIGHT functions are abbreviations of the SUBSTRING function, returning a requested number of characters from the left or right end of the input string. : LEFT(string, n), RIGHT(string, n)
+
+The LEN and DATALENGTH Functions
+The LEN function returns the number of characters in the input string.
+To get the number of bytes, use the DATALENGTH function instead of LEN.
+
+SELECT LEN('abcde') len, DATALENGTH(N'abcde') datalength;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Docker Steps
+docker run --name mymssql -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=M!cr0s0ft" -e "MSSQL_PID=Express" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-latest-ubuntu 
+docker exec -it mymssql /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P M!cr0s0ft
+
+SELECT * FROM sys.databases;
+
+sudo docker exec -it trusting_dhawan "bash"
+
+/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P M1cro$oft
+
+docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=yourStrong(!)Password' -e 'MSSQL_PID=Express' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+docker exec -it <container_id|container_name> /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P <your_password>
+
+Locking mechanism in MySQL and SQL Server is complicated from understanding point of view. But Oracle is simple from understanding pont of view. 
+
+There is no lock escalation concept to consider
+
+SELECT @@SERVERNAME, SERVERPROPERTY('ComputerNamePhysicalNetBIOS'), SERVERPROPERTY('MachineName'), SERVERPROPERTY('ServerName')
+
+Handson
+
+use mydb;
+
+select * from sys.databases;
+
+create schema saroj;
+
+CREATE TABLE saroj.Employees
+(
+    empid                INT         NOT NULL,
+    firstname            VARCHAR(30) NOT NULL,
+    lastname             VARCHAR(30) NOT NULL,
+    hiredate             DATE        NOT NULL,
+    mgrid                INT             NULL,
+    ssn                  VARCHAR(20) NOT NULL,
+    salary               MONEY       NOT NULL
+);
+
+select * from sys.tables;
+
+IF OBJECT_ID('saroj.Employees', 'U') IS NOT NULL DROP TABLE saroj.Employees;
+
+alter table saroj.employees
+add constraint pk_employees
+primary key(empid);
+
+alter table saroj.employees
+add constraint unq_employees_ssn
+unique(ssn);
+
+

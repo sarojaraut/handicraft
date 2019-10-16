@@ -446,24 +446,6 @@ ORDER BY submission_date DESC;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 create or replace function get_effective_summary
 return blob
 is
@@ -737,7 +719,7 @@ begin
                     select last_updated_by, status
                     from c19_application@webapps_owner_prd 
                     where last_updated_by <> 'public'
-                    and submission_date < = sysdate
+                    and last_updated_by < = sysdate
                     )
                 pivot ( count(*)
                 for status in (
