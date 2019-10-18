@@ -10,20 +10,116 @@ FOR <pivot-column> IN (<value1>, <value2>,..., <valuen>)
 ) AS <alias>
 WHERE .....
 
-Example -1 Simple Pivot : The following statement illustrates a typical pivot on the channel column:
-SELECT * FROM
-   (SELECT 
-      product, channel, amount_sold
-   FROM sales_view
-   ) S 
-PIVOT (SUM(amount_sold)
-   FOR CHANNEL IN (
-      3 AS DIRECT_SALES, 
-      4 AS INTERNET_SALES,
-      5 AS CATALOG_SALES, 
-      9 AS TELESALES))
-ORDER BY product;
 
+1.The pivot_clause computes the aggregation functions specified at the beginning of the clause. pivot_clause does not contain an explicit GROUP BY clause. Instead, the pivot_clause performs an implicit GROUP BY.
+
+2.The grouping columns and aggregated values calculated in Step 1 are configured to produce the following cross-tabular output:
+ a. All the implicit grouping columns not referred to in the pivot_clause, followed by
+ b. New columns corresponding to values in the pivot_in_clause Each aggregated value is transposed to the appropriate new column in the cross-tabulation.
+
+Examples
+
+--
+--
+Consider the output of the below query
+
+with emp as
+(
+    select 
+        rownum empno, 
+        decode(mod(rownum,8),1,'Civil',2,'Comp',3,'Electro','Mech') deptname,
+        decode(mod(rownum,3),1,'MGR1',2,'MGR2', 'MGR0') mgr
+    from dual 
+    connect by rownum <=27
+)
+select
+    mgr,
+    deptname,
+    count(*)
+from emp
+group by mgr, deptname
+order by 1;
+
+-- Output 
+--Result in this format may be a bit tricky to grasp
+MGR	DEPTNAME	COUNT(*)
+MGR0	Civil	1
+MGR0	Comp	1
+MGR0	Electro	2
+MGR0	Mech	5
+MGR1	Civil	2
+MGR1	Comp	1
+MGR1	Electro	1
+MGR1	Mech	5
+MGR2	Civil	1
+MGR2	Comp	2
+MGR2	Electro	1
+MGR2	Mech	5
+
+
+with emp as
+(
+    select 
+        rownum empno, 
+        decode(mod(rownum,8),1,'Civil',2,'Comp',3,'Electro','Mech') deptname,
+        decode(mod(rownum,3),1,'MGR1',2,'MGR2', 'MGR0') mgr
+    from dual 
+    connect by rownum <=27
+)
+select *
+from emp
+pivot
+(
+    count(empno) as empcnt 
+    for deptname in (
+        'Civil'     as Civil
+        ,'Comp'     as Comp
+        ,'Electro'  as Electro
+        ,'Mech'     as Mech
+    ) -- This will add four new columns to the output. civil_empcnt, comp_empcnt etc
+    -- because mgr column from main data is not included in pivot column clause each distinct value for mgr will decide the number of rows. 
+    -- Number of rows will be three, one for each distinct value of mgr, kind of group by mgr. Group by non reference columns in the pivot column clause 
+);
+-- Output
+-- Have a look at this, unlike the previous result all MGR1 data is listed in one row
+-- Summerises the result for each value of the mgr column  (The column not listed in the for columns clause of pivot)
+MGR	CIVIL_EMPCNT	COMP_EMPCNT	ELECTRO_EMPCNT	MECH_EMPCNT
+MGR1	2	             1	            1	         5
+MGR2	1	             2	            1	         5
+MGR0	1	             1	            2	         5
+
+
+--
+with emp as
+(
+    select 
+        rownum empno, 
+        decode(mod(rownum,8),1,'Civil',2,'Comp',3,'Electro','Mech') deptname,
+        decode(mod(rownum,3),1,'MGR1',2,'MGR2', 'MGR0') mgr
+    from dual 
+    connect by rownum <=27
+)
+select*
+from emp
+pivot
+(
+    count(empno)         as empcnt,
+    count(distinct mgr)  as mgrcnt 
+    for deptname in (
+        'Civil'     as Civil
+        ,'Comp'     as Comp
+        ,'Electro'  as Electro
+        ,'Mech'     as Mech
+    ) -- This will add eight new columns to the output. civil_empcnt, civil_mgrcnt, comp_empcnt, comp_mgrnt etc
+    -- because all columns from the main data is included in pivot clause, for clause and aggregate clause
+    -- Number of rows will be one everything, counts summerised at emp level and mgr level 
+);
+CIVIL_EMPCNT	CIVIL_MGRCNT	COMP_EMPCNT	COMP_MGRCNT	ELECTRO_EMPCNT	ELECTRO_MGRCNT	MECH_EMPCNT	MECH_MGRCNT
+4	                3	              4	          3         	4	         3	            15	         3
+
+If you need aggregations of different category but at one level(deptname in this example) then that is possible using pivot clause.
+
+-----
 select * 
 from(
 select 
@@ -45,6 +141,22 @@ pivot(
    ,'received-by-dc'      as dcreceived
    ,'return'              as return
    );
+--------
+--Simple Pivot : The following statement illustrates a typical pivot on the channel column:
+SELECT * FROM
+   (SELECT 
+      product, 
+      channel, 
+      amount_sold
+   FROM sales_view
+   ) S 
+PIVOT (SUM(amount_sold)
+   FOR CHANNEL IN (
+      3 AS DIRECT_SALES, 
+      4 AS INTERNET_SALES,
+      5 AS CATALOG_SALES, 
+      9 AS TELESALES))
+ORDER BY product;
 
 PRODUCT DIRECT_SALES INTERNET_SALES CATALOG_SALES TELESALES
 ---------------------- ------------ -------------- --------
@@ -52,58 +164,9 @@ PRODUCT DIRECT_SALES INTERNET_SALES CATALOG_SALES TELESALES
 Internal 6X CD-ROM 229512.97 26249.55
 Internal 8X CD-ROM 286291.49 42809.44
 Keyboard Wrist Rest 200959.84 38695.36 1522.73
+-------------------
 
-1.The pivot_clause computes the aggregation functions specified at the beginning of the clause. pivot_clause does not contain an explicit GROUP BY clause. Instead, the pivot_clause performs an implicit GROUP BY.
-
-2.The grouping columns and aggregated values calculated in Step 1 are configured to produce the following cross-tabular output:
- a. All the implicit grouping columns not referred to in the pivot_clause, followed by
- b. New columns corresponding to values in the pivot_in_clause Each aggregated value is transposed to the appropriate new column in the cross-tabulation. 
-
-select job, deptno, sum(sal) from emp group by job, deptno
-
-JOB	      DEPTNO	SUM(SAL)
-PRESIDENT	10	     5000
-MANAGER	   20	     2975
-CLERK	      10	     1300
-SALESMAN	   30	     5600
-ANALYST	   20	     6000
-MANAGER	   30	     2850
-MANAGER	   10	     2450
-CLERK	      30	     950
-CLERK	      20	     1900
-
-Output of both the queries below are same
-
-select job,dept_10_sal,dept_20_sal,dept_30_sal 
-from 
-(select job, deptno, sal from emp) 
--- without above sub query 14 records would be shown in the final output
--- rows will be grouped across all the remaining columns except sal used in aggregation
-pivot
-( sum(sal) 
-for deptno in (10 as dept_10_sal,20 as dept_20_sal,30 as dept_30_sal)
-)
-
-select job, dept_10_sal, dept_20_sal, dept_30_sal
-from 
-(select job, deptno, sal from emp) 
--- without above sub query 14 records would be shown in the final output
--- rows will be grouped across all the remaining columns except sal used in aggregation
-pivot
-( sum(sal) sal
-for deptno in (10 as dept_10,20 as dept_20,30 as dept_30)
-)
-
-JOB	        DEPT_10_SAL	 DEPT_20_SAL	 DEPT_30_SAL
-CLERK	         1300	        1900	          950
-SALESMAN			                              5600
-PRESIDENT	   5000		
-MANAGER	      2450	        2975	         2850
-ANALYST		                 6000	
-
-Note that the query creates column headings by concatenating the pivot values, the underscore character (_), and the alias of the aggregate column. If the length of the generated column heading exceeds the maximum length of a column name, then an ORA-00918 error is returned. To avoid this error, use AS alias to specify a shorter column alias for the pivot column heading, the aggregate value column name, or both.
-
-Example -2 Pivoting: Multiple Aggregates
+--Example Pivoting: Multiple Aggregates
 
 If you are only concerned about MANAGER on dept 10, MANAGER on dept 30 and ANALYST on dept 20
 
@@ -138,7 +201,7 @@ FROM
       )
    );
 
-Example -3 Pivoting on Multiple Columns
+--Example Pivoting on Multiple Columns
 
 SELECT *
 FROM
@@ -253,8 +316,47 @@ V2	           e
 V3	           i
 V4	           o
 
------------------------------------------------------
+--Slight variation of the above query Output for column type is translated
 
+select * from 
+(
+    select
+        'a' v1,
+        'e' v2,
+        'i' v3,
+        'o' v4
+    from dual
+    union
+    select
+        'A' v1,
+        'E' v2,
+        'I' v3,
+        'O' v4
+    from dual
+    
+)
+unpivot (
+    value
+    for column_type in (
+    v1 as 'value1',
+    v2 as 'value2' ,
+    v3 as 'value3',
+    v4 as 'value4' ) 
+    -- this will cause each row to be splited across four rows
+    -- Also because all columns of the main data is used here that means only two columns will be available i.e column_type and value
+);
+
+COLUMN_TYPE	VALUE
+value1	      A
+value2	      E
+value3	      I
+value4	      O
+value1	      a
+value2	      e
+value3	      i
+value4	      o
+
+-----------------------------------------------------
 select * from
 (
 select *
@@ -342,48 +444,6 @@ CUSTOMER_ID CUST_FIRST_NAME PHONE_NUMBER PHONE_TYPE
 7 Eugene 860-555-1835 PHONE_NUMBER1
 
 
-SQL>
-
-select * from
-(
-select rownum EMPNO, 
-decode(mod(rownum,4),0,'COMP',1,'MECH',2,'CIVIL','ELECTO') DEPTNAME,
-decode(mod(rownum,4),0,'MGR0',1,'MGR1',2,'MGR2','MGR3') MGR
-from dual connect by rownum <=10
-)
-pivot
-(count(empno) as EMPCNT for MGR in 
-('MGR0' as MGR0,'MGR1' as MGR1,'MGR2' as MGR2,'MGR3' AS MGR3))
---
---
-select * from
-(
-select rownum EMPNO, 
-decode(mod(rownum,4),0,'COMP',1,'MECH',2,'CIVIL','ELECTO') DEPTNAME,
-decode(mod(rownum,4),0,'MGR0',1,'MGR1',2,'MGR2','MGR3') MGR
-from dual connect by rownum <=10
-)
-pivot
-(count(empno) as EMPCNT for DEPTNAME in 
-('COMP' as COMP,'MECH' as MECH,'CIVIL' as CIVIL,'ELECTO' AS ELECTO))
---
---
-
-SELECT * FROM
-(
-SELECT * FROM
-(
-SELECT ROWNUM EMPNO, 
-DECODE(MOD(ROWNUM,4),0,'COMP',1,'MECH',2,'CIVIL','ELECTO') DEPTNAME,
-DECODE(MOD(ROWNUM,4),0,'MGR0',1,'MGR1',2,'MGR2','MGR3') MGR
-FROM DUAL CONNECT BY ROWNUM <=10
-)
-PIVOT
-(COUNT(EMPNO) AS EMPCNT FOR DEPTNAME IN 
-('COMP' AS COMP,'MECH' AS MECH,'CIVIL' AS CIVIL,'ELECTO' AS ELECTO))
-)
-UNPIVOT (EMPCNT FOR DEPTNAME IN (COMP_EMPCNT AS 'COMP',
-MECH_EMPCNT AS 'MECH',CIVIL_EMPCNT AS 'CIVIL',ELECTO_EMPCNT AS 'ELECTO'))
 
 --
 --
