@@ -18,6 +18,12 @@ function install_vs_code(){
     wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
     sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
     sudo apt install code
+    # Below is required for Install .NET Core SDK on Linux Ubuntu 19.04 - x64 which in tuen is reqired for oracle developer extension
+    wget -q https://packages.microsoft.com/config/ubuntu/19.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+    sudo dpkg -i packages-microsoft-prod.deb
+    sudo apt-get install apt-transport-https
+    sudo apt-get update
+    sudo apt-get install dotnet-sdk-2.2
 }
 
 #Keybase
