@@ -587,12 +587,19 @@ JSON_VALUE( PO_DOCUMENT, '$.ShippingInstructions.Address.zipCode' returning NUMB
     -- string specifies the property key name as a case-sensitive text literal. 
     -- expr is any expression that evaluates to a SQL numeric literal or text literal.
     --! VALUE or IS clause is mandatory
-    --  FORMAT JSON is optional and is for semantic clarity.
-    --  NULL ON NULL - returns JSON null value. or ABSENT ON NULL default omits the value from the JSON array.
-    --* select json_object(key 'name' value 'saroj' format json null on null returning clob) from dual;
-    --* select json_object('name' value 'saroj' format json null on null returning clob) from dual;
-    --* select json_object('name' is 'saroj' format json null on null returning clob) from dual;
-    --* select json_object('name' is 'Saroj', 'surname' is 'Raut' format json null on null returning clob) from dual;
+    --  FORMAT JSON is optional 
+    --      Use this optional clause to indicate that the input string is JSON, and will therefore not be quoted in the output.
+    -- NULL ON NULL - returns JSON null value. or ABSENT ON NULL default omits the value from the JSON array.
+    -- STRICT  verify that the output of the JSON generation function is correct JSON. If the check fails, a syntax error is raised.
+    -- WITH UNIQUE KEYS :  guarantee that generated JSON objects have unique keys.
+    --* select json_object(key 'name' value 'saroj' null on null returning clob) from dual;
+    --* select json_object('name' value 'saroj' null on null returning clob) from dual;
+    --* select json_object('name' is 'saroj' null on null returning clob) from dual;
+    --* select json_object('name' is 'Saroj', 'surname' is 'Raut' null on null returning clob) from dual;
+    --* select json_object(dummy is rownum, 'surname' is 'Raut' null on null returning clob) from dual;
+    --* select json_object ('name' value 'Foo'  format json strict ) from DUAL; 
+    --! Above query Throws ORA-40441: JSON syntax error as FORMAT JSON clause is used which returns value FOO as unquoted and hence syntax error
+    --*  
     -- {"name":"Saroj","surname":Raut}
 -- JSON_OBJECTAGG :  makes it easy to generate a JSON object from data that has been stored using Key, Value pair storage.
     -- JSON_OBJECTAGG(KEY key_expr VALUE value_expr FORMAT JSON NULL ON NULL RETURNING CLOB)
