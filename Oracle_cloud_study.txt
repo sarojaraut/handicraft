@@ -1,0 +1,28 @@
+Allow group NetworkAdmins to manage virtual-network-family in compartment Networks
+Allow group NetworkAdmins to manage instance-family in compartment Networks
+
+Allow group A-Admins,B-Admins to use virtual-network-family in compartment Networks
+
+Allow group A-Admins to manage all-resources in compartment Project-A
+
+Allow group B-Admins to manage all-resources in compartment Project-B
+
+Allow group A-Admins to use users in tenancy where target.group.name='A-Users'
+Allow group A-Admins to use groups in tenancy where target.group.name='A-Users'
+
+Allow group B-Admins to use users in tenancy where target.group.name='B-Users'
+Allow group B-Admins to use groups in tenancy where target.group.name='B-Users'
+
+Allow group A-Admins,B-Admins to inspect users in tenancy
+Allow group A-Admins,B-Admins to inspect groups in tenancy
+
+Allow group A-Users to use instance-family in compartment Project-A
+Allow group A-Users to use volume-family in compartment Project-A
+Allow group A-Users to inspect virtual-network-family in compartment Networks
+
+Allow group B-Users to use instance-family in compartment Project-B
+Allow group B-Users to use volume-family in compartment Project-B
+Allow group B-Users to inspect virtual-network-family in compartment Networks
+
+ssh-keygen -t rsa -N "" -b 2048 -C "oraclecloud" -f oraclecloud
+ssh -i oraclecloud opc@132.145.57.81

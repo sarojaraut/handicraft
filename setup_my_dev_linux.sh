@@ -149,6 +149,13 @@ function install_font_firacode(){
     sudo apt install fonts-firacode
 }
 
+# Font FiraCode
+function install_terraform(){
+CURRR_VER=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r -M '.current_version')
+wget "https://releases.hashicorp.com/terraform/${CURRR_VER}/terraform_${CURRR_VER}_linux_amd64.zip"
+
+unzip terraform_${CURRR_VER}_linux_amd64.zip
+}
 
 # # Name
 # function install_git(){
@@ -183,3 +190,6 @@ install_flash_player;
 install_insomnia;
 
 install_font_firacode;
+
+install_terraform;
+
