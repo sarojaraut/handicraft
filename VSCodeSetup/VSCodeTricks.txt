@@ -20,3 +20,22 @@ pl_create_eventfail_incident
 pl_create_certiffail_incident
 
 l_event_failure_alert_needed
+
+Multi line editing
+
+Windows: Ctrl + Alt + Arrow Keys
+Linux: Shift + Alt + Arrow Keys
+Mac: Opt + Cmd + Arrow keys
+
+Multi-Cursor Editing
+To engage multi-cursor editing, press the Alt key (or Option key on a Mac) and use the mouse to place cursors throughout the document
+
+Key board shortcuts : ctrl + k + s
+Manual Uppercase  : ctrl + u + c 
+Manual lowercase  : ctrl + l + c 
+
+SQL developer
+Multi Cursor : ctrl + shift + click 
+Line comment toggle : ctrl + /
+Block comment : ctrl + shift + /
+

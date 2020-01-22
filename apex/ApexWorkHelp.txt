@@ -1,3 +1,23 @@
+---
+Dynamic action of IG to capture last changed/selected record
+
+Event on Selectionn change 
+Action execute java script 
+
+-- apex.item.setvalue sets the page item value and apex.server.process submits the item value to server session
+if(this.data != null){
+    if(this.data.selectedRecords[0]!= null){
+        selectedRecord = this.data.selectedRecords[0][0];
+        console.log(selectedRecord);
+        //console.log(this.data.selectedRecords[0][4].v);
+        var qual = this.data.selectedRecords[0][4].v;
+        apex.item( "P30_QUALIFICATION" ).setValue( qual );
+        apex.server.process('MY_PROCESS',{pageItems: '#P30_QUALIFICATION'},{dataType: "text"});
+    }
+
+}
+
+---
 Application Icon
 
 Upload the SVG icon to the shared components and use this text as app-icon.css
