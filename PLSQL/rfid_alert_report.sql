@@ -1,19 +1,3 @@
---
--- NAME:  cms_rfid_alert_report.sql
--- TYPE:  SQL Query
--- TITLE: SQL Query to produce report on ticket request generated
---        after 1st July 2016 and corresponding RFID status of 
---        associated products. 
---
---$Revision:   1.2  $
--------------------------------------------------------------------------------
--- Version | Date    | Author        | Reason
--- 1.0     |15/08/16 | S. Raut       | Initial Version
--- 1.1     |19/08/16 | S. Raut       | Enahancment (adding five new columns)
---                                     QA Changes and Bug Fix
--- 1.2     |12/10/16 | S. Raut       | Added extra colummns 
---                                   | (look and hand_over_date(s))
--------------------------------------------------------------------------------
 WITH
 r_type_tckt AS
 (
@@ -194,8 +178,8 @@ all_prd_attr AS
     AND    attr_subtyp.atr_header_desc = 'Ticket Type'
     AND    attr_subtyp.app_func ='PRD'
     AND    prd_attr.prd_lvl_child  IN 
-           (SELECT prd_lvl_child 
-           FROM all_product)
+        (SELECT prd_lvl_child 
+        FROM all_product)
 )
 SELECT
     att.create_dt                   AS tckt_create_dt
@@ -211,8 +195,8 @@ SELECT
         WHEN att.req_type_ind='P' 
             AND NVL(atdq.tckt_dtl_qty,0) =0
                 THEN ap.pmg_sell_qty 
-         ELSE atdq.tckt_dtl_qty
-     END                             AS quantity
+        ELSE atdq.tckt_dtl_qty
+    END                             AS quantity
     ,apa.atr_code_desc               AS prd_lvl_ticket_type
     ,apd.season                      AS season
     ,apd.dept_name                   AS department
@@ -239,8 +223,8 @@ SELECT
             AND apd.max_pmg_exp_rct_date >= TO_DATE('01/12/2016','dd/mm/yyyy')
                 THEN 'Qualified'
         ELSE 'Dis-qualified'
-     END                             AS rfidable
-     ,CASE att.r_req_type_ind
+    END                             AS rfidable
+    ,CASE att.r_req_type_ind
         WHEN 'P' then 'Production'
         WHEN 'O' then 'Adhoc PO'
         WHEN 'C' then 'Adhoc Case-pack'
@@ -249,8 +233,8 @@ SELECT
     trs.tag_supp_name              AS tag_supp_name,
     vdr.vendor_name                AS supplier,
     cms_prd_dtl.f_cntry_of_origin(
-                  ap.prd_lvl_child,
-                  ap.vpc_tech_key) AS country_of_mnfct
+                ap.prd_lvl_child,
+                ap.vpc_tech_key) AS country_of_mnfct
 FROM all_tckt_type att
     JOIN all_product ap
         ON(att.tckt_req_hdr_num = ap.tckt_req_hdr_num)
@@ -264,9 +248,9 @@ FROM all_tckt_type att
     LEFT JOIN all_prd_attr apa
         ON (ap.prd_lvl_child = apa.prd_lvl_child)
     LEFT JOIN rfid_map rngmp
-         ON (rngmp.prd_lvl_child = apd.range_id)
+        ON (rngmp.prd_lvl_child = apd.range_id)
     LEFT JOIN rfid_map deptmp
-         ON (deptmp.prd_lvl_child = apd.dept_id)
+        ON (deptmp.prd_lvl_child = apd.dept_id)
     LEFT JOIN tckt_req_supplier trs
         ON (NVL(att.tag_supp_code,
                 cms_attr.f_add_value('TS',

@@ -1,3 +1,70 @@
+EXCEPTION
+    WHEN OTHERS
+    THEN
+        logger.log_warn (
+            p_text   => 'Create Store Order - package initialization WARN',
+            p_scope  => 'TEST_SSOPE',
+            p_extra  => SQLERRM
+            );
+            
+        logger.log_warning (
+            p_text   => 'Create Store Order - package initialization WARNING',
+            p_scope  => 'TEST_SSOPE',
+            p_extra  => SQLERRM
+            );
+            
+        logger.log_error (
+            p_text   => 'Create Store Order - package initialization failure',
+            p_scope  => 'TEST_SSOPE',
+            p_extra  => SQLERRM
+            );
+
+        RAISE;
+END;
+/
+
+dbms_application_info.set_client_info('names_data');
+dbms_session.set_identifier('names_data');
+
+-- At package intialisation section we can set like this which will be automatically
+-- picked up by logger
+dbms_application_info.set_client_info('package_name');
+dbms_session.set_identifier('web_random');
+-- And at each individual function level we can set module and action
+
+  dbms_application_info.set_action('r_bem'); -- at begning
+  dbms_application_info.set_action(null); -- at end
+
+  dbms_application_info.set_module('TestModule','TestAction');
+  dbms_application_info.set_action('TestAction-1');
+
+  dbms_application_info.set_module('',''); --Set both null at the end before the next module
+
+exception
+  when others then
+  dbms_application_info.set_action(null);
+raise;
+
+DBMS_APPLICATION_INFO.SET_MODULE ( 
+module_name IN VARCHAR2, 
+action_name IN VARCHAR2); 
+
+DBMS_APPLICATION_INFO.SET_CLIENT_INFO (
+client_info IN VARCHAR2
+); -- Visible in v$session and client_info of logger_logs, module and action 
+
+begin
+  dbms_application_info.set_client_info('SarojTest');
+  dbms_application_info.set_module('TestModule','TestAction');
+  dbms_application_info.set_action('TestAction-1');
+  dbms_session.set_identifier('TestProcess');
+end;
+/
+
+exec logger.log('Text Message','Start');
+
+
+
 Logger is a Open Source PL/SQL logging and debugging framework developed by group of Oracle Experts. 
 Its open source and source code is available to us if we need to customize.
 

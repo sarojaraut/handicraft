@@ -24,6 +24,7 @@ l_event_failure_alert_needed
 Multi line editing
 
 Windows: Ctrl + Alt + Arrow Keys
+Also : alt + shift + mouse left click hold and drag 
 Linux: Shift + Alt + Arrow Keys
 Mac: Opt + Cmd + Arrow keys
 
