@@ -1,3 +1,114 @@
+select 
+    username
+    ,user_full_name
+    ,role
+    ,status
+    ,created
+    ,case 
+        when status != 'Pending' 
+        then  'class="ma-button disabled  btn waves-effect waves-light"' 
+        else 'class="ma-button btn btn-outlined waves-effect waves-light icon-float-right"' 
+    end   action_button_class
+    ,'Approve'  Aprove_button
+    ,'Reject'  Reject_button
+    -- approved_by,
+    -- approve_date,
+    -- created_by,
+    -- updated,
+    -- updated_by
+from user_access_request
+
+Change columns Aprove_button and Reject_button to Links 
+set Link attribute = #ACTION_BUTTON_CLASS# and link text to #APROVE_BUTTON# and #REJECT_BUTTON#
+Set tatic ID for the Report region as accesRequest(Make not static ID value is without hash)
+set target Target URLs for both links as below
+javascript:$('#accesRequest').trigger('APPROVE', {userName:"#USERNAME#", role:"#ROLE#"});void(0);
+javascript:$('#accesRequest').trigger('REJECT', {userName:"#USERNAME#", role:"#ROLE#"});void(0);
+
+Or we can usejavascript:apex.event.trigger(pSelector, pEvent, pData)
+pSelector is the jQuery formatted selector used to trigger the Apex event.
+pEvent is the browser event that will occur on the selector.
+pData is not required.
+
+javascript:apex.event.trigger(accesRequest, 'APPROVE', [{userName:'#USERNAME#',  role:'#ROLE#'}]);void(0);
+javascript:apex.event.trigger(accesRequest, 'REJECT', [{userName:'#USERNAME#',  role:'#ROLE#'}]);void(0);
+
+apex.event.trigger executes the "Dynamic Action". 
+[{...}] defines the variables to forward.
+void(0) prevents the browser to do further actions.
+
+What this means is when we click the button it will trigger two custom events APPROVE and REJECT on JQuery Selected #accesRequest
+
+Create a Dynamic Action for custom event 
+Event = custom, Custom event = APPROVE JQuery Selector = #accesRequest
+True Actions
+Execute Java script = $s('P19_USERNAME', this.data.userName);
+Execute PLSQL = 
+
+begin
+    apex_acl.replace_user_roles (
+        p_application_id  => :APP_ID,
+        p_user_name       => :P19_USERNAME,
+        p_role_static_ids => wwv_flow_t_varchar2(:P19_ROLE) );
+    update user_access_request set status = 'Approved' where username=:P19_USERNAME;
+    --
+    -- Inside 
+    --
+end;
+
+begin
+    apex_acl.replace_user_roles (
+        p_application_id  => 100,
+        p_user_name       => 'FORMSLD',
+        p_role_static_ids => wwv_flow_t_varchar2('ADMIN') );
+end;
+
+begin
+    apex_acl.remove_user_role (
+        p_application_id => 255,
+        p_user_name => 'FORMSLD',
+        p_role_static_id => 'ADMIN' );
+end;
+
+begin
+    apex_acl.remove_all_user_roles (
+        p_application_id => 100,
+        p_user_name => 'FORMSLD' );
+end;
+-------------------
+
+
+-- Intialising the audit columns using page process. page process need to be before region
+begin
+    if :P15_ID is null then
+        :P15_CREATED    := to_char(systimestamp, 'DD-MON-YYYY HH24.MI.SSXFF');
+        :P15_CREATED_BY := :APP_USER;
+        logger.log_info('P15_ID Is null');
+    else
+        :P15_UPDATED    := to_char(systimestamp, 'DD-MON-YYYY HH24.MI.SSXFF');
+        :P15_UPDATED_BY := :APP_USER;
+        logger.log_info('P15_ID='||:P15_ID);
+    end if;
+end;
+
+or use a trigger
+
+create or replace trigger trg_rule_header_aiu 
+before insert or update on rule_header
+for each row 
+declare
+begin
+    if inserting then
+        :new.created    := systimestamp;
+        :new.created_by := nvl(v('app_user'), user);
+    elsif updating then
+        :new.updated    := systimestamp;
+        :new.updated_by := nvl(v('app_user'), user);
+    end if;
+
+end;
+/
+
 ---
 Dynamic action of IG to capture last changed/selected record
 

@@ -1,3 +1,12 @@
+    l_params                       logger.tab_param;
+    l_scope                        VARCHAR2(30) := $$plsql_unit;
+BEGIN
+    logger.append_param(l_params, 'v_username', v_username);
+    logger.append_param(l_params, 'v_ucas_code', v_ucas_code);
+    logger.append_param(l_params, 'v_status', v_status);
+    logger.log('Start', l_scope, null, l_params);
+
+
 EXCEPTION
     WHEN OTHERS
     THEN
@@ -38,7 +47,7 @@ dbms_session.set_identifier('web_random');
   dbms_application_info.set_module('TestModule','TestAction');
   dbms_application_info.set_action('TestAction-1');
 
-  dbms_application_info.set_module('',''); --Set both null at the end before the next module
+  dbms_application_info.set_module('',''); --Set both null at the end before the next module 
 
 exception
   when others then
