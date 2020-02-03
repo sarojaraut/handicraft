@@ -1,3 +1,32 @@
+--
+-- Conditional Links for a report
+-- In this example if id is < 0 then show plain description else
+-- show anchered text with link to page 30
+-- make sure to change the description column has type plain text 
+-- and switch off escaping special characters in this report
+--
+select 
+    rc.ucas_code || ' - '|| c.course_title course
+    ,rc.minimum_score
+    ,rc.required_for
+    , case when rh.id <0 
+        then rh.description
+        else 
+        '<a href="'
+        || APEX_UTIL.PREPARE_URL(
+            p_url => 'f?p=' || :APP_ID || ':30:' || :APP_SESSION || '::NO:RP:P30_RULE_ID:' || rh.id
+            )
+        ||'">'
+        || rh.description 
+        |'|</a>'
+        end description
+    ,rh.id
+from course_vw c
+left join rule_course_vw rc
+    on c.ucas_code = rc.ucas_code
+join rule_header_vw rh
+    on rc.rule_id = rh.id
+
 select 
     username
     ,user_full_name
