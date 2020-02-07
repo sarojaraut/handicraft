@@ -1,3 +1,129 @@
+-- Interactive report linking
+
+
+-- Report with style font icons
+with course_rule_summary as
+(
+select
+    ucas_code
+    ,sum(case when required_for ='O' then 1 else 0 end) offer_rules
+    ,sum(case when required_for ='R' then 1 else 0 end) rffer_rules
+    ,sum(case when required_for is null then 1 else 0 end) other_rules
+    ,count(*) total_rules
+from rule_course
+group by ucas_code
+)
+select
+    c.ucas_code || ' - '|| c.course_title course
+    ,c.tariff_advertised Offer
+    ,c.tariff_accepted reffer
+    ,c.url
+    ,nvl(crs.offer_rules,0) offer_rules
+    ,nvl(crs.rffer_rules,0) rffer_rules
+    ,nvl(crs.other_rules,0) other_rules
+    ,nvl(crs.total_rules,0) total_rules
+    , case when c.vacancies_internal = 1 
+        then '<span aria-hidden="true" style="color:#4caf50" class="fa fa-play-circle"></span>'
+        else '<span aria-hidden="true" style="color:#ffa000" class="fa fa-stop-circle"></span>'
+    end open
+from clr_course c
+left join course_rule_summary crs
+    on c.ucas_code = crs.ucas_code;
+
+---
+declare
+    l_host_url      varchar2(4000);
+    l_url           varchar2(4000);
+    l_application   varchar2(30) := 'f?p=100:1';
+    l_email_body    varchar2(32000);
+begin
+    l_host_url := apex_util.host_url('SCRIPT');
+    l_url := l_host_url||l_application;
+    l_email_body := 'The URL to the application is: '||l_url;
+end;
+-- apex_util.host_url('SCRIPT') Returns url : https://nsq915ap:8444/ords/
+-- withoug script argument it returns https://nsq915ap:8444 (Except ords) 
+
+declare
+       l_hash varchar2(4000);
+   begin
+       select apex_util.get_hash(apex_t_varchar2 (
+                  empno, sal, comm ))
+         into l_hash
+         from emp
+        where empno = :P1_EMPNO;
+ 
+       if :P1_HASH <> l_hash then
+           raise_application_error(-20001, 'Somebody already updated SAL/COMM');
+       end if;
+ 
+       update emp
+          set sal = :P1_SAL,
+              comm = :P1_COMM
+        where empno = :P1_EMPNO;
+   exception when no_data_found then
+       raise_application_error(-20001, 'Employee not found');
+   end;
+
+
+DECLARE
+    l_url  VARCHAR2(255);
+BEGIN
+    l_url := APEX_UTIL.URL_ENCODE('http://www.myurl.com?id=1&cat=foo');
+END;
+
+-- Link straight from report query
+select 
+    rc.ucas_code || ' - '|| c.course_title course
+    ,rc.minimum_score
+    ,rc.required_for
+    , case when rh.id <0 
+        then rh.description
+        else 
+        '<a href="'
+        || APEX_UTIL.PREPARE_URL(
+            p_url => 'f?p=' || :APP_ID || ':30:' || :APP_SESSION || '::NO:RP:P30_RULE_ID:' || rh.id
+            )
+        ||'">'
+        || rh.description 
+        ||'</a>'
+        end description
+    ,rh.id
+from course_vw c
+left join rule_course_vw rc
+    on c.ucas_code = rc.ucas_code
+join rule_header_vw rh
+    on rc.rule_id = rh.id
+order by coalesce(rc.updated, rc.created)
+
+
+--------Setting session state from PLSQL
+
+APEX_UTIL.set_session_state('P1_ITEM_1', to_char(systimestamp,'dd/mm/yyyy hh24:mi:ss:ff6'));
+
+simply assigning like below also works from plsql process
+
+:P1_ITEM_1 := to_char(systimestamp,'dd/mm/yyyy hh24:mi:ss:ff6');
+
+--------- Creating apex session from PLSQL 
+
+begin
+  apex_session.create_session(105,1,'SRAUT');
+end;
+/
+
+begin
+    dbms_output.put_line(
+        apex_page.get_url (
+            p_application => 105,
+            p_page        => 2,
+            p_items       => 'P2_DEPTNO',
+            p_values      => '10'
+        ) 
+    );
+end;
+/
+---------------------------
 --
 -- Conditional Links for a report
 -- In this example if id is < 0 then show plain description else
@@ -310,6 +436,20 @@ if ( this.data.successMessage ) {
 }
 // Refresh the report region
 $("#department_report").trigger("apexrefresh");
+
+
+-- Jquery Selector 
+
+All buttons with id starts with BT_ e.g BT_SAVE, BT_CANCEL, BT_DELETE
+
+"[id|='BT_']"
+
+---
+
+apex.message.alert("DA triggered");
+apex.message.alert("Hello &P10_EMPNAME.");
+
+apex.message.showPageSuccess('Action Processed.');
 
 --------------------------------------------
 server side condition : plsql function body

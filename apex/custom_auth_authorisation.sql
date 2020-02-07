@@ -242,9 +242,6 @@ select * from APEX_APPL_ACL_ROLES;
 
 select * from APEX_APPL_ACL_USER_ROLES;
 
-Reference data Management
-
-
 
 
 

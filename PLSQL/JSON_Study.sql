@@ -1,3 +1,83 @@
+select
+json_object(
+'data' is
+json_arrayagg(
+json_object(
+     'ucas_code'         value ucas_code
+    ,'course_title'      value course_title
+    ,'tariff_advertised' value tariff_advertised
+)
+returning clob)
+returning clob
+)
+from clr_course;
+
+with person as(
+select 
+    dbms_random.string('u',10)       username -- u - upper case, l - lower case, x - alpha numeric, 
+    ,dbms_random.string('p',10)      password -- p - any printable including special character
+    ,round(dbms_random.value(1,100)) age
+    ,round(dbms_random.value,5)      probability  -- int between 0 and 1
+    ,round(dbms_random.value(1,5))   turns
+from dual
+connect by rownum < 100
+)
+,dice_rolls as(
+select
+    username
+    ,turns
+    ,round(dbms_random.value(1,5))   dice
+from person
+connect by rownum <= turns
+)
+select 
+    json_object(
+    'username'     value p.username
+    ,'password'    value p.password
+    ,'age'         value p.age
+    ,'probability' value p.probability
+    ,'turns'       value p.turns
+    ) as rec
+from person p
+join dice_rolls dr
+on p.username=dr.username;
+
+with t as (
+select 
+    rownum rn
+from dual
+connect by rownum < 10
+)
+select 
+json_arrayagg(rn)
+from t;
+
+-- JSON_OBJECT(KEY key_expr VALUE value_expr FORMAT JSON NULL ON NULL RETURNING CLOB)
+
+with emp as(
+select 
+    rownum                                   as  empno
+    ,'E_'||rownum                            as  ename
+    ,case mod(rownum,4)
+        when 0 then 'PRESIDENT'
+        when 1 then 'MANAGER'
+        when 2 then 'ANALYST'
+        else        'CLERK' 
+    end                                      as job
+    ,case mod(rownum,4)
+        when 0 then 'ACCOUNTING'
+        when 1 then 'RESEARCH'
+        when 2 then 'SALES'
+        else        'OPERATIONS' 
+    end                                      as dept 
+    , round(dbms_random.value(30000,100000)) as sal
+    , dbms_random.string('u',10)             as rand_string -- u upper case, l lower case, x alphanum, p, printable including special chars
+from dual
+connect by rownum < =10
+)
+select * from emp;
+
+
 JSON_VALUE:  to select one scalar value in the JSON data and return it to SQL. (JSON_VALUE is the ‘bridge’ from a JSON value to a SQL value).
 JSON_EXISTS: a Boolean operator typically used in the WHERE clause to filter rows based on properties in the JSON data.
 JSON_QUERY: an operator to select (scalar or complex) value in the JSON data. In contrast to JSON_VALUE which always returns one scalar value, JSON_QUERY returns a JSON value (object or array). With JSON_QUERY a user can also select multiple values and have them wrapped inside a JSON array.
