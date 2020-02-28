@@ -1,5 +1,201 @@
+
+
+--- Manual Form proccessing
+
+begin 
+    logger.log(':request = '||:request);
+    case :request
+        when 'CREATE' then
+            insert into clr_course_dept values(:p23_ucas_code, :p23_dept_id);
+            -- Copy the email rules from the hot course of the new deparment (Hot course is the least recently updated course)
+            clearing_admin.p_copy_course_email_rules(clearing_admin.f_get_least_recently_updated_course(:p23_dept_id,:p23_ucas_code),:p23_ucas_code);
+            clearing_admin.p_copy_course_subjects(clearing_admin.f_get_least_recently_updated_course(:p23_dept_id,:p23_ucas_code),:p23_ucas_code);
+            --apex_application.g_print_success_message := '<span style="color:green">Course linked to department</span>';
+            apex_application.g_print_success_message := 'Course linked to department '||:p23_dept_id||' and email rules and course subjects cloned from the most recently updated course of this department';
+        when 'SAVE' then
+            -- Most likely course has been linked to a new department
+            -- so need cleanup of old settings and load fresh
+            -- We could have done another check to ensure dept id is really changed
+            -- but considering it will be rarely used simpler solution of 
+            -- cleanup and  load-fresh is adopted
+            -- First delete the email rules and course subject setings
+            delete from clr_email where ucas_code=:p23_ucas_code;
+            delete from clr_course_subject where ucas_code=:p23_ucas_code;
+            update clr_course_dept set dept_id= :p23_dept_id where ucas_code=:p23_ucas_code;
+            -- Copy the email rules from the hot course of the new deparment
+            clearing_admin.p_copy_course_email_rules(clearing_admin.f_get_least_recently_updated_course(:p23_dept_id,:p23_ucas_code),:p23_ucas_code);
+            clearing_admin.p_copy_course_subjects(clearing_admin.f_get_least_recently_updated_course(:p23_dept_id,:p23_ucas_code),:p23_ucas_code);
+            apex_application.g_print_success_message := 'Course unlinked from old dept, linked to new dept, email rules and course subjects cloned from the most recently updated course of the new department';
+        when 'DELETE' then
+            -- First delete the email rules and course subject setings
+            delete from clr_email where ucas_code=:p23_ucas_code;
+            delete from clr_course_subject where ucas_code=:p23_ucas_code;
+            -- delete the course dept link
+            delete from clr_course_dept where ucas_code=:p23_ucas_code and  dept_id= :p23_dept_id;
+            apex_application.g_print_success_message := 'Course un-linked';
+    end case;
+exception
+    when others then
+        logger.log_error('Error during page processing '||:APP_PAGE_ID);
+        apex_application.g_print_success_message := '<span style="color:red">Failure processing request, try again after some time or contact your administrator</span>';        
+end;
+
+
+
+begin 
+    logger.log(':request = '||:request);
+    case :request
+        when 'CREATE' then
+            insert into clr_course_dept(:P23_UCAS_CODE, :P23_DEPT_ID);
+        when 'SAVE' then
+            update clr_course_dept set dept_id= :P23_DEPT_ID;
+        when 'DELETE' then
+            delete from clr_course_dept where ucas_code=:P23_UCAS_CODE and  dept_id= :P23_DEPT_ID;
+    end;
+end;
+
+declare
+    l_parameters apex_exec.t_parameters;
+begin
+ 
+    -- add the primary key value as the "id" parameter; this will be appended to the URL for DELETE and APPLY_CHANGES
+    if :REQUEST in ( 'DELETE', 'APPLY_CHANGES' ) then
+        apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'id', p_value => :P2_EMPNO );
+    end if;
+ 
+    -- add form item values as parameters for CREATE and APPLY_CHANGES
+    if :REQUEST in ( 'CREATE', 'APPLY_CHANGES' ) then
+        apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'ENAME',    p_value => :P2_ENAME );
+        apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'EMPNO',    p_value => :P2_EMPNO );
+        apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'JOB',      p_value => :P2_JOB );
+        apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'HIREDATE', p_value => to_char( to_date( :P2_HIREDATE ), 'YYYY-MM-DD' ) || 'T00:00:00Z' );
+        apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'SAL',      p_value => :P2_SAL );
+        apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'COMM',     p_value => coalesce( :P2_COMM, 'null' ) );
+        apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'MGR',      p_value => :P2_MGR );
+        apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'DEPTNO',   p_value => :P2_DEPTNO );
+    end if;
+         
+        -- invoke Web Source Module for and select data
+    apex_exec.execute_web_source(
+        p_module_static_id => 'Auto_REST_Service_EMP',
+        p_operation        => case :REQUEST 
+                                  when 'APPLY_CHANGES' then 'PUT'
+                                  when 'CREATE'        then 'POST'
+                                  when 'DELETE'        then 'DELETE' end,
+        p_parameters       => l_parameters );
+end;
+
+
+--Manually  updating IG
+
+-- Interactive grid Custom Process
+-- Maual interactive grid process
+begin
+    --logger.log(':DEPARTMENT='||:DEPARTMENT||',:COURSE='||:COURSE);
+    if :APEX$ROW_STATUS = 'D' then
+        -- DELETE the record
+        delete 
+        from course_dept_vw
+        where dept_id   = :P23_DEPT_ID
+        and   ucas_code = :COURSE;
+    elsif :APEX$ROW_STATUS = 'C' then
+        insert into course_dept_vw(ucas_code,dept_id)
+        values (:COURSE, :P23_DEPT_ID)
+        returning rowid into :ROWID; 
+        -- returning clause important otherwise newly added row will not be refreshed
+        --logger.log('Row created');
+    else
+        -- it must be :APEX$ROW_STATUS = 'U'
+        -- should be updating but update is restricted for this IG
+        NULL;
+    end if;
+exception 
+    when others then
+    logger.log_error('IG Save failure');
+end;
+
+---- validation
+
+Validation > Value Required = true
+Appearance > Template = required 
+Above is a client side validation for server side validation we need to add a validation as item is not null and add appropriate error message
+
+Custom validation message instaed of "Please fill in this field."
+Advanced > Custom Attributes = data-valid-message="This is a required field"
+
+You can choose not to execute validations by turning off "Execute Validations" for any button submit
+
+Advanced > Custom attribute : pattern="[^ ]*" data-valid-message="No spaces allowed"
+
+Examples
+pattern="[0-9a-zA-Z]{4}" data-valid-message="Four character UCAS Code needed"
+pattern="^[1-9][0-9]?$|^100$" data-valid-message="Valid values 1-100"
+
+-- Setting Application ICON to be displayed in APP Builder
+    Upload the icon as static application file better to be 64/64
+    Edit application properties > application icon and provide the file name for Icon File Name. 
+    Note that file name should not contain #APP_IMAGES# part only file name is enough. 
+    File should not be uploded into any directory structure
+--- Accessing sys_context from apex session 
+dbms_session.set_identifier(null); -- This is the key for fetching session value
+select 
+    case regexp_substr(lower(sys_context('userenv', 'db_name')),'[^_]+',1,2)
+    when 'dev' then    '<span style="color:green;font-weight:bold;text-align:center;font-size=400%">DEV</span>'
+    when 'test' then '<span style="color:orange;font-weight:bold;text-align:center;font-size=400%">TEST</span>'
+    else '<span style="color:red;font-weight:bold;text-align:center;font-size=400%">PRD</span>'
+    end db_env
+    ,sys_context('admin_app_env', 'cwf_url')
+into
+    :DB_ENV
+    ,:CWF_URL
+from dual;
+-----
+
+Setting Workspace Level message > 
+Manage instance > define login message and define system message
+
+<center><span style="color:green;font-weight:bold;text-align:center;font-size=400%">DEV</span></center>
+<center><span style="color:orange;font-weight:bold;text-align:center;font-size=400%">TEST</span></center>
+<center><span style="color:red;font-weight:bold;text-align:center;font-size=400%">PRD</span></center>
+
+url-mapping.xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<pool-config xmlns="http://xmlns.oracle.com/apex/pool-config">
+    <pool name="dev" base-path="/dev" updated="2020-02-12T00:00:00.000Z"/>
+    <pool name="test" base-path="/test" updated="2020-02-12T00:00:00.000Z"/>
+    <pool name="apex" base-path="/prd" updated="2020-02-12T00:00:00.000Z"/>
+</pool-config>
+
 -- Interactive report linking
 
+apex_util.ir_reset(p_page_id => 1);
+apex_util.ir_filter(
+    p_page_id=>1,
+    p_report_column=>'DEPTNO',
+    p_operator_abbr=>'EQ',
+    p_filter_value=>'10');
+
+--This resets the interactive report on a given page for the current user session 
+--and performs the same function as selecting Reset from the pull down menu.
+
+apex_util.ir_clear(p_page_id => 16);
+
+f?p=&APP_ID.:1:&APP_SESSION.:::RIR,CIR:
+
+Cache definition:
+- RIR: reset IR to primary report
+- CIR: reset IR to primary report but with custom columns
+- RP: reset IR pagination.
+
+This example links, resets, and clears primary report settings. It additionally creates a ENAME = 'KING' filter on the primary report:
+f?p=100:1:&APP_SESSION.:IR_PRIMARY::RIR,CIR:IR_ENAME:KING
+
+As the name suggests, CIR Clears and RIR Resets.. But isn’t that the same?
+
+Almost. The main difference is that CIR Clears the report, clearing all breakpoints, filters and other defined actions on your report, ignoring the settings of the primary report. RIR Resets the interactive report to the primary report.
+
+In conclusion, use CIR to clear all filters and other settings set by the user or in the primary report. Use RIR if you want to reset to the primary report keeping all filters and columns of the primary report.
 
 -- Report with style font icons
 with course_rule_summary as
