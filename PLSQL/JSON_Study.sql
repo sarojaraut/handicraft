@@ -1,15 +1,78 @@
+
+with tmp as
+(
 select
-json_object(
-'data' is
-json_arrayagg(
-json_object(
-     'ucas_code'         value ucas_code
-    ,'course_title'      value course_title
-    ,'tariff_advertised' value tariff_advertised
+    'F'||rownum f_name
+    ,'L'||rownum  l_name
+from dual
+connect by rownum <=3
+),
+tmp_json as(
+select 
+    json_object(
+    'emps' is
+        json_arrayagg(
+            json_object(
+                key  'f_name' value f_name
+                ,key 'l_name' value l_name
+            returning clob
+            )
+        )
+    ) val
+from tmp
 )
-returning clob)
-returning clob
+select 
+    td.* 
+from tmp_json t,
+    json_table(
+        t.val
+        ,'$.emps[*]'
+        columns 
+        (
+            f_name varchar2(30) path '$.f_name'
+            ,l_name varchar2(30) path '$.l_name'
+        )
+) td;
+
+with tmp as(
+select 
+    json_object(
+        'info' is
+            json_arrayagg( 
+                json_object(
+                    'name' is 'name_'||rownum
+                    ,'val' is 'val_'||rownum
+                    returning clob
+                )
+                returning clob
+            ) 
+    )jsn
+from dual
+connect by rownum <=2
 )
+select t.name, t.val
+from tmp ,
+    json_table(
+        tmp.jsn
+        ,'$.info[*]'
+        columns(
+            name    varchar2(10) path '$.name'
+            ,val    varchar2(10) path '$.val'
+        ) 
+    ) t;
+
+select
+    json_object(
+    'data' is
+        json_arrayagg(
+            json_object(
+                'ucas_code'         value ucas_code
+                ,'course_title'      value course_title
+                ,'tariff_advertised' value tariff_advertised
+            )
+        returning clob)
+    returning clob
+    )
 from clr_course;
 
 with person as(
@@ -49,7 +112,7 @@ from dual
 connect by rownum < 10
 )
 select 
-json_arrayagg(rn)
+    json_arrayagg(rn)
 from t;
 
 -- JSON_OBJECT(KEY key_expr VALUE value_expr FORMAT JSON NULL ON NULL RETURNING CLOB)
@@ -76,7 +139,6 @@ from dual
 connect by rownum < =10
 )
 select * from emp;
-
 
 JSON_VALUE:  to select one scalar value in the JSON data and return it to SQL. (JSON_VALUE is the ‘bridge’ from a JSON value to a SQL value).
 JSON_EXISTS: a Boolean operator typically used in the WHERE clause to filter rows based on properties in the JSON data.

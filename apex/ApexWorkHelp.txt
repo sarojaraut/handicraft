@@ -1,4 +1,102 @@
 
+declare 
+    l_context apex_exec.t_context;    
+    l_emailsidx  pls_integer;
+    l_namesids    pls_integer;
+    l_region_id number;
+begin
+    -- Get the region id for the CUSTOMERS IR region
+    select region_id
+      into l_region_id
+      from apex_application_page_regions
+     where application_id = :APP_ID
+       and page_id        = 1
+       and static_id      = 'CUSTOMERS';
+ 
+    -- Get the query context for the CUSTOMERS IR Region
+    -- Documentation: https://docs.oracle.com/en/database/oracle/application-express/19.2/aeapi/OPEN_QUERY_CONTEXT-Function.html
+    l_context := apex_region.open_query_context (
+                        p_page_id => 1,
+                        p_region_id => l_region_id );
+    -- Get the column positions for EMAIL and NAME columns
+    l_emailsidx := apex_exec.get_column_position( l_context, 'EMAIL' );
+    l_namesids := apex_exec.get_column_position( l_context, 'NAME' );
+    
+    -- Loop throught the query of the context
+    while apex_exec.next_row( l_context ) loop        
+        apex_mail.send (
+        p_to                 => apex_exec.get_varchar2( l_context, l_emailsidx ),
+        p_template_static_id => 'NEW_YEAR_2020_PROMOTION_DUBAI_BRANCH',
+        p_placeholders       => '{' ||
+        '    "CUSTOMER":'            || apex_json.stringify( apex_exec.get_varchar2( l_context, l_namesids )) ||
+        '   ,"START_DATE":'          || apex_json.stringify( :P2_START_DATE ) ||
+        '   ,"END_DATE":'            || apex_json.stringify( :P2_END_DATE ) ||        
+        '   ,"LOCATION":'            || apex_json.stringify( :P2_LOCATION ) ||        
+        '   ,"NOTES":'               || apex_json.stringify( :P2_NOTES ) ||
+        '   ,"ITEMS":'               || apex_json.stringify( :P2_ITEMS ) ||
+        '   ,"MY_APPLICATION_LINK":' || apex_json.stringify( apex_mail.get_instance_url || apex_page.get_url( 1 )) ||        
+        '}' );
+     end loop;
+ 
+     apex_exec.close( l_context );
+exception
+     when others then
+         apex_exec.close( l_context );
+     raise; 
+end;
+
+
+Text to display for the blob download column in a report
+<span title="Download #FILE_NAME# #FILE_SIZE#" aria-hidden="true" class="fa fa-download-alt fam-ellipsis-h fam-is-success fa-lg"></span>
+
+
+select 
+    replace(t.name,'Err at ','') name, 
+    case 
+        when t.name = 'Data Error'  
+            then 'Fix the following errors before re-try'
+        else t.val
+    end                           value,
+    case 
+        when name like 'Err at Line%'      
+            then 'color:#e91e63; font-style:italic; text-align:center;'
+        when name like '**Error Records%' or t.name = 'Data Error' 
+            then 'color:#ff1744; font-weight:bold; text-align:center;'
+        when t.name in( 'Ignoring worksheet' ,'Delete count')
+            then 'color:#ef6c00; font-weight:italic; text-align:center;'
+        when t.name in ('Export count','Insert count')        
+            then 'color:#43a047; font-weight:bold; text-align:center;'  
+        else null
+    end name_style,
+    case 
+        when name like 'Err at Line%'                         then 'color:#e91e63; font-style:italic;'
+        when name like '**Error Records%'                     then 'color:#ff1744; font-style:italic; text-align:center;'
+        when t.name = 'Data Error'                            then 'color:#ff1744; font-weight:bold; text-align:center;'
+        when t.name in ('Ignoring worksheet','Delete count')  then 'color:#ef6c00; font-weight:italic; text-align:center;'
+        when t.name in ('Export count','Insert count')        then 'color:#43a047; font-weight:bold; text-align:center;' 
+        else null
+    end val_style
+from ref_data_activity_log ,
+    json_table(
+        extra_info
+        ,'$.info[*]'
+        columns(
+            name    varchar2(4000) path '$.name'
+            ,val    varchar2(4000) path '$.val'
+        ) 
+    ) t
+where id = :P33_ID;
+
+<span style="#NAME_STYLE#">#NAME#</span>
+<span style="#VAL_STYLE#">#VALUE#</span>
+
+-- Submitting disabled items to session state
+Disabled items are not submitted to page session in apex and sometimes you may need to disable some items to stop end users from changing the value but want to submit the value to session state
+-- Create a dynamic action on event before page submit and execute java script = $(':disabled').removeAttr('disabled');
+
+Bulk operations 
+
+How can you make sure each ambassaddor has got a feel of one success, one failure and one tough calls 
 
 --- Manual Form proccessing
 
@@ -39,8 +137,6 @@ exception
         logger.log_error('Error during page processing '||:APP_PAGE_ID);
         apex_application.g_print_success_message := '<span style="color:red">Failure processing request, try again after some time or contact your administrator</span>';        
 end;
-
-
 
 begin 
     logger.log(':request = '||:request);
@@ -467,6 +563,7 @@ Event on Selectionn change
 Action execute java script 
 
 -- apex.item.setvalue sets the page item value and apex.server.process submits the item value to server session
+
 if(this.data != null){
     if(this.data.selectedRecords[0]!= null){
         selectedRecord = this.data.selectedRecords[0][0];
@@ -478,8 +575,36 @@ if(this.data != null){
     }
 
 }
+-- Dynamic action to disable button to prevent duplicate submission
+
+document.getElementById("CREATE_BUTTON").disabled=true;
+apex.page.submit("CREATE");
+
+Material apex theme submit is working fine but disabled is not. Workaround for showing the spinner is reload on submit = only for sucecss
+
+Alternatively select two true action disable button and submit page with request=UPLOAD, dynamic actions by default shows spinner in material apex
+
+CREATE_BUTTON is the static id of the button
+
+Optionally you can set the following attributes but side effect is if page has validation errors then it will not be fixed because of second option
+
+Enable Duplicate Page submissions
+    Yes – Enable page to be re-posted
+    No – Prevent page from being re-posted
+Reload on Submit (New Feature for 5.1)
+    Always
+    Only For Success
 
 ---
+Setting item value from plsql, one way is dynamic action returning value or else staright from plsql 
+
+
+  select first_name into v_empname 
+    from employees where employee_id = :P12_EMPNO;
+    
+    apex_util.set_session_state('P12_EMPLOYEE_NAME', v_empname);
+----
+
 Application Icon
 
 Upload the SVG icon to the shared components and use this text as app-icon.css
@@ -646,6 +771,9 @@ apex.message.alert("DA triggered");
 apex.message.alert("Hello &P10_EMPNAME.");
 
 apex.message.showPageSuccess('Action Processed.');
+
+apex.message.showPageSuccess(this.data.successMessage.text);
+
 
 --------------------------------------------
 server side condition : plsql function body

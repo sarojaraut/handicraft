@@ -76,3 +76,81 @@ Schedule > date, ground
 
 
 
+-- 
+-- Fetching fourth word
+SELECT
+regexp_substr( 'This is a regexp_substr demo', '[[:alpha:]]+', 1, 4
+) the_4th_word
+FROM
+dual;
+
+with strings as ( 
+    select 'LHRJFK/010315/SAXONMR' str from dual union all 
+    select 'CDGLAX/050515/SMITHMRS' str from dual union all 
+    select 'LAXCDG/220515/SMITHMRS' str from dual union all 
+    select 'SFOJFK/010615/JONESMISS' str from dual 
+) 
+select regexp_substr(str, '[A-Z]{6}'), /* Returns the first string of 6 characters */  
+        regexp_substr(str, '[0-9]+'), /* Returns the first matching numbers */  
+        regexp_substr(str, '[A-Z].*$'), /* Returns the first letter followed by all other characters */  
+        regexp_substr(str, '/[A-Z].*$') /* Returns / followed by a letter then all other characters */  
+from   strings;
+
+--Convert multiple spaces into a single space
+WITH strings AS (   
+    SELECT 'Hello  World' s FROM dual union all   
+    SELECT 'Hello        World' s FROM dual union all   
+    SELECT 'Hello,   World  !' s FROM dual   
+)   
+SELECT s "STRING", regexp_replace(s, ' {2,}', ' ') "MODIFIED_STRING"  
+FROM   strings
+
+--Convert camel case string to lowercase with underscores between words
+WITH strings as (   
+    SELECT 'AddressLine1' s FROM dual union all   
+    SELECT 'ZipCode' s FROM dual union all   
+    SELECT 'Country' s FROM dual   
+)   
+SELECT s "STRING",  
+        lower(regexp_replace(s, '([A-Z0-9])', '_\1', 2)) "MODIFIED_STRING"  
+FROM strings
+
+--Convert yyyy-mm-dd date formats to dd.mm.yyyy
+WITH date_strings AS (   
+    SELECT  '2015-01-01' d from dual union all   
+    SELECT '2000-12-31' d from dual union all   
+    SELECT '900-01-01' d from dual   
+)   
+SELECT d "STRING",   
+        regexp_replace(d, '([[:digit:]]+)-([[:digit:]]{2})-([[:digit:]]{2})', '\3.\2.\1') "MODIFIED_STRING"  
+FROM date_strings
+
+--Remove all letters from a string
+WITH strings as (   
+    SELECT 'NEW YORK' s FROM dual union all   
+    SELECT 'New York' s FROM dual union all   
+    SELECT 'new york' s FROM dual   
+)   
+SELECT s "STRING",  
+    regexp_replace(s, '[a-z]', '1', 1, 0, 'i') "CASE_INSENSITIVE",  
+    regexp_replace(s, '[a-z]', '1', 1, 0, 'c') "CASE_SENSITIVE",  
+    regexp_replace(s, '[a-zA-Z]', '1', 1, 0, 'c') "CASE_SENSITIVE_MATCHING"  
+FROM  strings
+
+--XML validator for checking a closing tag of an element
+with xml as (   
+    select '<element>test<element>' as x from dual union all /* Incorrect closing tag '/' missing */  
+    select '<element>test</different_element>' as x from dual union all /* Different opening and closing tags */  
+    select '<element>test</element>' as x from dual /* Valid open and close tags*/  
+)   
+select * from xml   
+where  regexp_like (x, '<.*>.*</.*>')
+
+--XML validator for checking the opening and closing tags match
+with xml as (   
+    select '<element>test<element>' as x from dual union all /* Incorrect closing tag '/' missing */  
+    select '<element>test</different_element>' as x from dual union all /* Different opening and closing tags */  
+    select '<element>test</element>' as x from dual /* Valid open and close tags*/ 
+)   
+select * from xml   
+where  regexp_like (x, '<(.*)>.*</(\1)>')

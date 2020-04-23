@@ -330,3 +330,7 @@ Migration Using AWS Snowball
 When porting your data over a network is a tough and time-consuming task due to data size and bandwidth issues, Snowball from AWS comes to the rescue. It is a travel bag-like device that secures and weatherproofs your data during transport.
 
 Create a data transfer job -> AWS ships the snowball depending on the size of data -> connect snow ball to LAN -> Load databackup -> send back snow ball to AWS -> AWS loads data to s3 -> restore DB to AWS. 
+
+regions
+high availability domains
+ha contains fault domain : distribute resourcse so that they are not on the same physical server
