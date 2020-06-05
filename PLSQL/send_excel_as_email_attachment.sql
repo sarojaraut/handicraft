@@ -256,3 +256,9 @@ BEGIN
 END;
 /
 
+
+select * from ref_data_activity_log order by 1 desc;
+
+create table temp_files(id number, data blob);
+
+select * from temp_files;

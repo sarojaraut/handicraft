@@ -1,0 +1,26 @@
+
+Changing the login page icon
+Edit the app-icon.css file under shared component > application files to include the new image file : example
+
+.app-icon {
+    background-image: url(favicon-64.png);
+    background-repeat: no-repeat;
+    /* background-size: cover; */
+    background-size: 64px 64px;
+    background-position: 50%;
+    background-color: transparent;
+}
+
+also ensure the icon fiels value is app-icon in login page > app name region(static content) > appearance section
+
+to set workspace icon > Edit application properties > application icon section > icon file name = icon file name, icon file must be uploaded to application static files 
+
+
+edit application properties > user interface > favicon > favicon html >
+
+<link rel="shortcut icon" href="#APP_IMAGES#favicon.ico">
+<link rel="icon" sizes="16x16" href="#APP_IMAGES#favicon.ico">
+<link rel="icon" sizes="32x32" href="#APP_IMAGES#favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="#APP_IMAGES#favicon.ico">
+
+These icon will be shown when the application is running in the browser.
