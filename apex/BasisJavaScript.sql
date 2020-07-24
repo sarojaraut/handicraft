@@ -30,12 +30,12 @@ A triple equals sign (===) is used to compare two values
 
 Equality Operators : JavaScript has two kinds of equality:
 
-Normal, or “lenient,” (in)equality: == and != 
+Normal, or ï¿½lenient,ï¿½ (in)equality: == and != 
 Strict (in)equality: === and !== 
 
 Normal equality considers (too) many values to be equal (the details are explained in Normal (Lenient) Equality (==, !=)), which can hide bugs. Therefore, always using strict equality is recommended.
 
-JavaScript has two different ways to do if-then-else—either as a statement:
+JavaScript has two different ways to do if-then-elseï¿½either as a statement:
 var x;
 if (y >= 0) {
     x = y;
@@ -90,12 +90,12 @@ true
 Primitives have the following characteristics:
 
 1. Compared by value 
-The “content” is compared: 
+The ï¿½contentï¿½ is compared: 
 > 3 === 3
 true
 > 'abc' === 'abc'
 true
-2. Always immutable  : Properties can’t be changed, added, or removed: 
+2. Always immutable  : Properties canï¿½t be changed, added, or removed: 
 
 > var str = 'abc';
 
@@ -150,9 +150,9 @@ You can normally freely change, add, and remove properties (see Single Objects):
 123
 
 3. undefined and null
-Most programming languages have values denoting missing information. JavaScript has two such “nonvalues,” undefined and null:
+Most programming languages have values denoting missing information. JavaScript has two such ï¿½nonvalues,ï¿½ undefined and null:
 
-undefined means “no value.” Uninitialized variables are undefined: 
+undefined means ï¿½no value.ï¿½ Uninitialized variables are undefined: 
 > var foo;
 > foo
 undefined
@@ -167,7 +167,7 @@ If you read a nonexistent property, you get undefined:
 > obj.foo
 undefined
 
-null means “no object.” It is used as a nonvalue whenever an object is expected (parameters, last in a chain of objects, etc.). 
+null means ï¿½no object.ï¿½ It is used as a nonvalue whenever an object is expected (parameters, last in a chain of objects, etc.). 
 
 Warning : undefined and null have no properties, not even standard methods such as toString().
 
@@ -193,7 +193,7 @@ typeof looks like this: typeof value
 typeof looks like this:
 typeof value
 
-It returns a string describing the “type” of value. Here are some examples:
+It returns a string describing the ï¿½typeï¿½ of value. Here are some examples:
 > typeof true
 'boolean'
 > typeof 'abc'
@@ -217,7 +217,7 @@ Function  >> 'function'
 All other normal values >> 'object'
 (Engine-created value) >> JavaScript engines are allowed to create values for which typeof returns arbitrary strings (different from all results listed in this table).
  
-typeof null returning 'object' is a bug that can’t be fixed, because it would break existing code. It does not mean that null is an object.
+typeof null returning 'object' is a bug that canï¿½t be fixed, because it would break existing code. It does not mean that null is an object.
  
 instanceof looks like this:
 value instanceof Constr
@@ -294,8 +294,8 @@ Numbers
 All numbers in JavaScript are floating-point:
 > 1 === 1.0
 true
-NaN (“not a number”) 
-> Number('xyz')  // 'xyz' can’t be converted to a number
+NaN (ï¿½not a numberï¿½) 
+> Number('xyz')  // 'xyz' canï¿½t be converted to a number
 NaN
 Infinity 
 Also mostly an error value: 
@@ -303,9 +303,6 @@ Also mostly an error value:
 Infinity
 > Math.pow(2, 1024)  // number too large
 Infinity
-
-
-
 
 Operators
 
@@ -320,9 +317,6 @@ JavaScript has the following arithmetic operators (see Arithmetic Operators):
 ? Decrement: --variable, variable-- 
 ? Negate: -value 
 ? Convert to number: +value 
-
-
-
 
 Strings
 
@@ -351,17 +345,12 @@ The property length counts the number of characters in the string:
 Like all primitives, strings are immutable; you need to create a new string if you want to change an existing one.
 
 
-
-
 String Operators
 
 Strings are concatenated via the plus (+) operator, which converts the other operand to a string if one of the operands is a string:
 > var messageCount = 3;
 > 'You have ' + messageCount + ' messages'
 'You have 3 messages'
-
-
-
 
 String Methods
 
@@ -374,8 +363,8 @@ Strings have many useful methods (see String Prototype Methods). Here are some e
 > '\t xyz  '.trim()  // trim whitespace
 'xyz'
 
-> 'mjölnir'.toUpperCase()
-'MJÖLNIR'
+> 'mjï¿½lnir'.toUpperCase()
+'MJï¿½LNIR'
 
 > 'abc'.indexOf('b')  // find a string
 1
@@ -393,7 +382,7 @@ if (myvar === 0) {
     // else
 }
 
-Always recomended using braces (they denote blocks of zero or more statements). But you don’t have to do so if a clause is only a single statement (the same holds for the control flow statements for and while): compares to case () when then end clause of plsql. ensure : and break;
+Always recomended using braces (they denote blocks of zero or more statements). But you donï¿½t have to do so if a clause is only a single statement (the same holds for the control flow statements for and while): compares to case () when then end clause of plsql. ensure : and break;
 
 switch (fruit) {
     case 'banana':
@@ -406,7 +395,7 @@ switch (fruit) {
         // ...
 }
 
-The “operand” after case can be any expression; it is compared via === with the parameter of switch.
+The ï¿½operandï¿½ after case can be any expression; it is compared via === with the parameter of switch.
 
 
 
@@ -414,8 +403,8 @@ The “operand” after case can be any expression; it is compared via === with the 
 Loops
 
 The for loop has the following format:
-for («init»; «condition»; «post_iteration»)
-    «statement»
+for (ï¿½initï¿½; ï¿½conditionï¿½; ï¿½post_iterationï¿½)
+    ï¿½statementï¿½
 init is executed at the beginning of the loop. condition is checked before each loop iteration; if it becomes false, then the loop is terminated. post_iteration is executed after each loop iteration.
 for (var i=0; i < arr.length; i++) {
     console.log(arr[i]);
@@ -451,9 +440,6 @@ Another way of defining add() is by assigning a function expression to a variabl
 var add = function (param1, param2) {
     return param1 + param2;
 };
-
-
-
 
 
 The Special Variable arguments
@@ -540,7 +526,7 @@ The try clause surrounds critical code, and the catch clause is executed if an e
 
 Strict Mode
 
-Strict mode (see Strict Mode) enables more warnings and makes JavaScript a cleaner language (nonstrict mode is sometimes called “sloppy mode”). To switch it on, type the following line first in a JavaScript file or a <script> tag:
+Strict mode (see Strict Mode) enables more warnings and makes JavaScript a cleaner language (nonstrict mode is sometimes called ï¿½sloppy modeï¿½). To switch it on, type the following line first in a JavaScript file or a <script> tag:
 'use strict';
 
 Variable Scoping and Closures
@@ -605,7 +591,7 @@ var jane = {
     }
 };
 
-The preceding object has the properties name and describe. You can read (“get”) and write (“set”) properties:
+The preceding object has the properties name and describe. You can read (ï¿½getï¿½) and write (ï¿½setï¿½) properties:
 > jane.name  // get
 'Jane'
 > jane.name = 'John';  // set

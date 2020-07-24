@@ -2,20 +2,20 @@ Interview Questions
 access page items in Javascript
 function firstName(){  alert('First Name is ' + document.getElementById('P1_FIRST_NAME').value );
 
-•How can you clear caches programmaticaly? (APEX_UTIL.CLEAR_APP_CACHE, APEX_UTIL.CLEAR_PAGE_CACHE, APEX_UTIL.CLEAR_USER_CACHE
+ï¿½How can you clear caches programmaticaly? (APEX_UTIL.CLEAR_APP_CACHE, APEX_UTIL.CLEAR_PAGE_CACHE, APEX_UTIL.CLEAR_USER_CACHE
 
-•How will you code dynamic PL/SQL regions (HTP.P code)?
+ï¿½How will you code dynamic PL/SQL regions (HTP.P code)?
 
 Running an On Demand Process from a Page Request
 f?p=application_id:page_id:session:APPLICATION_PROCESS=process_id
  suppose you need to display the contents of a user's shopping cart with each page view.
  Instead of writing a process for each page to set the values of TOTAL_CART_ITEMS and TOTAL_PURCHASE_PRICE, you could write an application process of type On Load: Before Header to compute these values. 
  Condition > SQL, PLSQL, Request = value, item =value, current page, item or request are null, not null numeric, does not contain space 
- •What are the ways to get the session values? (&SESSION., :APP_SESSION, v(‘SESSION’) or nv())
- •How will you validate whether the session is valid? APEX_CUSTOM_AUTH.IS_SESSION_VALID
- •How will you submit jobs / back ground processes in Oracle APEX? APEX_PLSQL_JOB.SUBMIT_PROCESS
- •Name few important APEX functions? (APEX_UTIL, APEX_MAIL, APEX_ITEM
- •Differentiate Application Admin and Workspace Admin.
+ ï¿½What are the ways to get the session values? (&SESSION., :APP_SESSION, v(ï¿½SESSIONï¿½) or nv())
+ ï¿½How will you validate whether the session is valid? APEX_CUSTOM_AUTH.IS_SESSION_VALID
+ ï¿½How will you submit jobs / back ground processes in Oracle APEX? APEX_PLSQL_JOB.SUBMIT_PROCESS
+ ï¿½Name few important APEX functions? (APEX_UTIL, APEX_MAIL, APEX_ITEM
+ ï¿½Differentiate Application Admin and Workspace Admin.
 App admin > Workspace preferences, activity report, dash bord (database > recently modified program units, recently created table, object count etc, application > , developer activity etc)
 
 Workspace admin > Manage instance, manage wokspace, monitor activity etc
@@ -44,14 +44,14 @@ APEX Users
 Instance Administrators : manage and maintain the overall APEX instance. They can set instance level preferences and messages, create and manage workspaces, monitor space utilization, and perform many other actions related to the overall APEX installation. Instance Administrators are only able to log in to the special INTERNAL workspace, which houses the APEX Admin Services application.
 
 Workspace Administrators : managing the details of a specific workspace and can manage user accounts related to the workspace, monitor workspace activity, view
-log files, override developer locks and settings, and so on. Although it isn’t good practice, the Workspace Administrator can also act as a Developer, creating and modifying applications.
+log files, override developer locks and settings, and so on. Although it isnï¿½t good practice, the Workspace Administrator can also act as a Developer, creating and modifying applications.
 
 Developers : Create and edit the applications in the workspace. They have access to the underlying tables in the schema(s) assigned to the workspace and may
 create and modify database objects and stored PL/SQL units. Most people writing APEX applications only need this level of access.
 
-End Users  : Only able to run applications in a workspace. They don’t have direct access to any of the underlying database objects, nor do they have access to any of the APEX development modules. End users can’t log directly into a workspace.
+End Users  : Only able to run applications in a workspace. They donï¿½t have direct access to any of the underlying database objects, nor do they have access to any of the APEX development modules. End users canï¿½t log directly into a workspace.
 
-Note : Because APEX applications are portable and may not necessarily be run in the same schema they were developed in, it’s not good practice to hard code the schema names into your SQL or PL/SQL. Instead use the substitution variable #OWNER#, is substituted for the actual “parse as” schema for the application at runtime. 
+Note : Because APEX applications are portable and may not necessarily be run in the same schema they were developed in, itï¿½s not good practice to hard code the schema names into your SQL or PL/SQL. Instead use the substitution variable #OWNER#, is substituted for the actual ï¿½parse asï¿½ schema for the application at runtime. 
 
 select * from #OWNER#.emp
 
@@ -68,16 +68,16 @@ By default, all sQl statements executed via the sQl Commands interface are autom
 
 The SQL Workshop Utilities section gives you access to tools and reports that help you view and manage information about the underlying database objects and their data.
 
-The architecture of APEX may seem a bit daunting at first, but once you actually start working with it, things will begin to fall into place and you’ll understand more and more about how everything fits together.
+The architecture of APEX may seem a bit daunting at first, but once you actually start working with it, things will begin to fall into place and youï¿½ll understand more and more about how everything fits together.
 
 System Design with APEX in Mind
 
-• Placing comments on a table column seeds that item’s UI Default help text with the text of the comment.
-• Marking a column as NOT NULL at the database level triggers a Required flag to be set in the UI Defaults.
-• Date and Timestamp data types are set up to display as Date Pickers on input forms. 
-• The order in which the columns appear in the table is the default order in which the UI Defaults set them to display on a form or report.
-• Defining a column as a BLOB sets the form-level UI Defaults to use APEX’s declarative blob functionality.
-• Create look up tables, to be used in LOV. e.g status open, closed, draft, pending.
+ï¿½ Placing comments on a table column seeds that itemï¿½s UI Default help text with the text of the comment.
+ï¿½ Marking a column as NOT NULL at the database level triggers a Required flag to be set in the UI Defaults.
+ï¿½ Date and Timestamp data types are set up to display as Date Pickers on input forms. 
+ï¿½ The order in which the columns appear in the table is the default order in which the UI Defaults set them to display on a form or report.
+ï¿½ Defining a column as a BLOB sets the form-level UI Defaults to use APEXï¿½s declarative blob functionality.
+ï¿½ Create look up tables, to be used in LOV. e.g status open, closed, draft, pending.
 
 If you create a look up table using SQL Workshop > Object Browser. It will give you an option of selecting a column from the table normalises the table and create another lookup table, sequence and foreign key constraint.
 
@@ -85,7 +85,7 @@ User Interface Defaults > What would be the table name in form, in report, Regio
 
 SQL Workshop> Utilities > Table dictionary/ Attribute Dictionary
 
-Remeber the Anonymous blocks, queries entered directly in apex pages are stored in meta data. Each time they’re required to run, they must first be extracted from the APEX
+Remeber the Anonymous blocks, queries entered directly in apex pages are stored in meta data. Each time theyï¿½re required to run, they must first be extracted from the APEX
 metadata, parsed, compiled, and then run. If you move that code into a stored program unit in the database, the retrieval, parse, and compile steps are all skipped.
 
 As a general rule of thumb, logic that controls or manipulates the UI is best placed in APEX, and logic that implements business rules or controls the data is best placed in stored program units in the database.
@@ -94,11 +94,11 @@ Chapter 5 - Applications and Navigation
 
 Navigation Bar Entries : Each APEX application has one navigation bar that may contain multiple entries. Examples of links typically displayed on every page are Login, Logout, Help, and My Account. Placement of navigation bars is dictated by the page template substitution variable #NAVIGATION_BAR#. In most applications, the navigation bar is placed either at upper right or upper left on the page.  Navigation bar entries can be modified to include images. Entries can be based on conditions, authorization schemes, and build options.
 
-Navigation bars are part of an application’s shared components, so they’re created and maintained from the Shared Components section of the Application Builder.
+Navigation bars are part of an applicationï¿½s shared components, so theyï¿½re created and maintained from the Shared Components section of the Application Builder.
 
-Breadcrumb Regions : Breadcrumbs are a popular navigation structure. They give the user a quick and intuitive representation of the current navigation path with optional functionality to navigate back using the structure. When you’re creating new pages of an application, the Create Page wizard has an option to assist in creating new breadcrumb entries. When you use this option, child pages receive a copy of the breadcrumb region from the parent as well as an automatic entry in the Breadcrumb group.
+Breadcrumb Regions : Breadcrumbs are a popular navigation structure. They give the user a quick and intuitive representation of the current navigation path with optional functionality to navigate back using the structure. When youï¿½re creating new pages of an application, the Create Page wizard has an option to assist in creating new breadcrumb entries. When you use this option, child pages receive a copy of the breadcrumb region from the parent as well as an automatic entry in the Breadcrumb group.
 
-Lists : As the name implies, a list is a structure that APEX uses to keep a collection of data for links. The list structure allows menus to be displayed consistently across numerous application pages. Don’t confuse navigation lists with lists of values (LOVs). Lists are a navigational structure with built-in templates for displaying information in different ways. LOVs are used to support data entry, limiting the options a user can enter.
+Lists : As the name implies, a list is a structure that APEX uses to keep a collection of data for links. The list structure allows menus to be displayed consistently across numerous application pages. Donï¿½t confuse navigation lists with lists of values (LOVs). Lists are a navigational structure with built-in templates for displaying information in different ways. LOVs are used to support data entry, limiting the options a user can enter.
 
 List templates have a lot of capability. They support hierarchical lists, graphical bullets, dynamic HTML, and highlighting for the current page. Lists can contain data in a parent-child relationship; some list templates are specifically designed to display parent-child data Apex 5 universal theme lists can be displayed as drop down menu.
 
@@ -111,7 +111,7 @@ ename as d,
 from emp
 order by 1
 
-Chapter 6 - Forms and Reports—The Basics
+Chapter 6 - Forms and Reportsï¿½The Basics
 
 Most applications contain a series of forms, reports, charts, and other elements designed to display, edit, and collect data. Forms are used to display, edit, and collect data, which is then sent back to the database for processing. Forms can interface with tables, views , procedures (Typically collects values to pass on to the procedure for further processing), and web services.
 
@@ -122,10 +122,10 @@ The APEX wizards do handle most of the work of creating a form for you. However,
 
 Master-Detail Report and Form
 
-Understanding Session State : Session state is what allows APEX to keep track of all the values that belong in a particular user’s APEX session. Session state is particularly useful for keeping track of values as a user moves from page to page in the application. Unlike a stateful database application, where a connection is maintained continuously and all values retain their value until changed or removed or until the session ends, an APEX application doesn’t maintain a continuous connection
-to the database. APEX is a stateless system—the APEX engine generates HTML pages based on directives stored in the APEX repository.
+Understanding Session State : Session state is what allows APEX to keep track of all the values that belong in a particular userï¿½s APEX session. Session state is particularly useful for keeping track of values as a user moves from page to page in the application. Unlike a stateful database application, where a connection is maintained continuously and all values retain their value until changed or removed or until the session ends, an APEX application doesnï¿½t maintain a continuous connection
+to the database. APEX is a stateless systemï¿½the APEX engine generates HTML pages based on directives stored in the APEX repository.
 
-The APEX engine has a built-in session-state management component. This session-state management is an integral part of APEX—it can’t be disabled or circumvented. 
+The APEX engine has a built-in session-state management component. This session-state management is an integral part of APEXï¿½it canï¿½t be disabled or circumvented. 
 
 You can use a procedure with out parameter. and out parameter can be set to a page item.
 
@@ -145,7 +145,7 @@ Setting and Retrieving Session State
 When within an APEX process, you can set an item equal to a value, like so: :P1_ITEM_NAME := 'some value';
 In PL/SQL, when in a stored procedure, you can use the apex_util.set_session_state procedure to set a value in session state: apex_util.set_session_state( 'P1_ITEM_NAME', 'some value');
 
-The syntax to retrieve session state for an item varies according to where you’re referencing the item. In templates or regions, tabs, menus, or lists, use the following substitution-string syntax (and don’t forget the trailing dot!): &P1_ITEM_NAME.
+The syntax to retrieve session state for an item varies according to where youï¿½re referencing the item. In templates or regions, tabs, menus, or lists, use the following substitution-string syntax (and donï¿½t forget the trailing dot!): &P1_ITEM_NAME.
 
 Use the following syntax in SQL statements: :P1_ITEM_NAME
 From Anonymous PL/SQL block: :P1_ITEM_NAME
@@ -153,28 +153,28 @@ PL/SQL Unit Called from APEX: V('P1_ITEM_NAME')
       NV('MY_NUMERIC_ITEM'), Use standard PL/SQL syntax referencing the numeric item value using the NV function.
 Within conditions, use this syntax: P1_ITEM_NAME
 
-APEX Items : There are two types of APEX items: page items, which are displayed to the user on a page, and application items, which hold values in an application but aren’t displayed.
-Application items aren’t associated with a page and have no UI properties. They hold values in an application that are essential but not necessarily displayed. You can use an application item much like a global variable.
+APEX Items : There are two types of APEX items: page items, which are displayed to the user on a page, and application items, which hold values in an application but arenï¿½t displayed.
+Application items arenï¿½t associated with a page and have no UI properties. They hold values in an application that are essential but not necessarily displayed. You can use an application item much like a global variable.
 
 Built-In Items
-• APP_ID: The application identifier of the currently running application
-• APP_ALIAS: The application alias of the currently running application
-• APP_USER: The currently signed-on user
-• APP_SESSION: The session identifier of the currently signed-on user
-• APP_PAGE_ID: The currently running page identifier
+ï¿½ APP_ID: The application identifier of the currently running application
+ï¿½ APP_ALIAS: The application alias of the currently running application
+ï¿½ APP_USER: The currently signed-on user
+ï¿½ APP_SESSION: The session identifier of the currently signed-on user
+ï¿½ APP_PAGE_ID: The currently running page identifier
 
 APEX URL Syntax
 http://apex.somewhere.com/pls/apex/f?p=4350:1:220883407765693447
 
 This example indicates:
-¦ http: is the scheme.
-¦ apex.somewhere.com is the domain name of the server. It can also include a port number or an IP address.
-¦ pls is the indicator to use the mod_plsql cartridge (if applicable)
-¦ apex is the Database Access Descriptor (DAD) name. The DAD describes how HTTP Server connects to the database server so that it can fulfill an HTTP request. The default value is apex.
-¦ f?p= is a prefix used by Oracle Application Express to route the request to the correct engine process.
-¦ 4350 is the ID of the application being called. The application ID is a unique number that identifies each application.
-¦ 1 is the number of the page within the application.
-¦ 220883407765693447 is the session number. When you run an application, the Application Express engine generates a session number that serves as a key to the user's session state.
+ï¿½ http: is the scheme.
+ï¿½ apex.somewhere.com is the domain name of the server. It can also include a port number or an IP address.
+ï¿½ pls is the indicator to use the mod_plsql cartridge (if applicable)
+ï¿½ apex is the Database Access Descriptor (DAD) name. The DAD describes how HTTP Server connects to the database server so that it can fulfill an HTTP request. The default value is apex.
+ï¿½ f?p= is a prefix used by Oracle Application Express to route the request to the correct engine process.
+ï¿½ 4350 is the ID of the application being called. The application ID is a unique number that identifies each application.
+ï¿½ 1 is the number of the page within the application.
+ï¿½ 220883407765693447 is the session number. When you run an application, the Application Express engine generates a session number that serves as a key to the user's session state.
 
 f?p=App:Page:Session:Request:Debug:ClearCache:itemNames:itemValues:PrinterFriendly
 
@@ -202,11 +202,11 @@ resources. Application session state is managed in the database tables by the Ap
 
 Behind the scenes, the Application Express engine renders and processes pages. The Application Express engine also performs these tasks:
 
-¦ Session state management
-¦ Authentication services
-¦ Authorization services
-¦ Page flow control
-¦ Validation processing
+ï¿½ Session state management
+ï¿½ Authentication services
+ï¿½ Authorization services
+ï¿½ Page flow control
+ï¿½ Validation processing
 
 An application is an HTML interface that exists on top of database objects such as tables or procedures. You create both database applications and Websheet applications using the Create Application Wizard. The main difference between these two types of applications is the intended audience. While database applications are primarily developed by application developers, Websheet applications are often created by end users with no development experience.
 
@@ -216,11 +216,11 @@ Every application consists of one or multiple pages. Each page can have buttons 
 Page Designer and Component View - During Page edit
 Page Designer is a full featured Integrated Development Environment (IDE) designed to maximize developer productivity in maintaining application pages. The Page Designer window is divided into three main sections.
 
-¦ Tree Pane (Rendering) - The Tree pane displays in the left column and features the following tree views: Rendering, Dynamic Actions, Processing, and Shared Components.
+ï¿½ Tree Pane (Rendering) - The Tree pane displays in the left column and features the following tree views: Rendering, Dynamic Actions, Processing, and Shared Components.
 
-¦ Grid Layout - Grid Layout displays in the center column. Grid Layout is a visual representation of the regions, items, and buttons that define a page. You can edit the position of page components by dragging and dropping them. You can also add new regions, items, and button by dragging and dropping them from Gallery at the bottom of the tab.
+ï¿½ Grid Layout - Grid Layout displays in the center column. Grid Layout is a visual representation of the regions, items, and buttons that define a page. You can edit the position of page components by dragging and dropping them. You can also add new regions, items, and button by dragging and dropping them from Gallery at the bottom of the tab.
 
-¦ Property Editor - The Property Editor displays in the right column. Use the Property Editor to edit the properties of the component currently selected in the Tree Pane or Grid Layout.
+ï¿½ Property Editor - The Property Editor displays in the right column. Use the Property Editor to edit the properties of the component currently selected in the Tree Pane or Grid Layout.
 
 Tip: The Rendering tree and Grid Layout are two different representations of the regions, items, and buttons that define a page.
 
@@ -228,12 +228,12 @@ Component View is the traditional user interface for editing a page in Applicati
 
 The Component View window is divided into the following sections:
 
-¦ Page Rendering. Page rendering is the process of generating a page from the database. Use the Page Rendering section to modify controls that impact the rendering of a page, including page attributes, regions, buttons, items, page rendering computations, and page processes.
+ï¿½ Page Rendering. Page rendering is the process of generating a page from the database. Use the Page Rendering section to modify controls that impact the rendering of a page, including page attributes, regions, buttons, items, page rendering computations, and page processes.
 
-¦ Page Processing. Page processing is the process of submitting a page. A page is typically submitted when a user clicks a button. Use the Page Processing section to
+ï¿½ Page Processing. Page processing is the process of submitting a page. A page is typically submitted when a user clicks a button. Use the Page Processing section to
 specify application logic such as computations, validations, processes, and branches. In general, the Application Express engine runs this logic in the order it appears on the page. 
 
-¦ Shared Components. The Shared Components section lists common components that can be used by one or more pages within an application.
+ï¿½ Shared Components. The Shared Components section lists common components that can be used by one or more pages within an application.
 
 Use Theme 25 to create a responsive design or Universal list based theme.
 
@@ -241,8 +241,8 @@ How Does Page Processing and Page Rendering Work?
 
 To view a rendered version of your application, you request it from the Application Express engine with a URL. When you run an application, the Application Express engine relies on two processes:
 
-¦ Show Page is the page rendering process. It assembles all the page attributes (including regions, items, and buttons) into a viewable HTML page.
-¦ Accept Page performs page processing. It performs any computations, validations, processes, and branching.
+ï¿½ Show Page is the page rendering process. It assembles all the page attributes (including regions, items, and buttons) into a viewable HTML page.
+ï¿½ Accept Page performs page processing. It performs any computations, validations, processes, and branching.
 
 When you request a page using a URL, the engine is running Show Page. When you submit a page, the Application Express engine is running Accept Page or performing page processing during which it saves the submitted values in the session cache and then performs any computations, validations, or processes.
 
@@ -279,14 +279,14 @@ You can create links between pages in your application using the following f?p s
 f?p=App:Page:Session:Request:Debug:ClearCache:itemNames:itemValues:PrinterFriendly
 
 Session : Identifies a session ID. You can reference a session ID to create hypertext links to other pages that maintain the same session state by passing the session number. You can reference the session ID using the syntax:
-¦ Short substitution string: &SESSION.
-¦ PL/SQL: V('SESSION')
-¦ Bind variable: :APP_SESSION
+ï¿½ Short substitution string: &SESSION.
+ï¿½ PL/SQL: V('SESSION')
+ï¿½ Bind variable: :APP_SESSION
 
 Request : Sets the value of REQUEST. Each application button sets the value of REQUEST to the name of the button which enables accept processing to reference the name of the button when a user clicks it. You can reference REQUEST using the syntax:
-¦ Substitution string: &REQUEST.
-¦ PL/SQL: V('REQUEST')
-¦ Bind variable: :REQUEST
+ï¿½ Substitution string: &REQUEST.
+ï¿½ PL/SQL: V('REQUEST')
+ï¿½ Bind variable: :REQUEST
 
 ClearCache : Clears the cache. This sets the value of items to null. To clear cached items on a single page, specify the numeric page number. To clear cached items on multiple pages, use a comma-separated list of page numbers. Clearing a page's cache also resets any stateful processes on the page.
 
@@ -320,8 +320,6 @@ About Clearing Cache for an Item
 The following example uses standard f?p syntax to clear the cache for an item. This example calls page 5 of application 100. Placing MY_ITEM in the ClearCache position of
 the f?p syntax resets the value of MY_ITEM to NULL.
 
-
-
 The following example resets the value of the items THE_EMPNO and THE_DEPTNO:
 f?p=100:5:&APP_SESSION.::NO:THE_EMPNO,THE_DEPTNO
 
@@ -332,9 +330,9 @@ There are occasions when you may want to clear the cache for all items on a page
 
 In this example
 
-¦ Runs page 6003 of application 6000 and uses the current session ID.
-¦ Indicates to not show debug information (NO).
-¦ 
+ï¿½ Runs page 6003 of application 6000 and uses the current session ID.
+ï¿½ Indicates to not show debug information (NO).
+ï¿½ 
 
 
 Example: Clearing Cache on a Page and Passing an Item Value This example shows how to implement an update form. It clears existing information and sets the item's value
@@ -343,25 +341,25 @@ Example: Clearing Cache on a Page and Passing an Item Value This example shows h
 f?p=6000:6003:&APP_SESSION.::NO:6003:MY_ITEM:1234
 
 This example:
-¦ Runs page 6003 of application 6000 and uses the current session ID
-¦ Indicates to not show debug information (NO)
-¦ Clears all values maintained by the current session's cache for items on page 6003
-¦ Sets the session state of an item called MY_ITEM to the value 1234
+ï¿½ Runs page 6003 of application 6000 and uses the current session ID
+ï¿½ Indicates to not show debug information (NO)
+ï¿½ Clears all values maintained by the current session's cache for items on page 6003
+ï¿½ Sets the session state of an item called MY_ITEM to the value 1234
 
 Example: Clearing Session Cache on a Page and Passing Values to Multiple Items This example demonstrates how to implement an update form. It clears existing information, sets the item's value (typically a primary key), and passes values to multiple items.
 
 f?p=6000:6004:&APP_SESSION.::NO:6003:MY_ITEM1,MY_ITEM2,MY_ITEM3:1234,,5678
 
 This example:
-¦ Runs page 6004 of application 6000 and uses the current session ID
-¦ Clears the current session's cache for items on page 6003
-¦ Indicates to not show debug information (NO)
-¦ Sets the value of MY_ITEM1 to 1234, sets the value of MY_ITEM2 to null (indicated by the comma used as placeholder), and sets the value of MY_ITEM3 to 5678
+ï¿½ Runs page 6004 of application 6000 and uses the current session ID
+ï¿½ Clears the current session's cache for items on page 6003
+ï¿½ Indicates to not show debug information (NO)
+ï¿½ Sets the value of MY_ITEM1 to 1234, sets the value of MY_ITEM2 to null (indicated by the comma used as placeholder), and sets the value of MY_ITEM3 to 5678
 
-Example: Clearing Cache for an Entire Application. This example clears the application’s cache by using f?p syntax and creating a Clear Cache argument using the keyword APP.
+Example: Clearing Cache for an Entire Application. This example clears the applicationï¿½s cache by using f?p syntax and creating a Clear Cache argument using the keyword APP.
 f?p=App:Page:Session::NO:APP
 
-Another approach to clearing an application’s cache is to create a Clear Cache argument using the keyword SESSION. For example:
+Another approach to clearing an applicationï¿½s cache is to create a Clear Cache argument using the keyword SESSION. For example:
 f?p=6000:6004:12507785108488427528::NO:SESSION
 
 Referencing Session State Using Bind Variable Syntax
@@ -371,9 +369,9 @@ SELECT * FROM employees WHERE last_name like '%' || :SEARCH_STRING || '%'
 In this example, the search string is a page item. If the region type is defined as SQL Query, you can reference the value using standard SQL bind variable syntax.
 
 When using bind variable syntax, remember the following rules:
-¦ Bind variable names must correspond to an item name.
-¦ Bind variable names are not case-sensitive.
-¦ Bind variable names cannot be longer than 30 characters (that is, they must be a valid Oracle identifier).
+ï¿½ Bind variable names must correspond to an item name.
+ï¿½ Bind variable names are not case-sensitive.
+ï¿½ Bind variable names cannot be longer than 30 characters (that is, they must be a valid Oracle identifier).
 
 Although page item and application item names can be up to 255 characters, if you intend to use an application item within SQL using bind variable syntax, the item name must be 30 characters or less.
 
@@ -388,9 +386,9 @@ WHERE department_id = :THE_DEPTNO
 
 Understanding Substitution Strings
 You can use substitution strings in Application Builder in the following ways:
-¦ Include a substitution string within a template to reference component values
-¦ Reference page or application items using &ITEM. syntax
-¦ Use built-in substitution strings
+ï¿½ Include a substitution string within a template to reference component values
+ï¿½ Reference page or application items using &ITEM. syntax
+ï¿½ Use built-in substitution strings
 
 Substitution Strings within Templates
 Special substitution strings available within a template are denoted by the number symbol (#). For example:
@@ -426,13 +424,13 @@ Substitution string &APP_SESSION.
 SYS_CONTEXT variable SYS_CONTEXT('APEX$SESSION', 'APP_SESSION')
 
 Consider the following examples:
-¦ From within an HTML region:
+ï¿½ From within an HTML region:
 <a href="f?p=100:5:&APP_SESSION.">click me</a>
-¦ Using PL/SQL:
+ï¿½ Using PL/SQL:
 htf.anchor('f?p=100:5:'||V('APP_SESSION'),'click me');
-¦ Using a SQL query:
+ï¿½ Using a SQL query:
 SELECT htf.anchor('f?p=100:5:'||:APP_SESSION,'click me') FROM DUAL;
-¦ Using the SYS_CONTEXT variable:
+ï¿½ Using the SYS_CONTEXT variable:
 SELECT ... WHERE apex_session_id = SYS_CONTEXT('APEX$SESSION', 'APP_SESSION')
 
 APP_USER : APP_USER is the current user running the application. Depending upon your authentication model, the value of the user is set differently. If the application is running using database authentication, then the value of the user is the same as the database pseudo column USER. If the application uses an authentication scheme that requires the user to authenticate, the value of APP_USER is set by the authentication scheme, usually to the user name used during authentication.
@@ -443,7 +441,7 @@ About Scope and Value of REQUEST for Posted Pages : When you post a page, you in
 
 The value of REQUEST is the name of the button the user clicks, or the name of the tab the user selects. For example, suppose you have a button with a name of CHANGE, and a label Apply Change. When a user clicks the button, the value of REQUEST is CHANGE.
 
-About the When Button Pressed Attribute : Validations, processes, and branches have a When Button Pressed attribute. This attribute displays as a select list and contains the names of buttons that exist on the current page. If you make a selection from When Button Pressed, you associate the button’s REQUEST value with the validation, process, or branch.
+About the When Button Pressed Attribute : Validations, processes, and branches have a When Button Pressed attribute. This attribute displays as a select list and contains the names of buttons that exist on the current page. If you make a selection from When Button Pressed, you associate the buttonï¿½s REQUEST value with the validation, process, or branch.
 When you use a button to submit a page, the REQUEST value is passed to the page. The Accept processing logic evaluates each validation, process, and branch that uses a
 When Button Pressed attribute to determine whether the component should run (or fire). When one of these components runs, do not assume that a user actually clicked the associated button and caused the page to be submitted. Keep in mind, that another button using the same request value may have submitted the page. Similarly, JavaScript on the page can also submit the page and pass in a request value.
 
@@ -597,9 +595,9 @@ Build Status > When importing or exporting an application the Run Application On
 Changing the Build Status to Run and Build Application can only be done as the admin user of the workspace internal. In the APEX Administration Services, choose Manage Workspaces and then select Manage Applications | Build Status.
 
 Choosing a web server
-• Oracle HTTP Server (OHS)
-• Embedded PL/SQL Gateway (EPG)
-• APEX Listener
+ï¿½ Oracle HTTP Server (OHS)
+ï¿½ Embedded PL/SQL Gateway (EPG)
+ï¿½ APEX Listener
 In simple terms, the web server maps the URL in a web browser to a procedure in the database. Everything the procedure prints with sys.htp package, is sent to the browser of the user.
 
 Oracle more or less recommends the use of APEX Listener. Given the functionality, enhanced security, file caching, flexibility of deployment possibilities, and feature announcements makes it the best choice.
@@ -617,7 +615,7 @@ Table Dictionary : In the Table Dictionary, the defaults are defined by table an
 Another functionality of the Table Dictionary is the use of Column Groups. Related columns within a table can be grouped together. In forms, these groups appear as separate regions
 Creating User Interface Defaults : SQL Workshop > Utilities > User Interface Defaults.
 
-• If we have too many columns, we can use a form on the table with a report to layout the columns neatly in the form. We could also use this approach when we have a few columns. If we do not want the user to switch between too many pages, we can generate both the form and report on one single page. We can accomplish that by filling in the same page number for the form and report in the wizard. After that we may want to place the report above the form.
+ï¿½ If we have too many columns, we can use a form on the table with a report to layout the columns neatly in the form. We could also use this approach when we have a few columns. If we do not want the user to switch between too many pages, we can generate both the form and report on one single page. We can accomplish that by filling in the same page number for the form and report in the wizard. After that we may want to place the report above the form.
 
 Base tables
 We begin with base tables that we have to maintain. These base tables are often used in LOVs. A way to recognize a base table is to look at the number of foreign keys. It's also good practice to group these pages together on a separate tab with a name such as Basic Data or System.
@@ -634,7 +632,7 @@ Code instrumentation - If you just whip together an application and throw it out
 
 no network, no application time, just the database ?? you would not know where even to begin.
 
-Also, make this instrumentation part of the production code, don’t leave it out!  Why?  Because, funny thing about production – you are not allowed to drop in “debug” code at the drop of a hat, but you are allowed to update a row in a configuration table, or in a configuration file!  Your trace code, like Oracle’s should always be there, just waiting to be enabled.
+Also, make this instrumentation part of the production code, donï¿½t leave it out!  Why?  Because, funny thing about production ï¿½ you are not allowed to drop in ï¿½debugï¿½ code at the drop of a hat, but you are allowed to update a row in a configuration table, or in a configuration file!  Your trace code, like Oracleï¿½s should always be there, just waiting to be enabled.
 
 Good Looking Interface, visually attractive
 

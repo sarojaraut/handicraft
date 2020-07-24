@@ -1452,8 +1452,6 @@ clear cache = 18,RIR set these item =IRGT_BUDGET, With these values=5000 (Filter
 Html form element attributes to adjust width of select list : Advanced > custom attributes = style="width:200px" , 
 mnw160 works for text boxes > advanced > CSS classes  = mnw160
 
-
-
 select  vt.template_id
        ,vt.template_name
        ,vt.template_typ_cd || ' ~ ' || vt.template_typ_desc template_typ_desc
@@ -1465,7 +1463,7 @@ select  vt.template_id
        ,vt.insbyid
        ,1 action
 from    vams_template vt
-  
+
 sys.dbms_lob.getlength(file_blob) download
 
 select  vt.template_id
@@ -1502,6 +1500,8 @@ For diaplsying icons : Link text = <span class="t-Icon fa fa-copy"></span><span 
 Link Attributes = class="t-Button t-Button--warning" title="Copy"
 -- will show icon but hiden text "copy", text will be displayed when mouse hovered.
 
+Showing description on mouse hover of a report column
+<span title="#COLUMN_DESCR#">#COLUMN_NAME#</span>
 
 target = page number and pass all values
 
