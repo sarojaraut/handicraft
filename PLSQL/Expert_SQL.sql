@@ -8,9 +8,9 @@ FROM v$session
 WHERE sid = SYS_CONTEXT ('USERENV', 'SID');
 
 V$SQL contains information about statements that are currently running or have recently completed. V$SQL contains the following three columns, among others:
-• SQL_ID is the SQL_ID of the statement.
-• SQL_FULLTEXT is a CLOB column containing the text of the SQL statement.
-• SQL_TEXT is a VARCHAR2 column that contains a potentially truncated variant of SQL_FULLTEXT.
+ï¿½ SQL_ID is the SQL_ID of the statement.
+ï¿½ SQL_FULLTEXT is a CLOB column containing the text of the SQL statement.
+ï¿½ SQL_TEXT is a VARCHAR2 column that contains a potentially truncated variant of SQL_FULLTEXT.
 
 An SQL_ID is a base 32 number represented as a string of 13 characters, each of which may be a digit or one of 22 lowercase letters. The SQL_ID is actually a hash generated from the characters in the SQL statement. So assuming that case and whitespace are preserved, the same SQL statement will have the same SQL_ID on any database on which it is used. remember that SQL_IDs are the same on all databases irrespective of database version!
 
@@ -93,12 +93,12 @@ C1   C2
 The left operand of the join is called the preserved row source and the right operand the optional row source.
 
 What this query (logically) says is:
-• Identify combinations of rows in T1 and T2 that match the criteria T1.C1 = T2.C2 AND T1.C1 > 4.
-• For all rows in T1 that do not match any rows in T2, output them with NULL for the columns in T2.
-• Eliminate all rows from the result set that do not match the criteria T1.C1 > 3.
+ï¿½ Identify combinations of rows in T1 and T2 that match the criteria T1.C1 = T2.C2 AND T1.C1 > 4.
+ï¿½ For all rows in T1 that do not match any rows in T2, output them with NULL for the columns in T2.
+ï¿½ Eliminate all rows from the result set that do not match the criteria T1.C1 > 3.
 
 Notice that there is a big difference between a selection predicate and a join predicate. The selection predicate T1.C1 > 3 resulted in the elimination of rows from the result set, but the join predicate T1.C1 > 4 just resulted in the loss of column values from T2.
-Not only is there now a big difference between a join predicate and a selection predicate, but the CBO doesn’t have complete freedom to reorder joins. CBO always uses the left operand of the left outer join (the preserved row source) as the driving row source in the join. 
+Not only is there now a big difference between a join predicate and a selection predicate, but the CBO doesnï¿½t have complete freedom to reorder joins. CBO always uses the left operand of the left outer join (the preserved row source) as the driving row source in the join. 
 
 In traditional proprietary syntax, the notation is severely limited in its ability, prior to 12cR1, a table can be the optional row source in at most one join, full and partitioned join are not supported.
 
@@ -154,23 +154,23 @@ The problem that partitioned outer joins solves is known as data densification.
 
 Chapter - 2 The Cost-Based Optimizer
 
-The vast majority of the CBO’s work revolves around optimizing queries or the subqueries embedded in DML or Data Definition Language (DDL) statements.
+The vast majority of the CBOï¿½s work revolves around optimizing queries or the subqueries embedded in DML or Data Definition Language (DDL) statements.
 Fortunately, or unfortunately, the CBO has a very simple view of what constitutes optimal: the optimal execution plan is the one that runs the quickest.
 
 Unfortunately, for historical reasons, the unit of cost is defined as the length of time that a single block read takes to complete! So, if the CBO thinks that a query will take 5 seconds to run and that a single block read takes 10 milliseconds, then the assigned cost will be 500 as this is 5,000 milliseconds divided by 10 milliseconds.
 
-To arrive at the cost of an execution plan, the CBO doesn’t just estimate the number of single block reads. It also tries to work out how long any multiblock read operations in the plan will take and how long central processing unit (CPU)-related operations, such as in-memory sorts, take to run, and it incorporates these times in the overall cost. Oddly enough, though, it translates all these times into equivalent single block reads. Here’s an example. Suppose that a particular plan is estimated to involve:
-• 400 single block reads
-• 300 multiblock reads
-• 5 seconds of CPU processing
+To arrive at the cost of an execution plan, the CBO doesnï¿½t just estimate the number of single block reads. It also tries to work out how long any multiblock read operations in the plan will take and how long central processing unit (CPU)-related operations, such as in-memory sorts, take to run, and it incorporates these times in the overall cost. Oddly enough, though, it translates all these times into equivalent single block reads. Hereï¿½s an example. Suppose that a particular plan is estimated to involve:
+ï¿½ 400 single block reads
+ï¿½ 300 multiblock reads
+ï¿½ 5 seconds of CPU processing
 
-Let’s further assume that the CBO estimates that:
-• A single block read takes 10 milliseconds
-• A multiblock read takes 30 milliseconds
+Letï¿½s further assume that the CBO estimates that:
+ï¿½ A single block read takes 10 milliseconds
+ï¿½ A multiblock read takes 30 milliseconds
 The cost of this plan is calculated as: ((400 x 10) + (300 x 30) + 5,000)/10 = 1800
 
-These days, execution plans are typically printed with both a cost and an estimated elapsed time in hours, minutes, and seconds, so you don’t have to do quite as much math as you used to!
+These days, execution plans are typically printed with both a cost and an estimated elapsed time in hours, minutes, and seconds, so you donï¿½t have to do quite as much math as you used to!
 
-The main inputs to the CBO’s estimating process are the object statistics that are held in the data dictionary. These statistics will indicate, for example, how many blocks are in a table and, therefore, how many multiblock reads would be required to read it in its entirety. Statistics are also held for indexes, so the CBO has some basis for estimating how many single block reads will be required to read data from a table using an index.
-Object statistics are the most important inputs to the CBO’s costing algorithm but by no means the only ones. Initialization parameter settings, system statistics, dynamic sampling, SQL profiles, and SQL baselines are all examples of other things the CBO considers when making its cost estimates.
+The main inputs to the CBOï¿½s estimating process are the object statistics that are held in the data dictionary. These statistics will indicate, for example, how many blocks are in a table and, therefore, how many multiblock reads would be required to read it in its entirety. Statistics are also held for indexes, so the CBO has some basis for estimating how many single block reads will be required to read data from a table using an index.
+Object statistics are the most important inputs to the CBOï¿½s costing algorithm but by no means the only ones. Initialization parameter settings, system statistics, dynamic sampling, SQL profiles, and SQL baselines are all examples of other things the CBO considers when making its cost estimates.
 

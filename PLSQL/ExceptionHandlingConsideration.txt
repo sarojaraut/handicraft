@@ -37,28 +37,3 @@ Document Exceptions That Need Handling
 Yet the header of a program tells nothing about what errors it might raise and then send unhandled out of its exception section
  
 Suppose, for example, that I have built a package that calculates overdue fees on mortgages. The analyze_status procedure might raise the overdue.excessive_lateness or overdue.invalid_date_range exceptions. The count_by_borrower function could pass unhandled NO_DATA_FOUND or borrower.does_not_exist exceptions.
-
-L_process_stats    CLOB;
-
-https://uat1.riuat.com/webservices/storeorder.asmx 
-
-/apps/projects/cms/ts3/remote_data/in/web
-
-rlcmstd.hq.river-island.com
-
-lcmsud.wyn1346.ecs.hp.com
-
-lcmspd.wyn1346.ecs.hp.com
-
-cmsdev.ctl, cmstst.ctl, cmsts2.ctl, cmsts3.ctl, cmsts4.ctl, cmssp1.ctl
- 
-begin
-    insert into temp values(1,1);
-    raise no_data_found;
-end;
-/
-
-select name, type, text, regexp_replace(text, '--(\$Revision:)?[ -]+([0-9.]+).*','\2')
-from user_source@orderactive_xe
-where regexp_like(text,  '--(\$Revision:){1}[ -]+([0-9.]+).*')
-

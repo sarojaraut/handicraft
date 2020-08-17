@@ -1,13 +1,13 @@
 begin
 dbms_scheduler.create_job (
-job_name => 'TempJob',
-job_type => 'PLSQL_BLOCK',
-job_action => '
-begin 
-ams_etl.temp_create_moses_data_table;
-end; ',
-enabled => TRUE,
-comments => 'USGAAP Cube analysis, time taking table creation');
+  job_name => 'TempJob',
+  job_type => 'PLSQL_BLOCK',
+  job_action => '
+    begin 
+    ams_etl.temp_create_moses_data_table;
+    end; ',
+  enabled => TRUE,
+  comments => 'USGAAP Cube analysis, time taking table creation');
 end;
 /
 
@@ -75,7 +75,7 @@ END;
 
 Running Jobs
 
-By calling DBMS_SCHEDULER.RUN_JOB—You can use the RUN_JOB procedure to test a job or to run it outside of its specified schedule. You can run the job asynchronously, which is similar to the previous two methods of running a job, or synchronously, in which the job runs in the session that called RUN_JOB, and as the user logged in to that session. The use_current_session argument of RUN_JOB determines whether a job runs synchronously or asynchronously
+By calling DBMS_SCHEDULER.RUN_JOBï¿½You can use the RUN_JOB procedure to test a job or to run it outside of its specified schedule. You can run the job asynchronously, which is similar to the previous two methods of running a job, or synchronously, in which the job runs in the session that called RUN_JOB, and as the user logged in to that session. The use_current_session argument of RUN_JOB determines whether a job runs synchronously or asynchronously
 
 RUN_JOB accepts a comma-delimited list of job names.
 
@@ -111,13 +111,13 @@ END;
 
 If a job is running at the time of the procedure call, the attempt to drop the job fails. You can modify this default behavior by setting either the force or defer option.
 
-When you set the force option to TRUE, the Scheduler first attempts to stop the running job by using an interrupt mechanism—calling STOP_JOB with the force option set to FALSE. If the job is successfully stopped, the job is then dropped. Alternatively, you can call STOP_JOB to first stop the job and then call DROP_JOB. If STOP_JOB fails, you can call STOP_JOB with the force option, provided you have the MANAGE SCHEDULER privilege.
+When you set the force option to TRUE, the Scheduler first attempts to stop the running job by using an interrupt mechanismï¿½calling STOP_JOB with the force option set to FALSE. If the job is successfully stopped, the job is then dropped. Alternatively, you can call STOP_JOB to first stop the job and then call DROP_JOB. If STOP_JOB fails, you can call STOP_JOB with the force option, provided you have the MANAGE SCHEDULER privilege.
 
 When you specify multiple jobs to drop, the commit_semantics argument determines the outcome when an error occurs on one of the jobs. The following are the possible values for this argument:
 
-•STOP_ON_FIRST_ERROR, the default—The call returns on the first error and the previous drop operations that were successful are committed to disk.
-•TRANSACTIONAL—The call returns on the first error and the previous drop operations before the error are rolled back. force must be FALSE.
-•ABSORB_ERRORS—The call tries to absorb any errors, attempts to drop the rest of the jobs, and commits all the drops that were successful.
+ï¿½STOP_ON_FIRST_ERROR, the defaultï¿½The call returns on the first error and the previous drop operations that were successful are committed to disk.
+ï¿½TRANSACTIONALï¿½The call returns on the first error and the previous drop operations before the error are rolled back. force must be FALSE.
+ï¿½ABSORB_ERRORSï¿½The call tries to absorb any errors, attempts to drop the rest of the jobs, and commits all the drops that were successful.
 
 BEGIN
   DBMS_SCHEDULER.DROP_JOB(
@@ -145,8 +145,8 @@ Using Events to Start Jobs
 An event is a message sent by one application or system process to another to indicate that some action or occurrence has been detected. An event is raised (sent) by one application or process, and consumed (received) by one or more applications or processes.
 
 There are two kinds of events consumed by the Scheduler:
-•Events raised by your application : An application can raise an event to be consumed by the Scheduler. The Scheduler reacts to the event by starting a job. For example, when an inventory tracking system notices that the inventory has gone below a certain threshold, it can raise an event that starts an inventory replenishment job.
-•File arrival events raised by a file watcher : You can create a file watcher—a Scheduler object introduced in Oracle Database 11g Release 2—to watch for the arrival of a file on a system. 
+ï¿½Events raised by your application : An application can raise an event to be consumed by the Scheduler. The Scheduler reacts to the event by starting a job. For example, when an inventory tracking system notices that the inventory has gone below a certain threshold, it can raise an event that starts an inventory replenishment job.
+ï¿½File arrival events raised by a file watcher : You can create a file watcherï¿½a Scheduler object introduced in Oracle Database 11g Release 2ï¿½to watch for the arrival of a file on a system. 
 
 Creating File Watchers and File Watcher Jobs
 

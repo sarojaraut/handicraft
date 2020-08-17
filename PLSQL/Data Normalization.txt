@@ -6,10 +6,10 @@ Storing the data in this format gives rise to several anomalies.
 
  Insertion anamoly - it is impossible to enter details of authors who are not yet published, because there will be no ISBN number under which to store them.
  Deletion Anamoly - A book cannot be deleted without losing the details of the publisher.
- Update Anamoly - if a publisher’s address changes, it will be necessary to update the rows for every book he/she has published.
+ Update Anamoly - if a publisherï¿½s address changes, it will be necessary to update the rows for every book he/she has published.
   
 Furthermore:
-1. it will be very difficult to identify every book written by one author. The fact that a book may have several authors means that the “author” field must be multivalued, and a search will have to search all the values. Related to this is the problem of having to restructure the table of a book comes along with more authors than the original design can handle. 
+1. it will be very difficult to identify every book written by one author. The fact that a book may have several authors means that the ï¿½authorï¿½ field must be multivalued, and a search will have to search all the values. Related to this is the problem of having to restructure the table of a book comes along with more authors than the original design can handle. 
 2. Also, the storage is very inefficient due to replication of address details across rows, and the possibility of error as this data is repeatedly entered is high. Normalization should solve all these issues. 
 
 The first normal form is to remove the repeating groups. In this case, the multiple authors: pull them out into a separate table called AUTHORS. The data structures will now look like this:
@@ -19,7 +19,7 @@ AUTHORS: Name, ISBN
 
 One row in the BOOKS table is now linked to two rows in the AUTHORS table. and unpublished authors can be inserted. This solves the insertion anomaly. This is the first normal form: no repeating groups.
 
-The second normal form removes columns from the table that are not dependent on the primary key. In this example, that is the publisher’s address details: these
+The second normal form removes columns from the table that are not dependent on the primary key. In this example, that is the publisherï¿½s address details: these
 depend on the publisher, not the ISBN. The BOOKS table and a new PUBLISHERS table will then look like this:
 
 BOOKS :ISBN, Title, Publisher
@@ -33,3 +33,20 @@ PUBLISHERS : Publisher, Address, Code
 
 ADDRESSES :Address Code, Street, City ,State
 One characteristic of normalized data that should be emphasized now is the use of primary keys and foreign keys.
+
+First Normal Form (1NF)
+For a table to be in the First Normal Form, it should follow the following 4 rules:
+    It should only have single(atomic) valued attributes/columns.
+    Values stored in a column should be of the same domain, In each column the values stored must be of the same kind or type.
+    All the columns in a table should have unique names, If one or more columns have same name, then the DBMS system will be left confused.
+    And the order in which data is stored, does not matter.
+
+Second Normal Form (2NF)
+For a table to be in the Second Normal Form,
+    It should be in the First Normal form.
+    And, it should not have Partial Dependency. Partial Dependency exists, when for a composite primary key, any attribute in the table depends only on a part of the primary key and not on the complete primary key. To remove Partial dependency, we can divide the table, remove the attribute which is causing partial dependency, and move it to some other table where it fits in well.
+
+Third Normal Form (3NF)
+A table is said to be in the Third Normal Form when,
+    It is in the Second Normal form.
+    And, it doesn't have Transitive Dependency.
