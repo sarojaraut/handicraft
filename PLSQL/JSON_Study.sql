@@ -2,7 +2,7 @@
 with tmp as
 (
 select
-    'F'||rownum f_name
+    'F'||rownum   f_name
     ,'L'||rownum  l_name
 from dual
 connect by rownum <=3
@@ -24,15 +24,45 @@ from tmp
 select 
     td.* 
 from tmp_json t,
-    json_table(
+    json_table( -- JSON_TABLE creates a relational view of JSON data. It maps the result of a JSON data evaluation into relational rows and columns. 
         t.val
-        ,'$.emps[*]'
-        columns 
+        ,'$.emps[*]' --  row path expression
+        columns  
+        -- The COLUMNS clause evaluates the row source, finds specific JSON values within the row source, 
+        -- and returns those JSON values as SQL values in individual columns of a row of relational data.
         (
-            f_name varchar2(30) path '$.f_name'
+            f_name varchar2(30)  path '$.f_name'
             ,l_name varchar2(30) path '$.l_name'
         )
 ) td;
+
+
+SELECT jt.phones
+FROM j_purchaseorder,
+    JSON_TABLE(po_document, '$.ShippingInstructions'
+        COLUMNS(
+            phones VARCHAR2(100) FORMAT JSON PATH '$.Phone'
+        )
+    ) AS jt;
+
+PHONES
+-------------------------------------------------------------------------------------
+[{"type":"Office","number":"909-555-7307"},{"type":"Mobile","number":"415-555-1234"}]
+
+SELECT jt.*
+FROM j_purchaseorder,
+JSON_TABLE(po_document, '$.ShippingInstructions.Phone[*]'
+COLUMNS (row_number FOR ORDINALITY,
+         phone_type VARCHAR2(10) PATH '$.type',
+         phone_num VARCHAR2(20) PATH '$.number'))
+AS jt;
+
+ROW_NUMBER PHONE_TYPE PHONE_NUM
+---------- ---------- --------------------
+         1 Office     909-555-7307
+         2 Mobile     415-555-1234
+
+
 
 with tmp as(
 select 
@@ -117,28 +147,135 @@ from t;
 
 -- JSON_OBJECT(KEY key_expr VALUE value_expr FORMAT JSON NULL ON NULL RETURNING CLOB)
 
-with emp as(
-select 
-    rownum                                   as  empno
-    ,'E_'||rownum                            as  ename
-    ,case mod(rownum,4)
-        when 0 then 'PRESIDENT'
-        when 1 then 'MANAGER'
-        when 2 then 'ANALYST'
-        else        'CLERK' 
-    end                                      as job
-    ,case mod(rownum,4)
-        when 0 then 'ACCOUNTING'
-        when 1 then 'RESEARCH'
-        when 2 then 'SALES'
-        else        'OPERATIONS' 
-    end                                      as dept 
-    , round(dbms_random.value(30000,100000)) as sal
-    , dbms_random.string('u',10)             as rand_string -- u upper case, l lower case, x alphanum, p, printable including special chars
-from dual
-connect by rownum < =10
+
+with lists as(
+    select 
+        'ANALYST,CLERK,MANAGER,PRESIDENT'      jobs,
+        'ACCOUNTING,OPERATIONS,RESEARCH,SALES' depts
+    from dual
+),
+jobs as(
+    select
+        rownum-1 job_id
+        ,regexp_substr(jobs,'[^,]+',1,rownum) job
+    from lists
+    connect by rownum <= regexp_count(jobs,',')+1
+),
+depts as(
+    select
+        rownum dept_id
+        ,regexp_substr(depts,'[^,]+',1,rownum) dept
+    from lists
+    connect by rownum <= regexp_count(depts,',')+1
+),
+emps as(
+    select 
+        rownum                                   as empno
+        ,'E_'||rownum                            as ename
+        , mod(rownum,4)                          as job_id
+        , mod(rownum,5)                          as dept_id 
+        , round(dbms_random.value(30000,100000)) as sal
+        , dbms_random.string('u',10)             as rand_string -- u upper case, l lower case, x alphanum, p, printable including special chars
+    from dual
+    connect by rownum < =10
+),
+emps_json as(
+    select 
+        json_object(
+        'emps' is
+            json_arrayagg(
+                json_object(
+                    key  'empno'          value e.empno
+                    ,key 'ename'          value e.ename
+                    ,key 'sal'            value e.sal
+                    ,key 'rand_string'    value e.rand_string
+                    ,key 'job '           value j.job 
+                    ,key 'dept'           value json_object(
+                                                key 'name' value d.dept 
+                                                absent on null)
+                    absent on null
+                    returning  clob
+                )
+                returning  clob
+            )
+        ) as json_val
+    from emps e
+    left join jobs j
+    on e.job_id = j.job_id
+    left join depts d
+    on e.dept_id = d.dept_id
 )
-select * from emp;
+select * 
+from emps_json;
+
+
+with ord as (
+select 
+'{
+    "id": "abece703-bbfa-4250-b1a9-8abb7e5c64d6",
+    "order": {
+        "orderId": "a8924325-f46c-4b3e-8df2-a77ea9444ea8",
+        "externalIds": [
+            {
+                "systemId": "S1",
+                "externalId": "EXT-1"
+            },
+            {
+                "systemId": "S2",
+                "externalId": "EXT-2"
+            }
+        ],
+        "customer": {
+            "customerId": "5181166",
+            "email": "firstname.surname@xyz.com"
+        },
+        "productLineItems": [
+            {
+                "productId": "P1",
+                "skuId": "SKU1",
+                "priceAdjustments": [
+                    {
+                        "couponCode": "ORDER10"
+                    },
+                    {
+                        "couponCode": "ORDER11"
+                    }
+                ],
+                "basePrice": 1600
+            },
+            {
+                "productId": "P2",
+                "skuId": "SKU2"
+            }
+        ]
+    }
+}' json
+from dual
+)
+select 
+    d.*
+from ord o,
+JSON_TABLE(
+    o.json ,
+    '$'
+    columns (
+        externalId         varchar2(20 char)     path '$.order.externalIds[0].externalId',
+        email              varchar2(32 char)     path '$.order.customer.email',
+        nested PATH '$.order.productLineItems[*]'
+        columns (
+            sku_row_number  FOR ORDINALITY,
+            productId         varchar2(38)       path '$.productId',
+            skuId             varchar2(14)       path '$.skuId',
+            has_promo         varchar2(5) exists path '$.priceAdjustments',
+            nested PATH '$.priceAdjustments[*]'
+            columns(
+                discount_row_number  FOR ORDINALITY,
+                couponCode        varchar2(30)       path '$.couponCode'
+            )
+        )
+    )
+) d
+/
 
 JSON_VALUE:  to select one scalar value in the JSON data and return it to SQL. (JSON_VALUE is the ‘bridge’ from a JSON value to a SQL value).
 JSON_EXISTS: a Boolean operator typically used in the WHERE clause to filter rows based on properties in the JSON data.
@@ -375,7 +512,7 @@ select
 ' as json_data from dual)
 SELECT jt.*
 FROM feeddata fd,
-     JSON_TABLE(json_data,
+    JSON_TABLE(json_data,
         '$.data[*]'              -- we need to tell it when to start a new row. 
         -- this row path expr selects every item of the collection (array) that we want to project as a separate row
         COLUMNS (
@@ -1083,13 +1220,13 @@ select
                 "externalId": "EXT-1"
             },
             {
-              "systemId": "S2",
-              "externalId": "EXT-2"
-          }
+                "systemId": "S2",
+                "externalId": "EXT-2"
+            }
         ],
         "customer": {
             "customerId": "5181166",
-            "email": "xyzcolm.surname@xyz.com"
+            "email": "firstname.surname@xyz.com"
         },
         "productLineItems": [
             {
