@@ -1,0 +1,47 @@
+https://www.youtube.com/watch?v=jwPiT7tfAQk&list=PLPIzp-E1msrblCGG4bOcg1wnNHj2QnIqZ&index=18
+
+shortcut key : F12
+inspect element
+
+console : ctrl + shift + j (cmd + opt + j)
+
+dev tools : ctrl + shift + i 
+
+tab or shift + tab to move between attributes 
+
+select css attribute and use up and down keys to change value
+
+color can be choosed by using the colour selector
+use shift click to see the colour value in different format e.g rgb, hsl, hash -> hue, saturation and lightness. increasing lightness will make the colour light. This way you can find complementary colour 
+
+Taking screen shot of a long page : while on chrome developer toolbar ctrl + shift + p > capture full size screen shot
+On firefox developer tolbar click on three dots and click on take screenshot
+
+console.log("Hello")
+
+var i = 10;
+
+console.log(i)
+
+console.log("i:" + i)
+
+short cut is : console.log({i}) converts that to an object and print 
+console.log
+console.info
+console.warn
+console.error("Message")
+
+var i = [{"one" : 1, "two" : 2},{"three":3}]
+console.log(i)
+console.table(i)
+
+interactive grid : console.table (gIg***data)
+gIg***data is the interactive grid data name
+
+
+cursor align extension alt + a
+a => a 
+b   => b 
+c      => c
+
+file util extension > 

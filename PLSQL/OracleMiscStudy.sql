@@ -2,7 +2,7 @@ Pseudocolumns
  
 A pseudocolumn behaves like a table column, but is not actually stored in the table. You can select from pseudocolumns, but you cannot insert, update, or delete their values. A pseudocolumn is also similar to a function without arguments. However, functions without arguments typically return the same value for every row in the result set,whereas pseudocolumns typically return a different value for each row.
 
-• Hierarchical Query Pseudocolumns > (CONNECT_BY_ISCYCLE, CONNECT_BY_ISLEAF, LEVEL)
+ï¿½ Hierarchical Query Pseudocolumns > (CONNECT_BY_ISCYCLE, CONNECT_BY_ISLEAF, LEVEL)
 The CONNECT_BY_ISCYCLE pseudocolumn returns 1 if the current row has a child which is also its ancestor. Otherwise it returns 0.
 The CONNECT_BY_ISLEAF pseudocolumn returns 1 if the current row is a leaf of the tree defined by the CONNECT BY condition. Otherwise it returns 0. This information indicates whether a given row can be further expanded to show more of the hierarchy.
 
@@ -16,20 +16,20 @@ SELECT last_name "Employee", CONNECT_BY_ISLEAF "IsLeaf",
 
 For each row returned by a hierarchical query, the LEVEL pseudocolumn returns 1 for a root row, 2 for a child of a root, and so on.
 
-• Sequence Pseudocolumns(CURRVAL, NEXTVAL)
+ï¿½ Sequence Pseudocolumns(CURRVAL, NEXTVAL)
 Where to Use Sequence Values 
-• The select list of a SELECT statement that is not contained in a subquery, materialized view, or view
-• The select list of a subquery in an INSERT statement
-• The VALUES clause of an INSERT statement
-• The SET clause of an UPDATE statement
+ï¿½ The select list of a SELECT statement that is not contained in a subquery, materialized view, or view
+ï¿½ The select list of a subquery in an INSERT statement
+ï¿½ The VALUES clause of an INSERT statement
+ï¿½ The SET clause of an UPDATE statement
 
 You cannot use CURRVAL and NEXTVAL in the following constructs:
-• A subquery in a DELETE, SELECT, or UPDATE statement
-• A query of a view or of a materialized view
-• A SELECT statement with the DISTINCT operator, with a GROUP BY clause or ORDER BY clause
-• A SELECT statement that is combined with another SELECT statement with the UNION, INTERSECT, or MINUS set operator
-• The WHERE clause of a SELECT statement
-• The condition of a CHECK constraint
+ï¿½ A subquery in a DELETE, SELECT, or UPDATE statement
+ï¿½ A query of a view or of a materialized view
+ï¿½ A SELECT statement with the DISTINCT operator, with a GROUP BY clause or ORDER BY clause
+ï¿½ A SELECT statement that is combined with another SELECT statement with the UNION, INTERSECT, or MINUS set operator
+ï¿½ The WHERE clause of a SELECT statement
+ï¿½ The condition of a CHECK constraint
 
 ROWNUM Pseudocolumn
 For each row returned by a query, the ROWNUM pseudocolumn returns a number indicating the order in which Oracle selects the row from a table or set of joined rows. The first row selected has a ROWNUM of 1, the second has 2, and so on.
@@ -55,17 +55,26 @@ Example
 
 SELECT Product_Name, t.Year, t.Week, NVL(Sales,0) dense_sales
 FROM
-    (SELECT SUBSTR(p.Prod_Name,1,15) Product_Name,
-    t.Calendar_Year Year, t.Calendar_Week_Number Week, SUM(Amount_Sold) Sales
+    (
+      SELECT 
+        SUBSTR(p.Prod_Name,1,15) Product_Name,
+        t.Calendar_Year Year, 
+        t.Calendar_Week_Number Week, 
+        SUM(Amount_Sold) Sales
     FROM Sales s, Times t, Products p
-    WHERE s.Time_id = t.Time_id AND s.Prod_id = p.Prod_id AND
-    p.Prod_name IN ('Bounce') AND t.Calendar_Year IN (2000,2001) AND
-    t.Calendar_Week_Number BETWEEN 20 AND 30
-    GROUP BY p.Prod_Name, t.Calendar_Year, t.Calendar_Week_Number) v
+    WHERE s.Time_id = t.Time_id 
+    AND s.Prod_id = p.Prod_id 
+    AND p.Prod_name IN ('Bounce') 
+    AND t.Calendar_Year IN (2000,2001) 
+    AND t.Calendar_Week_Number BETWEEN 20 AND 30
+    GROUP BY p.Prod_Name, t.Calendar_Year, t.Calendar_Week_Number
+    ) v
     -- Data from v needs to be densified. where clause between 20 and 30 is for minimizing the data set for example
 PARTITION BY (v.Product_Name)
 RIGHT OUTER JOIN
-    (SELECT DISTINCT Calendar_Week_Number Week, Calendar_Year Year
+    (SELECT DISTINCT 
+      Calendar_Week_Number Week,
+      Calendar_Year Year
     FROM Times
     WHERE Calendar_Year IN (2000, 2001)
     AND Calendar_Week_Number BETWEEN 20 AND 30) t
@@ -96,8 +105,8 @@ ROLLUP enables a SELECT statement to calculate multiple levels of subtotals acro
 detailed level to a grand total, following a grouping list specified in the ROLLUP clause. ROLLUP takes as its argument an ordered list of grouping columns. First, it calculates the standard aggregate values specified in the GROUP BY clause. Then, it creates progressively higher-level subtotals, moving from right to left through the list of grouping columns. Finally, it creates a grand total.
 
 Use the ROLLUP extension in tasks involving subtotals.
-¦ It is very helpful for subtotaling along a hierarchical dimension such as time or geography. For instance, a query could specify a ROLLUP(y, m, day) or ROLLUP(country, state, city).
-¦ For data warehouse administrators using summary tables, ROLLUP can simplify and speed up the maintenance of summary tables.
+ï¿½ It is very helpful for subtotaling along a hierarchical dimension such as time or geography. For instance, a query could specify a ROLLUP(y, m, day) or ROLLUP(country, state, city).
+ï¿½ For data warehouse administrators using summary tables, ROLLUP can simplify and speed up the maintenance of summary tables.
 
 SELECT channels.channel_desc, calendar_month_desc, countries.country_iso_code, TO_CHAR(SUM(amount_sold), '9,999,999,999') SALES$
 FROM sales, customers, times, channels, countries
@@ -129,10 +138,10 @@ Direct Sales	            1,497,646
                             1,790,032
 
 This query returns the following sets of rows:
-¦ Regular aggregation rows that would be produced by GROUP BY without using ROLLUP.
-¦ First-level subtotals aggregating across country_id for each combination of channel_desc and calendar_month.
-¦ Second-level subtotals aggregating across calendar_month_desc and country_id for each channel_desc value.
-¦ A grand total row.
+ï¿½ Regular aggregation rows that would be produced by GROUP BY without using ROLLUP.
+ï¿½ First-level subtotals aggregating across country_id for each combination of channel_desc and calendar_month.
+ï¿½ Second-level subtotals aggregating across calendar_month_desc and country_id for each channel_desc value.
+ï¿½ A grand total row.
 
 Partial Rollup
 You can also roll up so that only some of the sub-totals will be included. This partial rollup uses the following syntax:
