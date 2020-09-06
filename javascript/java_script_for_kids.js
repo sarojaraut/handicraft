@@ -249,10 +249,8 @@ while (sheepCounted < 10) {
 for (setup; condition; increment) {
     console.log("Do something");
     }
-The setup ( var sheepCounted = 0 ) is run before the loop starts.
-The condition ( sheepCounted < 10 ) is checked before each run of the loop body.
-The increment ( sheepCounted++ ) is run after every execution of the loop body.
-
+    
+// The setup ( var sheepCounted = 0 ) is run before the loop s
 
 var timesToSayHello = 3;
 for (var i = 0; i < timesToSayHello; i++) {
@@ -265,9 +263,18 @@ for (var i = 0; i < timesToSayHello; ++i) {
 }// 0 1 2
 
 var timesToSayHello = 3;
-for (var i = 0;  ++i; i < timesToSayHello;) {
-    console.log("Hello :"+i);
+for (var i = 0,j=0;   i < timesToSayHello; ++i,j++) {
+    console.log("Hello :"+i+j);
 }// 0 1 2
+
+var animals = ["Lion", "Flamingo", "Polar Bear", "Boa Constrictor"];
+for (var i = 0; i < animals.length; i++) {
+console.log("This zoo contains a " + animals[i] + ".");
+}
+
+for (var x = 2; x < 10000; x = x * 2) {
+    console.log(x);
+}//print all the powers of 2 below the number 10,000
 
 /***** Chapter 2 - Data Types and Variables ****/
 /***** Chapter 2 - Data Types and Variables ****/
