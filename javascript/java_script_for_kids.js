@@ -61,13 +61,147 @@ The null value is usually used when you want to deliberately say “This is empt
 /***** Chapter 3 - Arrays ****/
 
 
+var daysOfWeek = ["Sun","Mon","Tue","Thu","Fri","Sat"]
+
+daysOfWeek[0]; //"Sun"
+
+var daysOfWeek=[];
+daysOfWeek[0]="Sun";
+daysOfWeek[1]="Mon";
+daysOfWeek[2]="Tue";
+daysOfWeek[3]="Wed";
+daysOfWeek[4]="Thu";
+daysOfWeek[5]="Fri";
+daysOfWeek[6]="Sat";
+
+// Mixing Data Types in an Array
+
+var mixedData = ["Test",1.5,true];
+
+// Properties and methods help you work with arrays
+mixedData.length;
+
+mixedData[mixedData.length-1];//last item of the array
+
+mixedData.push(10); // after adding the item to the end of array returns the length of the array
+mixedData.unshift("begining"); // after adding as first item of the array returns the length of the array
+mixedData.pop(); //remove the last element and returns it
+mixedData.shift()//remove and return the first element of an array
+
+// Adding Arrays
+var furryAnimals = ["Alpaca", "Ring-tailed Lemur", "Yeti"];
+var scalyAnimals = ["Boa Constrictor", "Godzilla"];
+var furryAndScalyAnimals = furryAnimals.concat(scalyAnimals);
+// Joining Multiple Arrays
+var furryAnimals = ["Alpaca", "Ring-tailed Lemur", "Yeti"];
+var scalyAnimals = ["Boa Constrictor", "Godzilla"];
+var featheredAnimals = ["Macaw", "Dodo"];
+var allAnimals = furryAnimals.concat(scalyAnimals, featheredAnimals);
+allAnimals;
+
+// Finding the Index of an Element in an Array
+
+var colors = ["red", "green", "blue"];
+colors.indexOf("blue"); //2
+colors.indexOf("purple");//-1
+
+// Turning an Array into a String
+
+colors.join()//"red,green,blue"
+colors.join(" ")//"red,green,blue"
+colors.join("")//"redgreenblue"
+colors.reverse();//["blue", "green", "red"]
+
+var randomBodyParts = ["Face", "Nose", "Hair"];
+var randomAdjectives = ["Smelly", "Boring", "Stupid"];
+var randomWords = ["Fly", "Marmot", "Stick", "Monkey", "Rat"];
+
+var randomBodyPart = randomBodyParts[Math.floor(Math.random() * randomBodyParts.length)];
+var randomAdjective = randomAdjectives[Math.floor(Math.random() * randomAdjectives.length)];
+var randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
 
 
+var randomInsult = "Your " + randomBodyPart + " is like a " + randomAdjective + " " + randomWord + "!!!";
+randomInsult;
+
+/***** Chapter 4 - Objects ****/
 
 
+var cat = {
+    "legs": 3,
+    "name": "Harmony",
+    "color": "Tortoiseshell"
+    };
 
-/***** Chapter 2 - Data Types and Variables ****/
-/***** Chapter 2 - Data Types and Variables ****/
+var cat = {
+    legs: 3,
+    "full name": "Harmony Philomena Snuggly-Pants Morgan",
+    color: "Tortoiseshell"
+    };
+        
+// while a key is always a string (with or without quotes), the value for that key can be any kind of value, or even a variable containing a value.
+cat["name"];
+cat.name;
+
+var cat = {};
+cat["legs"] = 3;
+cat["name"] = "Harmony";
+cat["color"] = "Tortoiseshell";
+cat;
+
+var cat = {};
+cat.legs = 3;
+cat.name = "Harmony";
+cat.color = "Tortoiseshell";
+cat.isAwesome = true;
+
+cat.isBrown;//undefined
+
+// If you ask for a property that JavaScript doesn’t know about, it returns the special value undefined . undefined just means “There’s nothing here!”
+
+// Combining Arrays and Objects
+
+var dinosaurs = [
+{name: "Tyrannosaurus Rex", period: "Late Cretaceous" },
+{name: "Stegosaurus", period: "Late Jurassic" },
+{name: "Plateosaurus", period: "Triassic" }
+];
+
+dinosaurs[0];
+dinosaurs[1].period;
+
+var movies = {
+    "Finding Nemo": {
+    releaseDate: 2003,
+    duration: 100,
+    actors: ["Albert Brooks", "Ellen DeGeneres", "Alexander Gould"],
+    format: "DVD"
+    },
+    "Star Wars: Episode VI - Return of the Jedi": {
+    releaseDate: 1983,
+    duration: 134,
+    actors: ["Mark Hamill", "Harrison Ford", "Carrie Fisher"],
+    format: "DVD"
+    },
+    "Harry Potter and the Goblet of Fire": {
+    releaseDate: 2005,
+    duration: 157,
+    actors: ["Daniel Radcliffe", "Emma Watson", "Rupert Grint"],
+    format: "Blu-ray"
+    }
+};
+
+var cars = {
+        releaseDate: 2006,
+        duration: 117,
+        actors: ["Owen Wilson", "Bonnie Hunt", "Paul Newman"],
+        format: "Blu-ray"
+    };
+movies["Cars"] = cars;
+
+/***** Chapter 5 - The Basics of HTML ****/
+
+
 /***** Chapter 2 - Data Types and Variables ****/
 /***** Chapter 2 - Data Types and Variables ****/
 /***** Chapter 2 - Data Types and Variables ****/
