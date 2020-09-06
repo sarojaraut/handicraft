@@ -201,8 +201,74 @@ movies["Cars"] = cars;
 
 /***** Chapter 5 - The Basics of HTML ****/
 
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>My first proper HTML page</title>
+    </head>
+    <body>
+        <h1>Hello world!</h1>
+        <p>My <em>first</em> <strong>web page</strong>.</p>
+        <p>Let's add another <strong><em>paragraph</em></strong>.</p>
+        <p><a href="http://xkcd.com">Click here</a> to read some excellent comics.</p>
+    </body>
+</html>
 
-/***** Chapter 2 - Data Types and Variables ****/
+<a href="http://xkcd.com" title="xkcd: Land of geeky comics!">Click here</a>
+When you hover your cursor over the link, you should see the text “xkcd: Land of geeky comics!”
+
+/***** Chapter 6 - Conditionals and Loops ****/
+
+var name = "Nicholas";
+console.log("Hello " + name);
+if (name.length > 7) {
+    console.log("Wow, you have a REALLY long name!");
+} else {
+    console.log("Your name isn't very long.");
+}
+
+var lemonChicken = false;
+var beefWithBlackBean = true;
+var sweetAndSourPork = true;
+if (lemonChicken) {
+    console.log("Great! I'm having lemon chicken!");
+} else if (beefWithBlackBean) {
+    console.log("I'm having the beef.");
+} else if (sweetAndSourPork) {
+    console.log("OK, I'll have the pork.");
+} else {
+    console.log("Well, I guess I'll have rice then.");
+}
+
+var sheepCounted = 0;
+while (sheepCounted < 10) {
+    console.log("I have counted " + sheepCounted + " sheep!");
+    sheepCounted++;
+}
+
+for (setup; condition; increment) {
+    console.log("Do something");
+    }
+The setup ( var sheepCounted = 0 ) is run before the loop starts.
+The condition ( sheepCounted < 10 ) is checked before each run of the loop body.
+The increment ( sheepCounted++ ) is run after every execution of the loop body.
+
+
+var timesToSayHello = 3;
+for (var i = 0; i < timesToSayHello; i++) {
+    console.log("Hello :"+i);
+}// 0 1 2
+
+var timesToSayHello = 3;
+for (var i = 0; i < timesToSayHello; ++i) {
+    console.log("Hello :"+i);
+}// 0 1 2
+
+var timesToSayHello = 3;
+for (var i = 0;  ++i; i < timesToSayHello;) {
+    console.log("Hello :"+i);
+}// 0 1 2
+
 /***** Chapter 2 - Data Types and Variables ****/
 /***** Chapter 2 - Data Types and Variables ****/
 /***** Chapter 2 - Data Types and Variables ****/
