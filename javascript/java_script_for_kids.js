@@ -276,8 +276,240 @@ for (var x = 2; x < 10000; x = x * 2) {
     console.log(x);
 }//print all the powers of 2 below the number 10,000
 
-/***** Chapter 2 - Data Types and Variables ****/
-/***** Chapter 2 - Data Types and Variables ****/
+/***** Chapter 8 - Functions ****/
+// Basic Anatomy of a Function
+function () {
+    console.log("Do something");
+    }
+
+var ourFirstFunction = function () {
+    console.log("Hello world!");
+    };
+
+ourFirstFunction(); //Hello world!
+
+var sayHelloTo = function (name) {
+    console.log("Hello " + name + "!");
+    };
+
+var printMultipleTimes = function (howManyTimes, whatToDraw) {
+    for (var i = 0; i < howManyTimes; i++) {
+        console.log(i + " " + whatToDraw);
+    }
+};
+//Returning Values from Functions
+var double = function (number) {
+    return number * 2;
+};
+
+var double = function (number) {
+    return number * 2;
+};
+// The shorthand version looks like this:
+function double(number) {
+    return number * 2;
+}
+
+// The for...in loop
+// The for...in loop iterates through the properties of an object, returning the names of the properties themselves. Here’s an example:
+for (var myProp in myObject) {
+alert(myProp + " = " + myObject[myProp]);
+}
+
+/***** Chapter 12 - Object-Oriented Programming ****/
+// A Simple Object
+var dog = {
+    name: "Pancake",
+    legs: 4,
+    isAwesome: true
+};
+// Adding Methods to Objects
+dog.bark = function () {
+    console.log("Woof woof! My name is " + this.name + "!");
+};
+dog.bark(); //Woof woof! My name is Pancake!
+
+// Sharing a Method Between Multiple Objects
+
+var speak = function () {
+    console.log(this.sound + "! My name is " + this.name + "!");
+};
+
+var pig = {
+    sound: "Oink",
+    name: "Charlie",
+    speak: speak
+};
+var horse = {
+    sound: "Neigh",
+    name: "Marie",
+    speak: speak
+};
+pig.speak(); //Oink! My name is Charlie!
+horse.speak(); //Neigh! My name is Marie!
+// if you have lots of methods or objects, adding the same methods to each object individually can become annoying
+
+// Creating Objects Using Constructors
+// Most JavaScript programmers start constructor names with a capital letter so it’s easy to see at a glance that they’re different from other functions.
+
+var Car = function (x, y) {
+    this.x = x;
+    this.y = y;
+};
+var tesla = new Car(10, 20);
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Cars</title>
+    </head>
+    <body>
+        <script src="https://code.jquery.com/jquery-2.1.0.js"></script>
+        <script>
+            var Car = function (x, y) {
+                this.x = x;
+                this.y = y;
+            };
+            var drawCar = function (car) {
+                var carHtml = '<img src="http://nostarch.com/images/car.png">';
+                var carElement = $(carHtml); 
+                // pass carHTML to the $ function converts it from a string to a jQuery element. 
+                // and we can tweak this element before adding it to the page.
+                carElement.css({
+                    position: "absolute",
+                    left: car.x,
+                    top: car.y
+                });
+                $("body").append(carElement);
+            };
+
+            var tesla = new Car(20, 20);
+            var nissan = new Car(100, 200);
+            drawCar(tesla);
+            drawCar(nissan);
+
+        </script>
+    </body>
+</html>
+
+// A more object-oriented way to draw our cars would be to give each car object a draw method. Then, instead of writing drawCar(tesla) , you’d write tesla.draw() .
+// In this case, the drawCar function is always meant to be used on car objects, so instead of saving drawCar as a separate function, we should include it as part of each car object.
+
+// JavaScript prototypes make it easy to share functionality (as methods) between different objects. All constructors have a prototype property, and we can add methods to it. Any method that we add to a constructor’s prototype property will be available as a method to all objects created by that constructor.
+
+var Car = function (x, y) {
+    this.x = x;
+    this.y = y;
+};
+Car.prototype.draw = function () {
+    var carHtml = '<img src="http://nostarch.com/images/car.png">';
+    this.carElement = $(carHtml); // this time we save it as a property of the object</img>/
+    this.carElement.css({
+        position: "absolute",
+        left: this.x,
+        top: this.y
+    });
+    $("body").append(this.carElement);
+};
+var tesla = new Car(20, 20);
+var nissan = new Car(100, 200);
+tesla.draw();
+nissan.draw();
+
+Car.prototype.moveRight = function () {
+    this.x += 5;
+    this.carElement.css({
+        left: this.x,
+        top: this.y
+    });
+};
+
+Car.prototype.moveLeft = function () {
+this.x -= 5;
+this.carElement.css({
+    left: this.x,
+    top: this.y
+});
+};
+Car.prototype.moveUp = function () {
+this.y -= 5;
+this.carElement.css({
+    left: this.x,
+    top: this.y
+});
+};
+Car.prototype.moveDown = function () {
+this.y += 5;
+this.carElement.css({
+    left: this.x,
+    top: this.y
+});
+};
+
+// In JavaScript, variables are either a complex type (e.g., Object, Array) or a primitive type (e.g., String, Integer). When a complex object is supplied as an argument, it is passed by reference to the function body. Instead of sending a copy of the variable, JavaScript sends a pointer to its location in the memory heap. Conversely, when passing a primitive type to a function, JavaScript passes by value.
+
+
+/***** Chapter 9 - The DOM and jQuery ****/
+
+// Replacing the Heading Text Using the DOM
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Playing with the DOM</title>
+    </head>
+    <body>
+        <h1 id="main-heading">Hello world!</h1>
+        <script>
+
+        var headingElement = document.getElementById("main-heading");
+
+        console.log(headingElement.innerHTML);
+
+        var newHeadingText = prompt("Please provide a new heading:");
+
+        headingElement.innerHTML = newHeadingText;
+
+        </script>
+    </body>
+</html>
+
+// document.getElementById to get the h1 element (with the id of "main-heading" ) and save it into the variable headingElement .
+// we print the string returned by headingElement.innerHTML , which prints Hello world! to the console.
+// we set the innerHTML property of headingElement to the text saved in newHeadingText .
+
+
+// Using jQuery to Work with the DOM Tree
+
+// Loading jQuery on Your HTML Page
+
+<script src="https://code.jquery.com/jquery-2.1.0.js"></script>
+
+// Replacing the Heading Text Using jQuery
+
+<script src="https://code.jquery.com/jquery-2.1.0.js"></script>
+<script>
+var newHeadingText = prompt("Please provide a new heading:");
+$("#main-heading").text(newHeadingText);
+</script>
+
+// Creating New Elements with jQuery
+$("body").append("<p>This is a new paragraph</p>");
+
+for (var i = 0; i < 3; i++) {
+    var hobby = prompt("Tell me one of your hobbies!");
+    $("body").append("<p>" + hobby + "</p>");
+}
+Animating Elements with jQuery
+$("h1").fadeOut(3000);
+// To change the text of the h1 element and fade it out, you could enter:
+$("h1").text("This will fade out").fadeOut(3000);
+$("h1").fadeOut(3000).fadeIn(2000);
+$("h1").slideUp(1000).slideDown(1000);
+
+
+
+
 /***** Chapter 2 - Data Types and Variables ****/
 /***** Chapter 2 - Data Types and Variables ****/
 /***** Chapter 2 - Data Types and Variables ****/

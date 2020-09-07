@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Playing with the DOM</title>
+    </head>
+    <body>
+        <h1 id="main-heading">First Header</h1>
+        <script>
+            var htmlElement = document.getElementById("main-heading");
+            console.log(htmlElement.innerHTML);
+            var msg = prompt("Enter New header");
+            if (msg !== null) {
+                htmlElement.innerHTML = msg;
+            }
+            
+        </script>
+    </body>
+</html>
