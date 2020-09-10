@@ -58,6 +58,39 @@ undefined and null
 They’re both used to mean “nothing,” but in slightly different ways. undefined is the value JavaScript uses when it doesn’t have a value for something. For example, when you create a new variable, if you don’t set its value to anything using the = operator, its value will be set to undefined.Double
 The null value is usually used when you want to deliberately say “This is empty.”
 
+
+The difference in meaning between undefined and null is mostly academic and usually not very interesting.
+When you just declare a variable but dont assign it any value it's undefined. 
+
+var mysteryVariable;
+mysteryVariable;
+→ undefined
+
+var mysteryVariable=null;
+mysteryVariable;
+→ null 
+
+null == undefined is true 
+but null === undefined is false 
+
+When comparing values that have different types, JavaScript uses a complicated and confusing set of rules. in most cases it just tries to convert one of the values to the type of the other value.
+
+The rules for converting strings and numbers to Boolean values state that 0 , NaN , and the empty string count as false, while all the other values count as true .
+ == does a type conversion but === doesnot.
+
+ "Apollo" + 5;
+→ "Apollo5"
+null + "ify";
+→ "nullify"
+"5" * 5;
+→ 25
+"strawberry" * 5;
+→ NaN
+
+NaN == NaN is false 
+NaN ===NaN is also false 
+
+
 /***** Chapter 3 - Arrays ****/
 
 
@@ -226,6 +259,45 @@ var cars = {
     };
 movies["Cars"] = cars;
 
+/* Eloquent Java script
+
+Some JavaScript values have other values associated with them. These associations are called properties. Every string, for example, has a property called length
+
+Properties can be accessed in two ways, either with brackets or using dot notation:
+
+var text = "purple haze";
+text["length"];
+→ 11
+text.length;
+→ 11
+
+Trying to read a property from the values null and undefined will cause an error.
+
+In most value types, if they have properties at all, they are fixed, and you are not allowed to change them.
+
+var cat = {color: "gray", name: "Spot", size: 46};
+cat.size = 47;
+cat.size;
+→ 47
+delete cat.size;
+cat.size;
+→ undefined
+
+Properties whose names are not valid variable names cannot be accessed with the dot notation, but only using brackets.
+
+var thing = {"gabba gabba": "hey", 5: 10};
+thing["5"];
+→ 10
+thing[2 + 3];
+→ 10
+
+The operator in can be used to test whether an object has a certain property. It produces a Boolean.
+var chineseBox = {};
+chineseBox.content = chineseBox;
+"content" in chineseBox;
+→ true
+*/
+
 /***** Chapter 5 - The Basics of HTML ****/
 
 <!DOCTYPE html>
@@ -342,6 +414,96 @@ function double(number) {
 for (var myProp in myObject) {
 alert(myProp + " = " + myObject[myProp]);
 }
+
+
+
+/* Eloquent Java script
+
+Closure
+
+function createFunction() {
+var local = 100;
+return function(){return local;};
+}
+
+The nature of the function stack, combined with the ability to treat functions as values, brings up an interesting question. What happens to local variables when the function call that created them is no longer on the stack? like above
+
+Javascript preserve the local variable as long as it is in any way reachable. This feature is called closure, and a function that “closes over” some local variables is called a closure. This behavior not only frees you from having to worry about variables still being “alive” but also allows for some creative use of function values.
+
+function makeAdder(amount) {
+    return function(number) {
+        return number + amount;
+    };
+}
+var addTwo = makeAdder(2);
+addTwo(10);
+
+var addThree = makeAdder(3);
+addThree(10);
+
+It turns out we can execute the following code:
+alert("Hello", "Good Evening", "How do you do?", "Good-bye");
+
+The function alert officially accepts only one argument. Yet when you call it like this, it does not complain. It simply ignores the other arguments and shows you Hello .
+
+JavaScript is notoriously nonstrict about the amount of arguments you pass to a function. If you pass too many, the extra ones are ignored. If you pass too few, the missing ones get the value undefined .
+
+Pure functions are the things that mathematicians mean when they say “function.” They always return the same value when given the same arguments and do not have side effects.
+
+In many cases, nonpure functions are precisely what you need. In other cases, a problem can be solved with a pure function, but the nonpure variant is much more convenient or efficient. Generally, when something can naturally be expressed as a pure function, write it that way. You’ll thank yourself later. If not, don’t feel dirty for writing nonpure functions.
+
+function findFactorial(num){
+    var result = 1;
+    for (var i = 1; i<=num; i++)
+        result *= i;
+    return result;
+}
+findFactorial(3);
+
+
+function findFactorial(num){
+    if (num === 1) return 1;
+    else return num * findFactorial(num - 1);
+}
+
+findFactorial(3);
+
+The dilemma of speed versus elegance is an interesting one and is not limited to debates about recursion. In many situations, an elegant, intuitive, and often short solution can be replaced by a more convoluted but faster solution.
+
+In this example the inelegant version is still sufficiently simple and easy to read. It does not make much sense to replace it with the recursive version.
+
+Recursion is not always just a less-efficient alternative to looping. Some problems are much easier to solve with recursion than with loops. Most often these are problems that require exploring or processing several “branches,” each of which might branch out again into more branches.
+
+Consider this puzzle: By starting from the number 1 and repeatedly either adding 5 or multiplying by 3, an infinite amount of new numbers can be produced. How would you write a function that, given a number, tries to find a sequence of additions and multiplications that produce that number?
+
+For example, the number 13 could be reached by first multiplying 1 by 3 and then adding 5 twice. The number 15 cannot be reached at all.
+
+function findSequence(goal) {
+    function find(start, history) {
+    if (start == goal)
+        return history;
+    else if (start > goal)
+        return null;
+    else
+        return find(start + 5, "(" + history + " + 5)") ||
+                find(start * 3, "(" + history + " * 3)");
+    }
+    return find(1, "1");
+}
+
+findSequence(24);
+→ (((1 * 3) + 5) * 3)
+
+
+
+
+
+*/
+
+
+
+
+
 
 /***** Chapter 12 - Object-Oriented Programming ****/
 // A Simple Object
