@@ -185,6 +185,7 @@ var fewPets = pets.slice(2, 4); // ["fly", "bug"]
 */
 
 /***** Chapter 4 - Objects ****/
+// Notes : in operator,
 
 
 var cat = {
@@ -494,11 +495,100 @@ function findSequence(goal) {
 findSequence(24);
 → (((1 * 3) + 5) * 3)
 
+Higher-Order Functions
 
+function forEach(array, action) {
+    for (var i = 0; i < array.length; i++)
+        action(array[i]);
+}
+
+function sum(numbers){
+    var total  = 0;
+    forEach(numbers, function(number){
+        total +=number;
+    });
+    return total;
+}
+
+sum([1,2,3]);
+
+function negate(func) {
+return function(x) {
+return !func(x);
+};
+}
+var isNotNaN = negate(isNaN);
+isNotNaN(NaN);
+
+The reduce Function
+reduce combines an array into a single value by repeatedly using a function that combines an element of the array with a base value.
+
+function forEach(array, action) {
+    for (var i = 0; i < array.length; i++)
+        action(array[i]);
+}
+
+function reduce(combine, base, array) {
+    forEach(array, function (element) {
+        base = combine(base, element);
+    });
+    return base;
+}
+
+function add(a, b) {
+    return a + b;
+}
+
+function sum(numbers) {
+    return reduce(add, 0, numbers);
+}
+
+sum ([1,2,3]);
+
+The reason reduce takes the function as its first argument instead of its last, as in forEach , is partly that this is tradition—other languages do it like that—and partly that this allows us to use a trick (partial application) that is discussed later
+
+As another example use of reduce , let’s write a function that takes an array of numbers as its argument and returns the amount of zeroes that occur in it:
+
+function countZeroes(array) {
+    function counter(total, element) {
+        return total + (element === 0 ? 1 : 0);
+    }
+    return reduce(counter, 0, array);
+}
+
+We could also have defined yet another algorithm function, count , and express countZeroes in terms of that:
+
+function count(test, array) {
+    var counted = 0;
+    forEach(array, function(element) {
+        if (test(element)) counted++;
+    });
+    return counted;
+}
+
+function countZeroes(array) {
+    function isZero(x) {return x === 0;}
+    return count(isZero, array);
+}
+
+Mapping Arrays
+Another generally useful “fundamental algorithm” related to arrays is called map . It goes over an array, applying a function to every element, just like forEach . But instead of discarding the values returned by the function, it builds up a new array from these values.
+
+function map(func, array) {
+    var result = [];
+    forEach(array, function (element) {
+        result.push(func(element));
+        }
+    );
+    return result;
+}
+
+map(Math.round, [0.01, 2, 9.89, Math.PI]);
 
 
 
 */
+
 
 
 
