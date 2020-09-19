@@ -760,6 +760,15 @@ $("h1").fadeOut(3000).fadeIn(2000);
 $("h1").slideUp(1000).slideDown(1000);
 
 
+/* Eloquent Java script
+
+
+function test(/* variable args...*/){
+    for (var i = 0; i < arguments.length; i++)
+        console.log(arguments[i]);
+}
+
+*/
 
 
 /***** Chapter 2 - Data Types and Variables ****/
