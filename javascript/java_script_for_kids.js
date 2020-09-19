@@ -157,6 +157,33 @@ var randomWord = randomWords[Math.floor(Math.random() * randomWords.length)];
 var randomInsult = "Your " + randomBodyPart + " is like a " + randomAdjective + " " + randomWord + "!!!";
 randomInsult;
 
+/* A smarter way to learn JS - Books
+
+var pets=["dog", "cat", "fly", "bug", "ox"]
+
+Use the splice method to insert one or more elements anywhere in an array
+pets.splice(2, 2, "pig", "duck", "emu");
+
+The first arg is the index of the position where you want to start adding if you're adding and deleting if you're deleting. 
+The second arg is the number of existing elements to remove, starting with the first element
+in this example we are going to inert three new items starting with second index i.e pig will be inerted as index=2 and then next two elements(fly and bug) will be replaced by three new items
+
+
+Output : Array [ "fly", "bug" ]
+Final array pets becomes : [ "dog", "cat", "pig", "duck", "emu", "ox" ]
+
+You can make additions without removing any elements by stating second argument as 0
+You can also remove elements without adding any by not mentioning any arguments as third argument.
+
+Use the slice method to copy one or more consecutive elements in any position and put them into a new array. The original arrey remain unchanged
+
+The first digit inside the parentheses is the index of the first element to be copied. The second digit is the index of the element after the last element to be copied. You must assigned the sliced array to an array it could be the same array and in that case the original array will get reduced.
+
+var pets=["dog", "cat", "fly", "bug", "ox"]
+var fewPets = pets.slice(2, 4); // ["fly", "bug"]
+
+*/
+
 /***** Chapter 4 - Objects ****/
 // Notes : in operator,
 
@@ -775,3 +802,12 @@ function test(/* variable args...*/){
 /***** Chapter 2 - Data Types and Variables ****/
 /***** Chapter 2 - Data Types and Variables ****/
 /***** Chapter 2 - Data Types and Variables ****/
+
+
+/* A smarter way to learn JS - Books
+
+
+
+
+
+*/</html>
