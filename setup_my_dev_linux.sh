@@ -11,7 +11,9 @@
 
 #VS Code
 # For upgrade sudo apt-get update and sudo apt-get install code
-function install_vs_code(){
+# Improvement
+# install prompt automation
+function install_vs_code{
     echo ".....Installing VS Code"
     sudo apt update
     sudo apt install -y software-properties-common apt-transport-https wget
@@ -169,7 +171,7 @@ unzip terraform_${CURRR_VER}_linux_amd64.zip
 
 install_vs_code;
 
-install_keybase;
+# install_keybase;
 
 install_git;
 
@@ -179,7 +181,7 @@ install_docker;
 
 install_sqldeveloper;
 
-install_mainspring;
+# install_mainspring;
 
 install_gnome_sysmon;
 

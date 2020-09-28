@@ -1,0 +1,41 @@
+
+designer : Design mappings
+topology : create data source and destination
+operator : Job logs and analysis
+security : create ODI users or developers
+
+topology > "hide unused technology at top left drop down of topology sub window"
+jdbs:oracle:thin:@server:port:sid
+
+designer :
+project > logical folder > mappings, packages(combination of individual objects (variables, procedures, mappings)) and procedures
+
+1. source system defination : topology (jdbc connection string and uid/pwd in defination section)
+2. source table structure
+3. join conditions
+4. target system defination
+5. target table structure
+
+
+knowledge modules
+scenario : executables of mappings and packages
+
+source -> staging -> dwh -> datamart
+
+Client : odi studio
+Server : Server agent 
+Repository : master, work(develop, execution)
+
+major change in odi 11g is adition of weblogic for easy integration with fusion middleware and soa products.
+odi 12c : flow based approach and big data integration, additional features for middleware integration
+
+mappings have three views at bottom
+over view, logical view and physical view 
+
+logical view : attribute, general, target, journalising, constraints, connector points
+
+in logical view >> target : none, control append, incremental update, slowly changing dimension
+
+physical view depicts the best way of implementing the logical view, if more than one sources are from same data source then those are grouped into one unit etc. generally this will be decided by ODI but on complex scenarios this may need to be adjusted
+
+when you click on individual objects in physical view ODI will give more options > general, attributes, integration knowledge module, check knowledge module

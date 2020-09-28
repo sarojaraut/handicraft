@@ -1,6 +1,6 @@
 // Install node JS 
 
-sudo apt install node js 
+sudo apt install nodejs 
 sudo apt install npm 
 
 npm -v 
