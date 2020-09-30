@@ -1,0 +1,15 @@
+Developing Integration Projects with Oracle Data Integrator
+
+#### Chapter -2 Overview of Oracle Data Integrator Topology
+
+The Oracle Data Integrator Topology is the physical and logical representation of the Oracle Data Integrator architecture and components.
+
+Physical Architecture
+The physical architecture defines the different elements of the information system
+
+
+How to remove Deepin Desktop:
+sudo dpkg-reconfigure lightdm
+sudo apt remove '~ndde-.*' '~ndeepin-.*' startdde ubuntudde-dde '~nxscreensaver-.*'
+
+http://ubuntuhandbook.org/index.php/2020/07/install-deepin-desktop-ubuntu-20-04-lts/
