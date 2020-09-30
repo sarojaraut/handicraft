@@ -7,6 +7,54 @@ The Oracle Data Integrator Topology is the physical and logical representation o
 Physical Architecture
 The physical architecture defines the different elements of the information system
 
+The physical components that store and expose structured data are defined as data servers. A data server is always linked to a single technology. A data server stores information according to a specific technical logic which is declared into physical schemas attached to this data server.
+
+Contexts
+Contexts bring together components of the physical architecture (the real Architecture) of the information system with components of the Oracle Data Integrator logical architecture (the Architecture on which the user works).
+
+Logical Architecture
+The logical architecture allows you to identify as a single Logical Schema a group of similar physical schemas (that contain datastores that are structurally identical) that are located in different physical locations. Logical Schemas, like their physical counterparts, are attached to a technology.
+
+For example, the Oracle logical schema Accounting may correspond to two Oracle physical schemas:
+• Accounting Sample used in the Development context
+• Accounting Corporate used in the Production context
+
+All the components developed in Oracle Data Integrator are designed on top of the logical architecture. For example, a data model is always attached to logical schema, and data flows are defined with this model. By specifying a context at run-time (either Development or Production), the model's logical schema (Accounting) resolves to a single physical schema
+
+Agents
+Oracle Data Integrator run-time Agents orchestrate the execution of jobs. These agents are Java components. The run-time agent functions as a listener and a scheduler agent.
+
+Agent Features
+Agents are not data transformation servers. They do not perform any data transformation, but instead only orchestrate integration processes. They delegate data transformation to database servers, operating systems, and scripting engines.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 How to remove Deepin Desktop:
 sudo dpkg-reconfigure lightdm
