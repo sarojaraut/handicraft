@@ -39,3 +39,17 @@ in logical view >> target : none, control append, incremental update, slowly cha
 physical view depicts the best way of implementing the logical view, if more than one sources are from same data source then those are grouped into one unit etc. generally this will be decided by ODI but on complex scenarios this may need to be adjusted
 
 when you click on individual objects in physical view ODI will give more options > general, attributes, integration knowledge module, check knowledge module
+
+reusable mapping with subselect enabled and source included
+scenario
+
+create version
+compare with old version
+package 
+
+sync and async in package 
+scenarios can be async not mapping?
+you can set one step as first step during run time
+
+packages can be part of another package after creating scenario for child package 
+odi also has inbuilt packages e.g. createting a file at end of execution to mark execution is successfull

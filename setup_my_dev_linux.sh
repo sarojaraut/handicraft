@@ -13,6 +13,9 @@
 # For upgrade sudo apt-get update and sudo apt-get install code
 # Improvement
 # install prompt automation
+function install_virtual_box{
+    sudo apt update && sudo apt install virtualbox-6.0
+}
 function install_vs_code{
     echo ".....Installing VS Code"
     sudo apt update
