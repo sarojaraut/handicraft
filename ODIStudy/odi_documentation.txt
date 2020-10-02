@@ -8,8 +8,15 @@ Physical Architecture
 The physical architecture defines the different elements of the information system
 
 
+
+--- Tips
+
+Auto completion in code editor ctrl + space
+
+
 How to remove Deepin Desktop:
 sudo dpkg-reconfigure lightdm
 sudo apt remove '~ndde-.*' '~ndeepin-.*' startdde ubuntudde-dde '~nxscreensaver-.*'
+sudo apt autoremove
 
 http://ubuntuhandbook.org/index.php/2020/07/install-deepin-desktop-ubuntu-20-04-lts/

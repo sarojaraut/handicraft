@@ -52,11 +52,13 @@ function start(route) {
     console.log("Server has started.");
 }
 exports.start = start;
+
 // Router.js
 function route(pathname) {
     console.log("About to route a request for " + pathname);
 }
-    exports.route = route;
+exports.route = route;
+
 //index.js
 var server = require("./server");
 var router = require("./router");
@@ -74,7 +76,18 @@ function upload() {
 exports.start = start;
 exports.upload = upload;
 
-//Server.js 
+// router.js
+function route(handle, pathname) {
+    console.log("About to route a request for " + pathname);
+    if (typeof handle[pathname] === 'function') {
+        handle[pathname]();
+    } else {
+        console.log("No request handler found for " + pathname);
+    }
+}
+exports.route = route;
+
+//server.js 
 var http = require("http");
 var url = require("url");
 function start(route, handle) {
@@ -92,16 +105,7 @@ function start(route, handle) {
     console.log("Server has started.");
 }
 exports.start = start;
-// Router.js
-function route(handle, pathname) {
-    console.log("About to route a request for " + pathname);
-    if (typeof handle[pathname] === 'function') {
-        handle[pathname]();
-    } else {
-        console.log("No request handler found for " + pathname);
-    }
-}
-    exports.route = route;
+
 //index.js
 var server = require("./server");
 var router = require("./router");
@@ -113,6 +117,7 @@ handle["/start"] = requestHandlers.start;
 handle["/upload"] = requestHandlers.upload;
 
 server.start(router.route, handle);
+
 //Fifth Version
 
 
