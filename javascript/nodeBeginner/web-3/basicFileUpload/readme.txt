@@ -1,7 +1,5 @@
 
-http://localhost:8888/start
-http://localhost:8888/upload
-http://localhost:8888/notfound
+http://localhost:8080/start
 
 Serving something useful
 handle incoming POST requests (but not file uploads)
