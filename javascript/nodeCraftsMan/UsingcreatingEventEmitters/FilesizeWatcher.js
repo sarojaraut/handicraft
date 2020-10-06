@@ -4,9 +4,9 @@
 var fs = require('fs');
 // we start to build a constructor function for FilesizeWatcher objects. They are created by     passing a path to watch as a parameter.
 var FilesizeWatcher = function (path) {
-    // we assign the object instance variable to a local self variable - this way we can access our     instantiated object within callback functions, where this would point to another object.
+    // we assign the object instance variable to a local self variable - this way we can access our instantiated object within callback functions, where this would point to another object.
     var self = this;
-    // We then create the self.callbacks object - we are going to use this as an associative array where we     will store the callback to each event.
+    // We then create the self.callbacks object - we are going to use this as an associative array where we will store the callback to each event.
     self.callbacks = {};
     if (/^\//.test(path) === false) {
         self.callbacks['error']('Path does not start with a slash');
