@@ -589,7 +589,25 @@ map(Math.round, [0.01, 2, 9.89, Math.PI]);
 
 */
 
+/*
+Microsoft courses
+https://www.youtube.com/watch?v=Td2IrY6QBpc&list=PLlrxD0HtieHhW0NCG7M536uHGOtJ95Ut2&index=40
 
+fat arrow function
+    spacial type of function declaration
+    function must be assigned to a variable or immediately used
+    supports implicit return if function body is single line
+    changes the this context, usually this in side a function is defiend by it's parent scope. But in fat arrow function this refers to it's parents's this
+    
+
+const add =  (a,b) => a+b;
+
+console.log(add(2,3));
+
+globalThis
+this inside a standa alone function refers to globalThis
+this inside a object function refers to the object
+*/
 
 
 
