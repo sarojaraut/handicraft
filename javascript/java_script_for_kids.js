@@ -609,7 +609,16 @@ this inside a standa alone function refers to globalThis
 this inside a object function refers to the object
 */
 
+/*
+Book : Mastering Javascript Promises
+In JavaScript, functions are first class citizens, which means they can be treated as objects and because of the fact that they really are objects themselves. They can do what a regular object is capable of, such as these:
+• Stored in variables
+• Passed as augments to other functions
+• Created within functions
+• Returned from functions after a payload of some processed data mechanism
 
+
+*/
 
 
 
