@@ -1,20 +1,44 @@
-console.log("start");
-for (i = 0; i <= 3; i++) {
-    setTimeout(() => {
-        console.log(i);
-    }, 100);
+function one() {
+    return "from one";
 }
-// above block is going to print 4 four times
-console.log("End");
 
-var startDate = new Date();
-var endDate;
+function two() {
+    return new Promise((resolve,reject)=>{
+        setTimeout(()=>{
+            console.log("Called Two");
+            resolve ("from Two");
+        },3000); 
+    });
 
-setTimeout(() => {
-    endDate = new Date();
-    console.log("Elapsed time :", endDate - startDate);
-    // elapsed time will be printed as at least 1000 because of while loop
-}, 500);
+}
 
-while (new Date - startDate <= 1000) { }
-// When we call setTimeout , a timeout event is queued. Then execution continues: the line after the setTimeout call runs, and then the line after that, and so on, until there are no lines left. Only then does the JavaScript virtual machine ask, “What’s on the queue?”
+// function two() {
+//         setTimeout(()=>{
+//             console.log("Called Two");
+//             return ("from Two");
+//         },3000); 
+
+// }
+
+function three() {
+    return "from three";
+}
+
+const callMe =  async () => { // async function is needed as await can only be called within an sync function
+    let oneOutput = one();
+    console.log(oneOutput);
+    let twoOutput = await two(); // await can be used only within one async function
+    console.log(twoOutput);
+    let threeOutput = three();
+    console.log(threeOutput);
+}
+
+callMe();
+// without async await and unpromised version of function two this program would return like below
+/*
+from one
+undefined
+from three
+Called Two
+
+*/
