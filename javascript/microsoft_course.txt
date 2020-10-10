@@ -1,0 +1,6 @@
+var: func scoped
+let
+const
+
+typeOf : array as object
+InstanceOf : number string and boolean unless created as new

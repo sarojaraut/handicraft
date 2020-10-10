@@ -1,10 +1,30 @@
 // Install node JS 
 
-sudo apt install nodejs 
-sudo apt install npm 
+// sudo apt install nodejs 
+// sudo apt install npm 
 
-npm -v 
-node -v 
+// npm -v 
+// node -v 
+
+
+// If you try installing the latest version of node using the apt-package manager, you'll end up with v10.19.0. This is the latest version in the ubuntu app store, but it's not the latest released version of NodeJS
+
+// To get the latest versions, we can use either nodesource or nvm 
+
+// Install NVM
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+
+// reconnect to the terminal
+nvm --version
+
+
+
+// Install NodeJS : Next, let's install Nodejs version 14.13.1
+
+nvm install 14.13.1
+
+// Above command automatically installs nodejs as well as the latest npm version which is at  v6.14.5
 
 // 1_node.js
 
