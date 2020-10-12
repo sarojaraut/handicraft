@@ -6,7 +6,6 @@
 // npm -v 
 // node -v 
 
-
 // If you try installing the latest version of node using the apt-package manager, you'll end up with v10.19.0. This is the latest version in the ubuntu app store, but it's not the latest released version of NodeJS
 
 // To get the latest versions, we can use either nodesource or nvm 
@@ -17,8 +16,6 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
 
 // reconnect to the terminal
 nvm --version
-
-
 
 // Install NodeJS : Next, let's install Nodejs version 14.13.1
 
@@ -40,7 +37,6 @@ server.listen(port);
 server.once('listening', function() {
 console.log('Hello World server listening on port %d', port);
 });
-
 
 Node Package Manager (NPM)
 // Node.js has a low-level API that is somewhat a translation and simplification of the Unix filesystem and networking API into JavaScript. If you plan to build a complex application, doing that solely on top of the core Node.js functionality can be hard and unproductive. Fortunately, Node.js has a way of browsing, querying, installing, and publishing third-party modules into a central repository, and it's called NPM. NPM stands for Node Package Manager.

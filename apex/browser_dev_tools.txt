@@ -40,8 +40,12 @@ gIg***data is the interactive grid data name
 
 
 cursor align extension alt + a
+first put the cursor at places on multiple lines to be aligned and then press alt + align
+use shortcut ctrl + right arrow or left arrow to move to the end or begning of next previous words
 a => a 
 b   => b 
 c      => c
+
+! emits sample html code in .html file
 
 file util extension > 
