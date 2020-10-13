@@ -32,11 +32,21 @@ Multi-Cursor Editing
 To engage multi-cursor editing, press the Alt key (or Option key on a Mac) and use the mouse to place cursors throughout the document
 
 Key board shortcuts : ctrl + k + s
-Manual Uppercase  : ctrl + u + c 
 Manual lowercase  : ctrl + l + c 
+Manual Uppercase  : ctrl + u + c 
 
 SQL developer
 Multi Cursor : ctrl + shift + click 
 Line comment toggle : ctrl + /
 Block comment : ctrl + shift + /
 
+command pallet : ctrl + p
+
+go to symbol : ctrl + shit + o
+alt + up arrow : moving current line or selected lines one ine up
+f12 go to the definination fo variable, function
+ctrl + g : go to line number
+ctrl + x : cut entire line 
+ctrl + left right arrwo moves word wise
+
+Emmet Snippets : ul>li.item$*5 
