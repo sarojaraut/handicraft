@@ -1,0 +1,60 @@
+Java script run time phases
+compiler parse and create global execution context, global object and this and link to outer context
+creation phase : java script setup functions and variavles of our code and allocates memory and set variables to value undefined
+execution phase : executes our code, line by line
+single tbreaded and synchronous
+single tbreaded means one command at a time
+synchronous means in order that it appears in our code
+invocation - function invokved or called using parenthesis
+
+when a function is invokes a new exevution context will be created containing it's own variable
+also execution stack is build depending on how functions are executed and popped out of this stack when execution of a function is completed
+scope chain : 
+if variable is not defined in a function then it fatches from outer environment, where the function sits lecixally
+dynamically typed : we don't attach a data type to a variable, js engine does that depending on the valye assigned
+Primitive types : holding single value , undefined, null, boolean, number, string, symbol. 
+operator : special function syntatically written differently, generally takes two parameters and return ine result 
+java script uses infix notation
++(3,4); //normal function call
+3 + 4; // in fix notation
++ 3 4; // prefix notation
+3 4 +; // post fix notationsome old languagaes support post fix and prefix notation operator but java script not 
+
+precedence(in what order) an associativity(left to right or right to left for operator of same precedence)
+
+a = b = c ( right to left associativity so all three will be same to C)
+b = c asigns b the value of c and returns value of c 
+use bracket to alter precedence
+
+coercin : converting from one type to other
+1 < 2 < 3 = true (left to right associative)
+3 < 2 < 1 = also true (false < 1 means 0< 1)
+
+== equality uses coercion and === strict equality
+
+if you conciously want to check coercied value and aware of the outcome use == otherwise most of the times we need ===
+
+objects
+
+var person = new Object();
+short hand is - var person = {};
+remember {} is not a function or operator it's a short hand
+
+var person = new Object();
+person["firstname"]="Saroj"; // computed member access operator []
+person.firstname = "Saroj"; // member access operator .
+var firstNameProperty = "firstname";
+
+person[firstNameProperty] = "Saroj"; // dot notation will not work here.
+
+person.address= new Object();
+person.address.street="Agate Close";
+person.address.postcode="NW107FF";
+
+
+we can also use
+person["address"]["postcode"]="NW107FF";
+
+operators [] and . both has left-to-right associativity 
+
+

@@ -1,0 +1,4 @@
+To type multiple lines into the console at once, use <shift> + <enter> to move to the next new line. Once you hit <enter> by itself, the console will run everything you’ve just typed.
+
+age = prompt( "Please tell me your age:" );
+
