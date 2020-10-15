@@ -153,7 +153,59 @@ console.log(a);// 2
 // console.log("start =",x);
 function f() {
     x = 20;
-    console.log("within f x=",x);
+    console.log("within f x=", x);
 }
 f();
 // console.log("End =",x);
+
+switch (a) {
+    case 2:
+        // do something
+        break;
+    case 10:
+        // do another thing
+        break;
+    case 42:
+        // do yet another thing
+        break;
+    default:
+    // fallback to here
+}
+
+// “fall through” is sometimes useful/desired
+// if a is either 2 or 10 , it will execute the “some cool stuff ” code statements.
+switch (a) {
+    case 2:
+    case 10:
+        // some cool stuff
+        break;
+    case 42:
+        // other stuff
+        break;
+    default:
+    // fallback
+}
+
+var a = 42;
+var b = (a > 41) ? "hello" : "world";
+// similar to:
+// if (a > 41) {
+//     b = "hello";
+// }
+// else {
+//     b = "world";
+// }
+
+// Immediately Invoked Function Expressions (IIFEs)
+(function IIFE() {
+    console.log("Hello!");
+})();
+// "Hello!"
+
+// Closure
+
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+/********************************** 2You Don't Know JS. Scope & Closures *****************/
+
