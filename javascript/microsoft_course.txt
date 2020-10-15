@@ -1,6 +1,6 @@
 var: func scoped
-let
-const
+let : block scoped
+const :  block scoped
 
 typeOf : array as object
 InstanceOf : number string and boolean unless created as new

@@ -83,7 +83,7 @@ b.toFixed(4);
 
 // Here’s an example of explicit coercion:
 var a = "42";
-var b = Number( a );
+var b = Number(a);
 
 // And here’s an example of implicit coercion:
 var a = "42";
@@ -115,8 +115,8 @@ var b = a * 1;
 
 // You should take special note of the == and === comparison rules if you’re comparing two non-primitive values, like object s including function and array ). Because those values are actually held by reference, both == and === comparisons will simply check whether the references match, not anything about the underlying values.
 
-var a = [1,2,3];
-var b = [1,2,3];
+var a = [1, 2, 3];
+var b = [1, 2, 3];
 var c = "1,2,3";
 a == c;// true
 b == c;// true
@@ -129,3 +129,31 @@ var b = "foo";
 a < b;// false
 a > b;// false
 a == b;// false
+
+// Function Scopes
+// You use the var keyword to declare a variable that will belong to thecurrent function scope, or the global scope if at the top level outsideof any function.
+
+// Wherever a var appears inside a scope, that declaration is taken tobelong to the entire scope and accessible everywhere throughout.Metaphorically, this behavior is called hoisting,
+
+var a = 2;
+foo();// works because `foo()` declaration is "hoisted"
+function foo() {
+    a = 3;
+    console.log(a);// 3
+    var a;// declaration is "hoisted" to the top of `foo()`
+}
+console.log(a);// 2
+
+// it's common to accept hoisted functions declaration but not varible hoisting
+
+// If you try to access a variable’s value in a scope where it’s not avail‐able, you’ll get a ReferenceError thrown.
+
+// If you try to set a variablethat hasn’t been declared, you’ll either end up creating a variable inthe top-level global scope (bad!) or getting an error, depending on“strict mode” 
+
+// console.log("start =",x);
+function f() {
+    x = 20;
+    console.log("within f x=",x);
+}
+f();
+// console.log("End =",x);
