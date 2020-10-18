@@ -433,7 +433,7 @@ btn.addEventListener("click", function click(evt) {
 The click function click handler callback doesn’t need the someReal lyBigData variable at all.That means, theoretically, after pro
 cess(..) runs, the big memory - heavy data structure could be garbage collected.However, it’s quite likely(though implementation dependent) that the JS engine will still have to keep the structure around, since the click function has a closure over the entire scope.
 
-Block - scoping can address this concern, making it clearer to the engine that it does not need to keep someReallyBigData around:
+    Block - scoping can address this concern, making it clearer to the engine that it does not need to keep someReallyBigData around:
 
 function process(data) {
     // do something interesting
@@ -455,4 +455,119 @@ btn.addEventListener("click", function click(evt) {
 /********************************************************************************************** */
 /********************************************************************************************** */
 // CHAPTER 4 - Hoisting
+/********************************************************************************************** */
+/********************************************************************************************** */
+/********************************************************************************************** */
+// CHAPTER 5 Scope Closure
 
+function foo() {
+    var a = 2;
+    function bar() {
+        console.log(a);
+    }
+    return bar;
+}
+var baz = foo();
+baz(); // 2 -- Whoa, closure was just observed, man.
+
+// After foo() executed, normally we would expect that the entirety of the inner scope of foo() would go away, garbage collector that comes along and frees up memory once it’s no longer in use.Since it would appear that the contents of foo() are no longer in use, it would seem natural  that they should be considered gone.
+
+// By virtue of where it was declared, bar() has a lexical scope closure over that inner scope of foo(), which keeps that scope alive for bar() to reference at any later time.  bar() still has a reference to that scope, and that reference is called closure.
+
+function wait(message) {
+    setTimeout(function timer() {
+        console.log(message);
+    }, 1000);
+}
+wait("Hello, closure!");
+
+// timer has a scope closure over the scope of wait(..) , indeed keeping and using a reference to the variable message .
+
+// essentially whenever and wherever you treat functions (that access their own respective lexical scopes) as first-class values and pass them around, you are likely to see those functions exercising closure. Be that timers, event handlers, Ajax requests, crosswindow messaging, web workers, or any of the other asynchronous (or synchronous!) tasks, when you pass in a callback function, get ready to sling some closure around!
+
+for (var i = 1; i <= 5; i++) {
+    (function () {
+        setTimeout(function timer() {
+            console.log(i);
+        }, i * 1000);
+    })();
+}
+// aobve block prints 6 five times because is is in global scope for each call
+
+for (var i = 1; i <= 5; i++) {
+    (function (j) {
+        setTimeout(function timer() {
+            console.log(j);
+        }, j * 1000);
+    })(i);
+}
+// if we want one to five to be printed then we need to make a local copy of the counter 
+
+// also the following awesome code just works the same way
+for (var i = 1; i <= 5; i++) {
+    let j = i; // yay, block-scope for closure!
+    setTimeout(function timer() {
+        console.log(j);
+    }, j * 1000);
+}
+
+// There’s a special behavior defined for let declarations used in the head of a for loop. This behavior says that the variable will be declared not just once for the loop, but each iteration. And, it will, helpfully, be initialized at each subsequent iteration with the value from the end of the previous iteration.
+
+for (let i = 1; i <= 5; i++) {
+    setTimeout(function timer() {
+        console.log(i);
+    }, i * 1000);
+}
+
+// There are other code patterns that leverage the power of closure but that do not on the surface appear to be about callbacks.
+
+function CoolModule() {
+    var something = "cool";
+    var another = [1, 2, 3];
+    function doSomething() {
+        console.log(something);
+    }
+    function doAnother() {
+        console.log(another.join(" ! "));
+    }
+    return {
+        doSomething: doSomething,
+        doAnother: doAnother
+    };
+}
+var foo = CoolModule();
+foo.doSomething(); // cool
+foo.doAnother(); // 1 ! 2 ! 3
+
+// First, CoolModule() is just a function, but it has to be invoked for there to be a module instance created. Without the execution of the outer function, the creation of the inner scope and the closures would not occur.
+
+// Second, the CoolModule() function returns an object, denoted by the object-literal syntax { key: value, ... } . The object we return has references on it to our inner functions, but not to our inner data variables. We keep those hidden and private. It’s appropriate to think of this object return value as essentially a public API for our module.
+
+// This object return value is ultimately assigned to the outer variable foo , and then we can access those property methods on the API, like foo.doSomething() .
+
+// It is not required that we return an actual object (literal) from our module. We could just return back an inner function directly. jQuery is actually a good example of this. The jQuery and $ identifiers are the public API for the jQuery module, but they are, themselves, just functions (which can themselves have properties, since all functions are objects).
+
+// An powerful variation on the module pattern is to name the object you are returning as your public API
+
+var foo = (function CoolModule(id) {
+    function change() {
+        // modifying the public API
+        publicAPI.identify = identify2;
+    }
+    function identify1() {
+        console.log(id);
+    }
+    function identify2() {
+        console.log(id.toUpperCase());
+    }
+    var publicAPI = {
+        change: change,
+        identify: identify1
+    };
+    return publicAPI;
+})("foo module");
+foo.identify(); // foo module
+foo.change();
+foo.identify(); // FOO MODULE
+
+// By retaining an inner reference to the public API object inside your module instance, you can modify that module instance from the inside, including adding and removing methods and properties, and changing their values.
