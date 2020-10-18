@@ -459,6 +459,7 @@ btn.addEventListener("click", function click(evt) {
 /********************************************************************************************** */
 /********************************************************************************************** */
 // CHAPTER 5 Scope Closure
+// Closure is when a function can remember and access its lexical scope even when it’s invoked outside its lexical scope.
 
 function foo() {
     var a = 2;
