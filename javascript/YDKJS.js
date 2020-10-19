@@ -830,13 +830,13 @@ console.log(b); // 5
 
 // Many libraries’ functions, and indeed many new built-in functions in the JavaScript language and host environment, provide an optional parameter, usually called “context,” which is designed as a workaround for you not having to use bind(..) to ensure your  callback function uses a particular this . For instance:
 function foo(el) {
-console.log( el, this.id );
+    console.log(el, this.id);
 }
 var obj = {
-id: "awesome"
+    id: "awesome"
 };
 // use `obj` as `this` for `foo(..)` calls
-[1, 2, 3].forEach( foo, obj );
+[1, 2, 3].forEach(foo, obj);
 // 1 awesome 2 awesome 3 awesome
 
 // Internally, these various functions almost certainly use explicit binding via call(..) or apply(..) , saving you the trouble.
@@ -847,6 +847,46 @@ id: "awesome"
 something = new MyClass(..);
 
 //However new usage in JS has no connection to class-oriented functionality. 
+// In JS, constructors are just functions that happen to be called with the new operator in front of them. They are not attached to classes, nor are they instantiating a class. They are not even special types of functions. They’re just regular functions that are, in essence, hijacked by the use of their new in their invocation.
+
+// When a function is invoked with new in front of it, otherwise known as a constructor call, the following things are done automatically:
+// 1. A brand new object is created (aka constructed) out of thin air.
+// 2. The newly constructed object is [[Prototype]]-linked.
+// 3. The newly constructed object is set as the this binding for that function call.
+// 4. Unless the function returns its own alternate object, the new-invoked function call will automatically return the newly constructed object.
+
+// Consider this code:
+
+function foo(a) {
+    this.a = a;
+}
+var bar = new foo(2);
+console.log(bar.a); // 2
+
+// By calling foo(..) with new in front of it, we’ve constructed a new object and set that new object as the this for the call of foo(..). So new is the final way that a function call’s this can be bound. We’ll call this new binding.
+
+// now we’ve uncovered the four rules for binding this in function calls. All you need to do is find the call-site and inspect it to see which rule applies. But, what if the call-site has multiple eligible rules? There must be an order of precedence to these rules, and so we will next demonstrate what order to apply the rules.
+
+// It should be clear that the default binding is the lowest priority rule of the four. So we’ll just set that one aside. Which is more precedent, implicit binding or explicit binding? Let’s /test it:
+
+function foo() {
+    console.log(this.a);
+}
+var obj1 = {
+    a: 2,
+    foo: foo
+};
+var obj2 = {
+    a: 3,
+    foo: foo
+};
+obj1.foo(); // 2
+obj2.foo(); // 3
+obj1.foo.call(obj2); // 3
+obj2.foo.call(obj1); // 2
+
+// So, explicit binding takes precedence over implicit binding, which means you should ask first if explicit binding applies before checking for implicit binding.
+
 
 
 
