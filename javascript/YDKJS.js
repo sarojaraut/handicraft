@@ -572,3 +572,304 @@ foo.change();
 foo.identify(); // FOO MODULE
 
 // By retaining an inner reference to the public API object inside your module instance, you can modify that module instance from the inside, including adding and removing methods and properties, and changing their values.
+
+function foo() {
+    console.log(a); // 2 
+    // Lexical scope holds that the RHS reference to a in foo() will be re solved to the global variable a , which will result in value 2 being output
+    // if JavaScript had dynamic scope, when foo() is executed, theoretically the code below would instead result in 3 as the output
+}
+function bar() {
+    var a = 3;
+    foo();
+}
+var a = 2;
+bar();
+
+// To be clear, JavaScript does not, in fact, have dynamic scope. It has lexical scope. Plain and simple. But the this mechanism is kind of like dynamic scope.
+
+// ES6 adds a special syntactic form of function declaration called the arrow function. The so-called “fat arrow” is often mentioned as a shorthand for the tediously verbose (sarcasm) function keyword. But there’s something much more important going on with arrow functions that has nothing to do with saving keystrokes in your dec laration.
+
+var obj = {
+    id: "awesome",
+    cool: function coolFn() {
+        console.log(this.id);
+    }
+};
+var id = "not awesome"
+obj.cool(); // awesome
+setTimeout(obj.cool, 100); // not awesome
+
+// The problem is the loss of this binding on the cool() function. There are various ways to address that problem, but one often-repeated solution is var self = this; . That might look like:
+var obj = {
+    count: 0,
+    cool: function coolFn() {
+        var self = this;
+        if (self.count < 1) {
+            setTimeout(function timer() {
+                self.count++;
+                console.log("awesome?");
+            }, 100);
+        }
+    }
+};
+obj.cool(); // awesome?
+
+// The ES6 solution, the arrow function, introduces a behavior called lexical this .
+var obj = {
+    count: 0,
+    cool: function coolFn() {
+        if (this.count < 1) {
+            setTimeout(() => { // arrow-function ftw?
+                this.count++;
+                console.log("awesome?");
+            }, 100);
+        }
+    }
+};
+obj.cool(); // awesome?
+
+
+// The short explanation is that arrow functions do not behave at all like normal functions when it comes to their this binding. They discard all the normal rules for this binding, and instead take on the this value of their immediate lexical enclosing scope, whatever it is.
+
+// So, in that snippet, the arrow function doesn’t get its this unbound in some unpredictable way, it just “inherits” the this binding of the cool() function (which is correct if we invoke it as shown!).
+
+// One other detraction from arrow functions is that they are anonymous
+
+// A more appropriate approach, in my perspective, to this “problem,” is to use and embrace the this mechanism correctly.
+var obj = {
+    count: 0,
+    cool: function coolFn() {
+        if (this.count < 1) {
+            setTimeout(function timer() {
+                this.count++; // `this` is safe
+                // because of `bind(..)`
+                console.log("more awesome");
+            }.bind(this), 100); // look, `bind()`!
+        }
+    }
+};
+obj.cool(); // more awesome
+
+/*********************************************************************************************** */
+/*********************************************************************************************** */
+/*********************************************************************************************** */
+
+// Part - 3 this & Object Prototypes
+
+// CHAPTER 1 this or That?
+
+function identify() {
+    return this.name.toUpperCase();
+}
+function speak() {
+    var greeting = "Hello, I'm " + identify.call(this);
+    console.log(greeting);
+}
+var me = {
+    name: "Kyle"
+};
+var you = {
+    name: "Reader"
+};
+identify.call(me); // KYLE
+identify.call(you); // READER
+speak.call(me); // Hello, I'm KYLE
+speak.call(you); // Hello, I'm READER
+
+// This code snippet allows the identify() and speak() functions to be reused against multiple context objects ( me and you ), rather than needing a separate version of the function for each object.
+
+// This code snippet allows the identify() and speak() functions to be reused against multiple context objects ( me and you ), rather than needing a separate version of the function for each object.
+
+// However, the this mechanism provides a more elegant way of implicitly “passing along” an object reference, leading to cleaner API
+// design and easier reuse.
+// The more complex your usage pattern is, the more clearly you’ll see that passing context around as an explicit parameter is often messier than passing around a this context.
+
+// To learn this , you first have to learn what this is not, despite any assumptions or misconceptions that may lead you down those paths. this is neither a reference to the function itself, nor is it a reference to the function’s lexical scope.
+
+// Fact : 
+// When a function is invoked, an activation record, otherwise known as an execution context, is created. This record contains information about where the function was called from (the call-stack), how the function was invoked, what parameters were passed, etc. One of the properties of this record is the this reference, which will be used for the duration of that function’s execution.
+
+// this is actually a binding that is made when a function is invoked, and what it references is determined entirely by the call-site where the function is called.
+
+/*********************************************************************************************** */
+// Chapter - 2 this All Makes Sense Now!
+// To understand this binding, we have to understand the call-site: the location in code where a function is called (not where it’s declared). We must inspect the call-site to answer the question: what is this this a reference to?
+
+function baz() {
+    // call-stack is: `baz`
+    // so, our call-site is in the global scope
+    console.log("baz");
+    bar(); // <-- call-site for `bar`
+}
+function bar() {
+    // call-stack is: `baz` -> `bar`
+    // so, our call-site is in `baz`
+    console.log("bar");
+    foo(); // <-- call-site for `foo`
+}
+function foo() {
+    // call-stack is: `baz` -> `bar` -> `foo`
+    // so, our call-site is in `bar`
+    console.log("foo");
+}
+baz(); // <-- call-site for `baz`
+
+
+// We turn our attention now to how the call-site determines where this will point during the execution of a function.
+// You must inspect the call-site and determine which of four rules applies.
+
+// 1. Default Binding : The first rule we will examine comes from the most common case of function calls: standalone function invocation. Variables declared in the global scope, as var a = 2 is, are synonymous with global-object properties of the same name.
+
+function foo() {
+    console.log(this.a);
+}
+var a = 2;
+foo(); // 2
+
+// We see that when foo() is called, this.a resolves to our global variable a . Why? Because in this case, the default binding for this applies to the function call as foo() is called with a plain, undecorated function reference
+
+// If strict mode is in effect (strict has to be inside foo or global), the global object is not eligible for the default binding, so the this is instead set to undefined :
+function foo() {
+    "use strict";
+    console.log(this.a);
+}
+var a = 2;
+foo(); // TypeError: `this` is `undefined`
+
+// The first rule does not seem to be working
+
+//2. Implicit Binding : Another rule to consider is whether the call-site has a context object, also referred to as an owning or containing object.
+
+function foo() {
+    console.log(this.a);
+}
+var obj = {
+    a: 2,
+    foo: foo
+};
+obj.foo(); // 2
+// foo() is called, it’s preceeded by an object reference to obj . When there is a context object for a function reference, the implicit binding rule says that it’s that object that should be used for the function call’s this binding. Because obj is the this for the foo() call, this.a is synonymous with obj.a .
+
+// Only the top / last level of an object property reference chain matters to the call - site.For instance:
+function foo() {
+    console.log(this.a);
+}
+var obj2 = {
+    a: 42,
+    foo: foo
+};
+var obj1 = {
+    a: 2,
+    obj2: obj2
+};
+obj1.obj2.foo(); // 42
+
+// Implicitly lost : One of the most common frustrations that this binding creates is when an implicitly bound function loses that binding, which usually means it falls back to the default binding
+
+function foo() {
+    console.log(this.a);
+}
+var obj = {
+    a: 2,
+    foo: foo
+};
+var bar = obj.foo; // function reference/alias!
+var a = "oops, global"; // `a` also property on global object
+bar(); // "oops, global" undefined
+// Even though bar appears to be a reference to obj.foo , in fact, it’s really just another reference to foo itself. Moreover, the call-site is what matters, and the call-site is bar() , which is a plain, undecorated call, and thus the default binding applies.
+
+// The more subtle, more common, and more unexpected way this occurs is when we consider passing a callback function: Parameter passing is just an implicit assignment, and since we’re passing a function, it’s an implicit reference assignment, so the end result is the same as the previous snippet.
+
+function foo() {
+    console.log(this.a);
+}
+function doFoo(fn) {
+    // `fn` is just another reference to `foo`
+    fn(); // <-- call-site!
+}
+var obj = {
+    a: 2,
+    foo: foo
+};
+var a = "oops, global"; // `a` also property on global object
+doFoo(obj.foo); // "oops, global" or  undefined
+
+// another way that this can surprise us is when the function we’ve passed our callback to intentionally changes the this for the call.
+
+// 3. Explicit Binding : With implicit binding, as we just saw, we had to mutate the object in question to include a reference on itself to the function, and use this property function reference to indirectly (implicitly) bind this to the object.
+
+// But, what if you want to force a function call to use a particular object for the this binding, without putting a property function reference on the object?
+// “All” functions in the language have some utilities available to them (via their [[Prototype]] —more on that later), which can be useful for this task. Specifically, functions have call(..) and apply(..) methods.
+
+// Both call and apply take, as their first parameter, an object to use for the this , and then invoke the function with that this specified. Since you are directly stating what you want the this to be, we call it explicit binding.
+
+function foo() {
+    console.log(this.a);
+}
+var obj = {
+    a: 2
+};
+foo.call(obj); // 2
+
+// Invoking foo with explicit binding by foo.call(..) allows us to force its this to be obj.
+// If you pass a simple primitive value (of type string , boolean , or num ber ) as the this binding, the primitive value is wrapped in its object form ( new String(..) , new Boolean(..) , or new Number(..) , respectively). This is often referred to as “boxing.”
+
+// Hard Binding 
+
+function foo(something) {
+    console.log(this.a, something);
+    return this.a + something;
+}
+var obj = {
+    a: 2
+};
+var bar = foo.bind(obj);
+var b = bar(3); // 2 3
+console.log(b); // 5
+// bind(..) returns a new function that is hardcoded to call the original function with the this context set as you specified.
+
+// Many libraries’ functions, and indeed many new built-in functions in the JavaScript language and host environment, provide an optional parameter, usually called “context,” which is designed as a workaround for you not having to use bind(..) to ensure your  callback function uses a particular this . For instance:
+function foo(el) {
+console.log( el, this.id );
+}
+var obj = {
+id: "awesome"
+};
+// use `obj` as `this` for `foo(..)` calls
+[1, 2, 3].forEach( foo, obj );
+// 1 awesome 2 awesome 3 awesome
+
+// Internally, these various functions almost certainly use explicit binding via call(..) or apply(..) , saving you the trouble.
+
+//4. new Binding : The fourth and final rule for this binding requires us to rethink a very common misconception about functions and objects in JavaScript.
+
+// In traditional class-oriented languages, “constructors” are special methods attached to classes, and when the class is instantiated with a new operator, the constructor of that class is called. This usually looks something like:
+something = new MyClass(..);
+
+//However new usage in JS has no connection to class-oriented functionality. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/// Important :To remmebr
+/*
+
+
+var bar = foo.bind(obj);
+bind(..) returns a new function that is hardcoded to call the original function with the this context set as you specified.
+
+
+*/
