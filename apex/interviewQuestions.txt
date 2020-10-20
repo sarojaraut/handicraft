@@ -210,6 +210,73 @@ function setFirstName(pFirstName){
  $s('P1_FIRST_NAME', pFirstName);
 };
 
+Incorporating JavaScript Functions
+
+There are two primary places to include JavaScript functions:
+    In the HTML Header attribute of the page
+    In a .js file in the page template
+
+https://docs.oracle.com/en/database/oracle/application-express/19.1/aexjs/index.html
+
+APEX provides a number of specific places for you to add JavaScript code. 
+You should avoid entering your own <script> tags in places where markup is allowed. 
+Also avoid entering JavaScript code using the javascript: pseudo-protocol in places where URLs are allowed.
+Various components may have specific attributes for JavaScript code snippets. For example some regions and items have an Advanced: JavaScript Initialization Code attribute that is used for advanced configuration of the region or item. 
+Dynamic Actions added to the Global Page can apply to all pages subject to any Server-Side Condition.
+
+Each page can have its own specific JavaScript code added to it using the following page attributes in the "JavaScript" section:
+    File URLs - Specify one JavaScript file URL per line. These files could be third party libraries or your own JavaScript code.
+    Function and Global Variable Declaration - This code runs after the core APEX libraries and above File URLs have been loaded and before the document is ready (DOMContentLoaded event or jQuery ready).
+    Execute when Page Loads - This code runs after the document is ready and after all APEX generated JavaScript code.
+
+If you have a file that you want loaded on all pages you can enter that file in one place rather than on each page. Shared Components > User Interface Attributes > User Interface Details has an attribute where you can enter any number of JavaScript File URLs (one per line).
+
+It is recommended to use Universal Theme. However if you do create your own theme (very few people do this) there is an attribute to specify the JavaScript File URLs that are needed by your theme.
+
+How will you access page items in Javascript?
+
+alert('First Name is ' + document.getElementById('P1_FIRST_NAME').value );
+value = apex.item( "P1_ITEM" ).getValue();
+
+What is the use of Page Group? Or what is Page Group feature? How will you create a page group?
+Page groups do not have any function other than to help developers organize their application pages.
+utilities > page group from right hand side 
+
+What is ‘page zero‘? How can you restrict page zero items across application?
+
+Page zero of your application functions as a master page. The Application Express engine renders all components you add to page zero on every page within your application. You can further control whether the Application Express engine renders a component or runs a computation, validation, or process by defining conditions.
+
+Page zero is now called as global page in recent releases.
+
+How a page is rendered? (Show page and Accept page process)?
+
+To view a rendered version of your application,you request it from the Application Express engine with a URL. When you run anapplication, the Application Express engine relies on two processes:
+
+•Show Page - When you request a page using a URL, the engine is running Show Page. Show Page is a page rendering process that assembles all the page attributes (including regions, items, and buttons) into a viewable HTML page.
+
+•Accept Page - Accept Page performs forms page processing, including computations, validations, processes, and branching. When you submit a page,the Application Express engine is running Accept Page or performing pageprocessing during which it saves the submitted values in the session cache andthen performs any computations, validations, or processes.
+
+Oracle Application Express issues implicit commits at the following points:
+•On load, after a page finishes rendering
+•On submit, before branching to another page•On submit, if one or more validations fail, before re-rendering the page
+•After a computation
+•After changing the value of an item, for example after a PL/SQL processthat modifies a bind variable value or when APEX_UTIL.SET_SESSION_STATE is called.
+•When APEX_MAIL.PUSH_QUEUE is called
+
+
+
+Where / How will you add Logo / pictures? How will you control them?
+Notification message, Success message regions?
+Where will you add logout or custom links?
+How will you pass value of one item from one page to another?
+How will you code dynamic PL/SQL regions (HTP.P code)?
+
+
+Caching
+
+    What are different caching methods available? (Page, for item, for user session, for application)
+    How can you clear caches programmaticaly? (APEX_UTIL.CLEAR_APP_CACHE, APEX_UTIL.CLEAR_PAGE_CACHE, APEX_UTIL.CLEAR_USER_CACHE)
+
 
 
 Fetched #ROWS_FETCHED# rows in #TIMING# seconds can be added to region footer
