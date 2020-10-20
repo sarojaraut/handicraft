@@ -1,0 +1,223 @@
+What is Oracle Application Express? 
+Oracle Application Express (APEX formerly called as HTML DB) is a low-code development platform that enables you to build scalable, secure enterprise apps, with world-class features. Developers claim to build web application 10x faster and with 100x less code compared to traditional hand coding using popular java script frameworks.
+
+There are numerous complexities involved in developing a modern web application, including security, accessibility, efficient data access, performance, and globalization. hese are typically addressed by hand written code. 
+Oracle APEX enables you to focus on your business problem by eliminating this burden and providing world-class components, a deeply customizable user interface, native web service integration, and a whole lot more, out of the box.
+
+Various components provided are : faceted search, interactive grid, interactive report, charting and dashboards, data entry forms, master detail form, calenders, navigation menu, webservice access. All these can be built and customised in a declarative manner. 
+
+Oracle APEX components are rigorously tested for usability, accessibility, performance, and security, out of the box. No coding required.
+
+Using APEX, developers can quickly develop and deploy compelling apps that solve real problems and provide immediate value. You won't need to be an expert in a vast array of technologies to deliver sophisticated solutions. Focus on solving the problem and let APEX take care of the rest.
+
+Archiecture :
+
+Oracle APEX uses a database encapsulated simple metadata-driven architecture that provides fast data access, top performance, and scalability, out of the box.
+
+Oracle APEX uses a simple 3-tier architecture where requests are sent from the browser, through a web server, to the database. All processing, data manipulation and business logic is executed in the database. This architecture guarantees zero latency data access, top performance, and scalability, out of the box.
+
+browser <-> ords <-> Oracle DB with Apex 
+
+Oracle  REST Data Services (ORDS) : ORDS is a Java application that enables developers with SQL and database skills to develop REST APIs for Oracle Database. It acts as a web listner for APEX
+
+Metadata Driven
+
+When you create or extend an application, Oracle APEX creates or modifies the metadata stored in its database tables. When the application is run, the Oracle APEX engine then reads the metadata and displays the requested page or processes page submissions.
+
+To provide stateful behavior within an application, Oracle APEX transparently manages session state in the database. Application developers can get and set session state using simple substitutions as well as standard SQL bind variable syntax. 
+
+All processing is performed by PL/SQL acting directly on the data schemas in the database. Therefore, Oracle APEX apps are very efficient as data is manipulated directly in the database, and the results are sent back to your web browser. A single API call invokes all of the necessary data processing, based on the metadata definition, in a single request rather than requiring multiple calls to the database.
+
+Stateless Access
+
+Oracle APEX is vastly scalable and can support tens of thousands of concurrent users due to the manner in which it manages database requests. The API calls to the Oracle APEX engine use the standard Oracle database connection pool. This means that once an API call is processed and the response sent back to the browser, the connection used is returned to the database connection pool, and can be used by any other request.
+
+The database sessions are only active when performing a request, otherwise, the users' session is inactive and does not consume any database resources. 
+
+What are the uses of APEX?
+    Builds professional looking web applications that are both fast and secure.
+    Runs on and lives in Oracle database. APEX framework and meta data are stored in Oracle tables.
+    Deployment of application is as simple as ‘Export and Import’ if hard coded references of values that change between environments are avoided.
+    Lot of scope for customization of application look and feel.
+    Scalable for high user volume. ASKTOM, former ORACLE METALINK (before migrated to Flash version) and MANY APPLICATIONS are built using APEX.
+    Can be configured to use Oracle SSO and EBS fnd user repository.
+
+
+What kind of activities you have done for apex as apex dba?
+    setup of apex environment
+    SSL configuration
+    USER access
+    Security modal definition
+    ad hoc issue and resolution
+    Patching /Performance /
+    install ords and deployed ORDS on tomcat and configrue nginx as reverse proxy 
+
+How do you know what version apex is installed in the system?
+If dba view access then select comp_name, version, status from dba_registry or schema user
+
+How do you know what version apex is installed in the system?
+If dba view access then select comp_name, version, status from dba_registry or schema user
+
+How do you know what version apex is installed in the system?
+If dba view access then select comp_name, version, status from dba_registry or schema user
+
+
+By which user we connect to apex application?
+apex_public_user
+
+How APEX Architecture works?
+APEX is installed on Oracle database.
+At the time of installation it creates several schamas and stored apex objects in those scehmas.
+Objects comprises of meta data in tables, pl/sql code and extensive JavaScript APIs.
+When we create workspace, users and applications details are stored in the metadata tables.
+When we create build new applications app metadata is stored in the corresponding tables and when we run the application 
+The URL request from the browser is translated into appropriate APEX PL/SQL call by ords. After the data is processed, results are relayed back to browser as HTML. This cycle happens each time user request or submit a page. The application session state is maintained in database tables.
+
+What are versions of APEX you have worked with?
+4.0 - dynamic action, plug-in support and restful webservices 
+5.0 - new IDE, page designer, responsive universal theme and theme roller 
+5.1 - IG 
+18.1 - new create application wizard(blue print) ,ew creat page(dashboard page, side by side master detail page), apex spot light search, new rest workshop, rest enabled sql 
+192 - faceted search, enahnced list of value, enahnced pop list of values, rest enabled IG, UT improvements(dark mode, collapsible menu, new login page style)
+20.1 - Friendly URLs, better version Software control, Faceted Search, Mega Menus, Redwood User Interface (UI), PDF printing
+
+
+What are skills required for APEX Developers?
+SQL, PL/SQL are essential. HTML, CSS and JavaScript are good to have skills to understand and customize look and feel (themes, templates, …. ).
+
+What are the different type of apex users 
+Users are divided into three primary roles developer, Workspace administrators  and Instance administrators
+
+Some views of apex
+apex_workspaces,apex_workspace_activitiy_log etc
+
+How will you validate apex
+Utlrp.sql  or
+SQL> exec validate_apex; (If your APEX version is 2.0 or above)
+
+How will you direct your application to use https instead of http?
+
+
+How is APEX a RAD Tool?
+You can prototype screens while sitting with the user. The Object Browser allows you to create database objects such as tables in addition to viewing those same objects. Quick SQL allows you to create objects on the fly and then build tables around those objects. Al you need is a browser and all applications are run within a browser. Turn-around time is immediate. 
+
+Because APEX is declarative, you can easily make changes in real-time via the built-in wizards. 
+
+By default APEX manages : 
+session information for you, 
+use the security framework built into the Oracle Database,
+manages connection to database 
+manages your authentication and authorisation
+you can concentration delivering applications, not on connection configuration and other typical web development time wasters.
+
+How much does APEX Cost and where can I get it?
+Oracle Application Express comes as a free add-on with all edition of Oracle database (enterprise, standard). If you chose to “try before you buy”, or since it’s free, “try before you install”, you can also use the hosted APEX Online facility. or install it on top of Oracle XE database.
+This facility allows you to create and run complete applications just as you would on your own equipment.
+
+What is the current version of APEX and why should I upgrade?
+current version is 20.1 and 20.2 is in progress. apex.oracle.com is now in 20.2
+
+
+ What is the future of Application Express?
+Oracle has made a large commitment to Application Express. APEX is the glue that can combine various parts of an enterprise solution into a whole. APEX is the tool of choice to create web-based, database-centric applications. If your business logic is in the database tier, APEX is the way to go.
+
+Are there any limitations in using Oracle XE?
+XE 18 is the recent version database which is free but Oracle has built certain limitations into the product.
+The first limitation is memory. Oracle Database XE can address only 2GB of RAM. This limitation mainly affects how many users can access the database concurrently and how well it performs.
+The second limit is that XE will only use one core CPU. XE will run on a multi -CPU computer but wont scale up to use those CPUs. This functionality requires Oracle Database Standard Edition or Enterprise Edition.
+The third limit is that only a single XE database can run on any given computer. You do not need a database for each application. Instead, Oracle uses the concept of schemas to separate applications.
+Finally, a 12 GB limit is enforced on disk space.12 GB is a huge amount of storage for most applications. You can also use APEX to link to other databases (on other servers) for more storage as needed.
+
+How do I backup and restore an Oracle XE Database?
+
+How to make applications portable?
+To ensure application can easily be moved from one Application Express environment to another you should avoid hard coded references to values that may change between environments.
+For example, the application ID is often referenced in URLs throughout an application. The Application Express engine uses the application ID to uniquely identify the application fetched and run from the application repository. Rather than using the actual application ID as is done in the URL below:
+f?p=100:1:&APP_SESSION.:
+It is recommended to use an indirect reference instead:
+f?p=&APP_ID.:1:&APP_SESSION.:
+Here, &APP_ID. is a built in substitution string that replaces the hard coded value 100. Using this technique, no modifications have to be made prior to deployment, even if the application ID changes.
+Similarly, to ensure smooth deployment, references to images in templates, HTML regions or SQL queries should use substitution strings instead of hard coded paths.
+Consider, for example, an application whose images are stored on the file system in the virtual path /dev/images/ in a development environment and /prod/images/ on the production server.
+Use substitution strings at the application level to avoid having to make changes throughout the application before deployment. E.g., define substitution string IMAGE_PATH, and give it a value of /dev/images/
+
+Should static files be placed in the database?
+Application Express applications may reference additional external files such as cascading style sheets (CSS), images and Javascript libraries.
+These images can either be placed on the file system of the server that runs the web server or, when they are uploaded using Application Express’s application builder, can be stored inside the database.
+A benefit of managing files such as images and CSS in the database with the application builder is that they can be exported and imported into another Application Express environment or workspace using only a browser.
+However, storing related files in the database is recommended only when you have relatively few images and when the application is not expected to endure high request throughput.
+When images, CSS and Javascript libraries are stored in the database, a database connection is established each time the browser requests one of these files.
+In a high throughput application this may result in undue and unwanted strain on the database.
+
+How do I separate development from production environment?
+Depending on requirements for the availability of the application, the size of the user population and other factors you can decide how to divide the development environment from the production environment.
+For certain applications, it is acceptable to combine the development server with the deployment server, as long as the end users understand that sometimes the application is not available.
+Other applications may require two (development and production) or even three (development, test and production) servers.
+In Application Express applications can be moved from environment to environment using an export and import facility for application definitions.
+With one server available to run the database and Application Express, you can still separate the development version of an application from its production version by using two workspaces accessing separate schemas.
+In this case one workspace will be used by developers and the other will be the workspace in which the application is deployed in production. We will add few more Oracle Apex Interview Questions soon.
+
+
+
+What kind of applications you have created?
+1. Last project we made web app for managing the clearing process.
+Clearing is the process which gives last chance to students to get their place secured in an uni. 
+The overall process is universities still have some vacant places they want to fill and some students who have not got a confirmed place in any university. Every year UK govering body UCAS declares dates for clearing. 
+
+Before that the university departments need to setup the courses partcipating in clearing and the number of vacancies in the course
+They also need to setup which are the list of qualifications, subjects and grades acceptable a specific course and they also need to set up a tariff for such qualification/subject and grade. let's say A level physics grade A* is 96 points. And also they need to announce total tariff required for offering a place. minimu cut off without which cnddidates can be outrightly rejected. And all other students be referred in case they still have some empty places to fill. 
+Setting up all these meta data and reviewing that is done using internal app. 
+reports and manually offering applicants.
+taking phone calls and revewing application adding notes
+
+
+internal facing app for setting up courses which are available for clearing
+
+
+public facing app for collecting student details( e.g their personal details like name, email telephone, qualification detais, qualification, subject, year, grade), Collecting qualification was a bit tricky because there is no standard set of attributes some internation qualification like IELTS, TOFEL, and IB has completely different set of attributes, like read, write, listen, spoken grades and there is no subject to choose.
+then finally app running the validation process to see if applicant is eligible for offer/reject or review 
+accordingly shows the message on screen and sends notificatiob email and text message.
+
+department staff can review applications of their own course and take action against them 
+department users have roles as admin, editor, reader
+authenticated by coprorate active directory
+creating application users 
+self service registration
+
+When to go for APEX and When not to go for APEX?
+
+if web application is based on data in oracle database then most requiremnts can be implemented easily
+Name few Oracle APEX applications you know - best examples are ask tom, apex.oracle.com, live sql, covid 19 uk
+
+Explain the URL structure of an application.
+
+How will you debug an application? (Debug flag)
+
+How will you define page cache?
+Enabling region caching is an effective way to improve the performance of static regions such as regions containing lists that do not use conditions or regions containing static HTML.When you enable region caching, the Application Express engine renders a region from a cached (or stored) repository instead of rendering it dynamically. 
+Server Cache = Disabled, Enabled, Enabled, Cache by Session
+
+Specifying a static region ID is useful when creating custom JavaScript or cascading style sheets. 
+
+Where will you add Java Script coding?
+
+if you create an item with the name P1_FIRST_NAME and a label of First Name, the ID is P1_FIRST_NAME. You can get and set item attributes and values using the JavaScript functions $v('P1_FIRST_NAME') and $s('P1_FIRST_NAME', 'Joe');
+
+function showFirstName(){
+ alert('First Name is ' +$v('P1_FIRST_NAME'))
+};
+function setFirstName(pFirstName){
+ $s('P1_FIRST_NAME', pFirstName);
+};
+
+
+
+Fetched #ROWS_FETCHED# rows in #TIMING# seconds can be added to region footer
+
+Need to check
+How will you make changes to application in Oracle SQL Developer?
+https://guruparan18.wordpress.com/2010/06/20/oracle-application-express-apex-interview-questions/
+
+
+
+
