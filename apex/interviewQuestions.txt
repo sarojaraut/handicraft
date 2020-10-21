@@ -314,6 +314,13 @@ What are the various charts available?
 Themes
 
     Can you define custom theme?
+    Yes, we can create a custom theme. Theme is basically collection of templates and usually we make a copy of universal theme and then copy of existing templates and then start modifying this.
+    A Cascading Style Sheet (CSS) provides a way to control the style of a web page without changing its structure.
+    quick edit provides a live template options, that is also a nice way of creating themes and templates.
+    CSS
+    color:#ff1744; font-style:italic; text-align:center; font-weight:bold;
+    <span style="#NAME_STYLE#">#NAME#</span>
+
 
 Interview Questions on Continuous Development
 
@@ -325,11 +332,17 @@ Authorization
     What is the use of authorization?
     What are the other ways of authorization?
     Where can you apply authorization? Custom defined authorization?
+    Authorization is a broad term for controlling access to resources based on user privileges
+    Common authorization scheme types include Exists, Not Exists SQL Queries, and PL/SQL Function Returning Boolean.
 
 Authentication
 
     What are the authentication methods available?
+    Application Express Accounts, Custom Authentication, Database Accounts, HTTP Header Variable, LDAP Directory, Open Door Credentials, Social Sign-In
+    
     How will you create a custom authentication?
+    for custom auth create a function returning boolean and taking two arguments p_username and p_password
+    DBMS_LDAP.init, DBMS_LDAP.simple_bind_s
 
 
 Interview Questions on Security
@@ -353,10 +366,12 @@ Interview Questions on Security
     
     SSP can be set at application level, page level and item level 
 
-
- 
-
     How will you disable SQL injections?
+    substitution variable syntax &. is useful when displaying text dynamically in html but dangreous when used in sql. bind variable syntax should be used instead While building dynamic queries use bind variable instead of concate operation. Use CREATE_COLLECTION_FROM_QUERY_B CREATE_COLLECTION_FROM_QUERY_B2 instead of CREATE_COLLECTION_FROM_QUERY as former use bind variable syntax. Use HTF.ESCAPE_SC and APEX_JAVASCRIPT.ESCAPE for displaying any report where fields are inputed by any form by end user to avoid XSS problem. The HTP.PS function should be used to escape any data from the database. This will automatically escape the <,>,”,& characters.
+    begin
+    sys.htp.p(apex_escape.html_whitelist('<h1>Hello<script>alert("XSS");</script></h1>')); 
+    end;
+    https://explorer.co.uk/securing-vulnerability-exploits-apex-part-3/
     How will you use check sums? APEX_ITEM.MD5_CHECKSUM. Check sums in URLs.
     How will you ensure strong password? APEX_UTIL.STRONG_PASSWORD_VALIDATION
     How will you find how many users clicked a HREF? APEX_UTIL.COUNT_CLICK. APEX_WORKSPACE_CLICKS View has the report.
@@ -383,7 +398,7 @@ Interview Questions on Sessions
      SYS_CONTEXT('APEX$SESSION', 'APP_USER')
 
 
-APP_UNIQUE_PAGE_ID is an integer generated from an Oracle sequence which is unique for each page view. This number is used by applications to prevent duplicate page submissions and can be used for other purposes. For example, to make a unique URL and avoid browser caching issues, you can embed this number in the srequest or debug column in calls to the f procedure.
+APP_UNIQUE_PAGE_ID is an integer generated from an Oracle sequence which is unique for each page view. This number is used by applications to prevent duplicate page submissions and can be used for other purposes. For example, to make a unique URL and avoid browser caching issues, you can embed this number in the request or debug column in calls to the f procedure.
 
 Each application button sets the value of REQUEST to the name of the button or to the request value attribute associated with the button, enabling accept processing to reference the name of the button when a user clicks it. In the f?p syntax, REQUEST may be set using the fourth argument. When you post a page, you initiate Accept processing. Accept processing consists of computations, validations, processes, and branches. The value of REQUEST is available during each phase of the Accept processing. Once an application branches to a sdifferent page then REQUEST is set to NULL.
 
@@ -422,17 +437,12 @@ Each application button sets the value of REQUEST to the name of the button or t
     RP - Resets interactive report or classic report pagination.
 
 
-
-
-
-
-
     How will you find the application session state? Within SQL (APP_SESSION)?
     What are the ways to get the session values? (&SESSION., :APP_SESSION, v(‘SESSION’) or nv())
     Session is synchronous or asynchronous? Asynchronous
     Does not use dedicated database connections are made and maintained?
-    How will you validate whether the session is valid? APEX_CUSTOM_AUTH.IS_SESSION_VALID
-    How will you submit jobs / back ground processes in Oracle APEX? APEX_PLSQL_JOB.SUBMIT_PROCESS
+    How will you validate whether the session is valid?  APEX_CUSTOM_AUTH.SESSION_ID_EXISTS RETURN BOOLEAN;
+    How will you submit jobs / back ground processes in Oracle APEX? DBMS_SCHEDULER
     What is optimistic / pessimistic locking?
     What is stateless transaction?
 
@@ -462,13 +472,6 @@ Build Option
     Status - Options: Include or Exclude
     Default on Export - choose expected behaviour of this build option during export ( e.g same as current status, include or exclude)
 
-
-
-
-    
-
-
-
 Workspace
 
     What is workspace?
@@ -478,6 +481,7 @@ Workspace
     How will you create a workspace, and what happens in database when you a create a new workspace?
     Oracle Application Express users? Their user roles.
     Developers, Workspace administrators, End users, Oracle Application Express administrators
+    APEX_WORKSPACE_APEX_USERS, APEX_APPLICATION_ITEMS, APEX_APPLICATIONS
 
 Admin
 
@@ -487,22 +491,103 @@ Admin
     Workspace Admin : can admin task specific to a workspace such as managing user accounts, altering passwords of users, viewing workspace activity managing, development services.
     Instance Admin : superusers that manage the entire hosted instance using the Oracle Application Express Administration Services application. This role is not available in oracle cloud
 
-    Who are the users and their privileges?
-    Name few important APEX functions? (APEX_UTIL, APEX_MAIL, APEX_ITEM, APEX_CUSTOM_AUTH, APEX_LDAP)
+    Who are the users and their privileges? developer, workspace admin, end user
+    Name few important APEX functions? (APEX_UTIL, APEX_EXEC, APEX_WEBSERVICE, APEX_ZIP, APEX_SESSION, APEX_ITEM)
+
+        apex_collection.create_collection(p_collection_name => 'EMPLOYEES')
+        apex_collection.collection_exists (p_collection_name => 'EMPLOYEES')
+        SELECT c001, c002, c003, n001, d001, clob001
+        FROM APEX_collections
+        WHERE collection_name = 'EMPLOYEES'
+    begin
+        apex_ir.add_filter(
+        p_page_id => 1,
+        p_region_id => 2505704029884282,
+        p_report_column =>'DEPTNO',
+        p_filter_value =>'30',
+        p_operator_abbr =>'EQ',
+        p_report_id =>880629800374638220);
+    end;
+    APEX_IR.RESET_REPORT
+
+    APEX_ITEM : You can use the APEX_ITEM package to create form elements dynamically based on a SQL query instead of creating individual items page by page.
+
+        begin
+            apex_session.attach (
+                p_app_id => 100,
+                p_page_id => 1,
+                p_session_id => 12345678 );
+            sys.dbms_output.put_line ('App is '||v('APP_ID')||', session is '||v('APP_SESSION'));
+        end;
+
+        apex_session.create_session (
+            p_app_id => 100,
+            p_page_id => 1,
+            p_username => 'EXAMPLE USER' );
+
+        begin
+        apex_session.detach;
+        end;
+
+        apex_session.set_debug (
+        p_session_id => 1234,
+        p_level => apex_debug.c_log_level_info ); -- p_level = null disables debug
+        commit;
+
+        apex_session.set_trace (
+            p_session_id => 1234,
+            p_mode => 'SQL' );
+            commit;
+
+        The following example demonstrates how to get the query context for a given saved interactive report on page 1 and print the data out as JSON.
+        declare
+            l_context apex_exec.t_context;
+        begin
+            l_context := apex_region.open_query_context (
+            p_page_id => 1,
+            p_region_id => 2505704029884282,
+            p_component_id => 880629800374638220 );
+            apex_json.open_object;
+            apex_json.write_context( 'data', l_context );
+            apex_json.close_object;
+        end;
+
+        apex_string.format('%s+%s=%s', 1, 2, 'three')
+        apex_string.format('%1+%2=%0', 'three', 1, 2)
+        apex_string.get_initials('Saroj Raut') -- SR
+        apex_string.join_clob(apex_t_varchar2(1,2,3),':') --1:2:3
+        apex_string.join(apex_t_number(1,2,3),':') --1:2:3
+        apex_string.split('1:2:3',':') --apex_t_varchar2('1','2','3')
+        apex_string.split('key1=val1, key2=val2','\s*[=,]\s*') -- apex_t_varchar2('key1','val1','key2','val2')
+        declare
+            l_table apex_t_varchar2 := apex_string.split('1234567890',null);
+        begin
+            dbms_output.put_line(apex_string.join(apex_string.shuffle(l_table),':'));
+        end; -- a permutation of 1:2:3:4:5:6:7:8:9:0
+
+        APEX_UTIL.GET_SESSION_STATE('my_item'); -- short hand is v function
+        apex_util.get_since(last_updated_on) last_update
+        APEX_UTIL.SET_SESSION_STATE('my_item','myvalue');
+
     How can you setup application wide notifications? Login notification?
     What is needed to configure OBIEE for report integration.
 Different Oracle Application Express Environments
 When you install Oracle Application Express, you can install two different environments: full development environment  or  runtime environment
 
 
-Interview Questions on Metadata
+Metadata
 
     How is APEX Application components stored inside DB?
     What is Oracle Application Express Engine? (session state management, auth & authori, page flow, validations processing, page rendering and processing)
     How will you find the logged in user? APP_USER.
 
 
-
+-- Submitting disabled items to session state
+Disabled items are not submitted to page session in apex and sometimes you may need to disable some items to stop end users from changing the value but want to submit the value to session state
+-- Create a dynamic action on event before page submit and execute java script = $(':disabled').removeAttr('disabled');
+<center><span style="color:green;font-weight:bold;text-align:center;font-size=400%">DEV</span></center>
+Advanced > Custom attribute : pattern="[^ ]*" data-valid-message="No spaces allowed"
+pattern="[0-9a-zA-Z]{4}" data-valid-message="Four character UCAS Code needed"
 
 
 Fetched #ROWS_FETCHED# rows in #TIMING# seconds can be added to region footer
