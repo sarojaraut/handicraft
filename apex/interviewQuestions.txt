@@ -261,7 +261,6 @@ Oracle Application Express issues implicit commits at the following points:
 •When APEX_MAIL.PUSH_QUEUE is called
 
 
-
 Where / How will you add Logo / pictures? How will you control them?
 Notification message, Success message regions?
 Where will you add logout or custom links?
