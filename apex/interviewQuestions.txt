@@ -157,8 +157,6 @@ In Application Express applications can be moved from environment to environment
 With one server available to run the database and Application Express, you can still separate the development version of an application from its production version by using two workspaces accessing separate schemas.
 In this case one workspace will be used by developers and the other will be the workspace in which the application is deployed in production. We will add few more Oracle Apex Interview Questions soon.
 
-
-
 What kind of applications you have created?
 1. Last project we made web app for managing the clearing process.
 Clearing is the process which gives last chance to students to get their place secured in an uni. 
@@ -172,7 +170,6 @@ taking phone calls and revewing application adding notes
 
 
 internal facing app for setting up courses which are available for clearing
-
 
 public facing app for collecting student details( e.g their personal details like name, email telephone, qualification detais, qualification, subject, year, grade), Collecting qualification was a bit tricky because there is no standard set of attributes some internation qualification like IELTS, TOFEL, and IB has completely different set of attributes, like read, write, listen, spoken grades and there is no subject to choose.
 then finally app running the validation process to see if applicant is eligible for offer/reject or review 
@@ -588,6 +585,25 @@ Disabled items are not submitted to page session in apex and sometimes you may n
 <center><span style="color:green;font-weight:bold;text-align:center;font-size=400%">DEV</span></center>
 Advanced > Custom attribute : pattern="[^ ]*" data-valid-message="No spaces allowed"
 pattern="[0-9a-zA-Z]{4}" data-valid-message="Four character UCAS Code needed"
+
+apex_application.g_print_success_message := 'Course linked to department '||:p23_dept_id||' and email rules and course subjects cloned from the most recently updated course of this department';
+
+:APEX$ROW_STATUS = 'D' , 'C', U' for manual IG processing 
+
+validation : va;ue required = yes, template required and server side validation not null. 
+
+APEX_UTIL.PREPARE_URL(
+            p_url => 'f?p=' || :APP_ID || ':30:' || :APP_SESSION || '::NO:RP:P30_RULE_ID:' || rh.id
+            )
+
+Add a java script function in the "Function and Global Variable Declaration" of the page and on button click set action to "redirect to URl" and set target as javascript:set_item();
+
+apex.event.trigger( "#myRegionStaticID", "apexrefresh" );
+
+apex_workspace_activity_log
+APEX_WORKSPACE_ACCESS_LOG
+
+SELECT DISTINCT APEX_VIEW_NAME FROM APEX_DICTIONARY
 
 
 Fetched #ROWS_FETCHED# rows in #TIMING# seconds can be added to region footer
