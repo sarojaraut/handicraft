@@ -223,7 +223,8 @@ Advanced > Custom Attributes = data-valid-message="This is a required field"
 
 You can choose not to execute validations by turning off "Execute Validations" for any button submit
 
-Advanced > Custom attribute : pattern="[^ ]*" data-valid-message="No spaces allowed"
+
+
 
 Examples
 pattern="[0-9a-zA-Z]{4}" data-valid-message="Four character UCAS Code needed"

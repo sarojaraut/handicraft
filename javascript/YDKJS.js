@@ -888,10 +888,168 @@ obj2.foo.call(obj1); // 2
 // So, explicit binding takes precedence over implicit binding, which means you should ask first if explicit binding applies before checking for implicit binding.
 
 
+// Now, we just need to figure out where new binding fits in the precedence:
 
 
+function foo(something) {
+    this.a = something;
+}
+var obj1 = {
+    foo: foo
+};
+var obj2 = {};
+obj1.foo(2);
+console.log(obj1.a); // 2
+obj1.foo.call(obj2, 3);
+console.log(obj2.a); // 3
+var bar = new obj1.foo(4);
+console.log(obj1.a); // 2
+console.log(bar.a); // 4
 
 
+// OK, new binding is more precedent than implicit binding. But do you think new binding is more or less precedent than explicit binding?
+// new and call / apply cannot be used together, so new foo.call(obj1) is not allowed to test new binding directly against explicit binding. But we can still use a hard binding to test the precedence of the two rules.
+
+function foo(something) {
+    this.a = something;
+}
+var obj1 = {};
+var bar = foo.bind(obj1);
+bar(2);
+console.log(obj1.a); // 2
+var baz = new bar(3);
+console.log(obj1.a); // 2
+console.log(baz.a); // 3
+
+
+// Now, we can summarize the rules for determining this from a function call’s call-site, in their order of precedence.
+
+// 1. Is the function called with new (new binding)? If so, this is the newly constructed object.
+// var bar = new foo()
+// 2. Is the function called with call or apply (explicit binding), even hidden inside a bind hard binding? If so, this is the explicitly specified object.
+// var bar = foo.call( obj2 )
+// 3. Is the function called with a context (implicit binding), otherwise known as an owning or containing object? If so, this is that context object.
+// var bar = obj1.foo()
+// 4. Otherwise, default the this (default binding). If in strict mode , pick undefined , otherwise pick the global object.
+// var bar = foo()
+
+// Binding Exceptions
+// As usual, there are some exceptions to the “rules.”
+
+// If you pass null or undefined as a this binding parameter to call, apply, or bind, those values are effectively ignored, and instead the default binding rule applies to the invocation
+
+function foo() {
+    console.log(this.a);
+}
+var a = 2;
+foo.call(null); // 2
+
+
+// Why would you intentionally pass something like null for a this binding ?
+// t’s quite common to use apply(..) for spreading out arrays of values as parameters to a function call.Similarly, bind(..) can curry parameters(preset values), which can be very helpful:
+
+function foo(a, b) {
+    console.log("a:" + a + ", b:" + b);
+}
+// spreading out array as parameters
+foo.apply(null, [2, 3]); // a:2, b:3
+// currying with `bind(..)`
+var bar = foo.bind(null, 2);
+bar(3); // a:2, b:3
+
+// Both these utilities require a this binding for the first parameter. If the functions in question don’t care about this , you need a placeholder value, and null might seem like a reasonable choice as shown in this snippet.
+
+// However, there’s a slight hidden “danger” in always using null when you don’t care about the this binding. If you ever use that against a function call (for instance, a third-party library function that you don’t control), and that function does make a this reference, the default binding rule means it might inadvertently reference (or worse, mutate!) the global object ( window in the browser).
+
+// Another thing to be aware of is that you can (intentionally or not!) create “indirect references” to functions, and in those cases, when that function reference is invoked, the default binding rule also applies.
+
+function foo() {
+    console.log(this.a);
+}
+var a = 2;
+var o = { a: 3, foo: foo };
+var p = { a: 4 };
+o.foo(); // 3
+(p.foo = o.foo)(); // 2
+// The result value of the assignment expression p.foo = o.foo is a reference to just the underlying function object. call-site is just foo() , not p.foo() or o.foo() as you might expect. Per the rules mentioned earlier, the default binding rule applies.
+
+// Lexical this
+Arrow - functions are signified not by the function keyword, but by the so - called “fat arrow” operator, => .Instead of using the four standard this rules, arrow - functions adopt the this binding from the enclosing(function or global) scope.
+
+function foo() {
+    // return an arrow function
+    return (a) => {
+        // `this` here is lexically inherited from `foo()`
+        console.log(this.a);
+    };
+}
+var obj1 = {
+    a: 2
+};
+var obj2 = {
+    a: 3
+};
+var bar = foo.call(obj1);
+bar.call(obj2); // 2, not 3! 
+// The lexical binding of an arrow-function cannot be overridden (even with new !).
+
+// Pre-ES6, we already have a fairly common pattern for doing so, which is basically almost indistinguishable from the spirit of ES6 arrow-functions:
+function foo() {
+    var self = this; // lexical capture of `this`
+    setTimeout(function () {
+        console.log(self.a);
+    }, 100);
+}
+var obj = {
+    a: 2
+};
+foo.call(obj); // 2
+
+// While self = this and arrow - functions both seem like good “solutions” to not wanting to use bind(..), they are essentially fleeing from this instead of understanding and embracing it.
+
+/********************************************************************************************************************************** */
+/********************************************************************************************************************************** */
+/********************************************************************************************************************************** */
+// CHAPTER 3 Objects
+
+Objects come in two forms: the declarative (literal) form and the constructed form.
+// The literal syntax for an object looks like this:
+var myObj = {
+key: value
+// ...
+};
+// The constructed form looks like this:
+var myObj = new Object();
+myObj.key = value;
+
+// Objects are the general building block upon which much of JS is built. They are one of the six primary types (called “language types” in the specification) in JS:
+• string
+• number
+• boolean
+• null
+• undefined
+• object
+
+// Note that the simple primitives ( string , boolean , number , null , and undefined ) are not themselves objects . null is sometimes referred to as an object type, but this misconception stems from a bug
+
+// It’s a common misstatement that “everything in JavaScript is an object.” This is clearly not true.
+
+// function is a subtype of object (technically, a “callable object”). Functions in JS are said to be “first class” in that they are basically just normal objects (with callable behavior semantics bolted on), and so they can be handled like any other plain object.
+
+// Arrays are also a form of objects, with extra behavior. The organization of contents in arrays is slightly more structured than for general objects.
+
+// Built-in Objects
+// There are several other object subtypes, usually referred to as built-in objects. For some of them, their names seem to imply they are directly related to their simple primitive counterparts, but in fact, their relationship is more complicated
+
+• String
+• Number
+• Boolean
+• Object
+• Function
+• Array
+• Date
+• RegExp
+• Error
 
 
 
