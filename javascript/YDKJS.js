@@ -1012,11 +1012,11 @@ foo.call(obj); // 2
 /********************************************************************************************************************************** */
 // CHAPTER 3 Objects
 
-Objects come in two forms: the declarative (literal) form and the constructed form.
+Objects come in two forms: the declarative(literal) form and the constructed form.
 // The literal syntax for an object looks like this:
 var myObj = {
-key: value
-// ...
+    key: value
+    // ...
 };
 // The constructed form looks like this:
 var myObj = new Object();
@@ -1050,6 +1050,176 @@ myObj.key = value;
 • Date
 • RegExp
 • Error
+
+Consider:
+var strPrimitive = "I am a string";
+console.log(strPrimitive.length); // 13
+console.log(strPrimitive.charAt(3)); // "m"
+
+// In both cases, we call a property or method on a string primitive, and the engine automatically coerces it to a String object, so that the property/method access works.
+
+function foo() {
+    console.log("foo");
+}
+var someFoo = foo; // variable reference to `foo`
+var myObject = {
+    someFoo: foo
+};
+
+foo; // function foo(){..}
+someFoo; // function foo(){..}
+myObject.someFoo; // function foo(){..}
+
+
+// someFoo and myObject.someFoo are just two separate references to the same function, and neither implies anything about the function being special or “owned” by any other object. If foo() was defined to have a this reference inside it, that myObject.someFoo implicit binding would be the only observable difference between the two references. It doesn’t make sense to call either reference a “method.”
+
+// The safest conclusion is probably that “function” and “method” are interchangeable in JavaScript.
+
+// Arrays
+// Arrays also use the [ ] access form, but as mentioned earlier, they have slightly more structured organization for how and where values are stored (though still no restriction on what type of values are stored). Arrays assume numeric indexing, which means that values are stored in locations, usually called indices, at positive integers, such as 0 and 42:
+
+// Arrays are objects, so even though each index is a positive integer, you can also add properties onto the array:
+var myArray = ["foo", 42, "bar"];
+myArray.baz = "baz";
+
+// Be careful: if you try to add a property to an array, but the property name looks like a number, it will end up instead as a numeric index (thus modifying the array contents):
+
+// Duplicating Objects
+
+// Object.assign(..) takes a target object as its first parameter, and one or more source objects as its subsequent parameters. It iterates over all the enumerable (see the following code), owned keys (immediately present) on the source object(s) and copies them (via = assignment only) to the target. It also, helpfully, returns the target, as you can see here:
+
+function anotherFunction() { /*..*/ }
+var anotherObject = {
+    c: true
+};
+var anotherArray = [];
+var myObject = {
+    a: 2,
+    b: anotherObject, // reference, not a copy!
+    c: anotherArray, // another reference!
+    d: anotherFunction
+};
+anotherArray.push(anotherObject, myObject);
+
+var newObj = Object.assign({}, myObject);
+newObj.a; //
+newObj.b === anotherObject; // true
+newObj.c === anotherArray; // true
+newObj.d === anotherFunction; // true
+
+// Property Descriptors
+
+Consider this code:
+var myObject = {
+    a: 2
+};
+Object.getOwnPropertyDescriptor(myObject, "a");
+// {
+//  value: 2,
+//  writable: true,
+//  enumerable: true,
+//  configurable: true
+// }
+
+// As you can see, the property descriptor for our normal object property a is much more than just its value of 2. It includes three other characteristics: writable, enumerable, and configurable.
+
+when we create a normal property, we can use Object.defineProperty(..) to add a new property, or modify an existing one(if it’s configurable!), with the desired characteristics.
+
+For example:
+var myObject = {};
+Object.defineProperty(myObject, "a", {
+    value: 2,
+    writable: true,
+    configurable: true,
+    enumerable: true
+});
+myObject.a; // 2
+
+// Using defineProperty(..), we added the plain, normal a property to myObject in a manually explicit way. However, you generally wouldn’t use this manual approach unless you wanted to modify one of the descriptor characteristics from its normal behavior.
+
+// Writable : The ability for you to change the value of a property is controlled by swritable.
+// Configurable : As long as a property is currently configurable, we can modify its descriptor definition, using the same defineProperty(..) utility:
+// Enumerable : this characteristic controls whether a property will show up in certain object-property enumerations, such as the for..in loop. Set enumerable to false to keep the property from showing up in such enumerations.  if you have a special prop‐erty you want to hide from enumeration, set it to enumerable:false.
+
+// Writable example
+var myObject = {};
+Object.defineProperty(myObject, "a", {
+    value: 2,
+    writable: false, // not writable!
+    configurable: true,
+    enumerable: true
+});
+myObject.a = 3;
+myObject.a; // 2
+// if we use "use strict"; then line myObject.a = 3; will throw TypeError
+
+//configurable example
+var myObject = {
+    a: 2
+};
+myObject.a = 3;
+myObject.a; // 3
+Object.defineProperty(myObject, "a", {
+    value: 4,
+    writable: true,
+    configurable: false, // not configurable!
+    enumerable: true
+});
+myObject.a; // 4
+myObject.a = 5;
+myObject.a; // 5
+Object.defineProperty(myObject, "a", {
+    value: 6,
+    writable: true,
+    configurable: true,
+    enumerable: true
+}); // TypeError
+
+delete myObject.a;
+myObject.a; // 5  call failed (silently) 
+// The final defineProperty(..) call results in a TypeError, regardless of strict mode, if you attempt to change the descriptor definition of a nonconfigurable property.
+
+// Another thing configurable:false prevents is the ability to use the delete operator to remove an existing property:
+
+// Immutability
+// Object constant : By combining writable:false and configurable:false, you can essentially create a constant (cannot be changed, redefined, or deleted)
+
+
+// Object constant : By combining writable:false and configurable:false, you can essentially create a constant (cannot be changed, redefined, or deleted) as an object property, like:
+var myObject = {};
+Object.defineProperty(myObject, "FAVORITE_NUMBER", {
+    value: 42,
+    writable: false,
+    configurable: false
+});
+
+// Prevent extensions : If you want to prevent an object from having new properties added to it, but otherwise leave the rest of the object’s properties alone, call Object.preventExtensions(..):
+var myObject = {
+    a: 2
+};
+Object.preventExtensions(myObject);
+myObject.b = 3;
+myObject.b; // undefined
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

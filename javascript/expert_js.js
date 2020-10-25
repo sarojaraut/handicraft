@@ -119,6 +119,8 @@ console.log("Hi, I'm a function expression!");
 ...
 }();
 
+
+
 // One other point worth mentioning is the use of the semicolon prepending the statement. Adding it provides a bit of defensive programming against other malformed modules that might not have a trailing semicolon.
 
 // Higher-Order Functions
