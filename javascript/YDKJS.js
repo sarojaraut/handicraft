@@ -1201,10 +1201,81 @@ Object.preventExtensions(myObject);
 myObject.b = 3;
 myObject.b; // undefined
 
+// Getters and Setters
+// The default [[Put]] and [[Get]] operations for objects completely control how values are set to existing or new properties, or retrieved from existing properties, respectively.
+
+// When you define a property to have either a getter or a setter or both, its definition becomes an “accessor descriptor” (as opposed to a “data descriptor”). 
+
+Consider:
+var myObject = {
+    // define a getter for `a`
+    get a() {
+        return 2;
+    }
+};
+Object.defineProperty(
+    myObject,
+    // target
+    "b",
+    // property name
+    {
+        // descriptor
+        // define a getter for `b`
+        get: function () { return this.a * 2 },
+);
+}
+// make sure `b` shows up as an object property
+enumerable: true
+myObject.a; // 2
+
+// Either through object-literal syntax with get a() { .. } or through explicit definition with defineProperty(..), in both cases we created a property on the object that actually doesn’t hold a value, 
+
+
+var myObject = {
+    // define a getter for `a`
+    get a() {
+        return 2;
+    }
+};
+myObject.a = 3;
+myObject.a; // 2
+// Since we only defined a getter for a, if we try to set the value of a later,  the set operation won’t throw an error but will just silently throw  the assignment away. You will almost certainly  want to always declare both getter and setter (having only one or the other often leads to unexpected/surprising behavior):
+
+// More on Enumerability
+var myObject = {};
+Object.defineProperty(
+    myObject,
+    "a",
+    // make `a` enumerable, as normal
+    { enumerable: true, value: 2 }
+);
+Object.defineProperty(
+    myObject,
+    "b",
+    // make `b` NON-enumerable
+    { enumerable: false, value: 3 }
+);
+myObject.b; // 3
+("b" in myObject); // true
+// That’s because “enu‐merable” basically means “will be included if the object’s properties are iterated through.”
+
+myObject.hasOwnProperty("b"); // true
+// .......
+for (var k in myObject) {
+    console.log(k, myObject[k]);
+}
+// "a" 2
+
+myObject.propertyIsEnumerable( "a" ); // true
+myObject.propertyIsEnumerable( "b" ); // false
+Object.keys( myObject ); // ["a"] returns an array of all enumerable properties,
+Object.getOwnPropertyNames( myObject ); // ["a", "b"] returns an array of all properties, regardless of enumerable or not
+
+// Whereas in versus hasOwnProperty(..) differ in whether they consult the [[Prototype]] chain or not, Object.keys(..) and Ob ject.getOwnPropertyNames(..) both inspect only the direct object specified.
 
 
 
-
+// It’s a good idea to use for..in loops only on objects, and traditional for loops with numeric index iteration for arrays. for..in on arrays give unexpected outcome
 
 
 
