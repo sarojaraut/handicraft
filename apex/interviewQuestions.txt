@@ -614,3 +614,77 @@ https://guruparan18.wordpress.com/2010/06/20/oracle-application-express-apex-int
 
 
 
+Standard Dynamic Action using java script
+
+dynamic action condition = $v(this.triggeringElement.Id) === 'Y'
+$v is a function provided by the JavaScript APIs for APEX. It returns the value of an item. 
+
+Action = execute java script to show the region having static id and page item with static id
+$('#product-image-reg').show();
+$('#P6_PRODUCT_IMAGE')
+.closest('.t-Form-fieldContainer')
+.show();
+
+opposite action code 
+$('#product-image-reg').hide();
+$('#P6_PRODUCT_IMAGE')
+.closest('.t-Form-fieldContainer')
+.hide();
+
+adding a function in JavaScript section of root node of the page . Put the following function in the Function and Global Variable Declaration property.
+
+function doWork() {
+  console.log('doWork fired!');
+}
+
+Above code in that property executes in the global scope - before the DOM load event and APEX components are initialized.
+
+Next, add this code to the Execute when Page Loads property: doWork();
+
+Code in that property executes in a function scope - after the DOM load event and APEX components have been initialized.
+
+------------
+
+In any Chart region, JavaScript Initialization Code section 
+
+function(options) {
+  options.dataFilter = function(data) {
+    data.series[0].color = '#0B6623';
+    data.series[1].color = '#9DC183';
+    data.series[2].color = '#708238';
+
+    return data;
+  };
+  return options;
+}
+
+This anonymous function accepts an options object and modifies it by adding a dataFilter function. The dataFilter function gives each series in the chart an explicit color.
+
+--------------
+
+create static file 
+
+function doWork() {
+  console.log('doWork fired!');
+}
+
+function styleSalesByCatChart(options) {
+  options.dataFilter = function(data) {
+    data.series[0].color = '#0B6623';
+    data.series[1].color = '#9DC183';
+    data.series[2].color = '#708238';return data;
+  };
+
+  return options;
+}
+
+including a static file 
+Navigate to the Shared Components > Static Application Files. Click Upload File, use the File(s) item to pick the sample-db-app.js file created in the previous step, and then click Upload. Note the string in the Reference column for the newly uploaded file: #APP_IMAGES#sample-db-app.js.
+Select the page-level attributes (root node under the rendering tab) and put the following file reference in the File URL(s) item in the JavaScript section: #APP_IMAGES#sample-db-app.js
+Attributes of the required region and set the value in JavaScript Initialization Code = just the function name e.g. styleSalesByCatChart
+
+$('#P1_SEARCH').attr('disabled', 'disabled');
+
+$('#P1_SEARCH').removeAttr('disabled');
+
+https://oracle.github.io/learning-library/developer-library/apex/intro-to-javascript/?lab=lab-4-working-dom-jquery
