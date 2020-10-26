@@ -1293,7 +1293,45 @@ for (var v of myArray) {
 /****************************************************************************************************************************** */
 // CHAPTER 4 : Mixing (Up) “Class” Objects
 
-OO or class-oriented programming stresses that data intrinsically has associated behavior (of course, different depending on the type and nature of the data!) that operates on it, so proper design is to package up (aka encapsulate) the data and the behavior together. This is sometimes called data structures in formal computer science.
+// OO or class-oriented programming stresses that data intrinsically has associated behavior (of course, different depending on the type and nature of the data!) that operates on it, so proper design is to package up (aka encapsulate) the data and the behavior together. This is sometimes called data structures in formal computer science.
+
+
+// While we may have a syntax that looks like classes, it’s as if JavaScript mechanics are fighting against you using the class design pattern, because behind the curtain, the mechanisms that you build on are operating quite differently. Syntactic sugar and (extremely widely used) JS “class” libraries go a long way toward hiding this reality from you, but sooner or later you will face the fact that the classes you have in other languages are not like the “classes” you’re faking in JS.
+
+// In general, faking classes in JS often sets more landmines for future coding than solving present real problems.
+
+
+
+/****************************************************************************************************************************** */
+/****************************************************************************************************************************** */
+/****************************************************************************************************************************** */
+// CHAPTER 5 : Prototypes
+
+// Objects in JavaScript have an internal property, denoted in the specification as [[Prototype]], which is simply a reference to another object. 
+
+// Consider:
+var myObject = {
+    a: 2
+};
+myObject.a; // 2
+
+// Setting and Shadowing Properties
+
+myObject.foo = "bar";
+
+// If the myObject object already has a normal data accessor property called foo directly present on it, the assignment is as simple as changing the value of the existing property.
+// If foo is not already present directly on myObject, the [[Prototype]] chain is traversed, just like for the [[Get]] operation. If foo is not found anywhere in the chain, the property foo is added directly to myObject with the specified value, as expected.
+// However, if foo is already present somewhere higher in the chain, nuanced (and perhaps surprising) behavior can occur with the myObject.foo = "bar" assignment. We’ll examine that more in just a moment.
+
+// We will now examine three scenarios for the myObject.foo = "bar" assignment when foo is not already on myObject directly, but is at a higher level of myObject’s [[Prototype]] chain:
+
+// 1. If a normal data accessor property named foo is found anywhere higher on the [[Prototype]] chain, and it’s not marked as read-only (writable:false), then a new property called foo is added directly to myObject, resulting in a shadowed property.
+// 2. If a foo is found higher on the [[Prototype]] chain, but it’s marked as read-only (writable:false), then both the setting of that existing property as well as the creation of the shadowed property on myObject are disallowed. If the code is running in strict mode, an error will be thrown. Otherwise, the setting of the property value will silently be ignored. Either way, no shadowing occurs.
+// 3. If a foo is found higher on the [[Prototype]] chain and it’s a setter, then the setter will always be called. No foo will be added to (aka shadowed on) myObject, nor will the foo setter be redefined.
+
+
+
+// If the property name foo ends up both on myObject itself and at a higher level of the [[Prototype]] chain that starts at myObject, this is called shadowing. 
 
 
 
@@ -1306,14 +1344,9 @@ OO or class-oriented programming stresses that data intrinsically has associated
 
 
 
-
-
-
-
-
-
-
-
+/****************************************************************************************************************************** */
+/****************************************************************************************************************************** */
+/****************************************************************************************************************************** */
 
 
 
