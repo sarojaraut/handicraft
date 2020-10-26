@@ -1266,17 +1266,34 @@ for (var k in myObject) {
 }
 // "a" 2
 
-myObject.propertyIsEnumerable( "a" ); // true
-myObject.propertyIsEnumerable( "b" ); // false
-Object.keys( myObject ); // ["a"] returns an array of all enumerable properties,
-Object.getOwnPropertyNames( myObject ); // ["a", "b"] returns an array of all properties, regardless of enumerable or not
+myObject.propertyIsEnumerable("a"); // true
+myObject.propertyIsEnumerable("b"); // false
+Object.keys(myObject); // ["a"] returns an array of all enumerable properties,
+Object.getOwnPropertyNames(myObject); // ["a", "b"] returns an array of all properties, regardless of enumerable or not
 
-// Whereas in versus hasOwnProperty(..) differ in whether they consult the [[Prototype]] chain or not, Object.keys(..) and Ob ject.getOwnPropertyNames(..) both inspect only the direct object specified.
-
-
+// Whereas in versus hasOwnProperty(..) differ in whether they consult the [[Prototype]] chain or not, Object.keys(..) and Object.getOwnPropertyNames(..) both inspect only the direct object specified.
 
 // It’s a good idea to use for..in loops only on objects, and traditional for loops with numeric index iteration for arrays. for..in on arrays give unexpected outcome
 
+// Iteration
+
+ES5 also added several iteration helpers for arrays, including forEach(..), every(..), and some(..).Each of these helpers accepts a function callback to apply to each element in the array.ES5 also added several iteration helpers for arrays, including forEach(..), every(..), and some(..).Each of these helpers accepts a function callback to apply to each element in the array.
+
+// If you want to loop through the values instead through indices
+var myArray = [1, 2, 3];
+for (var v of myArray) {
+    console.log(v);
+}
+// 1
+// 2
+// 3
+
+/****************************************************************************************************************************** */
+/****************************************************************************************************************************** */
+/****************************************************************************************************************************** */
+// CHAPTER 4 : Mixing (Up) “Class” Objects
+
+OO or class-oriented programming stresses that data intrinsically has associated behavior (of course, different depending on the type and nature of the data!) that operates on it, so proper design is to package up (aka encapsulate) the data and the behavior together. This is sometimes called data structures in formal computer science.
 
 
 
