@@ -687,4 +687,31 @@ $('#P1_SEARCH').attr('disabled', 'disabled');
 
 $('#P1_SEARCH').removeAttr('disabled');
 
+Execute the following code to add a class to the second li in the ul.
+
+$('.t-NavigationBar').children().eq(1).addClass('icon-only');
+
+Next, return the list item to its orginal state by executing the following code:
+$('.t-NavigationBar').children().eq(1).removeClass('icon-only');
+
+
+Execute the following code to add event handlers to the click events of the images in the report.
+$('img').on('click', function() {
+  console.log('You clicked an image!');
+});
+
+For a more complete example that uses event delegation, DOM traversal, and DOM manipulation, execute the following code and then click some images.
+
+
+$('#productsIRR').on('click', 'img', function() {
+  $img = $(this);
+
+  // Walk the DOM to get the product name
+  productName = $img.parent('td').next('td').children('a').text();
+
+  // Change the breadcrumb to include the product name of the image clicked
+  $('.t-Breadcrumb-label').text('You clicked the ' + productName);
+});
+
+
 https://oracle.github.io/learning-library/developer-library/apex/intro-to-javascript/?lab=lab-4-working-dom-jquery

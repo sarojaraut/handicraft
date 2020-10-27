@@ -1201,6 +1201,13 @@ Object.preventExtensions(myObject);
 myObject.b = 3;
 myObject.b; // undefined
 
+// Seal
+// Object.seal(..) creates a “sealed” object, which means it takes an existing object and essentially calls Object.preventExtensions(..) on it, but also marks all its existing properties as configurable:false. So, not only can you not add any more properties, but you also cannot reconfigure or delete any existing properties (though you can still modify their values)
+
+
+// Freeze
+// Object.freeze(..) creates a frozen object, which means it takes an existing object and essentially calls Object.seal(..) on it, but it also marks all “data accessor” properties as writable:false, so that their values cannot be changed.
+
 // Getters and Setters
 // The default [[Put]] and [[Get]] operations for objects completely control how values are set to existing or new properties, or retrieved from existing properties, respectively.
 
@@ -1334,8 +1341,47 @@ myObject.foo = "bar";
 // If the property name foo ends up both on myObject itself and at a higher level of the [[Prototype]] chain that starts at myObject, this is called shadowing. 
 
 
+/****************************************************************************************************************************** */
+/****************************************************************************************************************************** */
+/****************************************************************************************************************************** */
+//CHAPTER 6  Behavior Delegation
+
+// We need to try to change our thinking from the class/inheritance design pattern to the behavior delegation design pattern.
+
+// Some principles of class-oriented design are still very valid, so don’t toss out everything you know (just most of it!). For example, encapsulation is quite powerful, and is compatible (though not as common) with delegation.
 
 
+/*
+Class Theory
+Let’s say we have several similar tasks (“XYZ,” “ABC,” etc.) that we need to model in our software.
+With classes, the way you design the scenario is as follows: define a general parent (base) class like Task, defining shared behavior for all the “alike” tasks. Then, you define child classes XYZ and ABC, both of which inherit from Task, and each of which adds specialized behaviors to handle its respective task.
+
+Importantly, the class design pattern encourages you to employ method overriding (and polymorphism) to get the most out of inheritance, where you override the definition of some general Task method in your XYZ task, perhaps even making use of super to call to the base version of that method while adding more behavior to it. You’ll likely find quite a few places where you can “abstract” out general behavior to the parent class and specialize (override) it in your child classes.
+
+
+Delegation Theory
+But now let’s try to think about the same problem domain, using behavior delegation instead of classes.
+
+You will first define an object (not a class, nor a function as most JSers would lead you to believe) called Task, and it will have concrete behavior on it that includes utility methods that various tasks can use (read: delegate to!). Then, for each task (“XYZ,” “ABC”), you define an object to hold that task-specific data/behavior. You link your task specific object(s) to the Task utility object, allowing them to delegate sto it when they need to.
+
+*/
+
+Task = {
+    setID: function (ID) { this.id = ID; },
+    outputID: function () { console.log(this.id); }
+};
+// make `XYZ` delegate to `Task`
+XYZ = Object.create(Task);
+XYZ.prepareTask = function (ID, Label) {
+    this.setID(ID);
+    this.label = Label;
+};
+XYZ.outputTaskDetails = function () {
+    this.outputID();
+    console.log(this.label);
+};
+    // ABC = Object.create( Task );
+    // ABC ... = ...
 
 
 
