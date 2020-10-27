@@ -1383,6 +1383,11 @@ XYZ.outputTaskDetails = function () {
     // ABC = Object.create( Task );
     // ABC ... = ...
 
+I call this style of code OLOO (objects linked to other objects). All we sreally care about is that the XYZ object delegates to the Task object (as does sthe ABC object).
+
+In JavaScript, the [[Prototype]] mechanism links objects to other objects. There are no abstract mechanisms like “classes,” no matter how much you try to  convince yourself otherwise. It’s like paddling a canoe upstream: you can do it, but you’re choosing to go against the natural current, so it’s obviously going to be harder to get where you’re sgoing.
+
+
 
 
 
