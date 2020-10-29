@@ -520,8 +520,155 @@ return delay(50);
 // Inside the fulfillment/rejection handlers, if you return a value or an exception is thrown, the new returned (chainable) Promise is resolved accordingly.
 // If the fulfillment or rejection handler returns a Promise, it is unwrapped, so that whatever its resolution is will become the resolution of the chained Promise returned from the current then(..).
 
+// Error Handling
+// The most natural form of error handling for most developers is the synchronous try..catch construct. Unfortunately, it's synchronous-only, so it fails to help in async code patterns:
+function foo() {
+    setTimeout(function () {
+        baz.bar();
+    }, 100);
+}
+try {
+    foo();
+    // later throws global error from `baz.bar()`
+}
+catch (err) {
+    // never gets here
+}
+
+// try..catch would certainly be nice to have, but it doesn't work across async operations. That is, unless there's some additional environmental support, which we'll come back to with generators later
+
+// In callbacks, some standards have emerged for patterned error handling, 
+// 1. most notably the "error-first callback" style:
+
+function foo(cb) {
+    setTimeout(function () {
+        try {
+            var x = baz.bar();
+            cb(null, x); // success!
+        }
+        catch (err) {
+            cb(err);
+        }
+    }, 100);
+}
+foo(function (err, val) {
+    if (err) {
+        console.error(err); // bummer :(
+    }
+    else {
+        console.log(val);
+    }
+});
+
+// Note: The try..catch here works only from the perspective that the baz.bar() call will either succeed or fail immediately, synchronously. If  baz.bar() was itself its own async completing function, any async errors inside it would not be catchable. 
+// The callback we pass to foo(..) expects to receive a signal of an error by the reserved first parameter err . If present, error is assumed. If not, success is assumed.
+// This sort of error handling is technically async capable, but it doesn't compose well at all. Multiple levels of error-first callbacks woven together with these ubiquitous if statement checks inevitably will lead you to the perils of callback hell
+
+// 2. Some developers have claimed that a "best practice" for Promise chains is to always end your chain with a final catch(..) , like:
+
+var p = Promise.resolve(42);
+p.then(
+    function fulfilled(msg) {
+        // numbers don't have string functions,
+        // so will throw an error
+        console.log(msg.toLowerCase());
+    }
+)
+    .catch(handleErrors);
+
+// Because we didn't pass a rejection handler to the then(..) , the default handler was substituted, which simply propagates the error to the next promise in the chain. As such, both errors that come into p , and errors that come after p in its resolution (like the msg.toLowerCase() one) will filter down to the final handleErrors(..)
+
+// Now What happens if handleErrors(..) itself also has an error in it? Who catches that? There's still yet another unattended promise: the one catch(..) returns, which we don't capture and don't register a rejection handler for.
 
 
+// Promise Patterns
+// There are lots of variations on asynchronous patterns that we can build as abstractions on top of Promises.
+
+// Promise.all([ .. ])
+// In an async sequence (Promise chain), only one async task is being coordinated at any given moment -- step 2 strictly follows step 1, and step 3 strictly follows step 2. But what about doing two or more steps concurrently (aka "in parallel")?
+// In classic programming terminology, a "gate" is a mechanism that waits on two or more parallel/concurrent tasks to complete before continuing. It doesn't matter what order they finish in, just that all of them have to complete for the gate to open and let the flow control through.
+// Say you wanted to make two Ajax requests at the same time, and wait for both to finish, regardless of their order, before making a third Ajax request. Consider:
+
+// `request(..)` is a Promise-aware Ajax utility,
+// like we defined earlier in the chapter
+var p1 = request("http://some.url.1/");
+var p2 = request("http://some.url.2/");
+Promise.all([p1, p2])
+    .then(function (msgs) {
+        // both `p1` and `p2` fulfill and pass in
+        // their messages here
+        return request(
+            "http://some.url.3/?v=" + msgs.join(",")
+        );
+    })
+    .then(function (msg) {
+        console.log(msg);
+    });
+
+// Promise.all([ .. ]) expects a single argument, an array , consisting generally of Promise instances. Technically, the array of values passed into  Promise.all([ .. ]) can include Promises, thenables, or even immediate values. Each value in the list is essentially passed through Promise.resolve(..) to make sure it's a genuine Promise to be waited on, so an immediate value will just be normalized into a Promise for that value. If the array is empty, the main Promise is immediately fulfilled.
+
+// The main promise returned from Promise.all([ .. ]) will only be fulfilled if and when all its constituent promises are fulfilled. If any one of those promises instead is rejected, the main Promise.all([ .. ]) promise is immediately rejected, discarding all results from any other promises.
+// Remember to always attach a rejection/error handler to every promise, even and especially the one that comes back from Promise.all([ .. ])
+
+// Promise.race([ .. ])
+// sometimes you only want to respond to the "first Promise to cross the finish line," letting the other Promises fall away. This pattern is classically called a "latch," but in Promises it's called a "race."
+// Don't confuse Promise.race([..]) with "race condition."
+// Promise.race([ .. ]) also expects a single array argument, containing one or more Promises, thenables, or immediate values. It doesn't make much practical sense to have a race with immediate values, because the first one listed willobviously win -- like a foot race where one runner starts at the finish line!
+// `request(..)` is a Promise-aware Ajax utility,
+// like we defined earlier in the chapter
+var p1 = request("http://some.url.1/");
+var p2 = request("http://some.url.2/");
+Promise.race([p1, p2])
+    .then(function (msg) {
+        // either `p1` or `p2` will win the race
+        return request(
+            "http://some.url.3/?v=" + msg
+        );
+    })
+    .then(function (msg) {
+        console.log(msg);
+    });
+// Because only one promise wins, the fulfillment value is a single message, not an  array as it was for Promise.all([ .. ])
+// While native ES6 Promises come with built-in Promise.all([ .. ]) and Promise.race([ .. ]) , there are several other commonly used patterns with variations on those semantics:
+
+// none([ .. ]) is like all([ .. ]) , but fulfillments and rejections are transposed. All Promises need to be rejected --rejections become the fulfillment values and vice versa.
+// any([ .. ]) is like all([ .. ]) , but it ignores any rejections, so only one needs to fulfill instead of all of them.
+// first([ .. ]) is a like a race with any([ .. ]) , which is that it ignores any rejections and fulfills as soon as the first Promise fulfills.
+// last([ .. ])  is like first([ .. ]) , but only the latest fulfillment wins.
+
+// Promise API Recap
+
+// new Promise(..) Constructor
+// The revealing constructor Promise(..) must be used with new , and must be provided a function callback that is synchronously/immediately called. This function is passed two function callbacks that act as resolution capabilities for thepromise. We commonly label these resolve(..) and reject(..) :
+var p = new Promise(function (resolve, reject) {
+    // `resolve(..)` to resolve/fulfill the promise
+    // `reject(..)` to reject the promise
+});
+
+// reject(..) simply rejects the promise, but resolve(..) can either fulfill the promise or reject it, depending on what it's passed. If resolve(..) is passed an immediate, non-Promise, non-thenable value, then the promise is fulfilled with that value. But if resolve(..) is passed a genuine Promise or thenable value, that value is unwrapped recursively, and whatever its final resolution/state is will be adopted by the promise.
+
+// A shortcut for creating an already-rejected Promise is Promise.reject(..) , so these two promises are equivalent:
+var p1 = new Promise(function (resolve, reject) {
+    reject("Oops");
+});
+
+var p2 = Promise.reject("Oops");
+
+// Each Promise instance (not the Promise API namespace) has then(..) and catch(..) methods, which allow registering of fulfillment and rejection handlers for the Promise. Once the Promise is resolved, one or the other of these handlers will be called, but not both, and it will always be called asynchronously
+
+// then(..) takes one or two parameters, the first for the fulfillment callback, and the second for the rejection callback. If either is omitted or is otherwise passed as a non-function value, a default callback is substituted respectively. The default fulfillment callback simply passes the message along, while the default rejection callback simply rethrows (propagates) the error reason it receives.
+
+// catch(..) takes only the rejection callback as a parameter, and automatically substitutes the default fulfillment callback, as just discussed. In other words, it's equivalent to  then(null,..):
+p.then( fulfilled );
+p.then( fulfilled, rejected );
+p.catch( rejected ); // or `p.then( null, rejected )`
+
+// then(..) and catch(..) also create and return a new promise, which can be used to express Promise chain flow control. If the fulfillment or rejection callbacks have an exception thrown, the returned promise is rejected. If either callback returnsan immediate, non-Promise, non-thenable value, that value is set as the fulfillment for the returned promise. If the fulfillment handler specifically returns a promise or thenable value, that value is unwrapped and becomes the resolution of the returned promise.
+
+
+// Promise Limitations
+Single Value
+// Promises by definition only have a single fulfillment value or a single rejection reason. In simple examples, this isn't that big of a deal, but in more sophisticated scenarios, you may find this limiting. The typical advice is to construct a values wrapper (such as an object or array ) to contain these multiple messages. This solution works, but it can be quite awkward and tedious to wrap and unwrap your messages with every single step of your Promise chain.
 
 
 
