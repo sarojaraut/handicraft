@@ -376,11 +376,149 @@ p2.then(function (v) {
 // p1 is resolved not with an immediate value, but with another promise p3 which is itself resolved with the value "B" . The specified behavior is to unwrap p3 into p1 , but asynchronously, so p1 's callback(s) are behind p2 's callback(s) in the asynchronus Job queue
 
 
+// Promises can have, at most, one resolution value (fulfillment or rejection). If you don't explicitly resolve with a value either way, the value is undefined. If you want to pass along multiple values, you must wrap them in another single value that you pass, such as an array or an object.
+// If you reject a Promise with a reason (aka error message), that value is passed to the rejection callback(s). If at any point in the creation of a Promise, or in the observation of its resolution, a JS exception error occurs, such as a TypeError or ReferenceError , that exception will be caught, and it will force the Promise in question to become rejected.
+
+// For example:
+
+var p = new Promise(function (resolve, reject) {
+    foo.bar(); // `foo` is not defined, so error!
+    resolve(42); // never gets here :(
+});
+p.then(
+    function fulfilled() {
+        // never gets here :(
+    },
+    function rejected(err) {
+        // `err` will be a `TypeError` exception object
+        // from the `foo.bar()` line.
+    }
+);
+
+// Promises turn even JS exceptions into asynchronous behavior, thereby reducing the race condition chances greatly.
+// if a Promise is fulfilled, but there's a JS exception error during the observation (in a then(..) registered callback)? Even those aren't lost, but you may find how they're handled a bit surprising, until you dig in a little deeper:
+
+var p = new Promise(function (resolve, reject) {
+    resolve(42);
+});
+p.then(
+    function fulfilled(msg) {
+        foo.bar();
+        console.log(msg);
+        // never gets here :(
+    },
+    function rejected(err) {
+        // never gets here either :(
+    }
+);
+
+// Wait, that makes it seem like the exception from foo.bar() really did get swallowed. Never fear, it didn't. But something deeper is wrong, which is that we've failed to listen for it. The p.then(..) call itself returns another promise, and it's that promise that will be rejected with the TypeError exception.
+
+// Why couldn't it just call the error handler we have defined there? Seems like a logical behavior on the surface. But it would violate the fundamental principle that Promises are immutable once resolved. p was already fulfilled to the value 42 , so it can't later be changed to a rejection just because there's an error in observing p's resolution.
+
+// Besides the principle violation, such behavior could wreak havoc, if say there were multiple then(..) registered callbacks on the promise p, because some would get called and others wouldn't, and it would be very opaque as to why.
+
+// Trustable Promise?
+
+// You've no doubt noticed that Promises don't get rid of callbacks at all. They just change where the callback is passed to. Instead of passing a callback to foo(..) , we get something (ostensibly a genuine Promise) back from foo(..) , and we pass the callback to that something instead.
+// But why would this be any more trustable than just callbacks alone? How can we be sure the something we get back is in fact a trustable Promise? Isn't it basically all just a house of cards where we can trust only because we already trusted? One of the most important, but often overlooked, details of Promises is that they have a solution to this issue as well. Included with the native ES6 Promise implementation is Promise.resolve(..) .If you pass an immediate, non-Promise, non-thenable value to Promise.resolve(..) , you get a promise that's fulfilled with that value. In other words, these two promises p1 and p2 will behave basically identically:
+
+var p1 = new Promise(function (resolve, reject) {
+    resolve(42);
+});
+var p2 = Promise.resolve(42);
+// But if you pass a genuine Promise to Promise.resolve(..) , you just get the same promise back:
+var p1 = Promise.resolve(42);
+var p2 = Promise.resolve(p1);
+p1 === p2; // true
+
+// Promise.resolve(..) will accept any thenable, and will unwrap it to its non-thenable value. But you get back from Promise.resolve(..) a real, genuine Promise in its place, one that you can trust. If what you passed in is already a genuine Promise, you just get it right back, so there's no downside at all to filtering through Promise.resolve(..) to gain trust.
+
+// So let's say we're calling a foo(..) utility and we're not sure we can trust its return value to be a well-behaving Promise, but we know it's at least a thenable. Promise.resolve(..) will give us a trustable Promise wrapper to chain off of:
+// don't just do this:
+foo(42)
+    .then(function (v) {
+        console.log(v);
+    });
+// instead, do this:
+Promise.resolve(foo(42))
+    .then(function (v) {
+        console.log(v);
+    });
+
+// Note: Another beneficial side effect of wrapping Promise.resolve(..) around any function's return value (thenable or not) is that it's an easy way to normalize that function call into a well-behaving async task. If foo(42) returns an immediate value sometimes, or a Promise other times, Promise.resolve( foo(42) ) makes sure it's always a Promise result. And avoiding Zalgo makes for much better code.
+
+// Chain Flow
+
+// we can string multiple Promises together to represent a sequence of async steps. The key to making this work is built on two behaviors intrinsic to Promises:
+
+// Every time you call  then(..) on a Promise, it creates and returns a new Promise, which we can chain with.
+// Whatever value you return from the then(..) call's fulfillment callback (the first parameter) is automatically set as the fulfillment of the chained Promise (from the first point).
+
+var p = Promise.resolve(21);
+var p2 = p.then(function (v) {
+    console.log(v); // 21
+    // fulfill `p2` with value `42`
+    return v * 2;
+});
+// chain off `p2`
+p2.then(function (v) {
+
+    console.log(v); // 42
+});
+
+// But it's a little annoying to have to create an intermediate variable p2 (or p3 , etc.). Thankfully, we can easily just chain these together:
+var p = Promise.resolve(21);
+p
+    .then(function (v) {
+        console.log(v); // 21
+        // fulfill the chained promise with value `42`
+        return v * 2;
+    })
+    // here's the chained promise
+    .then(function (v) {
+        console.log(v); // 42
+    });
+// So now the first then(..) is the first step in an async sequence, and the second then(..) is the second step. This could keep going for as long as you needed it to extend. 
+
+// But there's something missing here. What if we want step 2 to wait for step 1 to do something asynchronous? We're using an immediate return statement, which immediately fulfills the chained promise. e.g. setTimeout(function () { return v * 2; }, 100);
+
+// so instead of setTimeout(function () { return v * 2; }, 100); we need to write return new Promise(function (resolve, reject) { setTimeout(function () { resolve (v * 2); }, 100);  });
 
 
+// That's incredibly powerful! Now we can construct a sequence of however many async steps we want, and each step can delay the next step (or not!), as necessary.
+
+// To further the chain illustration, let's generalize a delay-Promise creation (without resolution messages) into a utility we can reuse for multiple steps:
+function delay(time) {
+    return new Promise(function (resolve, reject) {
+        setTimeout(resolve, time);
+    });
+}
+delay(100) // step 1
+    .then(function STEP2() {
+        console.log("step 2
+            (after 100ms)" );
+return delay(200);
+    })
+    .then(function STEP3() {
+        console.log("step 3
+            (after another 200ms)" );
+})
+    .then(function STEP4() {
+        console.log("step 4
+            (next Job)" );
+return delay(50);
+    })
+    .then(function STEP5() {
+        console.log("step 5
+            (after another 50ms)" );
+})
+...
 
 
-
+// Let's review briefly the intrinsic behaviors of Promises that enable chaining flow control: A then(..) call against one Promise automatically produces a new Promise to return from the call.
+// Inside the fulfillment/rejection handlers, if you return a value or an exception is thrown, the new returned (chainable) Promise is resolved accordingly.
+// If the fulfillment or rejection handler returns a Promise, it is unwrapped, so that whatever its resolution is will become the resolution of the chained Promise returned from the current then(..).
 
 
 
