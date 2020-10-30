@@ -659,9 +659,9 @@ var p2 = Promise.reject("Oops");
 // then(..) takes one or two parameters, the first for the fulfillment callback, and the second for the rejection callback. If either is omitted or is otherwise passed as a non-function value, a default callback is substituted respectively. The default fulfillment callback simply passes the message along, while the default rejection callback simply rethrows (propagates) the error reason it receives.
 
 // catch(..) takes only the rejection callback as a parameter, and automatically substitutes the default fulfillment callback, as just discussed. In other words, it's equivalent to  then(null,..):
-p.then( fulfilled );
-p.then( fulfilled, rejected );
-p.catch( rejected ); // or `p.then( null, rejected )`
+p.then(fulfilled);
+p.then(fulfilled, rejected);
+p.catch(rejected); // or `p.then( null, rejected )`
 
 // then(..) and catch(..) also create and return a new promise, which can be used to express Promise chain flow control. If the fulfillment or rejection callbacks have an exception thrown, the returned promise is rejected. If either callback returnsan immediate, non-Promise, non-thenable value, that value is set as the fulfillment for the returned promise. If the fulfillment handler specifically returns a promise or thenable value, that value is unwrapped and becomes the resolution of the returned promise.
 
@@ -670,6 +670,140 @@ p.catch( rejected ); // or `p.then( null, rejected )`
 Single Value
 // Promises by definition only have a single fulfillment value or a single rejection reason. In simple examples, this isn't that big of a deal, but in more sophisticated scenarios, you may find this limiting. The typical advice is to construct a values wrapper (such as an object or array ) to contain these multiple messages. This solution works, but it can be quite awkward and tedious to wrap and unwrap your messages with every single step of your Promise chain.
 
+// Splitting Values
+// Sometimes you can take this as a signal that you could/should decompose the problem into two or more Promises.
+// Imagine you have a utility  foo(..) that produces two values (x and y ) asynchronously:
+function getY(x) {
+    return new Promise(function (resolve, reject) {
+        setTimeout(function () {
+            resolve((3 * x) - 1);
+        }, 100);
+    });
+}
+function foo(bar, baz) {
+    var x = bar * baz;
+}
+return getY(x)
+    .then(function (y) {
+        // wrap both values into container
+        return [x, y];
+    });
+foo(10, 20)
+    .then(function (msgs) {
+        var x = msgs[0];
+        var y = msgs[1];
+        console.log(x, y);
+    });
+// First, let's rearrange what foo(..) returns so that we don't have to wrap x and y into a single array value to transport through one Promise. Instead, we can wrap each value into its own promise:
+
+function foo(bar, baz) {
+    var x = bar * baz;
+}
+// return both promises
+return [
+    Promise.resolve(x),
+    getY(x)
+];
+Promise.all(
+    foo(10, 20)
+)
+    .then(function (msgs) {
+        var x = msgs[0];
+        var y = msgs[1];
+        console.log(x, y);
+    });
+
+// Is an array of promises really better than an array of values passed through a single promise? Syntactically, it's not much of an improvement.
+// But this approach more closely embraces the Promise design theory. It's now easier in the future to refactor to split the calculation of  x and y into separate functions.
+// It's cleaner and more flexible to let the calling code decide how to orchestrate the two promises -- using Promise.all([ .. ])
+
+// Unwrap/Spread Arguments
+// The var x = .. and var y = .. assignments are still awkward overhead. 
+
+// ES6 offers new tricks
+// The array destructuring assignment form looks like this:
+Promise.all(
+    foo(10, 20)
+)
+    .then(function (msgs) {
+        var [x, y] = msgs;
+        console.log(x, y);
+    });
+
+// the array parameter destructuring form:
+Promise.all(
+    foo(10, 20)
+)
+    .then(function ([x, y]) {
+        console.log(x, y);
+    });
+
+// Inertia
+// One concrete barrier to starting to use Promises in your own code is all the code that currently exists which is not already promise-aware. If you have lots of callback-based code, it's far easier to just keep coding in that same style.
+// "A code base in motion (with callbacks) will remain in motion (with callbacks) unless acted upon by a smart, Promises-aware developer."
+// Promises offer a different paradigm, and as such, the approach to the code can be anywhere from just a little different to, in some cases, radically different. You have to be intentional about it, because Promises will not just naturally shake out from the same ol' ways of doing code that have served you well thus far.
+
+
+/*********************************************************************************************************** */
+/*********************************************************************************************************** */
+/*********************************************************************************************************** */
+// Chapter 4: Generators
+// Generators help expressing async flow control in a sequential, synchronous-looking fashion.
+// A generator is a special kind of function that can start and stop one or more times, and doesn't necessarily ever have to finish.
+// A generator function is a special function with the new processing model 
+// Breaking Run-to-Completion
+var x = 1;
+function* foo() { // function* foo() can be used as well, the only difference being the stylistic positioning of the *
+    x++;
+    yield; // pause!
+    console.log("x:", x);
+}
+function bar() {
+    x++;
+}
+
+
+var it = foo(); // construct an iterator `it` to control the generator
+it.next();// start `foo()` here!
+x; //2
+bar();
+x;// 3
+it.next();// x: 3
+
+
+
+// 1. The it = foo() operation does not execute the *foo() generator yet, but it merely constructs an iterator that will control its execution. More on iterators in a bit.
+// 2. The first it.next() starts the *foo() generator, and runs the x++ on the first line of *foo()
+// 3. *foo() pauses at the yield statement, at which point that first it.next() call finishes. At the moment, *foo() is still running and active, but it's in a paused state.
+// 4. We inspect the value of x , and it's now 2 .
+// 5. We call bar() , which increments x again with x++ .
+// 6. We inspect the value of x again, and it's now 3 .
+// 7. The final it.next() call resumes the *foo() generator from where it was paused, and runs the console.log(..)statement, which uses the current value of x of 3 .
+
+// Clearly, foo() started, but did not run-to-completion -- it paused at the yield . We resumed foo() later.Add
+// Notice something very important but also easily confusing, there's a mismatch between the yield and the next(..) call. In general, you're going to have one more next(..) call than you have yield  statements -- the preceding  snippet has one yield and two  next(..) calls.
+
+
+// Multiple Iterators
+
+function* foo() {
+    var x = yield 2;
+    z++;
+    var y = yield (x * z);
+    console.log(x, y, z);
+}
+var z = 1;
+var it1 = foo();
+var it2 = foo();
+var val1 = it1.next().value;   // 2 <-- yield 2
+var val2 = it2.next().value;   // 2 <-- yield 2
+val1 = it1.next(val2 * 10).value; // 40 <-- x:20, z:2
+val2 = it2.next(val1 * 5).value;  // 600 <-- x:200, z:3
+it1.next(val2 / 2); // 20 300 3    y:300
+it2.next(val1 / 4); // 200 10 3    y:10
+
+
+// Generator'ing Values
 
 
 
@@ -683,17 +817,6 @@ Single Value
 
 
 
-
-
-
-
-
-
-
-
-
-
-/************************************************************************************************************************** */
-/************************************************************************************************************************** */
-/************************************************************************************************************************** */
-
+/*********************************************************************************************************** */
+/*********************************************************************************************************** */
+/*********************************************************************************************************** */
