@@ -784,6 +784,19 @@ it.next();// x: 3
 // Notice something very important but also easily confusing, there's a mismatch between the yield and the next(..) call. In general, you're going to have one more next(..) call than you have yield  statements -- the preceding  snippet has one yield and two  next(..) calls.
 
 
+// Mssages can go in both directions --  yield ..  as an expression can send out messages in response to next(..) calls, and next(..) can send values to a paused yield expression. Consider this slightly adjusted code:
+
+function* foo(x) {
+    var y = x * (yield "Hello"); // <-- yield a value!
+    return y;
+}
+var it = foo(6);
+var res = it.next(); // first `next()`, don't pass anything
+res.value; // "Hello"
+res = it.next(7); // pass `7` to waiting `yield`
+res.value; // 42
+
+
 // Multiple Iterators
 
 function* foo() {
@@ -805,7 +818,37 @@ it2.next(val1 / 4); // 200 10 3    y:10
 
 // Generator'ing Values
 
+var something = (function () {
+    var nextVal;
+    return {
+        // needed for `for..of` loops
+        [Symbol.iterator]: function () { return this; },
+        // standard iterator interface method
+        next: function () {
+            if (nextVal === undefined) {
+                nextVal = 1;
+            }
+            else {
+                nextVal = (3 * nextVal) + 6;
+            }
+        };
+    }) ();
+}
+    return { done: false, value: nextVal };
+something.next().value; // 1
+something.next().value; // 9
+something.next().value; // 33
 
+//This standard iterator can automatically be consumed with native loop syntax
+for (var v of something) {
+    console.log(v);
+    // don't let the loop run forever!
+    // Because our something iterator always returns done:false , otherwise this for..of loop would run forever, 
+    if (v > 500) {
+        break;
+    }
+}
+    // 1 9 33 105 321 969
 
 
 

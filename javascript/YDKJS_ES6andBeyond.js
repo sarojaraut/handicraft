@@ -109,7 +109,7 @@ console.log(a, b, c);  // 1 2 3
 console.log(x, y, z);  // 4 5 6
 
 // If the property name being matched is the same as the variable you want to declare, you can actually shorten the syntax:
-var { x, y, z } = bar(); 
+var { x, y, z } = bar();
 console.log(x, y, z); // 4 5 6
 
 // If you can write the shorter form, why would you ever write out the longer form? Because that longer form actually allows you to assign a property to a different variable name, which can sometimes be quite useful:
@@ -122,7 +122,7 @@ function bar() {
     };
 }
 
-var { x : y1, y : z1, z: x1 } = bar(); 
+var { x: y1, y: z1, z: x1 } = bar();
 console.log(x1, y1, z1); // 6 4 5
 
 // note value of x returned from bar is assigned to new variable y1 and so on surce => target or source : target or you can think of as  value: variable-alias
@@ -130,31 +130,108 @@ console.log(x1, y1, z1); // 6 4 5
 
 var X = 10, Y = 20;
 var o = { a: X, b: Y }; //  target < = source or target : source
-console.log( o.a, o.b );
+console.log(o.a, o.b);
 
 // With both array destructuring assignment and object destructuring assignment, you do not have to assign all the values that are present. For example:
 
-var [,b] = foo();
+var [, b] = foo();
 var { x, z } = bar();
-console.log( b, x, z );  // 2 4 6
+console.log(b, x, z);  // 2 4 6
 
 // The 1 and 3 values that came back from foo() are discarded, as is the 5 value from bar().
 
 // Similarly, if you try to assign more values than are present in the value you’re destructuring/decomposing, you get graceful fallback to undefined, as you’d expect:
-var [,,c,d] = foo();
+var [, , c, d] = foo();
 var { w, z } = bar();
-console.log( c, z );  // 3 6
-console.log( d, w );  // undefined undefined
+console.log(c, z);  // 3 6
+console.log(d, w);  // undefined undefined
 
-var a = [2,3,4];
+var a = [2, 3, 4];
 var [b, ...c] = a;
-console.log( b, c );  // 2 [3,4]
+console.log(b, c);  // 2 [3,4]
 
 // Both forms of destructuring can offer a default value option for an assignment
-var [ a = 3, b = 6, c = 9, d = 12 ] = foo();
+var [a = 3, b = 6, c = 9, d = 12] = foo();
 var { x = 5, y = 10, z = 15, w = 20 } = bar();
-console.log( a, b, c, d );  // 1 2 3 12
-console.log( x, y, z, w );  // 4 5 6 20
+console.log(a, b, c, d);  // 1 2 3 12
+console.log(x, y, z, w);  // 4 5 6 20
 
 // destructuring is great and can be very useful, but it’s also a sharp sword that used unwisely can end up injuring (someone’s brain).
+
+Nested Destructuring
+var a1 = [1, [2, 3, 4], 5];
+var o1 = { x: { y: { z: 6 } } };
+var [a, [b, c, d], e] = a1;
+var { x: { y: { z: w } } } = o1;
+console.log(a, b, c, d, e);// 1 2 3 4 5
+console.log(w);// 6
+
+// Nested destructuring can be a simple way to flatten out object namespaces. For example:
+var App = {
+    model: {
+        User: function () { .. }
+}
+};
+// instead of:
+// var User = App.model.User;
+var { model: { User } } = App;
+
+
+// Destructuring Parameters
+function foo([x, y]) {
+    console.log(x, y);
+}
+foo([1, 2]); // 1 2
+
+foo([1]);// 1 undefined
+
+foo([]);// undefined undefined
+
+Object destructuring for parameters works, too:
+    function foo({ x, y }) {
+        console.log(x, y);
+    }
+foo({ y: 1, x: 2 });// 2 1
+foo({ y: 42 });// undefined 42
+foo({});// undefined undefined
+
+// Of course, all the previously discussed variations of destructuring are available 
+function f1([x = 2, y = 3, z]) { ..}
+function f2([x, y, ...z], w) { ..}
+function f3([x, y, ...z], ...w) { ..}
+function f4({ x: X, y }) { ..}
+function f5({ x: X = 10, y = 20 }) { ..}
+function f6({ x = 10 } = {}, { y } = { y: 10 }) { ..}
+// Let’s take one example from this snippet and examine it, for illustration purposes:
+function f3([x, y, ...z], ...w) {
+    console.log(x, y, z, w);
+}
+f3([]); // undefined undefined [] []
+f3([1, 2, 3, 4], 5, 6);// 1 2 [3,4] [5,6]
+
+// Destructuring Defaults + Parameter Defaults
+function f6({ x = 10 } = {}, { y } = { y: 10 }) {
+    console.log(x, y);
+}
+f6();// 10 10
+f6( {}, {} );// 10 undefined
+
+//
+//Template Literals
+//
+
+var name = "Kyle";
+var greeting = `Hello ${name}!`;
+console.log( greeting );
+console.log( typeof greeting );
+// "Hello Kyle!"
+// "string"
+
+
+//
+//Interpolated Expressions
+//
+
+
+
 

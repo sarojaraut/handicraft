@@ -209,20 +209,10 @@ var b = (a > 41) ? "hello" : "world";
 ////////////////////////////////////////////////////////////////////////////////////////////
 /********************************** 2You Don't Know JS. Scope & Closures *****************/
 
-Hiding in Plain Scope
-The traditional way of thinking about functions is that you declare a
-function and then add code inside it.But the inverse thinking is equally
-powerful and useful: take any arbitrary section of code you’ve written
-and wrap a function declaration around it, which in effect “hides” the
-code.
+// Hiding in Plain Scope
+// The traditional way of thinking about functions is that you declare a function and then add code inside it.But the inverse thinking is equally powerful and useful: take any arbitrary section of code you’ve written and wrap a function declaration around it, which in effect “hides” the code.
 
-“hide” variables and functions by enclosing them in the scope of a
-function.
-
-Why would “hiding” variables and functions be a useful technique ?
-    There’s a variety of reasons motivating this scope - based hiding.They
-tend to arise from the software design principle Principle of Least
-Privilege 1, also sometimes called Least Authority or Least Exposure.
+// “hide” variables and functions by enclosing them in the scope of a function. Why would “hiding” variables and functions be a useful technique ? There’s a variety of reasons motivating this scope - based hiding.They tend to arise from the software design principle Principle of Least Privilege 1, also sometimes called Least Authority or Least Exposure.
 
 function doSomething(a) {
     b = a + doSomethingElse(a * 2);
@@ -234,15 +224,9 @@ function doSomethingElse(a) {
 var b;
 doSomething(2); // 15
 
-In this snippet, the b variable and the doSomethingElse(..) function
-    are likely “private” details of how doSomething(..) does its job.Giving
-the enclosing scope “access” to b and doSomethingElse(..) is not only
-unnecessary but also possibly “dangerous, ” in that they may be used
-    in unexpected ways,
+// In this snippet, the b variable and the doSomethingElse(..) function are likely “private” details of how doSomething(..) does its job.Giving the enclosing scope “access” to b and doSomethingElse(..) is not only unnecessary but also possibly “dangerous, ” in that they may be used in unexpected ways,
 
-        A more “proper” design
-would hide these private details inside the scope of doSometh
-ing(..), such as:
+// A more “proper” design would hide these private details inside the scope of doSomething(..), such as:
 
 function doSomething(a) {
     function doSomethingElse(a) {
@@ -253,17 +237,10 @@ function doSomething(a) {
     console.log(b * 3);
 }
 doSomething(2); // 15
-Now, b and doSomethingElse(..) are not accessible to any outside
-influence, instead controlled only by doSomething(..).The func‐
-tionality and end result has not been affected, but the design keeps
-private details private, which is usually considered better software.
+// Now, b and doSomethingElse(..) are not accessible to any outside influence, instead controlled only by doSomething(..).The functionality and end result has not been affected, but the design keeps private details private, which is usually considered better software.
 
-Collision Avoidance
-Another benefit of “hiding” variables and functions inside a scope is
-to avoid unintended collision between two different identifiers with
-the same name but different intended usages.Collision results often
-    in unexpected overwriting of values.
-For example:
+// Collision Avoidance
+// Another benefit of “hiding” variables and functions inside a scope is to avoid unintended collision between two different identifiers with the same name but different intended usages.Collision results often in unexpected overwriting of values. For example:
 function foo() {
     function bar(a) {
         i = 3; // changing the `i` in the enclosing scope's
@@ -276,23 +253,14 @@ function foo() {
 }
 foo();
 
-The i = 3 assignment inside of bar(..) overwrites, unexpectedly, the
-i that was declared in foo(..) at the for loop.In this case, it will result
-    in an infinite loop, because i is set to a fixed value of 3 and that will
-forever remain < 10.
+// The i = 3 assignment inside of bar(..) overwrites, unexpectedly, the i that was declared in foo(..) at the for loop.In this case, it will result in an infinite loop, because i is set to a fixed value of 3 and that will forever remain < 10.
 
-The assignment inside bar(..) needs to declare a local variable to use,
-    regardless of what identifier name is chosen.var i = 3;
+// The assignment inside bar(..) needs to declare a local variable to use, regardless of what identifier name is chosen.var i = 3;
 
-Global namespaces
-A particularly strong example of(likely) variable collision occurs in
-    the global scope.Multiple libraries loaded into your program can quite
-easily collide with each other if they don’t properly hide their internal /
-    private functions and variables.
-Such libraries typically will create a single variable declaration, often
-an object, with a sufficiently unique name, in the global scope.
+// Global namespaces
+// A particularly strong example of(likely) variable collision occurs in the global scope.Multiple libraries loaded into your program can quite easily collide with each other if they don’t properly hide their internal/private functions and variables. Such libraries typically will create a single variable declaration, often an object, with a sufficiently unique name, in the global scope.
 
-For example:
+// For example:
 var MyReallyCoolLibrary = {
     awesome: "stuff",
     doSomething: function () {
@@ -303,19 +271,12 @@ var MyReallyCoolLibrary = {
     }
 };
 
-Module management
-Another option for collision avoidance is the more modern module
-approach, using any of various dependency managers.Using these
-tools, no libraries ever add any identifiers to the global scope, but are
-instead required to have their identifier(s) be explicitly imported into
-another specific scope through usage of the dependency manager’s
-various mechanisms.
+// Module management
+// Another option for collision avoidance is the more modern module approach, using any of various dependency managers.Using these tools, no libraries ever add any identifiers to the global scope, but are instead required to have their identifier(s) be explicitly imported into another specific scope through usage of the dependency manager’s various mechanisms.
 
-Functions as Scopes
-We’ve seen that we can take any snippet of code and wrap a function
-    around it, and that effectively “hides” any enclosed variable or function
-    declarations from the outside scope inside that function’s inner scope.
-For example:
+// Functions as Scopes
+// We’ve seen that we can take any snippet of code and wrap a function around it, and that effectively “hides” any enclosed variable or function declarations from the outside scope inside that function’s inner scope.
+// For example:
 var a = 2;
 function foo() { // <-- insert this
     var a = 3;
@@ -323,15 +284,8 @@ function foo() { // <-- insert this
 } // <-- and this
 foo(); // <-- and this
 console.log(a); // 2
-While this technique works, it is not necessarily very ideal.There are
-a few problems it introduces.The first is that we have to declare a
-named - function foo() , which means that the identifier name foo itself
-“pollutes” the enclosing scope(global, in this case).We also have to
-explicitly call the function by name(foo()) so that the wrapped code
-actually executes.
-It would be more ideal if the function didn’t need a name(or, rather,
-    the name didn’t pollute the enclosing scope), and if the function could
-automatically be executed.
+
+// While this technique works, it is not necessarily very ideal.There are a few problems it introduces.The first is that we have to declare a named - function foo() , which means that the identifier name foo itself “pollutes” the enclosing scope(global, in this case).We also have to explicitly call the function by name(foo()) so that the wrapped code actually executes. It would be more ideal if the function didn’t need a name(or, rather, the name didn’t pollute the enclosing scope), and if the function could automatically be executed.
 
 var a = 2;
 (function foo() { // <-- insert this
@@ -340,47 +294,27 @@ var a = 2;
 })(); // <-- and this
 console.log(a); // 2
 
-First, notice that the wrapping function statement starts with (func
-tion...as opposed to just function... .While this may seem like a minor
-detail, it’s actually a major change.Instead of treating the function as
-a standard declaration, the function is treated as a function-
-    expression.
+// First, notice that the wrapping function statement starts with (function...as opposed to just function... .While this may seem like a minor detail, it’s actually a major change.Instead of treating the function as a standard declaration, the function is treated as a function-expression.
 
-        First, notice that the wrapping function statement starts with (func
-tion...as opposed to just function... .While this may seem like a minor
-detail, it’s actually a major change.Instead of treating the function as
-a standard declaration, the function is treated as a function-
-    expression.
+// First, notice that the wrapping function statement starts with (function...as opposed to just function... .While this may seem like a minor detail, it’s actually a major change.Instead of treating the function as a standard declaration, the function is treated as a function-expression.
 
-Anonymous Versus Named
-You are probably most familiar with function expressions as callback
-parameters, such as:
+// Anonymous Versus Named
+// You are probably most familiar with function expressions as callback parameters, such as:
 setTimeout(function () {
     console.log("I waited 1 second!");
 }, 1000);
-This is called an anonymous function expression, because function()
-...has no name identifier on it.Function expressions can be anony‐
-mous, but function declarations cannot omit the name
+// This is called an anonymous function expression, because function() ...has no name identifier on it.Function expressions can be anonymous, but function declarations cannot omit the name
 
-Anonymous function expressions are quick and easy to type, and
-many libraries and tools tend to encourage this idiomatic style of code.
-    However, they have several drawbacks to consider:
-1. Anonymous functions have no useful name to display in stack
-traces, which can make debugging more difficult.
-2. Without a name, if the function needs to refer to itself, for recur‐
-sion, etc., the deprecated arguments.callee reference is unfortu‐
-nately required.Another example of needing to self - reference is
-when an event handler function wants to unbind itself after it fires.
-3. Anonymous functions omit a name, which is often helpful in
-    providing more readable / understandable code.A descriptive
-name helps self - document the code in question.
+// Anonymous function expressions are quick and easy to type, and many libraries and tools tend to encourage this idiomatic style of code. However, they have several drawbacks to consider:
+// 1. Anonymous functions have no useful name to display in stack traces, which can make debugging more difficult.
+// 2. Without a name, if the function needs to refer to itself, for recursion, etc., the deprecated arguments.callee reference is unfortunately required.Another example of needing to self - reference is when an event handler function wants to unbind itself after it fires.
+// 3. Anonymous functions omit a name, which is often helpful in providing more readable / understandable code.A descriptive name helps self - document the code in question.
 
-The best practice is to always
-name your function expressions:
-    setTimeout(function timeoutHandler() { // <-- Look, I have a
-        // name!
-        console.log("I waited 1 second!");
-    }, 1000);
+// The best practice is to always name your function expressions:
+setTimeout(function timeoutHandler() { // <-- Look, I have a
+    // name!
+    console.log("I waited 1 second!");
+}, 1000);
 
 
 var a = 2;
@@ -389,28 +323,20 @@ var a = 2;
     console.log(a); // 3
 })();
 console.log(a); // 2
-There’s a slight variation on the traditional IIFE form, which some
-prefer: (function () { ..}()).Look closely to see the difference.In
-the first form, the function expression is wrapped in ( ), and then the
-invoking() pair is on the outside right after it.In the second form, the
-invoking() pair is moved to the inside of the outer() wrapping pair.
-These two forms are identical in functionality.It’s purely a stylistic
-choice which you prefer.
 
-Blocks as Scopes
-While functions are the most common unit of scope, and certainly the most widespread of the design approaches in the majority of JS in circulation, other units of scope are possible
+// There’s a slight variation on the traditional IIFE form, which some prefer: (function () { ..}()).Look closely to see the difference.In the first form, the function expression is wrapped in ( ), and then the invoking() pair is on the outside right after it.In the second form, the invoking() pair is moved to the inside of the outer() wrapping pair. These two forms are identical in functionality.It’s purely a stylistic choice which you prefer.
+
+// Blocks as Scopes
+// While functions are the most common unit of scope, and certainly the most widespread of the design approaches in the majority of JS in circulation, other units of scope are possible
 
 for (var i = 0; i < 10; i++) {
     console.log(i);
 }
-We declare the variable i directly inside the for loop head, most likely because our intent is to use i only within the context of that for loop, and essentially ignore the fact that the variable actually scopes itself to the enclosing scope(function or global).
+// We declare the variable directly inside the for loop head, most likely because our intent is to use i only within the context of that for loop, and essentially ignore the fact that the variable actually scopes itself to the enclosing scope(function or global). That’s what block - scoping is all about.Declaring variables as close as possible, as local as possible, to where they will be used.
 
-    That’s what block - scoping is all about.Declaring variables as close as possible, as local as possible, to where they will be used.
+// Fortunately, ES6 changes that, and introduces a new keyword let, which sits alongside var as another way to declare variables.The let keyword attaches the variable  declaration to the scope of whatever block(commonly a { .. } pair) it’s contained in.
 
-        Fortunately, ES6 changes that, and introduces a new keyword let, which sits alongside var as another way to declare variables.The let keyword attaches the variable declaration to the scope of whatever block(commonly a { .. } pair) it’s contained in.
-
-Declarations made with let will not hoist to the entire scope of the block they appear in.Such declarations will not observably “ex
-ist” in the block until the declaration statement.
+// Declarations made with let will not hoist to the entire scope of the block they appear in.Such declarations will not observably “exist” in the block until the declaration statement.
 {
     console.log(bar); // ReferenceError!
     let bar = 2;
@@ -430,10 +356,9 @@ btn.addEventListener("click", function click(evt) {
     console.log("button clicked");
 }, /*capturingPhase=*/false);
 
-The click function click handler callback doesn’t need the someReal lyBigData variable at all.That means, theoretically, after pro
-cess(..) runs, the big memory - heavy data structure could be garbage collected.However, it’s quite likely(though implementation dependent) that the JS engine will still have to keep the structure around, since the click function has a closure over the entire scope.
+// The click function click handler callback doesn’t need the someReal lyBigData variable at all.That means, theoretically, after pro cess(..) runs, the big memory - heavy data structure could be garbage collected.However, it’s quite likely(though implementation dependent) that the JS engine will still have to keep the structure around, since the click function has a closure over the entire scope.
 
-    Block - scoping can address this concern, making it clearer to the engine that it does not need to keep someReallyBigData around:
+// Block - scoping can address this concern, making it clearer to the engine that it does not need to keep someReallyBigData around:
 
 function process(data) {
     // do something interesting
