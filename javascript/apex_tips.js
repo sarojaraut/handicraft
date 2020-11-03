@@ -19,7 +19,7 @@ var o = {
 
 // https://skillbuilders.com/course/discovering-javascript-part-2/lessons/lesson-2-how-can-objects-be-used-in-applications/
 
-king = {
+let king = {
     empno: 7879,
     sal: 5000,
     [Symbol.toPrimitive](hint) {
@@ -32,7 +32,16 @@ king = {
 };
 
 console.log(king + 100);
-alert(king);
+// alert(king); // without the toPrimitive function this would displayed cryptic object representation
+
+let anotherUser = {
+    empno: 7879,
+    sal: 5000
+}
+
+console.log(king === anotherUser);
+console.log(king.equals(anotherUser));
+
 
 // How to Register a Listner
 
@@ -89,3 +98,81 @@ searchItem.addEventListner('keyup', apex.util.debounce(handleSearch, 200)); //su
 // multiple items hide and show : apex.item('P2_NAME')'.hide(); apex.item('P2_NAME')'.show(); instead of $('#P2_NAME')'.hide(); because apex item handles complx items like shuttle and list etc
 // you can add condition if $v('P2_NAME') === 'some val'
 //$('td').closet('thead') instead of parent.parent etc
+
+// sample code for updating database record
+// we will create a new object and add functions to that for various operations
+// this way we will not polute the global namespace
+// use alias for apex.server and apex.message , this is for dependency injection, if later we want to use similar compatible utility then most of our code remains the same and also useful for testing.
+
+var ourjs = {};
+
+ourjs.empUtil = {};
+(function (empUtil, message, server) {
+    "use strict"
+    // the wrapper showSuccess is needed just to in case we want to modify how the message is displayed
+    // so later instead of hunt down the code and finding all places where message.showPageSuccess is used 
+    // and chnage those we just need to make the changes in one place
+    empUtil.showSuccess = function (successMessage) {
+        message.showPageSuccess(successMessage);
+    }
+
+    empUtil.showError = function (errorMessage) {
+        message.clearErrors();
+        message.showErrors([{
+            type: "error",
+            location: ["page"],
+            message: errorMessage,
+            unsafe: false
+        }]);
+    }
+    empUtil.giveRise = function (empno, amount) {
+        return server.process('GIVE_RISE', {
+            X01: empno,
+            X02: amount
+        });
+    }
+})(sb.empUtil, apex.message, apex.server)
+
+//IEFE : Immediately invoked function expression : variables declared inside this can be never be accessed outside
+// add all the code in function and global variable declaration of apex page
+
+// now we need to create a plsql page process
+/*
+declare
+    l_empno            number;
+    l_amount           number;
+begin
+    l_empno := :APP_AJAX_X01;
+    l_amount:= :APP_AJAX_X02;
+    update emp
+    set sal = sal+ l_amount
+    where empno = l_empno;
+    apex_json.create_object;
+    apex_json.write('success', true);
+    apex_json.write('message', 'Emp Updated');
+    apex_json.close_all;
+
+exception
+    apex_json.create_object;
+    apex_json.write('success', false);
+    apex_json.write('message', 'Error during Emp Update');
+    apex_json.write('devMessage', sqlerrm);
+    apex_json.close_all;
+
+end;
+*/
+// dynamic action on butto click
+ourjs.empUtil.giveRise(
+    $v('P2_EMPNO'),
+    $v('P2_AMOUNT')
+).then(function (response) {
+    if (response.success) {
+        ourjs.empUtil.showSuccess(response.message);
+    } else {
+        ourjs.empUtil.showError(response.message);
+    }
+});
+
+// Module pattern
+// this way we just need to include one js file e.g main js
+// and main.js in turn has import {method} from './method.js'; and it can go on like spider web
