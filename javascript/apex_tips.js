@@ -3,19 +3,36 @@
 
 
 var o = {
-    "doSomething" : function (){}
+    "doSomething": function () { }
 };
 
 // you can skip the quotes
 var o = {
-    doSomething : function (){}
+    doSomething: function () { }
 };
 
 // you can skip the colon and function keyword
 var o = {
-    doSomething(){}
+    doSomething() { }
 };
 
+
+// https://skillbuilders.com/course/discovering-javascript-part-2/lessons/lesson-2-how-can-objects-be-used-in-applications/
+
+king = {
+    empno: 7879,
+    sal: 5000,
+    [Symbol.toPrimitive](hint) {
+        console.log(hint);
+        return hint == "string" ? `empno is ${this.empno}` : this.sal;
+    },
+    equals(employee) {
+        return this.empno === employee.empno
+    }
+};
+
+console.log(king + 100);
+alert(king);
 
 // How to Register a Listner
 
