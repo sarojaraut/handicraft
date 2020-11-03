@@ -1,4 +1,4 @@
-vs code extension quokka .js to run js in local machine
+// vs code extension quokka .js to run js in local machine
 //object
 
 
