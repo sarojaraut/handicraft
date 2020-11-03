@@ -214,7 +214,7 @@ function f6({ x = 10 } = {}, { y } = { y: 10 }) {
     console.log(x, y);
 }
 f6();// 10 10
-f6( {}, {} );// 10 undefined
+f6({}, {});// 10 undefined
 
 //
 //Template Literals
@@ -222,16 +222,93 @@ f6( {}, {} );// 10 undefined
 
 var name = "Kyle";
 var greeting = `Hello ${name}!`;
-console.log( greeting );
-console.log( typeof greeting );
+console.log(greeting);
+console.log(typeof greeting);
 // "Hello Kyle!"
 // "string"
+// any expressions of the form ${..}  in between `` are parsed and evaluated inline immediately. The fancy term for such parsing and evaluating is interpolation (much more accurate than templating).
+// typeof greeting == "string" illustrates why it’s important not to  think of these entities as special template values, since you cannot assign the unevaluated form of the literal to something and reuse it.
+// One really nice benefit of interpolated string literals is they are allowed to split across multiple lines:
 
+// Tagged Template Literals
 
-//
-//Interpolated Expressions
-//
+function foo(strings, ...values) {
+    console.log(strings);
+    console.log(values);
+}
+var desc = "awesome";
+foo`Everything is ${desc}!`; //a special kind of function call that doesn’t need the ( .. )
+// [ "Everything is ", "!"]
+// [ "awesome" ]
+// The first argument — we called it strings — is an array of all the plain strings (the stuff between any interpolated expressions). We get two values in the strings array:  "Everything is " and "!".
 
+// Arrow Functions
 
+function foo(x, y) {
+    return x + y;
+}
+// versus
+var foo = (x, y) => x + y;
+// The body only needs to be enclosed by { .. } if there’s more than one expression, or if the body consists of a non-expression statement. If there’s only one expression, and you omit the surrounding { .. }, there’s an implied return in front of the expression, as illustrated in the previous snippet.
 
+var a = [1, 2, 3, 4, 5];
+a = a.map(v => v * 2);
+console.log(a);
+// [2,4,6,8,10]
+// In those cases, where you have such inline function expressions, and they fit the pattern of computing a quick calculation in a single statement and returning that result, arrow functions indeed look to be an attractive and lightweight alternative to the more verbose function keyword and syntax.
 
+// Lexical this in the arrow function callback in the previous snippet now points to the same value as in the enclosing makeRequest(..) function. In other words, => is a syntactic stand-in for var self = this.
+
+// for..of Loops
+// Joining the for and for..in loops from the JavaScript we’re all familiar with, ES6 adds a for..of loop, which loops over the set of values produced by an iterator.
+
+var a = ["a", "b", "c", "d", "e"];
+for (var idx in a) {
+    console.log(idx);
+}
+// 0 1 2 3 4
+for (var val of a) {
+    console.log(val);
+}
+// "a" "b" "c" "d" "e"
+
+// Here’s the pre-ES6 version of the for..of from that previous snippet:
+var a = ["a", "b", "c", "d", "e"],
+    k = Object.keys(a);
+for (var val, i = 0; i < k.length; i++) {
+    val = a[k[i]];
+    console.log(val);
+}
+// "a" "b" "c" "d" "e"
+
+// Standard built-in values in JavaScript that are by default iterables (or provide them) include:
+
+// • arrays
+// • strings
+// • generators (see Chapter 3)
+// • collections / TypedArrays (see Chapter 5)
+
+// Number Literal Extensions
+
+var dec = 42,
+    oct = 0o52, // or `0O52` :(
+    hex = 0x2a, // or `0X2a` :/
+    bin = 0b101010; // or `0B101010` :/
+// The only decimal form allowed is base-10. Octal, hexadecimal, and binary are all integer forms.
+
+// Symbols
+// For the first time in quite awhile, a new primitive type has been added to JavaScript, in ES6: the symbol. Unlike the other primitive types, however, symbols don’t have a literal form.
+var sym = Symbol("some optional description");
+typeof sym;
+// "symbol"
+// Some things to note:
+// • You cannot and should not use new with Symbol(..). It’s not a constructor, nor are you producing an object.
+// • The parameter passed to Symbol(..) is optional. If passed, it should be a string that gives a friendly description for the symbol’s purpose.
+// • The typeof output is a new value ("symbol") that is the primary way to identify a symbol.
+
+// The main point of a symbol is to create a string-like value that can’t collide with any other value. So for example, consider using a symbol as a constant representing an event name:
+const EVT_LOGIN = Symbol("event.login");
+// You’d then use EVT_LOGIN in place of a generic string literal like "event.login":
+evthub.listen(EVT_LOGIN, function (data) {
+    // ..
+});
