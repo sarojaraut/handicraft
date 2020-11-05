@@ -176,3 +176,73 @@ ourjs.empUtil.giveRise(
 // Module pattern
 // this way we just need to include one js file e.g main js
 // and main.js in turn has import {method} from './method.js'; and it can go on like spider web
+
+// AJAX calls using apex.server.process
+
+apex.server.process('AJAX_PROCESS_NAME_CASE_SENSITIVE',
+    {
+        x01 : "test",
+        f01 : jsarray,
+        pageItems : "#P1_NAME","#P1_SAL"
+        // you can use any of the x01-x20, f01-f50 or pageItems if it's a page level process
+        // you can check how these variables can be access in your plsql block in package apex_application
+    },
+    {
+        loadingIndicator : "#P1_COMM,#P1_OTHER"
+        success : function(data){
+            //do success action
+            $s("P1_COMM", data.comm);
+        },
+        error : function(data){
+            //do error action
+        }
+    })
+
+// you can use apex_util.pause to inject slowness in your plsql code. 
+// AJAX process would be a plsql block using the page items passed or gx01 of gf0x variablles compute the output
+//apex_application.g_f01 or g_x01 etc
+// return the data in json object using apex_json under the hood  apex_json write to the http buffer you can achieve similar effect using htp.p as well
+// if you are not returning json then your ajsx response handling section you need to specify that dataType : "text" default is json
+//style="display:none" to hide one item when page loads
+//$("#COMM").show(200) or hide() the number 200 will just create a slide effect while showing
+
+// setTimeout( function(){$wp = apex.widget.waitPopup();},1} and remove the $wp in the .always section
+//referring documents : apex.oracle.com/api and apex.oracle.com/jsapi
+
+// $s sets an item value, $v retrieves it and $x determines whether an item with the given name exists on the current page.
+apex.item >
+    getValue()
+    setValue()
+    isChanged()
+    displayValueFor()
+    hide()
+    show()
+    enable()
+    disable()
+    setStyle({"background-color":"yellow", "font-weight":"bold"})
+
+
+$v( "P1_ENAME" )
+apex.item( "P1_ENAME" ).getValue()
+
+$s( "P1_ENAME", "SAROJ")
+apex.item( "P1_ENAME" ).setValue("SAROJ")
+
+apex.item( "P1_DEPTNO" ).getValue()
+apex.item( "P1_DEPTNO" ).displayValueFor("2")
+apex.item( "P1_DEPTNO" ).displayValueFor(apex.item( "P1_DEPTNO" ).getValue())
+$s( "P1_DEPTNO", "5")
+$v( "P1_DEPTNO" )
+apex.item( "P1_DEPTNO" ).hide()
+apex.item( "P1_DEPTNO" ).show()
+apex.item( "P1_DEPTNO" ).disable()
+$("#P1_DEPTNO" ).show()
+$("#P1_DEPTNO" ).hide()
+$( "#P1_DEPTNO" ).prop( "disabled", true );
+$( "#P1_DEPTNO" ).prop( "disabled", false );
+$( "#P1_DEPTNO" ).prop( "display", "inline" );
+$("#P1_ENAME" ).show()
+apex.item( "P1_DEPTNO" ).setStyle({"background-color":"yellow", "font-weight":"bold"})
+// to hide item when page loads : style="display=none" but this seems adding attribute at the outer most div
+// alternate option is add the java script to execute when page loads apex.item( "P1_DEPTNO" ).hide()
+// to supress da being fired on value change : apex.item( "P1_DEPTNO" ).setValue(4,null,true)
