@@ -50,3 +50,6 @@ ctrl + x : cut entire line
 ctrl + left right arrwo moves word wise
 
 Emmet Snippets : ul>li.item$*5 
+
+
+move block of code up and down : alt + arrow 

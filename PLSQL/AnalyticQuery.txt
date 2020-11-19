@@ -185,6 +185,39 @@ ORDER BY deptno, empno, HIRE_YR;
 
 ---------
 
+You should probably avoid FIRST and LAST in favour of the FIRST_VALUE and LAST_VALUE Analytic Functions, which follow the normal analytic function syntax. 
+FIRST_VALUE 
+  { (expr) [ {RESPECT | IGNORE} NULLS ]
+  | (expr [ {RESPECT | IGNORE} NULLS ])
+  }
+  OVER (analytic_clause)
+
+SELECT empno,
+       deptno,
+       sal,
+       FIRST_VALUE(sal) IGNORE NULLS 
+         OVER (PARTITION BY deptno ORDER BY sal) AS lowest_in_dept
+FROM   emp;
+
+     EMPNO     DEPTNO        SAL LOWEST_IN_DEPT
+---------- ---------- ---------- --------------
+      7934         10       1300           1300
+      7782         10       2450           1300
+      7839         10       5000           1300
+      7369         20        800            800
+      7876         20       1100            800
+      7566         20       2975            800
+      7788         20       3000            800
+      7902         20       3000            800
+      7900         30        950            950
+      7654         30       1250            950
+      7521         30       1250            950
+      7844         30       1500            950
+      7499         30       1600            950
+      7698         30       2850            950
+
+
+-------------
 SELECT empno, deptno, sal, AVG(sal) OVER (PARTITION BY deptno) AS avg_dept_sal FROM   emp;
 
 Defining the PARTITOIN BY and ORDER BY clauses on indexed columns (ordered in accordance with the PARTITION CLAUSE and then the ORDER BY clause in analytic function) will provide optimum performance. 

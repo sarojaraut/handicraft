@@ -1,76 +1,43 @@
-alter user hr identified by oracle account unlock;
-
-create user hr_staging identified by oracle;
-
-grant dba to hr_staging;
 
 
-alter user hr_staging identified by oracle;
+$s(P11_UCAS_PERSONAL_ID)           = '0000000000';
+$s(P11_EMAIL_ID)                   = 'Saroj.raut@gmail.com';
+$s(P11_DATE_OF_BIRTH)              = '1/1/2020';
+$s(P11_TITLE)                      = 'Mr';
+$s(P11_GIVEN_NAME)                 = 'Saroj';
+$s(P11_FAMILY_NAME)                = 'Raut';
+$s(P11_MOBILE)                     = '7777777777';
+$s(P11_LAND_LINE)                  = '020 333 4444';
+$s(P11_NATIONALITY)                = 'GBR';
+$s(P11_VISA_TYPE)                  = '';
+$s(P11_APPLIED_TO_UCAS)            = 'Y';
+$s(P11_APPLIED_TO_UNIGO)           = 'N';
+$s(P11_PREVIOUSLY_APPLIED_TO_CITY) = 'Y';
+$s(P11_PREVIOUS_UNI_STUDY)         = 'N';
+$s(P11_PREVIOUS_STUDY_NOTES)       = 'Saroj';
 
-create user hr_tgt identified by oracle;
+begin
+    apex_collection.CREATE_OR_TRUNCATE_COLLECTION ('CLRNG_APPLICANT');
 
-grant dba to hr_tgt;
-
-
-data server
-physical schema
-logical schema
-
-
-New model
-reverse engineer
-
-Challenges
-
-odi -clean -initialize
-
-Topology >
-physical architecture > Technologies > oracle >> create 
-1. new data server (jdbc connection and uid/pwd) 
-2. inside this data server create physical schema(name provided by odi data server.schema name, schema name and work schema name, work table prefixes (error tabe=E$_, loading=C$_ integration=I$_, Temp indexes=IX$_), journalising elements prefix(datastores=J$_, views=IV$_, triggers=T$_), naming rules(local object mask %schema.%object etc)
-
-logical architecture > Technologies > oracle >> create 
-1. logical schema and link physical schema for the contexts
-
-Designer
-models >
-create folder
-new model (Name, technology, logical schema, go to reverse engineer section and adjust the types of objects to be engineered and click on reverse engineer)
-
-now mappings can be created using the model objects
-
-in a mapping >
-overview section shows > executions, scenarios and versions etc
-logical tab > clicking on source shows > 1. attributes data columns and data type etc 2. general section shows : data store = modelname.objectname, logical schema name, physical schema name), constraints, connector points(input and output)
-logical tab > clicking on target shows > same as source with new section target(integration type)=control append, incremental update and slowly changing dimension)
-Physical tab > shows details about ODI implementation > 
-clicking on source data store > general, attributes, extract option(shows three sub tabs options, description, advanced) advanced tab shows extract knowledge module used
-staging data store > loading knowledge module (you can check/uncheck use default or change the default value for each step of knowledge module)
-loading knowldege module(LKM oracle to oracle(dblink) pull global has options 
-select_from_source_view
-use_staging_table
-add_driving_site_hint
-create_db_link
-source_access_db_link
-
-
-Integration knowledge module(IKM Oracle insert Global) has steps>
-create target table
-insert_hint=append parallel(default)
-select_hint
-truncate_target_table=false(default)
-constraints(disable/enable)=none(other options disable, enable, disable and enable)
-delete all=false
-indexes(disable/enable)=none(disable, enable, enable rebuild online, disable enable with rebuild)
-
-other similar IKMs are IKM Oracle mulit insert global, IKM SQL insert global
-
-difference with multi insert and standard insert IKM : insert hint step is missing in multi insert
-generic SQL IKM has many steps missing e.g disable enable constraints, index , hint
-
-
-
-
-
-
-
+    -- Create New Customer
+    if :P11_CUSTOMER_OPTIONS = 'NEW' then
+        apex_collection.add_member(
+            p_collection_name => 'CLRNG_APPLICANT',
+            p_c001            => :P11_UCAS_PERSONAL_ID
+            p_c002            => :P11_EMAIL_ID
+            p_c003            => :P11_TITLE
+            p_c004            => :P11_GIVEN_NAME
+            p_c005            => :P11_FAMILY_NAME
+            p_c006            => :P11_MOBILE
+            p_c007            => :P11_LAND_LINE
+            p_c008            => :P11_DATE_OF_BIRTH
+            p_c009            => :P11_NATIONALITY
+            p_c010            => :P11_VISA_TYPE
+            p_c011            => :P11_APPLIED_TO_UCAS
+            p_c012            => :P11_PREVIOUSLY_APPLIED_TO_CITY
+            p_c013            => :P11_PREVIOUS_UNI_STUDY
+            p_c014            => :P11_PREVIOUS_UNI_STUDY_NOTES
+        );
+    end if;
+end;
+/

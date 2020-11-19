@@ -244,4 +244,4 @@ select * from APEX_APPL_ACL_USER_ROLES;
 
 
 
-
+-- https://blogs.oracle.com/apex/custom-authentication-and-authorization-using-built-in-apex-access-control-a-how-to

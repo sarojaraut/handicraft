@@ -715,3 +715,4 @@ $('#productsIRR').on('click', 'img', function() {
 
 
 https://oracle.github.io/learning-library/developer-library/apex/intro-to-javascript/?lab=lab-4-working-dom-jquery
+
