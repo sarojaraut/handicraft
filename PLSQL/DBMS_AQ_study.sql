@@ -482,6 +482,42 @@ payload : Not interpreted by Oracle Database Advanced Queuing.
 msgid : System generated identification of the message. 
 
 
+TYPE DEQUEUE_OPTIONS_T IS RECORD (
+   consumer_name     VARCHAR2(30)    DEFAULT NULL,
+   dequeue_mode      BINARY_INTEGER  DEFAULT REMOVE,
+   navigation        BINARY_INTEGER  DEFAULT NEXT_MESSAGE,
+   visibility        BINARY_INTEGER  DEFAULT ON_COMMIT,
+   wait              BINARY_INTEGER  DEFAULT FOREVER,
+   msgid             RAW(16)         DEFAULT NULL,
+   correlation       VARCHAR2(128)   DEFAULT NULL,
+   deq_condition     VARCHAR2(4000)  DEFAULT NULL,
+   signature         aq$_sig_prop    DEFAULT NULL,
+   transformation    VARCHAR2(61)    DEFAULT NULL,
+   delivery_mode     PLS_INTEGER     DEFAULT PERSISTENT);
+
+consumer_name: Name of the consumer. Only those messages matching the consumer name are accessed. If a queue is not set up for multiple consumers, then this field should be set to NULL
+
+dequeue_mode : Specifies the locking behavior associated with the dequeue. Possible settings are:
+BROWSE: Read the message without acquiring any lock on the message. This specification is equivalent to a select statement.
+LOCKED: Read and obtain a write lock on the message. The lock lasts for the duration of the transaction. This setting is equivalent to a select for update statement.
+REMOVE: Read the message and delete it. This setting is the default. The message can be retained in the queue table based on the retention properties.
+REMOVE_NODATA: Mark the message as updated or deleted. The message can be retained in the queue table based on the retention properties.
+
+visibility : Specifies whether the new message is dequeued as part of the current transaction.The visibility parameter is ignored when using the BROWSE dequeue mode. Possible settings are:
+
+ON_COMMIT: The dequeue will be part of the current transaction. This setting is the default.
+IMMEDIATE: The dequeue operation is not part of the current transaction, but an autonomous transaction which commits at the end of the operation.
+
+
+
+
+
+
+
+
+
+
+
 Administrative Views Configuration
    DBA_QUEUE_TABLES
    DBA_QUEUES
@@ -509,3 +545,88 @@ DBMS_AQ– Run-time control
    Post, ...
 DBMS_TRANSFORM
    Create transformation  [between 2 queues of differing types]
+
+
+https://www.akadia.com/services/ora_advanced_queueing.html
+
+point to point model 
+publish subscribe model
+
+aq_administrator_role : for admin
+
+aq_user_role : for end user
+
+CREATE ROLE my_aq_user_role;
+
+GRANT CREATE SESSION, aq_user_role TO my_aq_user_role;
+
+EXEC DBMS_AQADM.GRANT_SYSTEM_PRIVILEGE(
+        privilege => 'ENQUEUE_ANY',
+        grantee => 'my_aq_user_role',
+        admin_option => FALSE);
+
+EXEC DBMS_AQADM.GRANT_SYSTEM_PRIVILEGE(
+        privilege => 'DEQUEUE_ANY',
+        grantee => 'my_aq_user_role',
+        admin_option => FALSE);
+
+Create message type : CREATE TYPE queue_message_type AS OBJECT
+grant execute on the object to aq user : GRANT EXECUTE ON queue_message_type TO my_aq_user_role;
+exec DBMS_AQADM.CREATE_QUEUE_TABLE( queue_table => 'queue_message_table', queue_payload_type => 'aqadm.queue_message_type');
+EXEC DBMS_AQADM.CREATE_QUEUE( queue_name => 'message_queue', queue_table => 'queue_message_table');
+EXEC DBMS_AQADM.START_QUEUE( queue_name => 'message_queue');
+
+CONNECT aquser/aquser;
+DECLARE
+    queue_options       DBMS_AQ.ENQUEUE_OPTIONS_T;
+    message_properties  DBMS_AQ.MESSAGE_PROPERTIES_T;
+    message_id          RAW(16);
+    my_message          aqadm.queue_message_type;
+BEGIN
+    my_message := aqadm.queue_message_type(
+            1,
+            'This is a sample message',
+            'This message has been posted on ' ||
+            TO_CHAR(SYSDATE,'DD.MM.YYYY HH24:MI:SS'));
+    DBMS_AQ.ENQUEUE(
+        queue_name => 'aqadm.message_queue',
+        enqueue_options => queue_options,
+        message_properties => message_properties,
+        payload => my_message,
+        msgid => message_id);
+    COMMIT;
+END;
+/
+
+There are a lot more features available such as message prioritisation, message grouping, rule-based subscription, message scheduling, message histories and many more
+
+
+Variations
+The ENQUEUE_OPTIONS_T, DEQUEUE_OPTIONS_T and MESSAGE_PROPERTIES_T types can be used to vary the way messages are enqueued and dequeued.
+
+ENQUEUE_OPTIONS_T IS RECORD (
+   visibility            BINARY_INTEGER  DEFAULT ON_COMMIT,
+   relative_msgid        RAW(16)         DEFAULT NULL,
+   sequence_deviation    BINARY_INTEGER  DEFAULT NULL,
+   transformation        VARCHAR2(60)    DEFAULT NULL);
+
+Troubleshooting : 
+Look for the entry in the DBA_QUEUE_SCHEDULES view and make sure that the status of the schedule is enabled. SCHEDULE_DISABLED must be set to 'N'. Check that it has a nonzero entry for JOBNO in table AQ$_SCHEDULES,
+
+To check if propagation is occurring, monitor the DBA_QUEUE_SCHEDULES view for the number of messages propagated (TOTAL_NUMBER).
+If propagation is not occurring, check the view for any errors. Also check the NEXT_RUN_DATE and NEXT_RUN_TIME in DBA_QUEUE_SCHEDULES to see if propagation is scheduled for a later time, perhaps due to errors or the way it is set up.
+
+Check if the database link to the destination database has been set up properly. Make sure that the queue owner can use the database link. You can do this with:
+
+select count(*) from table_name@dblink_name;
+
+Check for messages in the source queue with:
+
+select count (*) from AQ$<source_queue_table> 
+  where q_name = 'source_queue_name';
+Check for messages in the destination queue with:
+
+select count (*) from AQ$<destination_queue_table> 
+  where q_name = 'destination_queue_name';
+
+
