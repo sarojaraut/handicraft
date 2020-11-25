@@ -1,0 +1,38 @@
+<PurchaseOrder>
+    <Reference>ACABRIO-57PDT</Reference>
+    <Actions>
+        <Action>
+            <User>ACABRIO-57</User>
+        </Action>
+    </Actions>
+    <Rejection/>
+    <Requestor>A. Cabrio 57</Requestor>
+    <User>ACABRIO-57</User>
+    <CostCenter>A57</CostCenter>
+    <ShippingInstructions>
+        <name>A. Cabrio 57</name>
+        <Address>
+            <street>57 Sporting Green Centre, Science Club, building 57, Magdalen</street>
+            <city>SFO-57</city>
+            <state>CA</state>
+            <zipCode>99236</zipCode>
+            <country>United States of America</country>
+        </Address>
+        <telephone>269-57-4036</telephone>
+    </ShippingInstructions>
+    <SpecialInstructions>Priority Overnight</SpecialInstructions>
+    <LineItems>
+        <LineItem ItemNumber="1">
+            <Part Description="Face to Face: First Seven Years" UnitPrice="19.95">57</Part>
+            <Quantity>57</Quantity>
+        </LineItem>
+        <LineItem ItemNumber="2">
+            <Part Description="Runaway" UnitPrice="27.95">57</Part>
+            <Quantity>57</Quantity>
+        </LineItem>
+        <LineItem ItemNumber="3">
+            <Part Description="Founding Fathers: Men Who Shaped" UnitPrice="19.95">57</Part>
+            <Quantity>57</Quantity>
+        </LineItem>
+    </LineItems>
+</PurchaseOrder>

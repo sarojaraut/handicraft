@@ -1,3 +1,349 @@
+
+Data Dictionaries
+user_xml_tables
+
+xmlelement
+xmlattribute
+xmlforest 
+xmlagg
+
+
+Updating XML Content
+You can update XML content, replacing either the entire contents of a document or only particular parts of a document.
+
+Update using XMLQuery and copy $NEWXML := $XML modify(())
+xmlExists(
+        '$XML/PurchaseOrder[Reference=$REF]/LineItems/LineItem/Part[@Description=$OLDTITLE]'
+          passing 
+            object_value        as "XML",
+              'ACABRIO-100PDT'  as "REF",
+              'Runaway'         as "OLDTITLE"
+)
+
+Create a complete XML Index on the PURCHASEORDER table
+CREATE INDEX PURCHASEORDER_IDX on PURCHASEORDER (OBJECT_VALUE) indexType is xdb.xmlIndex
+
+
+--XMLAgg combines multiple XML fragments into a single document.
+select xmlagg(xmlelement("ROW", xmlforest(toy_id, toy_name, price, colour))).getClobVal() xdoc
+from   toys
+
+--Passing a cursor to XMLType will return the results of the query as a single XML document.
+select xmltype(cursor(select * from toys)).getClobVal() xdoc from dual
+Three ways of generating XML using plsql : 
+--1
+xmltype.create_xml(cursor)
+
+--2
+l_ctx := dbms_xmlgen.newContext(a_cursor); -- l_ctx  number; l_xml xmltype; a_cursor sys_refcursor
+l_xml := dbms_xmlgen.getxmltype(l_ctx);
+
+--3
+select xmlagg(value(a))
+into l_xml
+from table(xmlsequence(a_cursor)) a;
+
+
+
+cast( x as varchar2)
+treat(x as json)
+
+CREATE TABLE purchaseorder OF xmltype;
+-- finding count
+SELECT Count(*)
+FROM   purchaseorder p,
+XMLTABLE('for $r in /PurchaseOrder return $r' passing object_value) t; 
+--
+SELECT t.object_value.getclobval()
+FROM   purchaseorder t
+WHERE  rownum = 1;  
+--Accessing fragment of nodes of xml
+SELECT Xmlquery('/PurchaseOrder/Reference' passing object_value returning  content)
+FROM   purchaseorder
+WHERE  ROWNUM <= 1;
+<Reference>ACABRIO-57PDT</Reference>
+
+--Accessing text node value. without xmlcast it would return html. without as "p" clausse and $p in xpath it owuld return the same result
+SELECT xmlcast(xmlquery('$p/PurchaseOrder/Reference/text()' passing object_value AS "p" returning content) AS varchar2(30))
+FROM   purchaseorder
+WHERE  ROWNUM <=1;
+ACABRIO-57PDT
+
+--Searching an xml document:
+SELECT t.object_value.getclobval()
+FROM   purchaseorder t
+WHERE  xmlexists('/PurchaseOrder[Reference/text()=$REFERENCE]' passing object_value, 'ACABRIO-1PDT' AS "REFERENCE" ); 
+
+--You can use XMLTable to perform SQL operations on a set of nodes that match an XQuery expression. XMLTable breaks up an XML fragment contained in an XMLType instance, inserts the collection-element data into a new, virtual table, which you can then query using SQL — in a join expression,
+SELECT   reference,
+         Count(*)
+FROM     purchaseorder,
+         xmltable('/PurchaseOrder' passing object_value columns reference varchar2(32) path 'Reference', lineitem xmltype path 'LineItems/LineItem')
+         ,xmltable('LineItem' passing lineitem)
+WHERE    xmlexists('$p/PurchaseOrder' passing object_value AS "p")
+         AND ROWNUM <= 5
+GROUP BY reference
+ORDER BY reference;
+
+--XMLTABLE and XQuery (single predicate):
+SELECT t.object_value.getclobval()
+FROM   purchaseorder p,
+       XMLTABLE('for $r in /PurchaseOrder[Reference/text()=$REFERENCE] return $r' passing object_value, 'ACABRIO-1PDT' AS
+       "REFERENCE") t;  
+
+-- XMLTABLE and XQuery (multiple predicates):
+SELECT t.object_value.getclobval()
+FROM   purchaseorder p,
+       XMLTABLE(
+'for $r in /PurchaseOrder[CostCenter=$CC or Requestor=$REQUESTOR or count(LineItems/LineItem) > $QUANTITY]/Reference return $r'
+passing object_value, 'A1' AS "CC", 'A. Cabrio 10' AS "REQUESTOR", 0 AS
+"QUANTITY") t
+WHERE ROWNUM <= 5
+/ 
+
+--Constructing a new summary document from the documents that match the specified predicates:
+SELECT t.object_value.getclobval() 
+FROM   Purchaseorder p, 
+       XMLTable(
+         '<Summary>
+          {
+           for $r in /PurchaseOrder
+           return $r/Reference/text()
+          }
+          </Summary>' 
+          passing object_value
+       ) t
+WHERE  ROWNUM <= 5
+/
+
+--  Using XMLSerialize to format the XMLType and serialize it as a CLOB. Allows result to be viewed in products that do not support XMLType. XMLSerialize allows control over the layout of the serialized XML:
+SELECT XMLSERIALIZE(CONTENT COLUMN_VALUE AS CLOB INDENT SIZE=2) 
+FROM   Purchaseorder p, 
+       XMLTable(
+         '<Summary>
+          {
+           for $r in /PurchaseOrder
+           return $r/Reference
+          }
+          </Summary>' 
+          passing object_value
+       )
+WHERE  ROWNUM <= 5
+/
+
+-- Q9. Using XMLTable to create an in-line relational view from the documents that match the XQuery expression:
+SELECT * 
+FROM   Purchaseorder p, 
+       XMLTable( 
+        'for $r in /PurchaseOrder
+          for $l in $r/LineItems/LineItem
+          return 
+            <Result ItemNumber="{fn:data($l/@ItemNumber)}"> 
+                { 
+                  $r/Reference, 
+                  $r/Requestor, 
+                  $r/User, 
+                  $r/CostCenter, 
+                  $l/Quantity 
+                } 
+                <Description>{fn:data($l/Part/@Description)}</Description> 
+                <UnitPrice>{fn:data($l/Part/@UnitPrice)}</UnitPrice> 
+                <PartNumber>{$l/Part/text()}</PartNumber> 
+             </Result>' 
+             passing object_value
+             columns 
+             SEQUENCE      for ordinality, 
+             ITEM_NUMBER       NUMBER(3) path '@ItemNumber', 
+             REFERENCE     VARCHAR2( 30) path 'Reference', 
+             REQUESTOR     VARCHAR2(128) path 'Requestor', 
+             USERID        VARCHAR2( 10) path 'User', 
+             COSTCENTER    VARCHAR2(  4) path 'CostCenter', 
+             DESCRIPTION   VARCHAR2(256) path 'Description',  
+             PARTNO        VARCHAR2( 14) path 'PartNumber',  
+             QUANTITY       NUMBER(12,4) path 'Quantity',  
+             UNITPRICE      NUMBER(14,2) path 'UnitPrice'
+       )
+WHERE  ROWNUM <= 5 
+/
+
+-- Joining relational and XML tables using XQuery:
+
+SELECT requestor,
+       department_name
+FROM   hr.employees e,
+       hr.departments d,
+       purchaseorder p,
+       XMLTABLE( 'for $r in /PurchaseOrder where $r/Reference=$REFERENCE or $r/User=$EMAIL return $r' passing object_value, 'ACABRIO-1PDT' AS
+"REFERENCE", e.email AS "EMAIL" COLUMNS requestor path 'Requestor/text()' )
+WHERE  e.department_id = d.department_id
+       AND  ROWNUM <= 5
+/ 
+
+-- Creating a Master View, from elements that occur at most once per document:
+CREATE OR replace VIEW purchaseorder_master_view
+AS
+  SELECT m.*
+  FROM   purchaseorder p,
+    XMLTABLE ( '$p/PurchaseOrder' 
+      passing p.object_value AS "p" 
+      COLUMNS
+      reference          path 'Reference/text()', 
+      requestor          path 'Requestor/text()', 
+      userid             path 'User/text()', 
+      costcenter         path 'CostCenter/text()', 
+      ship_to_name       path 'ShippingInstructions/name/text()', 
+      ship_to_street     path 'ShippingInstructions/Address/street/text()',
+      instructions       path 'SpecialInstructions/text()' 
+) m
+/  
+
+-- Creating a Detail View, from the contents of the LineItem collection. LineItem can occur more than once is a document. The rows in this view can be joined with the rows in the previous view using REFERENCE, which is common to both views.
+
+CREATE OR replace VIEW purchaseorder_detail_view
+AS
+SELECT 
+  m.reference,
+  l.*
+FROM   purchaseorder p,
+  XMLTABLE ( '$p/PurchaseOrder' 
+    passing p.object_value AS "p" 
+    COLUMNS
+      reference path 'Reference/text()', 
+      lineitems xmltype path 'LineItems/LineItem' ) m,
+  XMLTABLE ( '$l/LineItem' 
+    passing m.lineitems AS "l" 
+    COLUMNS 
+      itemno      path '@ItemNumber',  --ItemNumber is an attribute of LineItem
+      description path 'Part/@Description', -- Description and UnitPrice are attribute of Part
+      partno      path 'Part/text()',
+      quantity    path 'Quantity', 
+      unitprice   path 'Part/@UnitPrice' ) l
+
+
+-- Generating XML data from DEPARTMENTS, HR.COUNTRIES c, HR.LOCATIONS relational tables:
+
+SELECT 
+  xmlelement ( "Department", 
+    xmlattributes( d.department_id as "DepartmentId"), 
+    xmlelement ("Name", d.department_name), 
+    xmlelement ( "Location", 
+      xmlforest ( 
+        street_address AS "Address", 
+        city           AS "City", 
+        state_province AS "State", 
+        postal_code    AS "Zip",
+        country_name   AS "Country" 
+      ) 
+    ), 
+    xmlelement ( "EmployeeList",
+      (
+        SELECT 
+          xmlagg ( 
+            xmlelement ( "Employee", 
+              xmlattributes ( e.employee_id AS "employeeNumber" ), 
+              xmlforest ( 
+                e.first_name AS "FirstName", 
+                e.last_name AS "LastName", 
+                e.email AS "EmailAddress", 
+                e.phone_number AS "Telephone", 
+                e.hire_date AS "StartDate", 
+                j.job_title AS "JobTitle", 
+                e.salary AS "Salary", 
+                m.first_name || ' '|| m.last_name AS "Manager" ),
+              xmlelement ( "Commission", e.commission_pct ) 
+            ) 
+          )
+        FROM   hr.employees e,
+          hr.employees m,
+          hr.jobs j
+        WHERE  e.department_id = d.department_id
+        AND    j.job_id = e.job_id
+        AND    m.employee_id = e.manager_id 
+      ) 
+    ) 
+  ).getclobval() AS xml
+FROM   hr.departments d,
+       hr.countries c,
+       hr.locations l
+WHERE  d.location_id = l.location_id
+AND    l.country_id = c.country_id
+AND    rownum < 3 
+/ 
+
+
+
+-- Create a complete XML Index on the PURCHASEORDER table
+
+CREATE INDEX PURCHASEORDER_IDX
+    on PURCHASEORDER (OBJECT_VALUE)
+    indexType is xdb.xmlIndex
+/
+
+-- Path-Subsetted XML Index
+
+DROP INDEX purchaseorder_idx
+/
+CREATE INDEX PURCHASEORDER_IDX
+    on PURCHASEORDER (OBJECT_VALUE)
+       indextype is XDB.XMLINDEX
+       parameters (
+        'paths (
+           include (
+              /PurchaseOrder/Reference
+              /PurchaseOrder/LineItems/LineItem/Part/* ))'
+       )
+/
+
+
+-- Let's first check the current state of the document:
+SELECT xmlquery(
+        '<POSummary lineItemCount="{count($XML/PurchaseOrder/LineItems/LineItem)}">{
+            $XML/PurchaseOrder/User,
+            $XML/PurchaseOrder/Requestor,
+            $XML/PurchaseOrder/LineItems/LineItem[2]
+          }
+          </POSummary>'
+        passing object_value AS "XML"
+        returning content 
+      ).getclobval() initial_state 
+FROM   PURCHASEORDER
+WHERE  xmlExists(
+        '$XML/PurchaseOrder[Reference=$REF]'
+          passing object_value AS "XML",
+                  'ACABRIO-100PDT' AS "REF"
+       )
+/
+
+
+--  Modifying the content of existing nodes using XQuery update:
+UPDATE PURCHASEORDER
+SET    object_value = XMLQuery
+                      (
+                        'copy $NEWXML := $XML modify (
+                          for $PO in $NEWXML/PurchaseOrder return (
+                                replace value of node $PO/User with $USERID,
+                                replace value of node $PO/Requestor with $FULLNAME,
+                                replace value of node $PO/LineItems/LineItem/Part[@Description=$OLDTITLE]/@Description with $NEWTITLE 
+                              )
+                        )
+                        return $NEWXML'
+                        passing  
+                        object_value       as "XML",
+                        'KCHUNG'           as "USERID",
+                        'Kelly Chung'      as "FULLNAME",
+                        'Runaway'          as "OLDTITLE",
+                        'Runaway[Updated]' as "NEWTITLE"
+                        returning content
+                      )
+WHERE xmlExists(
+        '$XML/PurchaseOrder[Reference=$REF]/LineItems/LineItem/Part[@Description=$OLDTITLE]'
+          passing 
+            object_value        as "XML",
+              'ACABRIO-100PDT'  as "REF",
+              'Runaway'         as "OLDTITLE"
+)
+/
+
 Creating a Table with an XMLType Column
 CREATE TABLE mytable1 (
   key_column VARCHAR2(10) PRIMARY KEY,
@@ -75,6 +421,18 @@ from   toys
 
 --Passing a cursor to XMLType will return the results of the query as a single XML document.
 select xmltype(cursor(select * from toys)).getClobVal() xdoc from dual
+Three ways of generating XML using plsql : 
+--1
+xmltype.create_xml(cursor)
+
+--2
+l_ctx := dbms_xmlgen.newContext(a_cursor); -- l_ctx  number; l_xml xmltype; a_cursor sys_refcursor
+l_xml := dbms_xmlgen.getxmltype(l_ctx);
+
+--3
+select xmlagg(value(a))
+into l_xml
+from table(xmlsequence(a_cursor)) a;
 
 <?xml version="1.0"?> <ROWSET> <ROW> <TOY_ID>1</TOY_ID> <TOY_NAME>Cheapasaurus Rex</TOY_NAME> <PRICE>.99</PRICE> <COLOUR>blue</COLOUR> </ROW> <ROW> <TOY_ID>2</TOY_ID> <TOY_NAME>Costsalottasaurs</TOY_NAME> <PRICE>99.99</PRICE> <COLOUR>green</COLOUR> </ROW> <ROW> <TOY_ID>3</TOY_ID> <TOY_NAME>Bluesaurus</TOY_NAME> <PRICE>21.99</PRICE> <COLOUR>blue</COLOUR> </ROW> </ROWSET>
 
@@ -82,6 +440,7 @@ select xmltype(cursor(select * from toys)).getClobVal() xdoc from dual
 select dbms_xmlgen.getxml('select * from toys') xdoc from dual
 
 -- Convert REF CURSOR to XML in 3 different way
+
 declare
   gc_date      date := sysdate;
   l_crsr sys_refcursor;
