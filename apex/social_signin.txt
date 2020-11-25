@@ -1,0 +1,58 @@
+Google
+https://console.developers.google.com/projectselector2/apis/dashboard?pli=1&supportedpurview=project
+
+login to Google’s Developers console.
+Create a project in order to enable the APIs you need to perform the OAuth2 login process. - OracleApexSocialSignIn
+After creation choose the project from the drop down next to googleAPIs
+Click the third link Credentials and then select to create an OAuth client ID credential.
+OAuth consent screen
+App Name : UKUniClearing
+
+https://sd2cgxnc6zom7sw-ourcompany.adb.uk-london-1.oraclecloudapps.com/ords/r/clrng/clearing82040/home?session=115677211860167
+
+https://apexea.oracle.com/pls/apex/apex_authentication.callback
+
+Client ID : 
+Secret : 
+
+ Shared Components -> Themes -> Universal Theme -> icons and setting Custom Library File URLs 
+https://kit.fontawesome.com/c5f00995f3.js
+
+Google oAuth setup 
+Using google developers console create project/link credentials and create client credential 
+authorised redirect uris = https://apex.oracle.com/pls/apex/apex_authentication.callback
+
+optionally we may add authorised javascript origin = https://apex.oracle.com and another authorised redirect uris = https://apex.oracle.co
+
+in Apex Shared Components 
+create web credential (name, Auth type - OAuth2 Client Credential Flow, client id and secret)
+Create new Auth schema (name, scheme type = social Sign-in, credential store = name created above, Auth provider=google/facebook/generic, scope=profile,email, username=email switch in session = enabled (under login processing section))
+
+add a new button to your login page and set action=redirect to page in this app. page no = 1 (home page), advanced request = APEX_AUTHENTICATION=GOOGLE (where GOOGLE(Case sensitive) is the name of new auth scheme created in above step)
+
+
+Actual Application URL
+https://sd2cgxnc6zom7sw-ourcompany.adb.uk-london-1.oraclecloudapps.com/ords/r/clrng/clearing82040/login?session=129156307424400
+
+Redirect URI to eb setup in Google Console
+https://sd2cgxnc6zom7sw-ourcompany.adb.uk-london-1.oraclecloudapps.com/ords/apex_authentication.callback
+
+Face Book login
+To enable Facebook login in your own app, you first have to create an app on Facebook. 
+Go to developers.facebook.com and click on get started and that will take you through the wizard of creating Application
+App ID: 700906214164266 App Name : UniClearingOCI
+App Domains : 
+https://sd2cgxnc6zom7sw-ourcompany.adb.uk-london-1.oraclecloudapps.com
+https://apex.oracle.com/
+
+app id
+app secret
+
+https://www.facebook.com/v2.10/dialog/outh
+
+Facebook login > settings 
+Valid oauth redirect uri = https://sd2cgxnc6zom7sw-ourcompany.adb.uk-london-1.oraclecloudapps.com/ords/apex_authentication.callback
+Deaaauthorize call back url = https://sd2cgxnc6zom7sw-ourcompany.adb.uk-london-1.oraclecloudapps.com/ords/r/clrng/clearing82040/login
+
+
+https://sd2cgxnc6zom7sw-ourcompany.adb.uk-london-1.oraclecloudapps.com/ords/r/clrng/apex_authentication.callback
