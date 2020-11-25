@@ -53,3 +53,19 @@ Emmet Snippets : ul>li.item$*5
 
 
 move block of code up and down : alt + arrow 
+
+side bar toggling ctrl + b 
+terminal : ctrl + `
+settings : ctrl + ,
+quick open : ctrl + p
+toggle through the opened files : ctrl + tab forward or ctrl + shift + tab backward
+opening file in split editor : ctrl + \
+find : ctrl + f 
+find and replace : ctrl + h and then ctrl + enter to replace all occurance
+just add the shift key to above two shortcuts and it will work as global find and global search replace
+command pallet : ctrl + shift + p 
+comment a line : ctrl + /
+moving to the end or begning of words : ctrl + right/left arrow
+selecting the entire word : ctrl + d same as double clicking on the word
+selecting all occurance of the same word rsors and give multiple cu: ctrl + shift + l 
+go to function definition : ctrl +

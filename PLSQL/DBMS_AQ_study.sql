@@ -168,6 +168,7 @@ create type student_o as object (
 CREATE TABLE students OF student_o 
 NESTED TABLE contacts STORE AS contacts 
 NESTED TABLE addresses STORE AS addresses;
+
 /*
 declare 
    l_student student_o;
