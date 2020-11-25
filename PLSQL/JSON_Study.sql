@@ -1,3 +1,110 @@
+Oracle 18c onwards json feature has been greatly 
+
+The Oracle default syntax for JSON is lax. In particular: it reflects the JavaScript
+syntax for object fields; the Boolean and null values are not case-sensitive; and it
+is more permissive with respect to numerals, whitespace, and escaping of Unicode
+characters.
+
+The default JSON syntax for Oracle Database is lax. Strict or lax syntax matters
+only for SQL/JSON conditions is json and is not json. All other SQL/JSON
+functions and conditions use lax syntax for interpreting input and strict syntax
+when returning output.
+
+
+CONSTRAINT ensure_json CHECK (po_document IS JSON (STRICT))
+
+You can query JSON data using a simple dot notation or, for more functionality, using
+SQL/JSON functions and conditions. 
+
+In its simplest form a path expression consists
+of one or more field names separated by periods (.). More complex path expressions
+can contain filters and array indexes.
+
+
+The return value for a dot-notation query is always a string (data type VARCHAR2)
+representing JSON data. The content of the string depends on the targeted JSON
+data, as follows:
+•
+If a single JSON value is targeted, then that value is the string content, whether it
+is a JSON scalar, object, or array.
+•
+If multiple JSON values are targeted, then the string content is a JSON array
+whose elements are those values.
+This behavior contrasts with that of SQL/JSON functions json_value and json_query,
+which you can use for more complex queries. They can return NULL or raise an error if
+the path expression you provide them does not match the queried JSON data. They
+accept optional clauses to specify the data type of the return value (RETURNING clause),
+whether or not to wrap multiple values as an array (wrapper clause), how to handle
+errors generally (ON ERROR clause), and how to handle missing JSON fields (ON EMPTY
+clause).
+
+
+dot notation field names are case sensitive 
+table aias is mandatory 
+and is json check constraint is amndatory in the table column
+po.po_document.LineItems[*] – All of the elements of array LineItems (* is a wildcard).
+po.po_document.LineItems[1] – The second element of array LineItems (array positions are zero-based).
+A simple dot-notation JSON query cannot return a value longer than 4K bytes. If the value surpasses this limit then SQL NULL is returned instead. To obtain the actual value, use SQL/JSON function json_query or json_value instead of dot notation, specifying an appropriate return type with a RETURNING clause.
+
+
+JSON Dot-Notation Query Compared With JSON_QUERY
+SELECT po.po_document.ShippingInstructions.Phone FROM j_purchaseorder po;
+SELECT json_query(po_document, '$.ShippingInstructions.Phone')
+FROM j_purchaseorder;
+
+SELECT po.po_document.ShippingInstructions.Phone.type FROM j_purchaseorder po;
+SELECT json_query(po_document, '$.ShippingInstructions.Phone.type' WITH WRAPPER)
+FROM j_purchaseorder;
+
+
+SQL/JSON Path Expression Syntax
+The optional filter expression can be present only when the path expression is used in SQL condition json_exists. No steps can follow the filter expression. (This is not allowed, for example: $.a?(@.b == 2).c.)
+An absolute simple path expression begins with a dollar sign ($), which represents the path-expression context item, that is, the JSON data to be matched.
+The dollar sign is followed by zero or more path steps. Each step can be an object step or an array step,
+An object step is a period (.), sometimes read as "dot", followed by an object field name (object property name) or an asterisk (*) wildcard, which stands for (the values of) all fields. 
+An array step is a left bracket ([) followed by either an asterisk (*) wildcard, which stands for all array elements, or one or more specific array indexes or range specifications separated by commas, followed by a right bracket (]). 
+A single function step is optional. If present, it is the last step of the path expression. It is a dot (.), followed by a SQL/JSON item method. 
+If an item method is applied to an array, it is in effect applied to each of the array elements. 
+
+The available item methods are : abs(),  ceiling(), date(), length(), lower(), upper(), timestamp()
+A filter expression (filter, for short) is a question mark (?) followed by a filter condition enclosed in parentheses (()). 
+Filter condition predicates can be joined with &&, ||, !, 
+A simple path expression is either an absolute simple path expression or a
+relative simple path expression. (The former begins with $; the latter begins with @.)
+
+$.friends[*].name – Value of field name of each object in an array that is the value of field friends of a context-item object.
+$.*[*].name – Field name values for each object in an array value of a field of a context-item object.
+$.friends[3, 8 to 10, 12] – The fourth, ninth through eleventh, and thirteenth elements of an array friends (field of a context-item object). The elements must be specified in ascending order
+$.friends[3].cars[0]?(@.year > 2014) – The first object of an array cars (field of an object that is the fourth element of an array friends), provided that the value of its field year is greater than 2014.
+
+$.friends[3]?(@.addresses.city == "San Francisco" && @.addresses.state == "Nevada") – Objects that are the fourth element of an array friends, provided that there is a match for an address with a city of "San Francisco" and there is a match for an address with a state of "Nevada".
+Note: The filter conditions in the conjunction do not necessarily apply to the same object — the filter tests for the existence of an object with city San Francisco and for the existence of an object with state Nevada. It does not test for the existence of an object with both city San Francisco and state Nevada.
+
+$.friends[3].addresses?(@.city == "San Francisco" && @.state == "Nevada") – An object that is the fourth element of array friends, provided that object has a match for city of "San Francisco" and a match for state of "Nevada". Unlike the preceding example, in this case the filter conditions in the conjunction, for fields city and state, apply to the same addresses object.
+
+The basic SQL/JSON path-expression syntax is relaxed to allow implicit array wrapping and unwrapping. This means that the object step [*].prop, which stands for the value of field prop of each element of a given array of objects, can be abbreviated as .prop, and the object step .prop, which looks as though it stands for the prop value of a single object, stands also for the prop value of each element of an array to which the object accessor is applied. Path expression $.Phone.number matches either a single phone object, selecting its number, or an array of phone objects, selecting the number of each.
+
+$.friends[0].name : equivalents are $.friends.name,  $[*].friends.name, $[*].friends[0].name
+
+RETURNING Clause for SQL/JSON Query Functions
+for json_value : VARCHAR2, NUMBER, DATE, TIMESTAMP
+for json_query : VARCHAR2
+later in 18c clob is added to both 
+
+WITH WRAPPER, WITHOUT WRAPPER , WITH CONDITIONAL WRAPPER 
+
+The optional error clause can take these forms:
+•  ERROR ON ERROR – Raise the error (no special handling).
+•  NULL ON ERROR – Return NULL instead of raising the error. Not available for json_exists.
+•  FALSE ON ERROR, TRUE ON ERROR  – Return false instead of raising the error. Available only for json_exists, for which it is the default.
+EMPTY OBJECT ON ERROR – Return an empty object ({}) instead of raising the error. Available only for json_query.
+EMPTY ARRAY ON ERROR – Return an empty array ([]) instead of raising the error. Available only for json_query.
+EMPTY ON ERROR – Same as EMPTY ARRAY ON ERROR. DEFAULT 'literal_return_value' ON ERROR – Return the specified value instead of raising the error. The value must be a constant at query compile time.
+
+
+
+
+
 
 with tmp as
 (
@@ -639,31 +746,57 @@ INSERT INTO j_purchaseorder
   VALUES (
     SYS_GUID(),
     SYSTIMESTAMP,
-    '{"PONumber"              : 1600,
-      "Reference"             : "ABULL-20140421",
-       "Requestor"            : "Alexis Bull",
-       "User"                 : "ABULL",
-       "CostCenter"           : "A50",
-       "ShippingInstructions" : {"name"   : "Alexis Bull",
-                                 "Address": {"street"   : "200 Sporting Green",
-                                              "city"    : "South San Francisco",
-                                              "state"   : "CA",
-                                              "zipCode" : 99236,
-                                              "country" : "United States of America"},
-                                 "Phone" : [{"type" : "Office", "number" : "909-555-7307"},
-                                            {"type" : "Mobile", "number" : "415-555-1234"}]},
-       "Special Instructions" : null,
-       "AllowPartialShipment" : true,
-       "LineItems" : [{"ItemNumber" : 1,
-                       "Part" : {"Description" : "One Magic Christmas",
-                                 "UnitPrice"   : 19.95,
-                                 "UPCCode"     : 13131092899},
-                       "Quantity" : 9.0},
-                      {"ItemNumber" : 2,
-                       "Part" : {"Description" : "Lethal Weapon",
-                                 "UnitPrice"   : 19.95,
-                                 "UPCCode"     : 85391628927},
-                       "Quantity" : 5.0}]}');
+    '   
+{
+    "PONumber": 1600,
+    "Reference": "ABULL-20140421",
+    "Requestor": "Alexis Bull",
+    "User": "ABULL",
+    "CostCenter": "A50",
+    "ShippingInstructions": {
+        "name": "Alexis Bull",
+        "Address": {
+            "street": "200 Sporting Green",
+            "city": "South San Francisco",
+            "state": "CA",
+            "zipCode": 99236,
+            "country": "United States of America"
+        },
+        "Phone": [
+            {
+                "type": "Office",
+                "number": "909-555-7307"
+            },
+            {
+                "type": "Mobile",
+                "number": "415-555-1234"
+            }
+        ]
+    },
+    "Special Instructions": null,
+    "AllowPartialShipment": true,
+    "LineItems": [
+        {
+            "ItemNumber": 1,
+            "Part": {
+                "Description": "One Magic Christmas",
+                "UnitPrice": 19.95,
+                "UPCCode": 13131092899
+            },
+            "Quantity": 9
+        },
+        {
+            "ItemNumber": 2,
+            "Part": {
+                "Description": "Lethal Weapon",
+                "UnitPrice": 19.95,
+                "UPCCode": 85391628927
+            },
+            "Quantity": 5
+        }
+    ]
+}
+');
 
 select j.PO_DOCUMENT.CostCenter, count(*)
 from J_PURCHASEORDER j
@@ -688,6 +821,74 @@ select j.PO_DOCUMENT.ShippingInstructions.Address
 from J_PURCHASEORDER j
 where j.PO_DOCUMENT."PONumber" = 450
 /
+
+with data as(
+select
+'{
+    "PONumber": 1600,
+    "Reference": "ABULL-20140421",
+    "Requestor": "Alexis Bull",
+    "User": "ABULL",
+    "CostCenter": "A50",
+    "ShippingInstructions": {
+        "name": "Alexis Bull",
+        "Address": {
+            "street": "200 Sporting Green",
+            "city": "South San Francisco",
+            "state": "CA",
+            "zipCode": 99236,
+            "country": "United States of America"
+        },
+        "Phone": [
+            {
+                "type": "Office",
+                "number": "909-555-7307"
+            },
+            {
+                "type": "Mobile",
+                "number": "415-555-1234"
+            }
+        ]
+    },
+    "Special Instructions": null,
+    "AllowPartialShipment": true,
+    "LineItems": [
+        {
+            "ItemNumber": 1,
+            "Part": {
+                "Description": "One Magic Christmas",
+                "UnitPrice": 19.95,
+                "UPCCode": 13131092899
+            },
+            "Quantity": 9
+        },
+        {
+            "ItemNumber": 2,
+            "Part": {
+                "Description": "Lethal Weapon",
+                "UnitPrice": 19.95,
+                "UPCCode": 85391628927
+            },
+            "Quantity": 5
+        }
+    ]
+}' val
+from dual
+),
+json_data as(
+select 
+    treat (jd.val as json) val
+from data jd
+)
+select 
+    jd.val.CostCenter
+    ,jd.val.ShippingInstructions.name name
+    ,jd.val.ShippingInstructions.Address address
+    ,jd.val.ShippingInstructions.Phone phone
+    ,jd.val.ShippingInstructions.Phone[0] phone0
+    ,jd.val.ShippingInstructions.Phone[0].type phone_type
+from json_data jd;
+
 
 -- The JSON_VALUE operator uses a JSON path expression to access a single scalar value.
 select JSON_VALUE(PO_DOCUMENT,'$.CostCenter'), count(*)
@@ -734,6 +935,64 @@ select JSON_QUERY(PO_DOCUMENT,'$.LineItems[0]' PRETTY)
 from J_PURCHASEORDER p
 where JSON_VALUE(PO_DOCUMENT ,'$.PONumber' returning NUMBER(10)) = 450
 /
+
+
+with json_data as(
+select
+'{
+    "PONumber": 1600,
+    "Reference": "ABULL-20140421",
+    "Requestor": "Alexis Bull",
+    "User": "ABULL",
+    "CostCenter": "A50",
+    "ShippingInstructions": {
+        "name": "Alexis Bull",
+        "Address": {
+            "street": "200 Sporting Green",
+            "city": "South San Francisco",
+            "state": "CA",
+            "zipCode": 99236,
+            "country": "United States of America"
+        },
+        "Phone": [
+            {
+                "type": "Office",
+                "number": "909-555-7307"
+            },
+            {
+                "type": "Mobile",
+                "number": "415-555-1234"
+            }
+        ]
+    },
+    "Special Instructions": null,
+    "AllowPartialShipment": true,
+    "LineItems": [
+        {
+            "ItemNumber": 1,
+            "Part": {
+                "Description": "One Magic Christmas",
+                "UnitPrice": 19.95,
+                "UPCCode": 13131092899
+            },
+            "Quantity": 9
+        },
+        {
+            "ItemNumber": 2,
+            "Part": {
+                "Description": "Lethal Weapon",
+                "UnitPrice": 19.95,
+                "UPCCode": 85391628927
+            },
+            "Quantity": 5
+        }
+    ]
+}' val
+from dual
+)
+select json_va
+from json_data jd;
+
 
 -- Relational access to JSON content using JSON_TABLE
 select M.*
