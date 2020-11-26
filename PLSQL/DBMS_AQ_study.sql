@@ -480,6 +480,7 @@ message_properties:
   https://docs.oracle.com/database/121/ARPLS/t_aq.htm#ARPLS71690
 payload : Not interpreted by Oracle Database Advanced Queuing. 
 msgid : System generated identification of the message. 
+exception_queue : Specifies the name of the queue into which the message is moved if it cannot be processed successfully.
 
 
 TYPE DEQUEUE_OPTIONS_T IS RECORD (
