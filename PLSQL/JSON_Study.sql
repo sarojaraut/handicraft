@@ -1,4 +1,54 @@
-Oracle 18c onwards json feature has been greatly 
+--------Quick Notes
+
+json_value, json_query, json_table, json_mergepatch, JSON_exists
+
+-- JSON Function-based Indexes
+create index dept_department_name_i on   
+  departments_json (   
+    json_value (   
+      department_data, '$.department'   
+        error on error  
+        null on empty  
+    )   
+  )
+-- JSON Search Index
+create search index dept_json_i on   
+  departments_json ( department_data )  
+  for json
+
+--   function based index is much better than full search index 
+
+-- JSON_exists enables you to find all the documents that contain a given attribute. This searches for documents that have hireDate within an employee object.
+select department_id   
+from   departments_json d  
+where  json_exists (  
+  department_data,   
+  '$.employees.hireDate'  
+)
+
+-- Creating a JSON search index with the parameters DATAGUIDE ON enables the JSON Data Guide. You can rebuild existing indexes if you want to add this.
+alter index dept_json_i   
+  rebuild parameters ( 'dataguide on' )
+
+-- With the data guide in place, you can expose scalar attributes as virtual columns.
+exec dbms_json.add_virtual_columns ( 'departments_json', 'department_data' );
+
+select column_name from user_tab_columns 
+where  table_name = 'DEPARTMENTS_JSON'
+
+COLUMN_NAME
+DEPARTMENT_ID
+DEPARTMENT_DATA
+DEPARTMENT_DATA$department
+
+-- DEPARTMENT_DATA$department is a virtual column. This returns values for the attributes $.department.
+select "DEPARTMENT_DATA$department" department_name  --The generated columns are case-sensitive.
+from   departments_json  
+where  department_id = 110
+
+https://livesql.oracle.com/apex/f?p=590:41:7364878818379:::41:P41_ID:173224373859411455791306432317875688393
+
+-----
 
 The Oracle default syntax for JSON is lax. In particular: it reflects the JavaScript
 syntax for object fields; the Boolean and null values are not case-sensitive; and it
