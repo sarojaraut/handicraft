@@ -1,6 +1,7 @@
 --------Quick Notes
 
-json_value, json_query, json_table, json_mergepatch, JSON_exists
+json_value, json_query, json_table, json_mergepatch, JSON_exists, json data guide 
+JSON_object, JSON_array, JSON_objectagg, and JSON_arrayagg
 
 -- JSON Function-based Indexes
 create index dept_department_name_i on   
