@@ -16,6 +16,14 @@ Number of rows processed is very high compared to number of rows returned : coul
 
 select disk_reads, sql_text from v$sqlarea
 
+alter table sales cache;
+alter system flush buffer_cache; -- only do it dev/test
+When a query with RESULT_CACHE hint is run, Oracle will see if the results of the query have already been executed, computed, and cached, and, if so, retrieve the data from the cache instead of querying the data blocks and computing the results again. Take the following important points into consideration before using this feature: useful only for SQL queries that are executed frequently and data does not change
+hint index (tab_name index_name)
+exists runs faster than in : exists return as soon as it find a single matching row as opposed to in which retrieves all rows
+
+
+
 -------------Quick Notes
 exec DBMS_SESSION.SET_IDENTIFIER('this is a test');
 exec DBMS_MONITOR.CLIENT_ID_TRACE_ENABLE('this is a test',true,true);
