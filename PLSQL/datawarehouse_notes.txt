@@ -175,6 +175,8 @@ Logical Modeling
 Physical Modeling
 
 
+
+
 SQL Performance Tuning
 SCD
 Degenerated Dimension Tables
