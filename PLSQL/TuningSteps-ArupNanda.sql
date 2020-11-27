@@ -1,3 +1,29 @@
+Genaral Guide lines
+
+Use global temporary tables for avoiding redo generation 
+use pipelined function for returning complex dataset 
+use plsql associative array for faster look up 
+identify plsql that needs to be pinned 
+use identity columns wherever possible 
+leverage plsql reslt cache 
+
+TK Prof takeaway
+parsing numbers are high : use bind variable or increase shared_pool_size
+parse elapsed time is high : may be problem with the number of open cursors
+disk reads are high : indexes are not being used or index absent
+query/current reads are high : indexes may be on lowe cardinality column, use histogram, poor join order etc 
+Number of rows processed is very high compared to number of rows returned : could be poorly written query or poor execution plan picked by optimiser because of lack of dbms_application_info
+
+select disk_reads, sql_text from v$sqlarea
+
+alter table sales cache;
+alter system flush buffer_cache; -- only do it dev/test
+When a query with RESULT_CACHE hint is run, Oracle will see if the results of the query have already been executed, computed, and cached, and, if so, retrieve the data from the cache instead of querying the data blocks and computing the results again. Take the following important points into consideration before using this feature: useful only for SQL queries that are executed frequently and data does not change
+hint index (tab_name index_name)
+exists runs faster than in : exists return as soon as it find a single matching row as opposed to in which retrieves all rows
+
+
+
 -------------Quick Notes
 exec DBMS_SESSION.SET_IDENTIFIER('this is a test');
 exec DBMS_MONITOR.CLIENT_ID_TRACE_ENABLE('this is a test',true,true);
@@ -34,6 +60,8 @@ and p.addr = s.paddr;
 SELECT trace_filename
 FROM   v$diag_trace_file
 WHERE  con_id = 3;
+
+select * from v$diag_info;
 
 SELECT p.tracefile
 FROM   v$session s
