@@ -18,12 +18,161 @@ The transaction grain corresponds to a measurement taken at a single instant. Th
 
 The periodic snapshot grain corresponds to a predefined span of time, often a financial reporting period.  The measured facts summarize activity during or at the end of the time span. The periodic snapshot grain carries a powerful guarantee that all of the reporting entities. even if there is no activity. The periodic snapshot is predictably dense, and applications can rely on combinations of keys always being present.
 
-https://www.kimballgroup.com/2008/11/fact-tables/#:~:text=Three%20Kinds%20of%20Fact%20Tables,are%20shown%20in%20Figure%201).
-
 The accumulating snapshot fact table corresponds to a predictable process that has a well-defined beginning and end. Order processing, claims processing, service call resolution and college admissions are typical candidates. The grain of an accumulating snapshot for order processing, for example, is usually the line item on the order. Accumulating snapshot records are revisited and overwritten as the process progresses through its steps from beginning to end. Accumulating snapshot fact tables generally are much smaller than the other two types because of this overwriting strategy. 
 
 
 
+-- SCD
+Very simply, there are 6 types of Slowly Changing Dimension that are commonly used, they are as follows:
+
+    Type 0 – Fixed Dimension
+        No changes allowed, dimension never changes
+    Type 1 – Overwrite,  No History
+        Update record directly, there is no record of historical values, only current state. Easy to follow, no maintenance cost or storage cost.
+    Type 2 – Row Versioning, add new row
+        Track changes as version records with current flag & active dates and other metadata
+    Type 3 – Previous Value column, add new column to store attributes current and old value 
+        Track change to a specific attribute, add a column to show the previous value, which is updated as further changes occur
+    Type 4 – History Table, mini dimension table for rapidly changing dimension 
+        Show current value in dimension table but track all changes in separate table
+        Frequently-used attributes in multi-million row dimension tables are also mini-dimension design candidates, even if they don’t change frequently.
+        The surrogate keys of both the base dimension and mini-dimension profile are captured as foreign keys in the fact table.
+    Type 5 – Hybrid SCD
+        Utilise techniques from SCD Types 1 and 4 to track change
+    Type 6 – Hybrid SCD
+        Utilise techniques from SCD Types 1, 2 and 3 to track change
+
+Historically it has been  type 1 (overwrite), type 2 (add a row), and type 3 (add a column). 
+
+Type 0: Retain Original
+
+With type 0, the dimension attribute value never changes, so facts are always grouped by this original value. Type 0 is appropriate for any attribute labeled “original,” such as a customer’s original credit score, or any durable identifiers. Type 0 also applies to most date dimension attributes.
+
+Type 4: Add Mini-Dimension
+
+The type 4 technique is used when a group of dimension attributes are split off into a separate mini-dimension. This approach is useful when dimension attribute values are relatively volatile. Frequently-used attributes in multi-million row dimension tables are also mini-dimension design candidates, even if they don’t change frequently. A surrogate key is assigned to each unique profile or combination of attribute values in the mini-dimension. The surrogate keys of both the base dimension and mini-dimension profile are captured as foreign keys in the fact table.
+
+Type 5: Add Mini-Dimension and Type 1 Outrigger          
+
+The type 5 technique builds on the type 4 mini-dimension by embedding a “current profile” mini-dimension key in the base dimension that’s overwritten as a type 1 attribute. This approach, called type 5 because 4 + 1 equals 5, allows the currently-assigned mini-dimension attribute values to be accessed along with the base dimension’s others without linking through a fact table. Logically, we typically represent the base dimension and current mini-dimension profile outrigger as a single table in the presentation layer.
+
+https://www.kimballgroup.com/2013/02/design-tip-152-slowly-changing-dimension-types-0-4-5-6-7/
+
+Dimension Table
+This is a table in a star schema of a data warehouse. Data warehouses are built using dimensional data models which consist of fact and dimension tables. The latter is used to describe dimensions. They contain dimension keys, values and attributes.
+
+
+
+Degenerated Dimension Tables
+Sometimes a dimension is deﬁned that has no content except for its primary key. For example, when an invoice has multiple line items, the line item fact rows inherit all the descriptive dimension foreign keys of the invoice, and the invoice is left with no unique content. But the invoice number remains a valid dimension key for fact tables at the line item level. This degenerate dimension is placed in the fact table with the explicit acknowledgment that there is no associated dimension table. Degenerate dimensions are most common with transaction and accumulating snapshot fact tables.
+
+degenerate dimensions are not physically implemented data structures. Degenerate dimension attributes exist in the fact table as a part of the primary key but have no corresponding dimension. Let’s look at the most common example of a degenerate dimension, the invoice.
+
+Junk Dimension Tables
+
+It is a single table with a combination of different and unrelated attributes to avoid having a large number of foreign keys in the fact table. They are often created to manage the foreign keys created by rapidly changing dimensions.
+
+Junk dimensions are used to reduce the number of dimensions in the dimensional model and reduce the number of columns in the fact table.  A junk dimension combines two or more related low cardinality flags into a single dimension. An example of this may be car color (red, black, blue, etc.) and body style (sedan, van, SUV, etc.) As you can see these are limited in number and, if created as single dimensions, the dimensions would be limited to a single attribute. In order to eliminate these small dimensions, we create a single “junk” dimension which cross joins all possible attributes into a single dimension which will be used in the fact table.
+
+Conformed Dimension- This is used in multiple locations. It helps in creating consistency so that the same can be maintained across the fact tables. Different tables can use the table across the fact table and it can help in creating different reports.
+
+
+Based on the frequency of data change below are the types of Dimension Tables:
+Unchanging or static dimension (UCD) : Dimensions values are static and will not change
+Rapidly changing Dimension (RCD) : Attribute values changes rapidly
+Slowly changing dimension (SCD) : Attribute values changes slowly over time. Based on the frequency of data change and history preservation, there are various slowly changing dimensions available.
+
+
+An ETL workflow is responsible for the extraction of data from the source systems, their cleaning, transformation, and loading into the target data warehouse. There are existing formal methods to model the schema of source systems or databases such as entity-relationship diagram (ERD).
+
+Destination data warehouse can follow well-accepted standard data models such as star schema and snowflake schema. 
+
+Currently, there are few approaches to model the ETL workflow. An ETL workflow can be modeled using (1) mapping expressions and guidelines, (2) conceptual constructs, (3) entity mapping, and (4) UML notations
+
+
+To build an ETL pipeline with batch processing, you need to:
+
+Create reference data: create a dataset that defines the set of permissible values your data may contain. For example, in a country data field, specify the list of country codes allowed.
+Extract data from different sources: the basis for the success of subsequent ETL steps is to extract data correctly. Take data from a range of sources, such as APIs, non/relational databases, XML, JSON, CSV files, and convert it into a single format for standardized processing.
+Validate data: Keep data that have values in the expected ranges and reject any that do not. For example, if you only want dates from the last year, reject any values older than 12 months. Analyze rejected records, on an on-going basis, to identify issues, correct the source data, and modify the extraction process to resolve the problem in future batches.
+Transform data: Remove duplicate data (cleaning), apply business rules, check data integrity (ensure that data has not been corrupted or lost), and create aggregates as necessary. For example, if you want to analyze revenue, you can summarize the dollar amount of invoices into a daily or monthly total. You need to program numerous functions to transform the data automatically. 
+Stage data: You do not typically load transformed data directly into the target data warehouse. Instead, data first enters a staging database which makes it easier to roll back if something goes wrong. At this point, you can also generate audit reports for regulatory compliance, or diagnose and repair data problems.
+Publish to your data warehouse: Load data to the target tables. Some data warehouses overwrite existing information whenever the ETL pipeline loads a new batch - this might happen daily, weekly, or monthly. In other cases, the ETL workflow can add data without overwriting, including a timestamp to indicate it is new. You must do this carefully to prevent the data warehouse from “exploding” due to disk space and performance limitations.
+
+Types of Data Warehouse Schema:
+
+Following are 3 chief types of multidimensional schemas each having its unique advantages.
+
+Star Schema
+Snowflake Schema
+galaxy schema 
+
+Star Schema in data warehouse, in which the center of the star can have one fact table and a number of associated dimension tables. It is known as star schema as its structure resembles a star. The Star Schema data model is the simplest type of Data Warehouse schema. It is also known as Star Join Schema and is optimized for querying large data sets.
+
+
+Characteristics of Star Schema:
+
+Every dimension in a star schema is represented with the only one-dimension table.
+The dimension table should contain the set of attributes.
+The dimension table is joined to the fact table using a foreign key
+The dimension table are not joined to each other
+Fact table would contain key and measure
+The Star schema is easy to understand and provides optimal disk usage.
+The dimension tables are not normalized. For instance, in the above figure, Country_ID does not have Country lookup table as an OLTP design would have.
+The schema is widely supported by BI Tools
+
+A Snowflake Schema is an extension of a Star Schema, and it adds additional dimensions. The dimension tables are normalized which splits data into additional tables.
+
+Characteristics of Snowflake Schema:
+
+The main benefit of the snowflake schema it uses smaller disk space.
+Easier to implement a dimension is added to the Schema
+Due to multiple tables query performance is reduced
+The primary challenge that you will face while using the snowflake Schema is that you need to perform more maintenance efforts because of the more lookup tables.
+
+
+Star Schema Vs Snowflake Schema: Key Differences
+Following is a key difference between Star Schema and Snowflake Schema:
+
+Star Schema	 : Snowflake Schema
+Hierarchies for the dimensions are stored in the dimensional table. : 	Hierarchies are divided into separate tables.
+It contains a fact table surrounded by dimension tables. :	One fact table surrounded by dimension table which are in turn surrounded by dimension table
+In a star schema, only single join creates the relationship between the fact table and any dimension tables. :	A snowflake schema requires many joins to fetch the data.
+Simple DB Design. :	Very Complex DB Design.
+Denormalized Data structure and query also run faster. :	Normalized Data Structure.
+High level of Data redundancy	 :Very low-level data redundancy
+Single Dimension table contains aggregated data. :	Data Split into different Dimension Tables.
+Cube processing is faster. :	Cube processing might be slow because of the complex join.
+Offers higher performing queries using Star Join Query Optimization. Tables may be connected with multiple dimensions.	The Snowflake schema is represented by centralized fact table which unlikely connected with multiple dimensions.
+
+
+What is a Galaxy Schema?
+A Galaxy Schema contains two fact table that share dimension tables between them. It is also called Fact Constellation Schema. The schema is viewed as a collection of stars hence the name Galaxy Schema.
+
+In Galaxy schema shares dimensions are called Conformed Dimensions.
+
+
+What is Dimension Table?
+
+Dimension table is a table which contain attributes of measurements stored in fact tables. This table consists of hierarchies, categories and logic that can be used to traverse in nodes.
+
+What is Fact Table?
+
+Fact table contains the measurement of business processes, and it contains foreign keys for the dimension tables. 
+Example – If the business process is storing pos system
+
+What is factless fact tables?
+
+A factless fact tables are the fact table which doesn’t contain numeric fact column in the fact table. It is essentially an intersection of dimensions (it contains nothing but dimensional keys).
+say an investment bank assigns a broker to each customer.  Each row in this factless fact table represents a bounded time period during which a broker was assigned to a particular customer. 
+
+What are the types of Dimensional Modeling?
+
+There are three types of Dimensional Modeling and they are as follows:
+
+Conceptual Modeling
+Logical Modeling
+Physical Modeling
 
 
 SQL Performance Tuning
@@ -36,3 +185,8 @@ Dynamic SQL & Bind Variables
 How you interact with Business Owners
 Data Migration
 
+EXECUTE IMMEDIATE l_sql INTO l_number USING p_job, p_deptno;
+
+--For a little extra clarity, the following test uses the 10053 trace output to show the query transformation that takes place.
+ALTER SESSION SET EVENTS '10053 trace name context forever';
+ALTER SESSION SET EVENTS '10053 trace name context off';
