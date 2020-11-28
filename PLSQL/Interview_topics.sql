@@ -58,4 +58,4 @@ select
 from json s)
 select * from decomposed_json;
 --
---
+--https://github.com/connormcd/misc-scripts/blob/master/office-hours/oh_conc1.sql
