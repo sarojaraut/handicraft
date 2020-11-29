@@ -9,6 +9,15 @@ set sqlformat json;
 -- Note : Not exactly SQL hint syntax
 select /*json*/ * from dept;
 
+
+sql /nolog
+set cloudconfig /home/saroj/sqlcl/Wallet_ourcompany.zip
+conn demo/Mo********@ourcompany_high
+
+
+
+alter user demo identified by Mo********;
+
 alias mysqlcl="sqlcl itsr/itsr@orclpdb1"
 alias cmsdev="sqlcl cms/cms@cmsdev"
 
