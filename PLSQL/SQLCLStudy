@@ -14,6 +14,7 @@ sql /nolog
 set cloudconfig /home/saroj/sqlcl/Wallet_ourcompany.zip
 conn demo/Mo********@ourcompany_high
 
+set cloudconfig /home/aarush/oracle/Wallet_ourcompany.zip
 
 
 alter user demo identified by Mo********;

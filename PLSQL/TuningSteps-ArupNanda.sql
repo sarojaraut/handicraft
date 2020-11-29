@@ -1,11 +1,48 @@
 Genaral Guide lines
 
-Use global temporary tables for avoiding redo generation 
+Choose proper table :
+  heap table : default use unless any compelling reason to use other 
+  partitioned table : for large data set, making use of partition pruning, easier data purge 
+  mv : for storing pre computed data 
+  choose appropriate pctfree for tables which are heavily updated with more data later
+  define fk where appropriate this gives usefull insight to optimiser along with data integrity
+  global temporary tables for avoiding redo generation 
+maximise data loading speed : make table as no logging and use append and append_values hint as appropriate 
+  ctas 
+efficient data removal : truncate table, alter table f_sales truncate partition p_2012;
+analyze table emp list chained rows;
+create table temp_emp
+as select *
+from emp
+where rowid in
+(select head_rowid from chained_rows where table_name = 'EMP');
+
+delete from emp
+where rowid in
+(select head_rowid from chained_rows where table_name = 'EMP');
+
+insert into emp select * from temp_emp;
+
+select count(*) from user_extents where segment_name='EMP';
+ALTER TABLE...SHRINK SPACE or truncate table 
+alter table emp enable row movement;
+alter table emp shrink space;
+alter table emp shrink space cascade; -- shrink space for index as well
+
+sometimes we need to enable/disble constraint for loading very large volume of data, make sure to create index separately in that case so that we can drop/disable constraint without loosing the index or rebuilding the index.
+compress indexes whereever applicable : create index cust_cidx1 on cust(last_name, first_name) compress 1; -- last_name are mostly repeated
+bitmap index on foreign key columns and may disable them during data loading
+faster index creation with no logging
+avoid accidental full table scan by applying any function on indexed column trunc or to_char or lower 
+
+
+
 use pipelined function for returning complex dataset 
 use plsql associative array for faster look up 
 identify plsql that needs to be pinned 
 use identity columns wherever possible 
 leverage plsql reslt cache 
+avoid not clause in sql wherever possible not might lead to unwanted fulltable scan 
 
 TK Prof takeaway
 parsing numbers are high : use bind variable or increase shared_pool_size
