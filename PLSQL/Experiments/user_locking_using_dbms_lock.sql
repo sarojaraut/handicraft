@@ -15,9 +15,10 @@ create table stock (
     close_ts   timestamp );
 
 create table trans (
-    trans_seq int,
-    stock_id  int,
-    trans_ts  timestamp);
+    trans_seq   int,
+    stock_id    int,
+    stock_price int,
+    trans_ts    timestamp);
 
 
 create or replace package stock_mgmt
@@ -53,17 +54,24 @@ is
         i_slow     int default 0
     ) is
         l_status varchar2(10);
+        l_price  int;
     begin
-        select status
-        into   l_status
+        select status, price
+        into   l_status, l_price
         from   stock
         where  id = i_stock_id;
 
         if l_status = 'OPEN' then
-            insert into trans
+            insert into trans(
+                trans_seq  
+                ,stock_id   
+                ,stock_price
+                ,trans_ts   
+            )
             values (
                 audit_seq.nextval,
                 i_stock_id,
+                l_price,
                 localtimestamp);
             dbms_session.sleep(i_slow);
             commit;

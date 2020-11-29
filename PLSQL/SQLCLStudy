@@ -15,6 +15,7 @@ set cloudconfig /home/saroj/sqlcl/Wallet_ourcompany.zip
 conn demo/Mo********@ourcompany_high
 
 
+
 alter user demo identified by Mo********;
 
 alias mysqlcl="sqlcl itsr/itsr@orclpdb1"
