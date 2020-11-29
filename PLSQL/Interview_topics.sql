@@ -32,6 +32,8 @@ WHERE  ora_err_tag$ = 'TEST_INSERT';
 
 --Partition 
 
+-- 3 DBMS_LOCK for 
+
 -- Misc with data as ( 
     select 'MONDAY' val 
     from dual)
