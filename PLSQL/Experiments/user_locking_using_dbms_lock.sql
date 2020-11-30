@@ -141,7 +141,7 @@ is
             timeout=>i_timeout,
             release_on_commit=>true);
 
-        if l_status not in (0,4) then
+        if l_status not in (0,4) then-- 0 success and 4 is already held
             raise_application_error(-20000,'Time out');
         end if;
     end;
