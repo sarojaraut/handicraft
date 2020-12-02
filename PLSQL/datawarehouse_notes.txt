@@ -52,9 +52,26 @@ Type 4: Add Mini-Dimension
 
 The type 4 technique is used when a group of dimension attributes are split off into a separate mini-dimension. This approach is useful when dimension attribute values are relatively volatile. Frequently-used attributes in multi-million row dimension tables are also mini-dimension design candidates, even if they don’t change frequently. A surrogate key is assigned to each unique profile or combination of attribute values in the mini-dimension. The surrogate keys of both the base dimension and mini-dimension profile are captured as foreign keys in the fact table.
 
+Customer dim split off into customer and customer profile, fact table contains customer key and customer profile key
+
 Type 5: Add Mini-Dimension and Type 1 Outrigger          
 
 The type 5 technique builds on the type 4 mini-dimension by embedding a “current profile” mini-dimension key in the base dimension that’s overwritten as a type 1 attribute. This approach, called type 5 because 4 + 1 equals 5, allows the currently-assigned mini-dimension attribute values to be accessed along with the base dimension’s others without linking through a fact table. Logically, we typically represent the base dimension and current mini-dimension profile outrigger as a single table in the presentation layer.
+
+Fact table contains customer key and customer profile key
+dimensions customer, customer_profile and customer_profile_current customer dimension holds key for customer_profile_key_current which gets overwritten every time profile changes, e.g. income level
+
+Type 6: Add Type 1 Attributes to Type 2 Dimension(2 + 3 + 2)
+
+Type 6 builds on the type 2 technique by also embedding current attributes in the dimension so that fact rows can be filtered or grouped by either the type 2 value in effect when the measurement occurred or the attribute’s current value. 
+
+product dimension with historic dept and current dept, start date, end date, is_active
+
+Type 7: Dual Type 1 and Type 2 Dimensions
+
+Type 7 delivers the same functionality as type 6, but it’s accomplished via dual keys instead of physically overwriting the current attributes with type 6.
+
+fact table (product key and durable product key), two dimension table product and current product(durable product key, current product name, current product department)
 
 https://www.kimballgroup.com/2013/02/design-tip-152-slowly-changing-dimension-types-0-4-5-6-7/
 
