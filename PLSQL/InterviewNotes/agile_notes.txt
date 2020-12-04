@@ -1,0 +1,227 @@
+
+SAFe: framework for scaling Agile
+Scaled Agile Framework (SAFe) empowers complex organizations to achieve the benefits of Lean-Agile software and systems development at scale.
+
+SAFe 5.0 is a significant update to the Framework that provides guidance on the seven core competencies that help an organization become a Lean Enterprise and achieve Business Agility.
+
+https://www.scaledagileframework.com/?_ga=2.190403746.829602061.1607005951-502753014.1607005951
+
+Enterprise Solution Delivery
+Lean Portfolio Management
+Agile Product Delivery
+Organizational Agility
+Team and Technical Agility
+Lean-Agile Leadership
+Continuous Learning Culture
+
+Lean-Agile Leadership
+Mindset awareness and openness to change
+Fixed mindset - Growth mindset
+I can either do it or can not - I like to try new things
+Failure is the limit of my abilities - I am inspired by success of others 
+I am either good at it or not - My effort and attitude determine my abilities 
+My abilities are unchanging - failure is an opportunity to grow
+I don't like to be challenged - Challenges help me grow
+I stick to what I know - Feedback is constructive
+
+Adopting a new mindset requires the belief that new abilities can be developed with effort. 
+
+#### Continuous Learning Culture
+Describes a set of values and practices that encourage individuals—and the enterprise as a whole— to continually increase knowledge, competence, performance, and innovation. This is achieved by becoming a learning organization, committing to relentless improvement, and promoting a culture of innovation.
+
+Learning Organization – Employees at every level are learning and growing so that the organization can transform and adapt to an ever-changing world. 
+Innovation Culture – Employees are encouraged and empowered to explore and implement creative ideas that enable future value delivery. 
+Relentless Improvement – Every part of the enterprise focuses on continuously improving its solutions, products, and processes.
+
+Problem Solving Culture In Lean, problem-solving is the driver for continuous improvement. It recognizes that a gap exists between the current state and the desired state, requiring an iterative process to achieve the target state.
+Iterative Plan-Do-Check-Adjust (PDCA) cycles, The entire process is repeated until the target state is achieved.
+
+Plan : state the problem, identify the root cause 
+Do : develop and implement improvement, verify change 
+Check : measure results, evaluate outcomes
+Adjust : adjust and establish standards, celebrate success 
+
+
+########Core agile
+Agile Manifesto
+
+We are uncovering better way of developing software and helping other do it, While there is a value in the items on the right, we value the items on the left more. 
+
+1. Individuals and interactions - over processes and tools : self-organization and motivation are important, as are interactions like co-location and pair programming
+2. Working software - over comprehensive documentation ; working software is more useful and welcome than just presenting documents to clients in meetings.
+3. Customer collaboration - over contract negotiation : requirements cannot be fully collected at the beginning of the software development cycle, therefore continuous customer or stakeholder involvement is very important.
+4. Responding to change - over following a plan : agile methods are focused on quick responses to change and continuous development. 
+
+
+The Twelve Principles of Agile Software
+
+1. Customer satisfaction by early and continuous delivery of valuable software : highest priority is to satisfy the customer through early and continuous delivery
+of valuable software.
+2. Welcome changing requirements, even in late development : 
+3. Working software is delivered frequently with a preference to the shorter timescale.(weeks rather than months) 
+4. Close, daily cooperation between business people and developers
+5. Build projects around motivated individuals. Give them the environment and support they need, and trust them to get the job done.
+6. Face-to-face conversation is the best form of communication (co-location)
+7. Working software is the principal measure of progress
+8. Sustainable development, able to maintain a constant pace
+9. Continuous attention to technical excellence and good design enhances agility.
+10. Simplicity�the art of maximizing the amount of work not done�is essential
+11. Best architectures, requirements, and designs emerge from self-organizing teams
+12. Regularly, the team reflects on how to become more effective, and adjusts accordingly
+
+Scrum
+Scrum is an iterative, incremental framework for project management. The word scrum refers to the daily stand-up meeting where the day�s immediate work is planned. The team members briefly summarize what was accomplished on the previous day and what will be accomplished on the coming day, and raise a flag if they are experiencing a problem. Problem resolution is done after the meeting. This meeting style keeps all members accountable for their work and gets individual problems resolved quickly.
+
+Work is done in time-boxed sprints that last approximately two to four weeks.
+individuals committed full time to one team , reduces multiplexing, context switching overhead and single minded
+
+Agile teams have two specialty roles (Figure 4). The Product Owner defines Stories (along with other team members) and prioritizes the team backlog to streamline the execution of program priorities, while also maintaining the conceptual and technical integrity of the Features or components the team is responsible for. The Scrum Master is a servant leader and coach for the team, instilling the agreed-to Agile process, removing impediments, and fostering an environment for high performance, continuous flow, and relentless improvement.
+
+story refinement and backlog prioritisation 
+assign a t-shirt size in terms of XS/S/M/L/XL 
+Retrospective 
+Scrum of scrum 
+Team velocity
+
+Peer Review and Pairing Peer review and pairing create built-in quality during development. Peer review provides feedback on another team member’s WIP  before release. When pairing, two or more team members work on the same item together. Both create and maintain quality because the work will contain knowledge, perspectives, and best practices from multiple members. They also raise and broaden the skillset for the entire team as teammates learn from each other. Teams often apply both practices, with some teams pairing frequently. Other teams use reviews for feedback and pair when addressing a challenging problem or performing an activity that requires diverse skills. Regardless of the approach, all artifacts are subject to multiple sets of eyes and perspectives before ever being accepted or released.
+
+Definition of Done Agreeing on a ‘Definition of Done’ (DoD) is a standard way to ensure that artifacts and larger increments of value can only be considered finished when they demonstrate the agreed level of quality and completeness. 
+Teams and ARTs use the DoD to ensure they agree on and follow a common set of practices when completing work. 
+
+For example, a few DoD conditions might be to: 
+Require work to be peer-reviewed 
+Show all quality tests passed successfully (ideally automated) 
+Ensure that all associated files have been checked-in and merged as needed 
+Ensure all versions have been generated and published 
+Update confleunce if needed 
+These agreements align teams around what quality means and how it is built into the solution.
+
+Automation Agile teams automate repetitive, manual tasks to increase speed and ensure they are performed accurately and consistently. Teams typically automate in two ways. They automate the processes that build, deploy, and release the solution. This process takes the teams’ raw artifacts (code, models, images, content, etc.), generates production versions as necessary, integrates them across teams and ARTs, and makes them available in a production environment. They automate the quality checks along this path to ensure standards are followed, artifacts meet quality levels (e.g., broken link and spelling checkers), etc.
+
+
+Delivery of high-quality working software to users on a fast and regular basis is a key goal of Agile software development. Oracle Application Express is a highly efficient rapid application development (RAD) environment. 
+
+
+Weakness : Sometimes I tend to focus too much on the details. Mainly when something/some work/concept is new to me. In the process of trying to ensure nothing left unturned I end up spending more time than needed. The technique I use is time boxing. 
+
+Lean-Agile Mindset The Lean-Agile Mindset is the combination of beliefs, assumptions, attitudes, and actions of SAFe leaders and practitioners who embrace the concepts of the Agile Manifesto and Lean thinking. It’s the personal, intellectual, and leadership foundation for adopting and applying SAFe principles and practices.
+
+Strength : My technical knowledge and passion and dedication to make things perfect. Also I am very diciplined and dedicated to what I do. 
+
+Foundation of lean agile leadership :  leaders apply lean thinking as a basis of decision making, model the lean agile mindset in daily activities and teach it to others. 
+
+Restpect for people and culture 
+    genarate a culture 
+    yout customer is whoever consumes your work
+    build longterm partnership based on trust 
+    to change the culture you need to change the culture 
+
+Flow
+    move from project to product
+    understand exploit and manage variability
+    build in quality
+    optimize sustainable value delivery
+
+Innovation
+    experimentation and feedback 
+    time ans space for innovation 
+    Temporary and limited suspension of norms, policies, and systems (within legal, ethical, and safety boundaries) to challenge existing assumptions and explore what’s possible
+    Provide platforms and Communities of Practice (CoPs) that create the opportunity for ongoing conversations across the organization
+    Thomas Edison famously said, “I have not failed. I’ve just found 10,000 ways that won’t work.” In the scientific method, experiments don’t fail; they simply produce the data needed to accept or reject a hypothesis. Many companies don’t innovate sufficiently due to a culture that includes fear of failure. Such fear cripples innovation.
+
+
+Relentness Improvement
+    constant sense of danger 
+    problem solving culture
+    reflect at key milestones : 
+        SAFe encourages retrospectives at iteration boundaries at a minimum and in real-time when possible.
+        Improvement activities are often deferred in favor of ‘more urgent’ work such as new feature development, fixing defects, and responding to the latest outage.
+
+    optimize the whole
+    every employee at all times to have a mindset of continuous improvement.
+
+
+Agile Manifesto - APEX
+1. Individuals and interactions - over processes and tools : self-organization and motivation are important, as are interactions like co-location and pair programming
+
+APEX wizards are one of the chief tools that support an individual developer. There are wizards that help you create most of the artifacts in APEX.
+APEX�s Team Development module supports team collaboration. Team Development provides a
+light but rich framework that allows a skilled, motivated, and trusted team to self-organize. The feedback
+mechanism, features, to-dos, bugs, and milestones are used in concert by the team to efficiently and
+effectively communicate among themselves and outside stakeholders.
+
+2. Working software - over comprehensive documentation ; working software is more useful and welcome than just presenting documents to clients in meetings.
+
+Software developers produce working software; that is our primary job. Everything else merely supports the primary purpose and must be looked at as overhead. The overhead is always necessary, but it must be ruthlessly minimized and must never, ever become an end in itself.
+
+APEX�s declarative environment is the tool�s main mechanism for producing working software. Most of the underlying tough coding is taken care of by the APEX engine. The APEX engine does an excellent job of making these database actions safe, quick, and reliable.
+
+3. Customer collaboration - over contract negotiation
+
+APEX delivers working software to the customer quickly. This enables the customer to start working
+with the product to test, debug, and evaluate the requirements.
+The feedback mechanism that is built into the APEX Team Development module is an ideal
+collaboration tool. It enables the customer to provide immediate and useful comments to the
+development team from within the context of the application.
+
+4. Responding to change - over following a plan : agile methods are focused on quick responses to change and continuous development. 
+
+Change is a fact of life, and software development is no exception. Agile software development deals with change by expecting it and planning for it. It does this by putting working software into the customer�s hands as quickly as possible so that the team can iterate, multiple times if required, through these stages:
+1. Design
+2. Build
+3. Evaluate
+
+How does APEX support responding to change and building a plan? First, APEX is an efficient rapid application development (RAD) environment. A RAD environment enables you to quickly build the initial version of the application. This environment also enables you to quickly delete a page and then re-create it.
+
+12 Principles
+
+Continuous Attention to Technical Excellence APEX is a tool. It can be used well, or it can be abused. Learning to use APEX well involves two fundamental steps that are true for any tool:
+
+�Simplicity� is one of the key principles of Agile software development. Using the core APEX framework exclusively is an elegant way of applying the Agile principle of �simplicity� to your development environment.
+
+Web pages are the fundamental building blocks of an APEX application. They are containers that hold regions, buttons, items, business logic, and navigation links.
+Pages - Blank page, report (interactive and classic), Form (on a table, on a procedure, Master detail form, tabular form, form on a web service, form on a table with report, form on a sql query), chart page, map page, calender, wizard page, data loading page, tree page, feedback page, login page, access control page
+Regions - HTML, report  region, form region plug-ins, chart, map, tree, calender, breadcrumb, plsql dynamic content, help text, region display selector.
+Button - 1. Button in a region position 2. Button in displayed among region items(button position = region body).
+Items : check box, text field, display only, radio button, text area, date picker, selectlist, file browse, display image, pop up LOV, shuttle, text field with auto complete.
+computation : Computations are used to assign value to pages items (on the current page or another page or application level item). Computations are fired when a page is either rendered or submitted.
+Processes : Processes are used to run business code on a page. PLSQL, web services, reset pagination, session state, data manipulation (automatic row fetch, automatic row processing), close pop-up window.
+Dynamic Actions :
+Validations : Validations pevent bad data to be entered into the system and returns a meaning full message to fix the corrupt data. Item level validation and page level validation. 
+Page item validation > not null, string comparison, regular expression, sql and plsql. 
+Page validation > sql, plsql, function returning boolean, function returning error text. 
+Branches > control navigation to different pages.
+Application > websheet, database, 
+
+Business Cases for Enhanced APEX
+Organizations often brand themselves. The appearance of their web pages is extremely important to them. APEX utilizes a theme/template model that uses Hyper Text Markup Language (HTML) and Cascading Style Sheets (CSS). HTML is used to define the content of an APEX web page, while CSS controls how it looks. Enhancing an existing theme or developing your own requires knowledge of HTML and CSS, together with a good understanding of how APEX builds its themes and templates.
+
+Reporting
+Core APEX does not have a built-in high-fidelity reporting engine. In this case, APEX developers are forced to look for solutions that are external to APEX.
+
+APEX can be used as a mockup tool. The attractive advantage of this strategy is the fact that the resulting mockup is very close to a working prototype that can quickly evolve into the first version of the application;
+
+Authentication
+Authentication controls who is allowed to log on to an APEX application. APEX supports a number of authentication schemes: APEX accounts, database accounts, custom, LDAP, HTTP header variables, No authentication, open door credentials
+Authorization
+Authorization controls a user�s access to various parts of an application after the user logs on to your application. Authorization involves assigning roles to user groups and then writing a suite of PL/SQL boolean functions that are called from the APEX object you want to control. 
+Session-State Protection : Session-state protection is important for defending your APEX application from unauthorized hackers.
+Three common security vectors are
+� URL tampering
+� Cross-site scripting
+� SQL injection
+Session-state protection adds a checksum to the URL that prevents hackers from manually changing a page number in a URL from an authorized page to an unauthorized page.
+
+Cross-site scripting is done by injecting JavaScript into a web page. This can be done by entering malicious code into a comment item and saving it to the database. When the rogue comment data is returned from the database to the browser, the browser happily executes the JavaScript. The wizards in APEX 4.x now do a lot to protect programmers from this danger by automatically selecting items that �escape� data that is sent to the browser. For example, setting a report column to �Display as Text
+(escape special characters, does not save state)� explicitly stops JavaScript code in the column from being executed by the browser.
+
+SQL injection is similar to cross-site scripting. Instead of malicious JavaScript being injected into a web page, malicious SQL is sent to the database and then returns unauthorized data to the browser. In most areas of APEX, this is not a problem because the standard way of building SQL statements in APEX uses bind variables.
+
+Agile documentation can take many forms, the key factors being that it must add value and it must not cost more to produce than that value. Do as little as possible, as efficiently as possible, as late as possible.
+
+It is essential to record information that is not otherwise known that is critical to the end goal of working software. If how to use a particular page of your APEX application is not intuitively obvious, communication of how to use that interface must be provided. This communication may be made in one or more of several forms: as an online help page, online tooltips on page items, an online how-to video, an online step-by-step how-to document.
+
+Short, concise, active sentences are easy to read, easy to understand, and easy to write. Yes, even developers can learn to write short, clear, direct, complete sentences to communicate. Pseudo-code is for code; complete sentences are for documentation. Keep the purpose and the audience of the document in mind, and provide no more and no less information than necessary. In writing documentation, you are not creating a novel; you are communicating facts about your software. Write just enough, and then stop.
+
+Quality Assurance : Delivery of high-quality working software on a fast and regular basis is the goal of Agile software development. 
+
