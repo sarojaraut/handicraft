@@ -1,0 +1,98 @@
+####Tell me about yourself.
+A lot of jobs require someone who can think on their feet or present ideas with crispness and clarity. This question provides employers with an early preview of your core skills, your personality and your ability to respond to an unstructured question.
+
+I would describe myself as highly curious and focused on learning in all parts of life, personal and professional.
+
+I’ve been doing development for the past fifteen years. Over the years, I’ve built an expertise in oracle and related technology, PLSQL/SQL, APEX, ODI and Datawarehousing. 
+
+I’ve been lucky to have a few great mentors over the course of my career, and find a great deal of personal and professional satisfaction being able to do the same. I currently oversee a team of developers and work along side. 
+
+Additionally, I like to stay active within the industry community, and recently spoke at DeveloperWeek conference.
+ 
+I’ve been happy at my current role, have managed many successful product launches, and really enjoy management. 
+
+I’d like to use my expertise to deliver more impact on a growing company — to help grow and shape team and culture —and make a significant impact in the market.
+
+#### What is your greatest strength?
+
+Employers want to see if you can strike the right balance between confidence and humility. Hiring managers also want to get a sense for how self-aware and honest you are and align your strengths to the role at hand.
+
+Over the last several years, I’ve realized my strength as an deciplined and dedicated team player. My technical knowledge and passion and dedication to make things perfect. 
+
+In my current role, I am senior oracle developer mentoring few junior developers and play the key role of developing quality product and lay out the best practices and coding standards.  more needs to be added...
+
+#### What is your greatest weakness?
+The interviewer is assessing whether your weaknesses will get in the way of doing the job. Employers are looking for humility and whether you’re committed to learning and growing. This is a place you can showcase what you’re doing to improve.
+
+Sometimes I tend to focus too much on the details. Mainly when something/some work/concept is new to me. In the process of trying to ensure nothing left unturned I end up spending more time than needed.
+
+I've been reflecting on why this happens. As I've become more conscious of this pattern, I'm working on ways to time box my my work specially at the analysis phase.
+
+#### Why should we hire you?
+This question tests how persuasive you are. Interviewers want to see if you can make a calm, confident case for yourself, even if they’re acting skeptical. They’re looking for factual and compelling answers.
+
+As a data developer, I’ve demonstrated my ability to answer business questions, as well as advise strategic marketing decisions by providing in-depth data analysis with various technical skills, such as SQL and PLSQL, APEX.
+
+I am also proactive in learning new skills. For example, knowing that effective communication is the key to making findings convincing, I sought out and took training sessions on both data visualization and presentation. These skill sets have been critical in successfully pitching and persuading senior leadership on changes to strategy. As a result, I was quickly promoted to a senior role in just a year.
+
+Given the growth moment that your company is poised to have, I believe that my unique experience will be an asset to your team. I’m excited to expand my expertise within a new industry, and recommend key strategies and opportunities that will support and drive business
+
+#### Why do you want to work here?
+Interviewers want to understand what prompted you to apply for this job. They don’t want candidates who are indifferent to where they work. Instead, they want someone who offers very specific reasons for why they want this job.
+
+I have spoken to people who worked here previously and I was always highly impressed on how highly they spoke about the company and how well they developed themselves.
+
+I admire your mentor program and have always believed that mentorship is key to a company’s success and an individual’s personal and professional growth. I see this opportunity as a way to contribute to an exciting fast growth company with such a potential with my skills well-suited to add value to the company’s growth.
+----
+
+I understand that you’re looking for a leader who can implement and scale your data analytics platform.
+
+Over the course of my career, I have implemented data analytics platforms for 3 companies. Each had its own unique challenges and required me to learn, grow, and expand my skill set. I’m energized by new and complex challenges, and have the background, experience, and successful track record required to implement this system within your organization.
+
+The space in which your company operates is also of personal interest to me and I would love to contribute to it and help the company grow. When I started at my current company, I had a team of 4 people which I scaled to 28 people. I led the team in designing and building a big data platform for this big global company. Ultimately, we expanded the user base from 100 to 1,200.
+
+I’m looking forward to the next chapter and challenge, and believe I can bring real value to this organization.
+----
+
+Lastly, I applied because I see this as an opportunity for me to broaden my financial services experience. This seems to be a natural fit based on my understanding of regulated industries.
+
+#### What are your salary expectations?
+If this question arises early, odds are that the interviewer is really asking: “Can we afford you?” If it arises much later, the interviewer may be hoping that your salary requirements are aligned to what they have budgeted for this role.
+
+It’s important to me any new role is positive from a work standpoint. I want the work that I’d be doing to be impactful, and I want to know that I can contribute meaningfully to the organization. That’s why I’m most interested in this role: My personal values and ambitions are aligned with the company’s mission.
+
+As far as annual compensation, I’m open to how it is paid out, whether through base salary or a bonus structure. For a move to make sense to me, I would need the total compensation to be between [desired salary range].
+----
+
+After researching market ranges from multiple sources online and taking into account my education, experience, and location, I’m targeting roles with base salaries in the range of [dollar amount].
+
+Of course, I’m also taking into account opportunities for long-term growth with an emphasis on purpose-driven work as I evaluate and weigh options — and my values are closely aligned with your organization’s mission.
+
+
+For this reason, I would be willing to negotiate base salary in exchange for a generous time-off policy. I intend to be a high performing asset to your company, and value time to recharge when appropriate.
+----
+
+Based on my current compensation and market research from resources like Glassdoor and levels.fyi, I am seeking a base salary within the range of $[dollar amount] to $[dollar amount]. I’ve seen similar roles that are offering $[dollar amount].
+
+My specific experience and years in the field are closely aligned with this position, making me a strong candidate to be able to jump in and quickly add value.
+
+That said, I understand that this base salary range might be on the higher end of the spectrum for a growing company, and I’m willing to consider a lesser base paired with a signing bonus or increase in restricted stock units. My intention is to grow with the company and invest myself in its success.
+
+#### Do you have any questions for me?
+This question isn’t just designed to make sure you leave with all of your questions answered; it’s intended to see if you’re prepared and to assess how curious and thoughtful you are.
+
+I do have a few questions. Thanks for asking.
+
+We talked a bit about your plans to invest in training opportunities for your current employees, especially those who will be managing the company's transition to a centralized billing system.
+
+I think that this is a great plan, and I'd love to support the curriculum development.
+
+Now, will most of the training modules be designed by this team? And will they be delivered in person, via webinar, or a video format? Or will you be using a hybrid approach?
+----
+What do you see as the most critical component of your business today that will contribute to your long-term success?
+
+What challenges does your organization face today that you are working to overcome?
+
+Regarding my role, what would you consider to be the most important factor to ensuring success?
+---
+

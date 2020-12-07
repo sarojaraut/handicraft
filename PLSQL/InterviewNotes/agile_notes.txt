@@ -98,9 +98,7 @@ These agreements align teams around what quality means and how it is built into 
 
 Automation Agile teams automate repetitive, manual tasks to increase speed and ensure they are performed accurately and consistently. Teams typically automate in two ways. They automate the processes that build, deploy, and release the solution. This process takes the teams’ raw artifacts (code, models, images, content, etc.), generates production versions as necessary, integrates them across teams and ARTs, and makes them available in a production environment. They automate the quality checks along this path to ensure standards are followed, artifacts meet quality levels (e.g., broken link and spelling checkers), etc.
 
-
 Delivery of high-quality working software to users on a fast and regular basis is a key goal of Agile software development. Oracle Application Express is a highly efficient rapid application development (RAD) environment. 
-
 
 Weakness : Sometimes I tend to focus too much on the details. Mainly when something/some work/concept is new to me. In the process of trying to ensure nothing left unturned I end up spending more time than needed. The technique I use is time boxing. 
 
