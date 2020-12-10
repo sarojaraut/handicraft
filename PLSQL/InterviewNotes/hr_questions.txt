@@ -56,6 +56,16 @@ I’m looking forward to the next chapter and challenge, and believe I can bring
 
 Lastly, I applied because I see this as an opportunity for me to broaden my financial services experience. This seems to be a natural fit based on my understanding of regulated industries.
 
+##### What would your co-workers say about you?
+
+Interviewers want to know if you’ll fit in with the team. This question can also help you highlight your strengths without feeling like you’re bragging.
+
+My coworkers have told me that I am a technical leader who sets ambitious goals, reliably delivers work on time, and shows empathy to each team member.
+
+In a recent peer review, I received great feedback for being a team player. One of my coworkers needed to take some time off to address some pressing personal issues. He wasn’t comfortable asking, as we were working on a very tight timeline and everyone had limited bandwidth — especially me. But knowing that he would be stronger in his role and that the team would be healthier if he was given space to handle outside concerns, I offered to take up his responsibilities for 3 weeks.
+
+It was a stretch, but I knew it was temporary. I emphasized time management and prioritization to ensure that no deadlines were missed. When he returned, he was able to focus and our team was even more productive.
+
 #### What are your salary expectations?
 If this question arises early, odds are that the interviewer is really asking: “Can we afford you?” If it arises much later, the interviewer may be hoping that your salary requirements are aligned to what they have budgeted for this role.
 
@@ -77,6 +87,91 @@ Based on my current compensation and market research from resources like Glassdo
 My specific experience and years in the field are closely aligned with this position, making me a strong candidate to be able to jump in and quickly add value.
 
 That said, I understand that this base salary range might be on the higher end of the spectrum for a growing company, and I’m willing to consider a lesser base paired with a signing bonus or increase in restricted stock units. My intention is to grow with the company and invest myself in its success.
+#### Tell me about a time you disagreed with someone.
+Occasional conflicts are a fact of life. Interviewers want to see if you can work through those tensions in a respectful way. If you helped steer things toward a good compromise, that’s a big plus. Signs of anger or bitterness will count against you.
+
+#### Why do you want to leave your current role?
+
+Employers say they want to hire people who are running “to” a role as opposed to running “away.” However, they are also interested in your honesty when things haven’t worked out and will give people second chances when they demonstrate hunger.
+
+I'm eager to find a new opportunity and grow.
+
+As you can see, I've been doing the same kind of work for two and a half years, and I'm starting to stagnate. My company doesn't have a role open for the next step up, unfortunately. 
+-----------
+I’ve enjoyed my time with my current employer, and have grown a lot in my role. In the past 2 years, I’ve successfully shipped several products that turned out to be very successful.
+
+I believe that the next big trend for product development will be centered heavily around mobile shopping. My current company is looking at a possible move in this direction within a number of years, rather than months.
+
+I’m interested in joining your team because the products you’re developing are in the exact area I’d like to explore and grow. 
+---------------
+I enjoy my current role and am not actually actively pursuing a change. I am, however, very open to intellectually stimulating and challenging opportunities that will allow me to provide value.
+
+I’m interested in a role where I am responsible to deliver and actively contribute towards company success. I am also seeking continued development and improvement, both personally and professionally.
+
+Based on the job description and our discussions, this role does seem like a good match. I’ve long admired this company and am passionate about both the mission and the products. I believe that my record of success, unique experience, and background would make me an asset to the team.
+##### Tell me about a time you showed leadership.
+Employers want to understand your capacity to step up and handle tough situations that undoubtedly arise in the workplace. They want to know when you’ve seen an opening to lean in and lead with good judgment.
+
+I was working on a high visibility project and during production, two members on my cross-functional team had different approaches to a problem that we were facing. They both wanted credit for being right, and we were at a stalemate. To move forward, I needed to help align the team.
+
+I wasn’t their reporting manager but I was the project lead, so I asked them to explain the pros and cons of their approach. I encouraged them to fairly assess their solutions and moderated the discussion so that it stayed productive and respectful.
+
+As they laid out their plans, it became clear that a hybrid approach would be best for the company. I encouraged them to see this as a team win towards a common goal that would reflect positively on everyone.
+
+Using the hybrid approach, we not only delivered a superior solution, but completed the project 2 weeks ahead of schedule because the team was so motivated.
+
+
+
+
+#### What are your salary expectations?
+It’s important to me any new role is positive from a work standpoint. I want the work that I’d be doing to be impactful, and I want to know that I can contribute meaningfully to the organization. That’s why I’m most interested in this role: My personal values and ambitions are aligned with the company’s mission.
+
+As far as annual compensation, I’m open to how it is paid out, whether through base salary or a bonus structure. For a move to make sense to me, I would need the total compensation to be between [desired salary range].
+-------------
+I've been doing some research on the market for the role of Sales Analyst.
+
+What I found from LinkedIn's salary tool is that here in Chicago, base pay for these jobs tends to run between $61,000 and $71,000. Half the companies pay bonuses as well.
+
+Given the global impact of your company, and the fact that candidates with Master's degrees, like me, are being recruited most heavily, I think we should be looking toward the top end of that range.
+
+
+#### Tell me about a time you had to persuade someone.
+This question is all about sizing up your emotional intelligence. Interviewers are looking for problem solvers, not shouters. Strong answers showcase your listening skills and your ability to guide people to better choices.
+
+The day before a major management review, I was told we only had ten minutes to present our project. We had originally been promised fifteen.
+
+Most of our team members agreed to shorten their remarks. One person refused to make changes. I suggested that we sit down over coffee and talk about it. I started by listening, letting him explain how hard he'd worked.
+
+I realized the issue wasn't about the length of his speech but more about him being recognized for doing a thorough job and getting his presentation together. He was proud of his work.
+
+So, we talked about another way of recognizing his efforts by acknowledging him in our team newsletter. When we wrapped up that part of the conversation, he volunteered to shorten his part of his speech.
+
+By treating his contributions with respect, I guided him to a better outcome.
+--------------
+As a software engineer, I had to persuade my marketing and sales teams that deploying a new version of the software was the right thing for our consumers and clients because the existing version was vulnerable to cyber attacks.
+
+The teams were against a new version because they believed it would cause client dissatisfaction. Additionally, these security enhancements came with a 23% cost increase.
+
+To reframe the value equation, I took three steps. First, I enrolled leading cyber attack experts to educate everyone on the impending risks from foreign entities. This reinforced the urgent business imperative of investing in secured systems.
+
+Next, I partnered with my finance team and determined that the cost of “fixing” systems after an attack amounted to a 77% increase in spend — to say nothing of intangibles like reputational damage.
+
+Finally, I hired a market research group to bring a group of "non-techy" folks to conduct a live, in-person demo of our new interface. The group demonstrated the new software with ease.
+
+Marketing and sales were so convinced that they asked me to join them in key client meetings to lead the sales pitch myself. Clients not only loved the new system, but revenues increased by 32% with the development of a premium version.
+
+#### Tell me about a time you had to handle pressure.
+I was working on my company's big quarterly project update when two team members left unexpectedly and we were short-handed with three weeks to go. 
+
+I convened an urgent strategy session where we identified all the projects they were involved in and mapped out our action plan. We shared the most important tasks within the team and got them all done in time.
+
+We canceled two optional features that could wait a quarter, on boarding new team mmber was not an option as we would have to spend time to get them upto speed.
+
+We were able to complete the project without a delay and delivered on all the essential deliverables by being creative, strategic, and very focused.
+---------
+I also made sure to communicate daily with my VP. He knew the unique challenge I was facing and could provide guidance, but only if he knew where to help. So I set up daily check-ins with him to show him my progress and receive feedback in a 1:1 setting outside of our normal working group. This added communication helped me avoid any surprises, eased stress, and allowed me to successfully manage and complete an unfamiliar project.
+
+
 
 #### Do you have any questions for me?
 This question isn’t just designed to make sure you leave with all of your questions answered; it’s intended to see if you’re prepared and to assess how curious and thoughtful you are.
@@ -95,4 +190,9 @@ What challenges does your organization face today that you are working to overco
 
 Regarding my role, what would you consider to be the most important factor to ensuring success?
 ---
+Earlier in our conversation, you mentioned that there were some tensions between these two teams. Can you share more about where that comes from, and how you think this will impact me in my role?
+--
+How do you think I should approach the first 30 days in the role to best position myself for success in a new culture?
 
+I know that your company has won numerous awards for workplace and community culture, and I have always prided myself in helping colleagues get active in the community. What do opportunities look like within your organization to get involved?
+--
