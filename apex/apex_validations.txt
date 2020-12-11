@@ -67,3 +67,95 @@ https://medium.com/samsung-internet-dev/native-form-validation-part-2-552c78f563
 
 <select id="P12_SUBJECT_ID" name="P12_SUBJECT_ID" required="" class="selectlist apex-item-select" size="1"><option value="" selected="selected"></option>
 <option value="228">Accounting</option><option value="155">Afrikaans</option><option value="229">Ancient History</option><option value="230">Anthropology</option><option value="87">Applied Art and Design</option><option value="156">Applied Business</option><option value="116">Applied Health and Social Care</option><option value="194">Applied ICT</option><option value="157">Applied Leisure Studies</option><option value="158">Applied Science</option><option value="44">Applied Travel and Tourism</option><option value="88">Arabic</option><option value="117">Archaeology</option><option value="45">Art and Design</option><option value="89">Bengali</option><option value="1">Biblical Hebrew</option><option value="90">Biology</option><option value="231">Business</option><option value="2">Business Studies</option><option value="159">Chemistry</option><option value="160">Chinese</option><option value="46">Citizenship Studies</option><option value="91">Classical Civilisation</option><option value="232">Classical Greek</option><option value="118">Classical Studies</option><option value="47">Classics</option><option value="92">Communication and Culture</option><option value="93">Computer Science/Computing</option><option value="119">Creative Writing</option><option value="3">Critical Thinking</option><option value="264">Dance</option><option value="195">Design and Technology</option><option value="161">Design and Technology - 3D Product Design</option><option value="162">Design and Technology - Fashion and Textiles</option><option value="265">Design and Technology - Food Technology</option><option value="4">Design and Technology - Product Design</option><option value="48">Design and Technology - Systems and Control Technology</option><option value="94">Design and Technology - Textiles</option><option value="49">Digital Media and Design</option><option value="233">Digital Technology</option><option value="234">Divinity</option><option value="266">Drama and Theatre Studies</option><option value="163">Dutch</option><option value="120">Economics</option><option value="121">Electronics</option><option value="122">Engineering</option><option value="123">English Language</option><option value="267">English Language and Literature</option><option value="235">English Literature</option><option value="196">Environmental Management</option><option value="50">Environmental Science</option><option value="236">Environmental Studies</option><option value="197">Environmental Technology</option><option value="5">Film Studies</option><option value="124">Food Studies</option><option value="164">French</option><option value="6">Further Mathematics</option><option value="95">General Studies</option><option value="125">Geography</option><option value="198">Geology</option><option value="96">German</option><option value="165">Global Development</option><option value="199">Global Perspectives and Research</option><option value="166">Government and Politics</option><option value="167">Greek</option><option value="168">Gujarati</option><option value="7">Health and Social Care</option><option value="169">Hindi</option><option value="97">Hinduism</option><option value="8">History</option><option value="51">History of Art</option><option value="237">Home Economics</option><option value="170">Human Biology</option><option value="9">Humanities</option><option value="238">ICT / Information and Communication Technology</option><option value="10">Information and Communication Technology (ICT)</option><option value="268">Irish</option><option value="171">Islamic Studies</option><option value="126">Italian</option><option value="239">Japanese</option><option value="52">Journalism in the Media and Communications Industry</option><option value="98">Latin</option><option value="200">Law</option><option value="127">Leisure Studies</option><option value="53">Life and Health Sciences</option><option value="172">Marathi</option><option value="173">Marine Science</option><option value="201">Mathematics</option><option value="240">Mathematics - MEI</option><option value="54">Media Studies</option><option value="55">Modern Hebrew</option><option value="269">Modern Languages</option><option value="11">Moving Image Arts</option><option value="12">Music</option><option value="270">Music Technology</option><option value="271">Nutrition and Food Science</option><option value="174">Panjabi</option><option value="128">Performance Studies</option><option value="56">Performing Arts</option><option value="272">Persian</option><option value="99">Philosophy</option><option value="100">Physical Education</option><option value="202">Physics</option><option value="57">Polish</option><option value="13">Politics</option><option value="14">Portuguese</option><option value="241">Professional Business Services</option><option value="203">Psychology</option><option value="58">Pure Mathematics</option><option value="273">Quantitative Methods</option><option value="15">Religious Studies</option><option value="274">Russian</option><option value="59">Sociology</option><option value="275">Software Systems Development</option><option value="60">Spanish</option><option value="61">Sports Science and the Active Leisure Industry</option><option value="101">Statistics</option><option value="175">Tamil</option><option value="276">Thinking Skills</option><option value="204">Travel and Tourism</option><option value="16">Turkish</option><option value="205">Urdu</option><option value="206">Use of Mathematics</option><option value="17">Welsh</option><option value="62">World Development</option></select>
+
+
+    exception
+        when no_data_found then
+            apex_error.add_error (
+                p_message => 'The employee does not exist in the Data Base.',
+                p_display_location => zpex_error.c_inline_with_field_and_notif,
+                p_page_item_name => l_item
+            );
+            
+        when not_authorized then
+            apex_error.add_error (
+                p_message => 'Sorry, the employee can not be transferred to this department.',
+                p_display_location => apex_error.c_inline_with_field_and_notif,
+                p_page_item_name => l_item
+            );
+            
+    end;
+
+apex_error.add_error(
+  p_message => 'Your date range overlaps with other periods.'
+, p_display_location => apex_error.c_inline_in_notification
+);
+
+apex_error.add_error(
+  p_message => 'The category combination is invalid for the selected item.'
+, p_display_location => apex_error.c_inline_in_notification
+);
+
+c_inline_with_field
+c_inline_with_field_and_notif
+c_inline_in_notification
+c_on_error_page
+
+if not apex_error.have_errors_occurred then
+    ...
+end if; 
+
+apex_error.add_error triggers a rollback and in most cases this is a good thing. In some very specific cases you may not want a rollback to occur. 
+
+Page Process
+
+-- ...
+-- Save staging data
+-- ...
+-- Validations:
+l_err_json := null;
+
+select sum(salary)
+into l_salary_total
+from my_stage_table;
+
+if l_salary_total > 1000 then
+  -- Produce JSON error like:
+  -- {
+  --   "errMsg": "Total salary must be less than $1000"
+  -- }
+  apex_json.initialize_clob_output;
+  apex_json.open_object;
+  apex_json.write('errMsg', 'Total salary must be less than $1000');
+  apex_json.close_object;
+
+  l_err_json := apex_json.get_clob_output;
+  apex_json.free_output;
+end if;
+
+apex_util.set_session_state('P1_ERR_JSON', l_err_json, false);
+--
+-- This block does not use apex_error.add_error but logs message to a json and finally posted to page item 
+--
+
+onPageLoad Dynamic Action
+
+err = apex.item('P1_ERR_JSON').getValue();
+
+if (err.length > 0) {
+  err = JSON.parse(err);
+
+  apex.message.clearErrors();
+  apex.message.showErrors([
+    {
+      type: apex.message.TYPE.ERROR,
+      location: ["page"],
+      message: err.errMsg,
+      unsafe: false
+    }
+  ]);
+}// end if
+
+
+
+Page Process
