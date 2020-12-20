@@ -1,3 +1,21 @@
+Interactive grid Dynamic action 
+------------------------------------
+var view = apex.region("RuleQualification").widget().interactiveGrid("getViews", "grid");
+var records = view.getSelectedRecords();
+// console.log(records);
+// console.log((records[0][3].v));
+$s("P15_SELECTED_QUAL_ID",records[0][3].v);
+//difference between input type and object like LOV
+// for ( i = 0; i < records.length; i++) {
+//     //if dealing with LOV for example
+//     console.log(view.model.getValue(records[i], "DOC_REFERENCE").v);
+   
+//     //if dealing with regular text type for example
+//     // console.log(view.model.getValue(records[i], "rule_id"));
+// }
+
+--------------------------------
+
 https://www.svgbackgrounds.com/#spectrum-gradient
 
 
