@@ -12,8 +12,10 @@ https://sd2cgxnc6zom7sw-ourcompany.adb.uk-london-1.oraclecloudapps.com/ords/r/cl
 
 https://apexea.oracle.com/pls/apex/apex_authentication.callback
 
-Client ID : 
-Secret : 
+Dev Clearing ATP 
+Apex Link: https://sd2cgxnc6zom7sw-devclearing.adb.uk-london-1.oraclecloudapps.com/ords/f?p=4550:1:108755760597755:::::
+Authorised redirect URIs : https://sd2cgxnc6zom7sw-devclearing.adb.uk-london-1.oraclecloudapps.com/ords/apex_authentication.callback
+
 
  Shared Components -> Themes -> Universal Theme -> icons and setting Custom Library File URLs 
 https://kit.fontawesome.com/c5f00995f3.js
