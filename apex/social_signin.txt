@@ -4,7 +4,7 @@ https://console.developers.google.com/projectselector2/apis/dashboard?pli=1&supp
 login to Google’s Developers console.
 Create a project in order to enable the APIs you need to perform the OAuth2 login process. - OracleApexSocialSignIn
 After creation choose the project from the drop down next to googleAPIs
-Click the third link Credentials and then select to create an OAuth client ID credential.
+Click the third link Credentials and then select to create an OAuth client ID credential.git
 OAuth consent screen
 App Name : UKUniClearing
 
