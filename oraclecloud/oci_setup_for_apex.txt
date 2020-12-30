@@ -1,0 +1,107 @@
+
+OCI compartments : Compartment for assets of each environment - DEV, STG, PRD 
+
+
+Create Groups :  Create Groups : DevObjectManagers - Users who can manage objects in compartment Dev
+Create DevObjectManagementPolicies in root compartment
+
+DevObjectManagementPolicies : Policies for users to manage objects in compartment DEV
+
+Allow group DevObjectManagers to read buckets in compartment DEV 
+Allow group DevObjectManagers to manage objects in compartment DEV
+
+Create the dev_object_agent user, whose API keys will be used for managing storage objects through APEX
+User for performing object management on behalf of APEX application user
+Edit User Capabilities, uncheck all items except API Keys, and click Save.
+
+Generate a private key with no pass phrase:
+mkdir -p ~/.oci && openssl genrsa -out ~/.oci/poa_oci_api_key.pem 2048
+
+Generate the public key:
+openssl rsa -pubout -in ~/.oci/poa_oci_api_key.pem -out ~/.oci/poa_oci_api_key_public.pem
+
+Copy the contents of the file to the clipboard:
+xclip -sel clip ~/.oci/poa_oci_api_key_public.pem
+
+Add public key for the user and select paste public key option and add the key 
+
+make a note of the finger print returned or you can generate using command 
+openssl rsa -pubout -outform DER -in ~/.oci/poa_oci_api_key.pem | openssl md5 -c 
+
+(stdin)= c4:bb:00:d7:05:89:29:d2:8e:2b:08:a2:69:e8:ff:95
+
+(Only the second part is fingerprint in this case  c4:bb:00:d7:05:89:29:d2:8e:2b:08:a2:69:e8:ff:95)
+
+Finally add the dev_object_agent user to the DevObjectManagers group.
+
+Bucket Setup
+Object Storage > Create Bucket,
+
+Bucket Name: clearing_reference_data
+Storage Tier: Select Standard.
+Emit Object Events: Uncheck this option.
+Encryption: Select Encrypt Using Oracle Managed Keys.
+
+
+Oracle Apex Set up 
+Web Credentials
+Name ; OCI API Access
+static Identifier : OCI_API_ACCESS
+Auth Type : OCI
+User ID : ocid1.user.oc1..aaaaaaaaxx2tg6lhysdbzsbgkujfkoytyxachsxipmddisgpx2cfocffmo7a
+Private Key : 
+copy content of key using xclip -sel clip ~/.oci/poa_oci_api_key.pem
+remove begin and end line 
+and remove line breaks to make it all long single line
+Tenancy ID :ocid1.tenancy.oc1..
+Finger Print : c4:bb:00:d7:05:89:29:d2:8e:2b:08:a2:69:e8:ff:95
+
+
+create rese data source
+type : oci
+name : list_buckets
+URL Endpoint: Use the format
+https://objectstorage.<REGION>.oraclecloud.com/n/<NAMESPACE>/
+next
+change suggested base url to same as URL end point as we will be working within single tenancy
+https://objectstorage.uk-london-1.oraclecloud.com/n/lrXXXXXXXX
+
+change service url to : /b/
+authentication required : yes 
+credentials : select the above create credential
+
+click advanced
+add parameter type : query string variable
+param name : compartmentId
+value : 
+is static : yes
+
+New Rest Data source
+
+Web Source Type: Oracle Cloud Infrastructure (OCI)
+Name: list_objects_in_bucket
+URL Endpoint: Use the format https://objectstorage.<REGION>.oraclecloud.com/n/<NAMESPACE>/b/:bucket_name/o/
+URL Parameter 1: bucket_name (This parameter was created automatically by APEX.)
+Value: clearing_reference_data
+APEX will parse the endpoint and suggest what to enter for Base URL and Service URL Path.
+accept the default
+Select Authentication Required and the appropriate choice for Credentials. Click Advanced >.
+The first parameter, Parameter Name = bucket_name, is created automatically by APEX. Leave the defaults. 
+Create another parameter
+add parameter type : query string variable
+param name : compartmentId
+value : fields
+value : name,size,timeCreated,md5
+is static : yes
+
+provide the required information, and click Discover >.
+
+https://blogs.oracle.com/oraclemagazine/better-file-storage-in-oracle-cloud
+
+https://cloud-blogs.com/index.php/oracle-cloud/oracle-cloud-iaas/comprehensive-blog-on-autonomous-data-warehouse-and-analytics-cloud/04-load-data-into-oci-object-storage-and-import-that-data-into-autonomous-data-warehouse/
+
+https://fuzziebrain.com/content/id/2009/
+
+
+https://objectstorage.uk-london-1.oraclecloud.com/n/lradoqbpnhce/b/clearing_reference_data/o/testf222%20(1).sql
+
