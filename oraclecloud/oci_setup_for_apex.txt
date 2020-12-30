@@ -105,3 +105,189 @@ https://fuzziebrain.com/content/id/2009/
 
 https://objectstorage.uk-london-1.oraclecloud.com/n/lradoqbpnhce/b/clearing_reference_data/o/testf222%20(1).sql
 
+
+grant execute on dbms_cloud to clrng;
+grant execute on dbms_cloud_oci_obs_object_storage to clrng;
+grant execute on dbms_cloud_oci_obs_object_storage_list_buckets_response_t to clrng;
+
+
+begin
+  dbms_cloud.create_credential(
+    credential_name => 'MY_OCI_CRED'
+    , user_ocid => 'ocid1.user.oc1..aaaaaaaa**********'
+    , tenancy_ocid => 'ocid1.tenancy.oc1..aaaaaaaa**********'
+    , private_key => 'MIIE**********='
+    , fingerprint => '**:**:**:**:**:**:**:**:**:**:**:**:**:**:**:**'
+  );
+end;
+/
+
+select credential_name, username from user_credentials;
+
+
+
+declare
+  where_are_my_buckets dbms_cloud_oci_obs_object_storage_list_buckets_response_t;
+begin
+  where_are_my_buckets :=
+      dbms_cloud_oci_obs_object_storage.list_buckets(
+        namespace_name => 'lradoqbpnhce'
+        , compartment_id => 'ocid1.compartment.oc1..aaaaaaaaekdgnbc7ko3nkmeeqdd53trrlfpyuvk3lodinnnhlmvpmbbwwa2a'
+        , region => 'uk-london-1'
+        , credential_name => 'OURCOMPANY_OCI_CRED'
+      );
+  dbms_output.put_line('status code: ' || where_are_my_buckets.status_code);
+  dbms_output.put_line('bucket count ' || where_are_my_buckets.response_body.count);
+  for i in 1..where_are_my_buckets.response_body.count
+  loop
+    dbms_output.put_line('bucket: ' || where_are_my_buckets.response_body(i).name);
+  end loop;
+end;
+/
+
+declare
+  my_objects dbms_cloud_oci_obs_object_storage_list_objects_response_t;
+begin
+  my_objects :=
+      dbms_cloud_oci_obs_object_storage.list_objects(
+        namespace_name => 'lradoqbpnhce'
+        , bucket_name => 'clearing_reference_data'
+        , credential_name => 'OURCOMPANY_OCI_CRED'
+        , region => 'uk-london-1'
+
+      );
+  dbms_output.put_line('Status code: ' || my_objects.status_code);
+  dbms_output.put_line('Object count ' || my_objects.response_body.objects.count());
+  for i in 1..my_objects.response_body.objects.count
+  loop
+    dbms_output.put_line('Object: ' || my_objects.response_body.objects(i).name);
+  end loop;
+end;
+/
+
+declare
+  my_objects dbms_cloud_oci_obs_object_storage_put_object_response_t;
+  l_country clob;
+  l_country_blob blob;
+begin
+    select json_arrayagg(json_object(*)returning clob) 
+    into l_country
+    from country;
+    l_country_blob := clob_to_blob(l_country);
+  my_objects :=
+      dbms_cloud_oci_obs_object_storage.put_object(
+        namespace_name => 'lradoqbpnhce'
+        , bucket_name => 'clearing_reference_data'
+        , object_name  => 'countries.json'
+        , credential_name => 'OURCOMPANY_OCI_CRED'
+        , region => 'uk-london-1'
+        , put_object_body =>l_country_blob
+
+      );
+  dbms_output.put_line('Status code: ' || my_objects.status_code);
+end;
+/
+
+
+CREATE OR REPLACE FUNCTION clob_to_blob (p_data  IN  CLOB)
+  RETURN BLOB
+-- -----------------------------------------------------------------------------------
+-- File Name    : https://oracle-base.com/dba/miscellaneous/clob_to_blob.sql
+-- Author       : Tim Hall
+-- Description  : Converts a CLOB to a BLOB.
+-- Last Modified: 26/12/2016
+-- -----------------------------------------------------------------------------------
+AS
+  l_blob         BLOB;
+  l_dest_offset  PLS_INTEGER := 1;
+  l_src_offset   PLS_INTEGER := 1;
+  l_lang_context PLS_INTEGER := DBMS_LOB.default_lang_ctx;
+  l_warning      PLS_INTEGER := DBMS_LOB.warn_inconvertible_char;
+BEGIN
+
+  DBMS_LOB.createtemporary(
+    lob_loc => l_blob,
+    cache   => TRUE);
+
+  DBMS_LOB.converttoblob(
+   dest_lob      => l_blob,
+   src_clob      => p_data,
+   amount        => DBMS_LOB.lobmaxsize,
+   dest_offset   => l_dest_offset,
+   src_offset    => l_src_offset, 
+   blob_csid     => DBMS_LOB.default_csid,
+   lang_context  => l_lang_context,
+   warning       => l_warning);
+
+   RETURN l_blob;
+END;
+/
+
+
+CREATE OR REPLACE NONEDITIONABLE TYPE dbms_cloud_oci_obs_object_storage_list_buckets_response_t FORCE AUTHID CURRENT_USER IS OBJECT (
+  response_body dbms_cloud_oci_obs_object_storage_bucket_summary_tbl,
+  headers json_object_t,
+  status_code number 
+) NOT PERSISTABLE;
+
+CREATE OR REPLACE NONEDITIONABLE TYPE dbms_cloud_oci_obs_object_storage_list_objects_response_t FORCE AUTHID CURRENT_USER IS OBJECT (
+  response_body dbms_cloud_oci_obs_object_storage_list_objects_t,
+  headers json_object_t,
+  status_code number 
+) NOT PERSISTABLE;
+
+CREATE OR REPLACE NONEDITIONABLE TYPE dbms_cloud_oci_obs_object_storage_list_objects_t FORCE AUTHID CURRENT_USER IS OBJECT (
+  objects dbms_cloud_oci_obs_object_storage_object_summary_tbl,
+  prefixes dbms_cloud_oci_obs_object_storage_varchar2_tbl,
+  next_start_with varchar2(4000),
+  CONSTRUCTOR FUNCTION dbms_cloud_oci_obs_object_storage_list_objects_t
+    RETURN SELF AS RESULT,
+  CONSTRUCTOR FUNCTION dbms_cloud_oci_obs_object_storage_list_objects_t (
+    objects dbms_cloud_oci_obs_object_storage_object_summary_tbl,
+    prefixes dbms_cloud_oci_obs_object_storage_varchar2_tbl,
+    next_start_with varchar2
+  ) RETURN SELF AS RESULT
+) NOT PERSISTABLE;
+
+
+FUNCTION list_objects (
+  namespace_name        varchar2,
+  bucket_name           varchar2,
+  prefix                varchar2 DEFAULT NULL,
+  l_start               varchar2 DEFAULT NULL,
+  l_end                 varchar2 DEFAULT NULL,
+  limit                 number DEFAULT NULL,
+  delimiter             varchar2 DEFAULT NULL,
+  fields                varchar2 DEFAULT NULL,
+  opc_client_request_id varchar2 DEFAULT NULL,
+  start_after           varchar2 DEFAULT NULL,
+  region                varchar2 DEFAULT NULL, 
+  endpoint              varchar2 DEFAULT NULL,
+  credential_name       varchar2 DEFAULT NULL
+) RETURN dbms_cloud_oci_obs_object_storage_list_objects_response_t;
+
+FUNCTION put_object (
+  namespace_name                 varchar2,
+  bucket_name                    varchar2,
+  object_name                    varchar2,
+  content_length                 number DEFAULT NULL,
+  put_object_body                blob,
+  if_match                       varchar2 DEFAULT NULL,
+  if_none_match                  varchar2 DEFAULT NULL,
+  opc_client_request_id          varchar2 DEFAULT NULL,
+  expect                         varchar2 DEFAULT NULL,
+  content_md5                    varchar2 DEFAULT NULL,
+  content_type                   varchar2 DEFAULT NULL,
+  content_language               varchar2 DEFAULT NULL,
+  content_encoding               varchar2 DEFAULT NULL,
+  content_disposition            varchar2 DEFAULT NULL,
+  cache_control                  varchar2 DEFAULT NULL,
+  opc_sse_customer_algorithm     varchar2 DEFAULT NULL,
+  opc_sse_customer_key           varchar2 DEFAULT NULL,
+  opc_sse_customer_key_sha256    varchar2 DEFAULT NULL,
+  opc_meta                       json_element_t DEFAULT NULL,
+  region                         varchar2 DEFAULT NULL, 
+  endpoint                       varchar2 DEFAULT NULL,
+  credential_name                varchar2 DEFAULT NULL
+) RETURN dbms_cloud_oci_obs_object_storage_put_object_response_t;
+
