@@ -170,7 +170,7 @@ declare
   l_country clob;
   l_country_blob blob;
 begin
-    select json_arrayagg(json_object(*)returning clob) 
+    select json_object(key 'countries' value json_arrayagg(json_object(*)returning clob)
     into l_country
     from country;
     l_country_blob := clob_to_blob(l_country);
@@ -291,3 +291,41 @@ FUNCTION put_object (
   credential_name                varchar2 DEFAULT NULL
 ) RETURN dbms_cloud_oci_obs_object_storage_put_object_response_t;
 
+
+BEGIN
+    DBMS_CLOUD.CREATE_EXTERNAL_TABLE(
+        table_name =>'COUNTRIES_EXT',
+        credential_name =>'OURCOMPANY_OCI_CRED',
+        file_uri_list =>'https://objectstorage.uk-london-1.oraclecloud.com/n/lradoqbpnhce/b/clearing_reference_data/o/countries.json',
+        format => json_object('type' value 'json'),
+        field_list => '
+            COUNTRY_CODE    
+            ,COUNTRY         
+            ,IS_EEA          
+            ,VISA_NEEDED     
+        '
+        ,
+        column_list => '
+            country_code       varchar2(3),
+            country            varchar2(64),
+            is_eea             varchar2(1),
+            visa_needed        varchar2(1)
+        '
+    );
+END;
+/
+
+drop table COUNTRIES_EXT;
+
+select * from COUNTRIES_EXT;
+
+BEGIN
+    DBMS_CLOUD.CREATE_EXTERNAL_TABLE(
+        table_name =>'COUNTRIES_EXT',
+        credential_name =>'OURCOMPANY_OCI_CRED',
+        file_uri_list =>'https://objectstorage.uk-london-1.oraclecloud.com/n/lradoqbpnhce/b/clearing_reference_data/o/countries.json',
+        column_list => 'json_document blob',
+        field_list => 'json_document char(9999999999)' -- field list specifies how many bytes of data needs to be read from file
+    );
+END;
+/
