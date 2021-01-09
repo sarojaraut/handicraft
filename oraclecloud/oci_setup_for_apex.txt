@@ -319,13 +319,13 @@ drop table COUNTRIES_EXT;
 
 select * from COUNTRIES_EXT;
 
-BEGIN
-    DBMS_CLOUD.CREATE_EXTERNAL_TABLE(
-        table_name =>'COUNTRIES_EXT',
-        credential_name =>'OURCOMPANY_OCI_CRED',
+begin
+    dbms_cloud.create_external_table(
+        table_name =>'countries_ext',
+        credential_name =>'ourcompany_oci_cred',
         file_uri_list =>'https://objectstorage.uk-london-1.oraclecloud.com/n/lradoqbpnhce/b/clearing_reference_data/o/countries.json',
         column_list => 'json_document blob',
         field_list => 'json_document char(9999999999)' -- field list specifies how many bytes of data needs to be read from file
     );
-END;
+end;
 /

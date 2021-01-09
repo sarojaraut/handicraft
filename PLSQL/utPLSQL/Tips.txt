@@ -1,0 +1,109 @@
+Annotation is defined by:
+
+single line comment -- (double hyphen)
+followed directly by a % (percent)
+followed by annotation name
+followed by optional annotation text placed in single brackets.
+
+--%suite(The name of my test suite) - represents suite annotation with text The name of my test suite
+The name of the suite appears when we run a test. Presence of Suite makes a package qualify as test package
+
+Annotation placed directly before a procedure (--%test, --%beforeall, --%beforeeach etc.). 
+There can not be any empty lines or comments between annotation line and procedure line.
+
+Package level annotations placed at any place in package except directly before procedure (--%suite, --%suitepath etc.). recommended to put at the top 
+
+
+--%disabled : can disable a whole suite or a single test
+--%beforeall : At procedure level, marks annotated procedure to be executed before all test procedures in a suite.
+            ts a package level annotation Indicates that the procedure(s) mentioned as the annotation parameter are to be executed before all test procedures in a suite. e.g --%beforeall(to_be_executed_before_all, other_package.some_setup)
+--%afterall : same as beforeall but instead after all test procedures. Can be set at procedure level and package level
+
+--%beforeeach
+procedure to_be_executed_before_each;
+--%beforeeach(to_be_executed_before_each, other_package.some_setup)
+
+--%aftereach
+procedure to_be_executed_after_each;
+--%aftereach(to_be_executed_after_each, other_package.some_setup)
+
+--%test(Description of another behavior)
+--%beforetest(test_package.setup_for_a_test, another_setup_for_a_test)
+procedure other_test;
+
+The --%beforetest procedures are executed after invoking all --%beforeeach for a test.
+If a test is marked as disabled the --%beforetest procedures are not invoked for that test.
+
+--%test(Description of another behavior)
+--%aftertest(test_package.cleanup_for_a_test, another_cleanup_for_a_test)
+procedure other_test;
+
+--%throws annotation allows you to specify a list of exceptions as one of
+--%throws(-20134)
+%throws(exc_pkg.c_some_exception)
+--%throws(no_data_found)
+
+The framework will raise a warning, when --%throws annotation has invalid arguments or when no arguments were provided.
+
+Contexts allow for creating sub-suites within a suite package and they allow for grouping of tests that are somehow related.
+
+context starts with the --%context annotation and ends with --%endcontext. Everything placed between those two annotations belongs to that context
+can have a description provided as parameter for example --%context(Some interesting stuff).
+can have a name provided with --%name annotation. This is different than with suite and test annotations, where name is taken from package/procedure name.
+context name must be unique within it’s parent (suite / parent context) 
+context name cannot contain a . (full stop/period) character or space character
+
+In order to run only the tests for the context A non empty queue that is not full you will need to call utPLSQL as below:
+
+  exec ut.run(':queue_spec.context_#3.context_#1');
+
+Name
+The --%name annotation is currently only used only for naming a context. If a context doesn’t have explicit name specified, then the name is given automatically by framework.
+
+Tags
+Tag is a label attached to the test or a suite. It is used for identification and execution of a group of tests / suites that share the same tag.
+
+--%tags(batch,daily,csv)
+
+Execution of the test is done by using the parameter a_tags
+When a suite/context is tagged, all of its children will automatically inherit the tag and get executed along with the parent.
+
+select * from table(ut.run(a_path => 'ut_sample_test',a_tags => 'api'));
+
+
+
+
+create or replace package queue_spec as
+  --%suite(Queue specification)
+
+  --%context(A new queue)
+  --%name(a_new_queue)
+
+    --%test(Cannot be created with non positive bounding capacity)
+    procedure non_positive_bounding_cap;
+  --%endcontext
+  --%context(An empty queue)
+  --%name(an_empty_queue)
+
+    --%test(Becomes non empty when non null value enqueued)
+    procedure non_empty_after_enq;
+  --%endcontext
+  --%context(A non empty queue)
+  --%name(a_non_empty_queue)
+
+    --%context(that is not full)
+    --%name(that_is_not_full)
+
+      --%test(Becomes full when enqueued up to capacity)
+      procedure full_on_enq_to_cap;
+    --%endcontext
+    --%context(that is full)
+    --%name(that_is_full)
+
+      --%test(Becomes non full when dequeued)
+      procedure non_full_on_deq;
+    --%endcontext
+
+  --%endcontext
+end;
+
