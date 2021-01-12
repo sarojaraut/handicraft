@@ -1,0 +1,125 @@
+BDD with Cucumber and Serenity BDD
+
+Asking user can we give me an example : conversation about concrete example
+uncover ambuigities or overlooking details
+detailed example will give us more meat to chew or more questions to ask.
+what happens if this and that etc 
+That will help us identify and ilustrate business rules
+Focus on what not how. we just need to understand the problem and leave the solution to later stage. How the ui will look like, which button to press what voice command to give etc
+Make us think about the goals and outcome we are actully trying to achieve
+
+BDD and Three Amigos
+BDD fits in lean/agile development
+story mapping or impact mapping high level acceptance criteria or user story 
+Example user story frequent flier
+
+Leaving things to the last responsible moment so that details stay fresh in team members mind 
+
+Key points
+
+Behaviour Driven Development is a collaborative software delivery methodology
+Teams practicing BDD have structured conversations about examples and business rules to build a deep shared understanding of the problem they need to solve
+During the Three Amigos workshop, team members discuss the requirements around a story and identify a number of key examples that will act as acceptance criteria for the story
+
+
+Automated Test : Executable specification
+
+Feature
+In order to save time when I pick up my morning cofee 
+As a cofee lover 
+I want to be able to order my cofee in advance
+
+Scenario : Buyer order a cofee when they are close to the shop
+Given Cathy is 100 meters away from the cofee shop
+when Cathy orders a large cappuccino
+Then Barry should receive the order 
+And Barry should know that the cofee is urgent
+
+Above is typical Gherkin Feature
+Each feature consists of number os Scenario
+Each scenario indicates name or title of the scenario 
+Given condition is the pre condition / context for the scenario. This is where we setup the system into a state that need to be 
+When clause describes the action the scenaio ellustrates to test. 
+then clause describes the outcome, what action, what occurs. In this case two outcome : receive order and should know it's urgent
+
+scenario always have three things : cotext/precondition, some action and expected outcome
+
+https://github.com/serenity-bdd/serenity-cucumber-starter
+
+clone repo or wget the zip in mac/linux
+from release page copy the url and use wget https://github.com/serenity-bdd/serenity-cucumber-starter/archive/v1.0.1.zip
+unzip v1.0.1.zip
+
+rename project directory to something meaning full : mv serenity-cucumber-starter-1.0.1 caffinate-me
+cd caffinate-me 
+tree 
+
+.
+├── build.gradle
+├── gradle
+│   └── wrapper
+│       ├── gradle-wrapper.jar
+│       └── gradle-wrapper.properties
+├── gradlew
+├── gradlew.bat
+├── LICENSE
+├── pom.xml
+├── README.md
+├── serenity.properties
+└── src
+    ├── main
+    │   └── java
+    │       └── starter
+    │           └── README.md
+    └── test
+        ├── java
+        │   └── starter
+        │       ├── CucumberTestSuite.java
+        │       ├── navigation
+        │       │   ├── NavigateTo.java
+        │       │   └── WikipediaHomePage.java
+        │       ├── search
+        │       │   ├── LookForInformation.java
+        │       │   ├── SearchForm.java
+        │       │   └── WikipediaArticle.java
+        │       └── stepdefinitions
+        │           ├── ParameterDefinitions.java
+        │           └── SearchStepDefinitions.java
+        └── resources
+            ├── features
+            │   └── search
+            │       └── search_by_keyword.feature
+            ├── logback-test.xml
+            └── serenity.conf
+
+15 directories, 21 files
+
+project comes bundled with build scripts both Maven and graddle
+make sure you have maven installed in your machine and you can install from command line
+
+https://maven.apache.org/install.html
+
+project structure
+src/main/java : for application code
+src/test/java : for test automation code
+src/test/resources : for cucumber scenarios
+
+first of lets remove the sample files that comes with this project 
+rm src/test/java/starter/stepdefinitions/^
+rm src/test/java/resources/features/*
+
+now we are going to load the project into IDE
+before that we need to change the name of the project in build script pom.xml (because maven)
+update group id, artifact id and name to something meaningful
+
+
+mvn verify 
+we dont have any scenario at the moment so it will be a dry run but it will load some dependencies
+open pom.xml in intelij and that will open the project
+
+rename package using intellij refactor > rename starter to caffinate me. and choose rename package and it will affect both src/main/java and src/test/java
+
+add feature file 
+and mvn clean verify 
+
+notice we are using verify isnstead of test 
