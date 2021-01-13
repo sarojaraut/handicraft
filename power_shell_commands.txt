@@ -1,0 +1,22 @@
+
+Get-ExecutionPolicy. If it returns Restricted, then run 
+
+Set-ExecutionPolicy AllSigne
+
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+
+
+
+-- General Commands
+choco list -l
+choco upgrade all
+
+
+
+-- Packages installed
+choco install vscode
+choco install git -y
+choco install googlechrome -y
+choco install intellijidea-community
+choco install openjdk

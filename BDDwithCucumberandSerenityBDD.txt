@@ -105,15 +105,22 @@ src/test/java : for test automation code
 src/test/resources : for cucumber scenarios
 
 first of lets remove the sample files that comes with this project 
-rm src/test/java/starter/stepdefinitions/^
-rm src/test/java/resources/features/*
+
+rm -rf src/test/java/starter/stepdefinitions/*
+rm -rf src/test/resources/features/*
+
+now  we need to change the name of the project in build script pom.xml (because maven)
+update group id, artifact id and name to something meaningful
+
+code pom.xml 
+
 
 now we are going to load the project into IDE
-before that we need to change the name of the project in build script pom.xml (because maven)
-update group id, artifact id and name to something meaningful
+before that
 
 
 mvn verify 
+
 we dont have any scenario at the moment so it will be a dry run but it will load some dependencies
 open pom.xml in intelij and that will open the project
 
