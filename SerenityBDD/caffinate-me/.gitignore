@@ -1,12 +1,3 @@
-.DS_Store
-.idea
-*.code-workspace
-*.tar.bz2
-build
-# below line handles both install.log and installation_cleanup.log
-install*.log
-Data/Thumbs.db
-node_modules
 target/
 build
 out

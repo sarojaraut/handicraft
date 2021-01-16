@@ -18,5 +18,6 @@ choco upgrade all
 choco install vscode
 choco install git -y
 choco install googlechrome -y
-choco install intellijidea-community
 choco install openjdk
+choco install maven
+choco install intellijidea-community
