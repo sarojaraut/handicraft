@@ -24,16 +24,16 @@ During the Three Amigos workshop, team members discuss the requirements around a
 
 Automated Test : Executable specification
 
-Feature
-In order to save time when I pick up my morning cofee 
-As a cofee lover 
-I want to be able to order my cofee in advance
+Feature : Order a coffee
+  In order to save time when I pick up my morning cofee
+  As a coffee lover
+  I want to be able to order my cofee in advance
 
-Scenario : Buyer order a cofee when they are close to the shop
-Given Cathy is 100 meters away from the cofee shop
-when Cathy orders a large cappuccino
-Then Barry should receive the order 
-And Barry should know that the cofee is urgent
+  Scenario : Buyer order a coffee when they are close to the shop
+    Given Cathy is 100 meters away from the cofee shop
+    When Cathy orders a large cappuccino
+    Then Barry should receive the order
+#    And Barry should know that the cofee is urgent
 
 Above is typical Gherkin Feature
 Each feature consists of number os Scenario
@@ -126,7 +126,45 @@ open pom.xml in intelij and that will open the project
 
 rename package using intellij refactor > rename starter to caffinate me. and choose rename package and it will affect both src/main/java and src/test/java
 
-add feature file 
-and mvn clean verify 
+add feature file order_a_cofee.feature 
+Feature : Order a coffee
+  In order to save time when I pick up my morning cofee
+  As a coffee lover
+  I want to be able to order my cofee in advance
+
+  Scenario : Buyer order a coffee when they are close to the shop
+    Given Cathy is 100 meters away from the cofee shop
+    When Cathy orders a large cappuccino
+    Then Barry should receive the order
+#    And Barry should know that the cofee is urgent
+and run mvn clean verify 
 
 notice we are using verify isnstead of test 
+
+
+
+when you run for the first time it will create a default run configuration and later we can edit and change the values e.g main class as below
+
+
+Run edit configuration
+Main Class : net.serenitybdd.cucumber.cli.Main
+glue : caffinateme
+Feature or Folder Path  : C:/saroj/gitrepos/handicraft/SerenityBDD/caffinate-me/src/test/resources/features/order_a_cofee.feature
+program Arguments
+
+If run option is not visible after right clicking on the faeature file then ensure cucumber plugins has been addedcd
+---------------
+Intellij Settings 
+
+Enable plugins
+Enable Cucumber support
+Gherkin
+
+Cucumber for Java
+
+Cucumber for Groovy (optional: install this plugin if you want to create step definitions in Groovy)
+
+Add the Cucumber library
+From the main menu, select File | Project Structure (Ctrl+Alt+Shift+S) or click the Project Structure button on the toolbar.
+Under Project Settings, select Libraries and click the New Project Library button | From Maven.
+io.cucumber:cucumber-java:jar:6.1.1
