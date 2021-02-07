@@ -69,3 +69,21 @@ moving to the end or begning of words : ctrl + right/left arrow
 selecting the entire word : ctrl + d same as double clicking on the word
 selecting all occurance of the same word rsors and give multiple cu: ctrl + shift + l 
 go to function definition : ctrl +
+
+
+join line : ctrl + j
+code folding : ctrl + shift + [
+delete previous word : ctrl + backspace
+Selecting words : ctrl + shift + right arrow 
+duplicate lines : ctrl + shift + d
+
+
+Custom Settings ctrl + , 
+workbench.editor.decorations.color and badges >
+workbench.editor.wraptab
+search.mode view default, new editor or reuse editor
+ctrl + shift + f : search across all files
+
+
+Command : ctrl + shift + p 
+Git: Open All Changes... - Opens all modified and untracked files.

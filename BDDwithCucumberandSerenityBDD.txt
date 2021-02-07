@@ -20,7 +20,71 @@ Key points
 Behaviour Driven Development is a collaborative software delivery methodology
 Teams practicing BDD have structured conversations about examples and business rules to build a deep shared understanding of the problem they need to solve
 During the Three Amigos workshop, team members discuss the requirements around a story and identify a number of key examples that will act as acceptance criteria for the story
+use concrete example to understand the happy cases and variations
+Three amigos use techniques like feature mapping and example mapping.
+These two techiniques use color index cards to describe the requirements in more details. easy to understand and through.
+After 3 amigo go away and work offline to generate the gherkin scenarios and then later in sprint planning these can be presented. This is a great way of developing shared understanding and second chance for feedback. Creating gherkin scenarios during 3 amigo sessions would be quite laborious and hence go away and do these offline. In the meeting focus on business scenarios
 
+example mapping : we have conversation about stories and concrete example. Examples are great way to explore problem domain. Great starting point for out automation testing. 
+Stories, examples, rules and questions/assumptions. Story(Yellow), acceptance criteria or rules(blue) example(green), questions/Assumptions(Pink)
+
+Story : Yellow Card
+As a cofee lover whose plan have changed at the last minute
+I want to be able to cancel my order 
+So that I don't pay for cofee that I don't drink.
+
+Acceptance Criteria/Rule : Blue Card(underneath story)
+Orders cancelled less than 5 minutes before pickup time incur a £1 fee 
+Order should appear in the "prepare now" list when the client is 4 minutes away 
+
+Example : Green card. under each rule
+These are simple and we don't express in cucumber gievn-when-then format. We just need min amout of info that allows everyone to rember what we are talking about. friends episode notation
+
+The one where Sera has to cancel at the last minute
+The one where Sera orders her cofee when she is 2 minutes from the shop
+The one where jack has automatic order scheduled each morning.
+Some time we need more details e.g. : JAck has a cappuccino scheduled for 8 Am each morning => it appears in the todo list at 7:50AM.
+
+Record questions : Pink cards
+How does the fee work if cust pays using loyality points?
+
+Pink cards are uncertainty. If we have too many pink cards thie means we may not quite ready yet to pick that story
+
+Feature Mapping:
+Similar to example mapping but focuses more on the alternative paths through stories to identify many significant examples as possible
+Feature mapping builds on example mapping
+
+Feature mapping works on four principles :
+  Rules explain Examples 
+  Examples illustrate Rules
+  Steps explore Examples
+  Questions to challlenge everything.
+
+Example : how would we analyse story refund cancelled orders story using feature mapping.
+Step-1 Anchoring example the conversation starter
+  "Sara leaves her apartment and order her usaul morning latte. She is 30 mins away from Barry's cofee shop. 5 mins later, when she reaches the tube station, she realises that she need to go to different office and won't be going to Barry's cofee shop at all. She cancels the order and she paid by credit card and the rrfund is paid to har card"
+
+Step-2 Layout the rules (Blue)
+  Orders cancelled less than 5 minutes before pickup time incur a £1 fee
+Step-3 Find an example (Green)
+  The one where Sera has to cancel at the last minute
+Step-4 Steps and consequences (Yellow)
+  How the above example plays out. We are looking at more details and flow of the story.
+  Sara order her cofee (Yellow)
+  Sara cancels the order before 25 minutes(Yellow)
+  Sara is fulle refunded (consequence orange card)
+  The order is removed from Barry's order list (consequence orange card)
+  Rule, example, steps consequences are aligned in one straight line horizontally
+  We need to think about all steps and consequences
+  Now hunt for variants
+  Explore requiremnts in all sorts of different directions
+  When we explore variants we explore the steps and ask what else could happen here and what could be the consequeneces
+  e.g. can you give an example when we don't charge the fee 
+  Oh yes, premium customers are only charged 0.5 fee 
+
+We can put guide line cards on left most side to group stories like section header
+
+One of example mapping or feature mapping can be used during three amigo sessions. May be you cna start with example mapping and switch onto feature mapping when you realise that more details needs to be included.
 
 Automated Test : Executable specification
 
@@ -153,6 +217,9 @@ Feature or Folder Path  : C:/saroj/gitrepos/handicraft/SerenityBDD/caffinate-me/
 program Arguments
 
 If run option is not visible after right clicking on the faeature file then ensure cucumber plugins has been addedcd
+
+
+
 ---------------
 Intellij Settings 
 

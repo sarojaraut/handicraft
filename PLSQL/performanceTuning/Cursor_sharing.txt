@@ -1,0 +1,212 @@
+
+Intersting Anamolies
+
+1. Monitor SQL Workload during performance run : v$sqlstats or awr, there might be one or might be ten
+2. Individual SQLs, leading columns for predicates and potential indexes
+3. Consolidate indexes column (A, B, C) or only (A,B) not slap an index on every column 
+4. Try with nosegment index/unusable mode, index definitation just in dictionaries. Can't speed up query but explain plan with assumption index exists. Validation step, if index exists will indeed be used.
+5. Check virtual explain plan
+6. Now we have increased confidence that index will be used, Create index invisible mode to minimise risk. Quick foot note - Unique invisible will be visible because of uniqueness
+7. Test each SQL, and ensure runs better. Ideally all should but might not be always the case 
+8. Decide on the worth of each index : kind of balancing act : makes three sqls better but adverse impact on three other sqls because of range scan. If it's important for index to go on 
+9. no_index for regression
+10. make index visible 
+
+
+Index monitoring can gave you a false lead 
+v$sql_plan
+dba_hist_sql_plan 
+dba_index_usage where name='' -- look for last used
+tools are there to help you not replace you
+
+set autotrace explain only 
+optimiser estimation : rows sometimes out by big factor , miles apart
+optimiser by default does not understand the corelation between columns
+Optimiser can use index stastics to change execution plan 
+
+is_bind_sensitive
+is_bind_aware
+is_sharable
+
+
+more than 14 bind variables
+more than 9 columns in filter
+
+dba_audit_trail
+
+https://docs.oracle.com/database/121/TGSQL/tgsql_cursor.htm#TGSQL-GUID-7A37EEAC-1B50-4744-B4BC-A3052313A7E4
+
+
+Child Cursors and V$SQL
+Every parent cursor has one or more child cursors. A child cursor contains the execution plan, bind variables, metadata about objects referenced in the query, optimizer environment, and other information. In contrast to the parent cursor, the child cursor does not store the text of the SQL statement.
+
+Parent Cursors and V$SQLAREA
+The V$SQLAREA view contains one row for every parent cursor.
+
+SELECT SQL_TEXT, SQL_ID, USERNAME AS USR, CHILD_NUMBER AS CHILD#, 
+       HASH_VALUE, PLAN_HASH_VALUE AS PLAN_HASHV
+FROM   V$SQL s, DBA_USERS d
+WHERE  SQL_TEXT LIKE '%mployee%'
+AND    SQL_TEXT NOT LIKE '%SQL_TEXT%'
+AND    d.USER_ID = s.PARSING_USER_ID;
+
+SQL_TEXT                SQL_ID        USR CHILD# HASH_VALUE PLAN_HASHV
+----------------------- ------------- --- ------ ---------- ----------
+SELECT * FROM Employees 5bzhzpaa0wy9m  HR      0 2483976499 1445457117
+SELECT * FROM employees 4959aapufrm1k  HR      0 1961610290 1445457117
+SELECT * FROM employees 4959aapufrm1k  SH      1 1961610290 1445457117
+
+V$SQL describes the statements that currently reside in the library cache. It contains one row for every child cursor, as shown in the following example:
+
+In the preceding results, the CHILD# of the bottom two statements is different (0 and 1), even though the SQL_ID is the same. This means that the statements have the same parent cursor, but different child cursors. In contrast, the statement with the SQL_ID of 5bzhzpaa0wy9m has one parent and one child (CHILD# of 0). All three SQL statements use the same execution plan, as indicated by identical values in the PLAN_HASH_VALUE column.
+
+Cursor Mismatches and V$SQL_SHARED_CURSOR
+If a parent cursor has multiple children, then the V$SQL_SHARED_CURSOR view provides information about why the cursor was not shared. For several types of incompatibility, the TRANSLATION_MISMATCH column indicates a mismatch with the value Y or N.
+
+SELECT S.SQL_TEXT, S.CHILD_NUMBER, s.CHILD_ADDRESS, 
+       C.TRANSLATION_MISMATCH
+FROM   V$SQL S, V$SQL_SHARED_CURSOR C
+WHERE  SQL_TEXT LIKE '%employee%'
+AND    SQL_TEXT NOT LIKE '%SQL_TEXT%'
+AND S.CHILD_ADDRESS = C.CHILD_ADDRESS;
+
+SQL_TEXT                       CHILD_NUMBER    CHILD_ADDRESS T
+------------------------------ ------------ ---------------- -
+SELECT * FROM employees                   0 0000000081EE8690 N
+SELECT * FROM employees                   1 0000000081F22508 Y
+
+In this example, the TRANSLATION_MISMATCH column shows that the two statements (SELECT * FROM employees) referenced different objects
+
+
+
+About Cursors and Parsing
+If an application issues a statement, and if Oracle Database cannot reuse a cursor, then it must build a new executable version of the application code. This operation is known as a hard parse.
+
+A soft parse is any parse that is not a hard parse, and occurs when the database can reuse existing code. 
+Some soft parses are less resource-intensive than others. For example, if a parent cursor for the statement already exists, then Oracle Database can perform various optimizations, and then store the child cursor in the shared SQL area. If a parent cursor does not exist, however, then Oracle Database must also store the parent cursor in the shared SQL area, which creates additional memory overhead.
+
+
+Effectively, a hard parse recompiles a statement before running it. Hard parsing a SQL statement before every execution is analogous to recompiling a C program before every execution. Syntax check, semantic check, acces right check, creating exec plan, Accessing the library cache and data dictionary cache numerous times.
+
+An especially resource-intensive aspect of hard parsing is accessing the library cache and data dictionary cache numerous times to check the data dictionary. When the database accesses these areas, it uses a serialization device called a latch on required objects so that their definition does not change during the check. Latch contention increases statement execution time and decreases concurrency.
+
+ALTER SYSTEM FLUSH SHARED_POOL;
+
+SQL> COL NAME FORMAT a18
+
+SQL> SELECT s.NAME, m.VALUE
+  2  FROM   V$STATNAME s, V$MYSTAT m
+  3  WHERE  s.STATISTIC# = m.STATISTIC#
+  4  AND    s.NAME LIKE '%(hard%';
+
+NAME                    VALUE
+------------------ ----------
+parse count (hard)         48
+
+SELECT value
+FROM   v$diag_info
+WHERE  name = 'Default Trace File';
+
+EXEC DBMS_MONITOR.SESSION_TRACE_ENABLE(waits=>TRUE, binds=>TRUE); 
+ALTER SESSION SET TRACEFILE_IDENTIFIER = "emp_stmt";
+SELECT * FROM hr.employees;
+EXIT;
+
+Misses in library cache during parse: 1 : Value 1 shows a library cache miss indicates a hard parse. count=0 means soft parse.
+
+
+The statement SELECT SUM(salary) FROM hr.employees WHERE employee_id < 101 uses the literal value 101 for the employee ID. By default, when similar statements do not use bind variables, Oracle Database cannot take advantage of cursor sharing. Thus, Oracle Database sees a statement that is identical except for the value 102, or any other random value, as a completely new statement, requiring a hard parse.
+
+Consider an application that executes the following statements, which differ only in literals:
+
+SELECT SUM(salary) FROM hr.employees WHERE employee_id < 101;
+SELECT SUM(salary) FROM hr.employees WHERE employee_id < 120;
+SELECT SUM(salary) FROM hr.employees WHERE employee_id < 165;
+
+The following query of V$SQLAREA shows that the three statements require three different parent cursors. As shown by VERSION_COUNT, each parent cursor requires its own child cursor.
+
+COL SQL_TEXT FORMAT a30
+SELECT SQL_TEXT, SQL_ID, VERSION_COUNT, HASH_VALUE
+FROM   V$SQLAREA
+WHERE  SQL_TEXT LIKE '%mployee%'
+AND    SQL_TEXT NOT LIKE '%SQL_TEXT%';
+
+
+VARIABLE emp_id NUMBER
+
+EXEC :emp_id := 101;
+SELECT SUM(salary) FROM hr.employees WHERE employee_id < :emp_id;
+EXEC :emp_id := 120;
+SELECT SUM(salary) FROM hr.employees WHERE employee_id < :emp_id;
+EXEC :emp_id := 165;
+SELECT SUM(salary) FROM hr.employees WHERE employee_id < :emp_id;
+V$SQLAREA shows one unique SQL statement:
+
+Bind Variable Peeking
+In bind variable peeking (also known as bind peeking), the optimizer looks at the value in a bind variable when the database performs a hard parse of a statement. The optimizer does not look at the bind variable values before every parse. Rather, the optimizer peeks only when the optimizer is first invoked, which is during the hard parse.
+
+When a query uses literals, the optimizer can use the literal values to find the best plan. However, when a query uses bind variables, the optimizer must select the best plan without the presence of literals in the SQL text. 
+
+Literals Results hard parse but possible choose Different Execution Plans
+
+CURSOR_SHARING Initialization Parameter
+EXACT : This is the default value. The database enables only textually identical statements to share a cursor. 
+FORCE : The database replaces all literals with system-generated bind variables. For statements that are identical after the bind variables replace the literals, the optimizer uses the same plan.
+
+For example, an application could process the following statement:
+
+SELECT SUBSTR(last_name, 1, 4), SUM(salary) 
+FROM   hr.employees 
+WHERE  employee_id < 101 GROUP BY last_name
+The optimizer replaces literals, including the literals in the SUBSTR function, as follows:
+
+SELECT SUBSTR(last_name, :"SYS_B_0", :"SYS_B_1"), SUM(salary) 
+FROM   hr.employees 
+WHERE  employee_id < :"SYS_B_2" GROUP BY last_name
+
+As the preceding steps indicate, setting the CURSOR_SHARING initialization parameter to FORCE does not reduce the parse count. Rather, in some cases, FORCE enables the database to perform a soft parse instead of a hard parse.
+
+Adaptive Cursor Sharing
+The adaptive cursor sharing feature enables a single statement that contains bind variables to use multiple execution plans. Cursor sharing is "adaptive" because the cursor adapts its behavior so that the database does not always use the same plan for each execution or bind variable value.
+
+In adaptive cursor sharing, the database monitors data accessed over time for different bind values, ensuring the optimal choice of cursor for a specific bind value. For example, the optimizer might choose one plan for bind value 10 and a different plan for bind value 50. Cursor sharing is "adaptive" because the cursor adapts its behavior so that the optimizer does not always choose the same plan for each execution or bind variable value. Thus, the optimizer automatically detects when different execution of a statement would benefit from different execution plans.
+
+https://docs.oracle.com/database/121/TGSQL/tgsql_cursor.htm#TGSQL94741
+
+
+
+
+
+
+
+
+Establish Coding Conventions to Increase Cursor Reuse
+By default, any variation in the text of two SQL statements prevents the database from sharing a cursor, including the names of bind variables. Also, changes in the size of bind variables can cause cursor mismatches. For this reason, using bind variables in application code is not enough to guarantee cursor sharing.
+
+
+
+A best practice is to prevent users of the application from changing the optimization approach and goal for their individual sessions. Any changes to the optimizer environment can prevent otherwise identical statements from sharing cursors.
+
+VARIABLE emp_id NUMBER
+
+EXEC :emp_id := 110;
+
+ALTER SESSION SET OPTIMIZER_MODE = FIRST_ROWS;
+SELECT salary FROM hr.employees WHERE employee_id < :emp_id;
+ALTER SESSION SET OPTIMIZER_MODE = ALL_ROWS;
+SELECT salary FROM hr.employees WHERE employee_id < :emp_id;
+
+SELECT S.SQL_TEXT, S.CHILD_NUMBER, s.CHILD_ADDRESS, 
+       C.OPTIMIZER_MODE_MISMATCH
+FROM   V$SQL S, V$SQL_SHARED_CURSOR C
+WHERE  SQL_TEXT LIKE '%employee%'
+AND    SQL_TEXT NOT LIKE '%SQL_TEXT%'
+AND S.CHILD_ADDRESS = C.CHILD_ADDRESS;
+
+SQL_TEXT                            CHILD_NUMBER CHILD_ADDRESS    O
+----------------------------------- ------------ ---------------- -
+SELECT salary FROM hr.employees WHE            0 0000000080293040 N
+RE employee_id < :emp_id
+SELECT salary FROM hr.employees WHE            1 000000008644E888 Y
+RE employee_id < :emp_id
+
