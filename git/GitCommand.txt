@@ -1,3 +1,64 @@
+create a new repository : git init
+
+git remote add origin https://github.com/user-name/repo-name.git
+
+git push -u remote-name branch-name
+
+example : push local main branch to remote : git push -u origin main 
+
+create new branch : git checkout -b new-branch-name 
+
+list branch : git branch 
+
+switch branch : git checkout branch-name 
+
+stash/unstash files : one of the ways to resolve the checkout error is to stash changes, temporarily save the work you have done so far in the current branch if you are not ready to commit.
+git stash 
+recover or undo stash changes, we can comeback to the branch where we stashed and pop those : git stash pop
+
+check current status : git status
+
+rename local branch : git branch -m old-branch-name new-branch-name
+
+rename remote branch : git push origin :old-branch-name new-branch-name
+
+synchronise branch changes : 
+        add all changes : git add .
+        add a specific file : git add file-path
+        git commit -m "message"
+        git add file-path 
+        git commit --ammend -m "Changed commit message"
+
+clone repository : git clone https://github.com/username/repo-name.git
+
+Checking commit log: git log 
+
+reset to the last commit : git reset origin/branch-name 
+
+merge local repo with remote repo : 
+
+remove untracked file/dirs : files or dirs which has not been commited yet can be easily removed from working directory using git clean. Usually needed to remove unwanted files created by IDE 
+Remove untracked files : git clean -f 
+Remove untracked dirs : git clean -fd 
+
+rollback all chnages to an existing file which has been changed accidentally git checkout -- file-name 
+
+delete local branch : git branch -d branch-name 
+delete remote branch : git push remote-name --delete branch-name 
+
+ignore file permission changes : file permission changes are picked by git as updated files : git config core.fileMode false 
+
+Fix git ignore : if the files are already being tracked then adding to git ignore may be a bit pain
+
+easy way is :
+
+touch .gitignore
+
+git rm -r --cached .
+git add . 
+git commit -m "gitignore fixed untracked files"
+
+
 
 cd /c/saroj
 

@@ -40,3 +40,18 @@ order by buffer_gets desc;
 -- but what if you choose a queue with one person but bagfull of items taking more time than other queue with fewer people
 -- Optimiser behaves similar way .. it estimates the best case but if reality does not match the estimates then drama happens
 -- I thought I'll go fastes choosing that lane but I was wrong
+
+
+--* Finding difference between two tables 
+-- Historically we a minus b union all b minus a
+-- If we look at the explain plan : it does two passes on both the tables and minus does a sort operation
+-- so sorting can be scostly operation and does not scale well, e.g. for similar reason hash join scales well above merge join
+-- better option could be full outer join instead of minus and union all
+-- but the full outer join sql could be hefty statement
+-- you need to join on primary keys, and check all other columns as not equal, also need to cater for null
+-- e.g nvl(a.x,0) != nvl(b.x,0) , you need to carefully choose the fallback data e.g. 0 in this case
+--you could use sys_op_map_nonnull : similar to nvl solution but takes care of special value for you
+-- sys_op_map_nonnull chooses a impossible to achieve value for that data type kind of illegal value
+-- this is a documented function though, so on that side of the fence you should not be allowed to use this
+-- however this has been publicly documented within oracle MOS notes
+-- even nicer : decode (a.x, b.x,1,0) != 0
