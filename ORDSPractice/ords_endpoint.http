@@ -1,0 +1,63 @@
+# The first non-empty line of the selection (or document if nothing is selected) is the Request Line. Below are some examples of Request Line:
+# alt + ctrl + r : runs a request line
+# allow you to spread query parameters into multiple lines(one line one query parameter), we will parse the lines in immediately after the Request Line which starts with ? and &, like
+
+    # GET https://example.com/comments
+    #     ?page=2
+    #     &pageSize=10
+
+# Request Headers
+# The lines immediately after the request line to first empty line are parsed as Request Headers. provide headers with the standard field-name: field-value format, each line represents one header. 
+
+# If you want to provide the request body, please add a blank line after the request headers like the POST example in usage
+
+    # POST https://example.com/comments HTTP/1.1
+    # Content-Type: application/xml
+    # Authorization: token xxx
+
+    # <request>
+    #     <name>sample</name>
+    #     <time>Wed, 21 Oct 2015 18:27:50 GMT</time>
+    # </request>
+
+# You can also specify file path to use as a body, which starts with <
+    # POST https://example.com/comments HTTP/1.1
+    # Content-Type: application/xml
+    # Authorization: token xxx
+
+    # < C:\Users\Default\Desktop\demo.xml
+
+# When content type of request body is application/x-www-form-urlencoded, you may even divide the request body into multiple lines. And each key and value pair should occupy a single line which starts with &:
+
+    # POST https://api.example.com/login HTTP/1.1
+    # Content-Type: application/x-www-form-urlencoded
+
+    # name=foo
+    # &password=bar
+# Authentication
+###
+
+
+GET https://httpbin.org/basic-auth/demouser/demopwd
+Authorization: Basic demouser:demopwd
+
+###
+
+GET https://sd2cgxnc6zom7sw-ourcompany.adb.uk-london-1.oraclecloudapps.com/ords/oauth/token
+data "grant_type=client_credentials"
+
+###
+GET https://sd2cgxnc6zom7sw-ourcompany.adb.uk-london-1.oraclecloudapps.com/ords/api/healthcheck/v1/
+
+###
+
+POST https://example.com/comments HTTP/1.1
+content-type: application/json
+
+{
+    "name": "sample",
+    "time": "Wed, 21 Oct 2015 18:27:50 GMT"
+}
+
+###
+
