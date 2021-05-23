@@ -1,0 +1,149 @@
+
+JAVA for tester
+
+https://expansion.serenity-dojo.com/courses/take/java-for-testers/lessons/12416746-simple-conditional-logic
+
+String animal;
+animal = "Cat";
+if animal.equals("Cat"){
+    return "Tuna";
+} else if (animal.equals("Dog")){
+    return "Dog Food";
+} else {
+    return "Cabbage";
+
+}
+
+return (isPremium ==  true) "Salmon" ? "Tuna";
+
+
+string food;
+
+switch (animal){
+    case "Cat" :
+        food = (isPremium ==  true) "Salmon" ? "Tuna";
+        break;
+    case "Dog" :
+        food = (isPremium ==  true) "Deluxe Dog Food" ? "Dog Food";
+        break;
+    default:
+        food = "Don't know the animal, don't know it's food";
+}
+
+return food;
+
+
+we need the break. otherwise the case will fall through all cases after the matching case 
+One way of avoiding the break is using return inside case blocks instead of assigning to intermediate variable.
+
+
+Enum
+
+public enum animalType{
+    CAT, DOG, FISH
+}
+
+animalType animal;
+
+string food;
+
+switch (animal){
+    case CAT :
+        food = (isPremium ==  true) "Salmon" ? "Tuna";
+        break;
+    case DOG :
+        food = (isPremium ==  true) "Deluxe Dog Food" ? "Dog Food";
+        break;
+    default:
+        food = "Don't know the animal, don't know it's food";
+}
+
+return food;
+
+we can use animalType.CAT in other packages but to use the shorthand CAT we need to import that using import static packagename.animalType.CAT
+
+#Java Collection
+
+Array
+
+String[] colors = {"red",'Green","blue"};
+int[] ages = new Int[3];
+
+ages[0] = 10;
+ages[1] = 20;
+ages[2] = 30;
+
+
+for (i=0; i<3 ; i++){
+    sSystem.out.println(ages[i]);
+}
+
+
+#Lists
+
+List in Java provides the facility to maintain the ordered collection. It contains the index-based methods to insert, update, delete and search the elements. It can have the duplicate elements also. We can also store the null elements in the list.
+
+List<String> colours = new ArrayList<>();
+
+colours.add("red");
+colours.add("blue");
+colours.add("green");
+colours.add("red");
+// Red will be added twice
+
+for(String someColour:colours) 
+  System.out.println(someColour);  
+
+
+Set<String> colours = new HashSet<>();
+
+colours.add("red");
+colours.add("blue");
+colours.add("green");
+colours.add("red");
+// Red will be added only once because set is unique collection
+
+for(String someColour:colours) 
+  System.out.println(someColour);
+
+
+  https://expansion.serenity-dojo.com/courses/take/java-for-testers/lessons/12447634-lists-and-sets
+
+    @Test
+    public void creatingAMapMoreConcisely() {
+        Map<String, Integer> numberOfBallsByColor = Map.of("red",3,"green", 6,"blue", 5);
+
+        Map<String,Integer> moreColors = new HashMap<>();
+        moreColors.put("yellow", 10);
+        moreColors.put("mauve", 0);
+        moreColors.putAll(numberOfBallsByColor);
+
+        moreColors.put("yellow", 20);
+        moreColors.replace("pink", 15);
+
+        System.out.println("Number of pink tennis balls " + moreColors.getOrDefault("pink",0));
+    }
+
+    @Test
+    public void iteratingOverMapKeys() {
+        Map<String, Integer> numberOfBallsByColor = Map.of("red",3,"green", 6,"blue", 5);
+
+        System.out.println("Keys = " + numberOfBallsByColor.keySet());
+
+        printMap(numberOfBallsByColor);
+
+        Map<String, Integer> modifiableMap = new HashMap<>();
+        modifiableMap.putAll(numberOfBallsByColor);
+
+        modifiableMap.clear();
+
+        printMap(modifiableMap);
+
+    }
+
+    private void printMap(Map<String, Integer> numberOfBallsByColor) {
+        for(Map.Entry<String, Integer> entry : numberOfBallsByColor.entrySet()) {
+            System.out.println(entry.getKey() + " -> " + entry.getValue());
+        }
+    }  
+

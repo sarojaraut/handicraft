@@ -1,0 +1,280 @@
+
+Setup
+    install node and npm
+    npm install -g @angular/cli
+
+Create a workspace and initial application
+
+Plural Site Course : https://app.pluralsight.com/course-player?clipId=ee55d6f6-9b9f-4e1d-97d1-c5fbc1d2258c
+Excercise Link: https://jcoop.io/angular-practice-exercises/
+
+
+Type script : suer set of java script. Ttype script contains type script feature and java script code and leater transpiled into java script.
+
+Type script feature : static typing, interface, class properties, public private accessibility
+
+static typing : 
+    let name : string 
+    let age : number 
+    let birthdate : date
+
+if you set any of these to invalid value type script compiler will throw an error and fail the transpiler, catching bus earlier in the process
+
+TYpeScript interface : This will enforce the shape of the object. If we want to ensure all cats has name and age property we can define interface like this.
+
+interface ICat{
+    name:string
+    age:number
+}
+
+let fluffy:ICat
+
+Given this declaration we will get compile time safety if we try to assign a object to fluffy that does not include name and age with string and number type.
+
+example of faile objects in this case 
+fluffy = {name : 'fluffy', age : 'seven'} // fail to compile because age is not number
+fluffy = {name : 'fluffy'} // fail to compile because age property is missing
+if we want age property to be options we could define interface with ? e.g.
+
+interface ICat{
+    name:string
+    age?:number
+}
+
+
+TYpeScript Class Properties
+
+class cat{
+    constructor (name){
+        this.name = name
+    }
+}
+Above is just plain es2015 not TypeScript we can make it more explicit by adding a name property like :
+
+class cat{
+    name:string
+    constructor (name){
+        this.name = name
+    }
+}
+
+adding this does not change any functionality but kust more explicit
+
+Public and Private accessibility
+class cat{
+    name:string
+    color:string
+    constructor (name){
+        this.name = name
+    }
+    speak(){console.log('meow')}
+}
+
+This class has three members: name property, color property and speak function
+class members public by default in ES2015 and TS 
+
+e.g 
+
+class cat{
+    name:string
+    speak(){console.log('My name is: '+ this.name)}
+}
+
+let fluffy = new cat()
+console.log(fluffy.name)
+fluffy.speak
+
+but if we want to make them as private
+
+class cat{
+    pprivate name:string
+    speak(){console.log('My name is: '+ this.name)}
+}
+
+let fluffy = new cat()
+console.log(fluffy.name) // compile error
+fluffy.speak // success
+
+class cat{
+    pprivate name:string
+    private color : string
+    constructor (name, color){
+        this.name = name
+        this.color = color
+    }
+}
+
+For such usecase TS has shorthand 
+class cat{
+    constructor(private name, private color){}
+}
+
+let fluffy = new cat('Fluffy', 'White')
+
+##Angular JS vs Angular
+
+Angular 1.x is angular JS and 2.x onwards are called Angular 
+Angular JS : MVC architecture : View inside html(template) (ng-controller="myCtrlr) refers a controler myCtrlr.js and controller exposes models or objects that expose data
+Angular : Component. In Angular we have comonent and that component has associated template. 
+
+In Angularjs template is kind of controller and template would identify one more controller that controlls sections of our page. where as in Angular cmponents and templates are really one-to-one. In fact we can consider template to be a part of component and we can actually code like that, html inside component  
+
+##Conceptual Model
+
+Angular component hierarchy : When we navigate to a url there is always a root application component that loads first. Then the angular router looks at the url and figures out the component that matches the route. Component template then loaded and then component fetches data from server and gives to the template for display. If the page is complex then it's likely that it will have lots of smaller components and those components can be composed of other components. This kind of ends up forming a tree like structure
+
+Angular modules are containers that groups routes and components into a single unit. If user uses a sertain section of app the only those modules are loaded. When we create a component, service, directive or pipe we register within a module
+
+Tools needed : NVM - Node version manager, After installing nVM we can install any version of node like ; nvm install 14.16.0
+
+nvm install 8.11.2 used in the course 
+
+nvm use 14.16.0
+nvm use 8.11.2
+npm uninstall -g angular-cli
+npm cache clean or npm cache verify
+
+npm install -g @angular/cli
+
+npm install -g @angular/cli@7.1.2 used in the course
+ng --version 
+
+ng new ng-fundamentals 
+
+add angular routing : no 
+css : scss
+
+this will generate a angular project with webpack and everything we need for production 
+
+cd C:\saroj\angular_practice
+
+angular.json : holds number of settings for this project
+package.json :
+
+inside src it creats 
+app folder, this is where we will be coding
+asset : static assets, css, image 
+
+let's make some small changes to package json file
+
+https://github.com/jmcooper/angular-fundamentals-files
+
+cd ng-fundamentals 
+
+npm start
+
+http://localhost:4200/
+
+Bootstrap Files 
+app.component.ts
+app.component.html
+app.component.css
+
+Notice that component is consists of three files, .ts, .html and .css
+
+.html file is being displayed when we start the app, let's see how that works.
+
+bootstraping begins with main.ts 
+in angular.json main properties is set to src/main.ts and this is used by webpack config for our site and it causes main.ts to be loaded when app first loads
+
+in main.ts platformBrowserDynamic().bootstrapModule(AppModule)
+Angular applications has made up of modueles and every app has AppModule 
+
+that module is defined in app.module.ts 
+
+in app.module.ts  it's bootstrap with AppComponent. 
+If you look our app.component.ts , it has selector : 'app-root' . This selector defines the HTML tag in order to display this component
+if you look in the index.html you will see the app-root tag. This index.html file is first displayed when out app loads and it's loading out AppComponent
+That's how it all comes together
+
+There is nothing magical about AppComponent 
+
+we can rename app.component.ts to events-app.component.ts
+change the selector name : event-app 
+change export class name to EventsAppComponent
+we can rename the templateUrl and styleUrls or use template and use hardcoded html
+
+export class name from app.component.ts is used in import name of app.module.ts
+Also in app.module.ts we need to use same class name in NgModule's declarations section and bootstrap section
+and one last thing in index.html change the selector name
+
+## Brief look at the App module
+
+app.module.ts : three main sections declarations, imports and providers
+When we add a component, pipe or directive we must deaclare that in declarations section 
+Services are added as providers here
+imports array is used for importing other modules
+Imported modules makes other services and directives available 
+
+if you create service, component, pipe or directive you need to make sure you add it in the modules section 
+
+## accessing statis files 
+we can create separate folders under assets directory e.g. images 
+
+we can refere images as "/assets/images/a.png", here the path mentioned is relative to index.html file 
+
+by default the assets folder is included in the assets array of angular.json file 
+similarly styles array and scripts array in angular.json specifies path of css and js scripts
+
+we can load third party css styles : e.g. npm install ngf-bootstrap --save : this is twiter style bootstrap
+
+#Create and Communicating Between Angular Components 
+
+create new events folder under app : this will hold everything needed to display and work with events in our app 
+Now create our events-list-component 
+
+first add 
+
+import { component } from '@angular/core'
+export class EventsListComponent{
+
+}
+
+finally add a decorator and decorator class with it 
+
+@Component({
+    selector : 'event-list'
+    template : '<div><h1>Upcoming Angular Events</h1></div>'
+})
+
+to make it more redable we are going to change this to es6 multi line string literal use back ticks instead of single quote
+
+@Component({
+    selector : 'event-list'
+    template : `
+    <div>
+        <h1>Upcoming Angular Events</h1>
+    </div>
+    `
+})
+
+--
+
+import { component } from '@angular/core'
+
+@Component({
+    selector : 'event-list'
+    template : `
+    <div>
+        <h1>Upcoming Angular Events</h1>
+    </div>
+    `
+})
+
+export class EventsListComponent{
+
+}
+
+{{}} : double brace notation, this is interpolation and one-way binding. Angular will look for that object in the component 
+
+it's easier to have html content in it's own file
+
+breaking our app into lots of little component will make our application well organised and easy to mantain but won't be very usefull unless we know how to communicate between them and pass data and events back and forth
+
+Previous chapter link : https://app.pluralsight.com/course-player?clipId=ac796629-c17d-4da8-a6fa-b9371e86f44b
+
+# 4 Exploring Angular Template Syntax
+https://app.pluralsight.com/course-player?clipId=fadbed2d-c001-4a94-871c-7bbe2a4c7239
+
+
+

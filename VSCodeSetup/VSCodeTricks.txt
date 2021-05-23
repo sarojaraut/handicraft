@@ -87,3 +87,19 @@ ctrl + shift + f : search across all files
 
 Command : ctrl + shift + p 
 Git: Open All Changes... - Opens all modified and untracked files.
+
+ctrl + w = closing current file
+
+easier way to open a file is : ctrl + p and then type your file name
+
+ctrl + tab : to switch between files
+
+
+Mortgage Advisor
+Peter Bowler : peter@ambrofinancelimited.co.uk
+
+Solicitor 
+Peter Augustine : pa@hpwsolicitors.co.uk
+
+
+

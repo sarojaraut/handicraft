@@ -210,3 +210,8 @@ RE employee_id < :emp_id
 SELECT salary FROM hr.employees WHE            1 000000008644E888 Y
 RE employee_id < :emp_id
 
+
+-- Check for histograms and distinct values.
+select column_name, histogram, num_distinct
+from   user_tab_cols
+where  table_name = 'ACS_TEST_TAB';

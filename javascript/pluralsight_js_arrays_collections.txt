@@ -1,0 +1,113 @@
+https://app.pluralsight.com/course-player?clipId=d0799bdc-6060-4988-9319-67bb96bb6ce4
+
+
+Basic Methods : puch, pop, slice 
+
+
+Advanced methods : list of, find , fill
+new ways to interate : foreach and forall
+New data collections : set and map 
+specific methods of set and map
+typed array 
+
+
+#Array.of, Array.find, Array.findIndex, Array.fill, Spread operator ..., forEach
+
+Array.of
+    let monthlySales = Array.of(1,2,3); //creates array containing three elements 1 to 3. Revision : Array(3) creates array with three different spots
+    let monthLabels = Array.of("Jan","Feb","Mar");
+
+
+Spread Operator 
+
+    let addMonthlyTotals = function addMonthlyTotals(a,b,c){
+        return a+b+c;
+    }
+
+    let totalSales = addMonthlyTotals(...monthlySales); //6
+
+
+    let monthlySales = Array.of(1,2,3,4,5);
+
+    let totalSales = addMonthlyTotals(...monthlySales); //still 6, other arra elements except first three are thrown out.
+
+    let firstQuarter  = Array.of(1,2,3);
+    let SecQuarter  = Array.of(4,5,6);
+    let thirdQuarter  = Array.of(7,8,9);
+    let fourhtQuarter  = Array.of(10,11,12);
+
+    let allYear = Array.of(...firstQuarter, ...SecQuarter, ...thirdQuarter, ...fourhtQuarter); // 1 to 12
+
+    let firstTwoDigit = allYear.find(element => element >= 10);
+    let firstTwoDigit = allYear.findIndex(element => element >= 10);
+
+    allYear.fill(0); // all 12 elements set to zero
+
+Methods of Iterating through an Array 
+
+    let monthlySales = Array.of(1,2,3,4,5);
+
+    let monthlyTotal = 0;
+    function addMOnthlyTotal(x){
+        monthlyTotal = monthlyTotal + x;
+    }
+    monthlySales.forEach(addMOnthlyTotal);
+
+
+//https://app.pluralsight.com/course-player?clipId=231b914c-e710-4364-8c21-c886bbffea61
+#Working With Sets
+
+Before ECMAScript-6 we had Array and Objects 
+ECMAScript-6 intriduced Sets, Maps, WeakSets, WeakMaps
+
+8 data types in java script : Boolean, Null, Undefined, Bumber, BigInt, String, Symbol, Objects : firsr seven are primitives. Primitives really can't be changed, e.g. you can't change  what 1 actually stands for, but objects can be changed. 
+
+Sets : Sets enable you store unique values of any type, primitives values or object references. Set has unique values and can't have duplicates, and ignores duplicates. One set can contain values of many types, primitive, function, object, string etc.
+
+Set properties : size
+Set methods : Add, Clear, Delete, Entries, forEach, Has, Keys, Values
+
+const monthlySales =  new Set();
+const monthlyLabels =  new Set();
+
+monthlySales.add(10);
+
+monthlySales.size; //1
+monthlyLabels.size; //0
+
+console.log(monthlySales)
+
+monthlySales.add(10);
+monthlySales.size; // still 1
+monthlySales.add("10");
+monthlySales.delete(10)  // returns true if deleted
+monthlySales.delete(10)  // returns false because already deleted
+
+monthlySales.add(10).add(20).add(30) // only add can be cascaded but not delete 
+
+const test1 = new Set([10,20,30]);
+const test2 = new Set([{"name":"Saroj"}]);
+
+let test3 = new Set([10,20,30]);
+let yealyTotal = 0;
+
+for (let total of test3) yealyTotal = yealyTotal + total;
+console.log(yealyTotal);
+
+test3.forEach((val1, val2, test3) => {
+console.log(val1);
+})
+
+newAmount = document.getElementById('itemAmount');
+parseInt(newAmount.values) //parseInt needed otherwise the value will be treated as string
+
+https://app.pluralsight.com/course-player?clipId=42e1ee28-3ec7-4a7d-89ee-bab15e65226c
+
+
+#Weak sets : https://app.pluralsight.com/course-player?clipId=c5e614cb-c44f-439f-a292-6884befa009e
+
+Weak set: it can only contain objects not primitives, objects are weakly held.not iteratable, no access to size property, garbage collected.
+categories  = new WeakSet();
+
+First of all : Offer
+

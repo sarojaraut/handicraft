@@ -1,0 +1,74 @@
+Module - 4 Introduction to Web Testing using Selenium
+
+Web driver gives an api in language of our choice to send instructions to the prefered browser.
+
+WebDriver driver = new FireFoxDriver(); // creates a new web driver instance and open the browser
+driver.get ("https://duckduckgo.com/"); // open url
+
+WebElement input = driver.findElement(By.id("search_form_input_homepage"));
+input.sendKeys("Pet Store");
+WebElement searchButton =  driver.findElement(By.id("search_button_homepage"));
+searchButton.click();
+
+assertThat(driver.getTitle, equalTo("Pet Store at DuckDuckGo));
+
+driver.quit();//close the driver and browser
+
+Also supports headless browser, phantom js based and can be used in build server for example
+
+Finding elements on a page :
+
+id : collaborate with developers to have the id, it a good way but not good if developers have not thought about the naming convention upfront
+
+#webdriver essentials
+
+finding elements on a page
+we can find elements based on id, name, tag, class name, css, xpath, link text and partial link text 
+
+https://todomvc.com/examples/angularjs/#/
+
+in developer toolbar console > $("#uniqName_0_0") where uniqName_0_0 is the id of that element shows the html fragment
+$("#uniqName_0_0")
+$x("//*[@id='uniqName_0_0']")
+
+https://expansion.serenity-dojo.com/courses/take/introduction-to-web-testing-with-selenium/lessons/11212363-webdriver-essentials
+
+
+By Name : Makes test often more redable. available on input fields, check boxes, radio buttons. They might not be guranteed to be unique
+driver.findElement(By.name("new-item"));
+
+By Tag : finding by tag is not common but possiblt to use.
+driver.findElement(By.tag("header"));
+
+By CSS class name :
+driver.findElement(By.className("quote"));
+
+By linkText or apartial link text] : href="#/Active"
+driver.findElement(By.linkText("Active"));
+
+By CSS selector: My goto, usually if I can't use id or name then I tend to use this. there are couple of exceptions where I use xpath.
+
+by ID : <ul id="filter">
+driver.findElement(By.cssSelector("#filter"));
+
+by Class:
+driver.findElement(By.cssSelector(".quote"));
+
+by Tag: just add the tag typically used in conjuction with others
+driver.findElement(By.cssSelector("li"));
+
+
+attribute selector : 
+section is the tag name in below example
+driver.findElement(By.cssSelector("section[data-dojo-type='dijit/_WidgetBase']"));
+
+Or we can say any tag with data-dojo-type='dijit/_WidgetBase'
+driver.findElement(By.cssSelector("[data-dojo-type='dijit/_WidgetBase']"));
+
+Or we can say any tag with data-dojo-type contains 'WidgetBase'
+driver.findElement(By.cssSelector("[data-dojo-type*='WidgetBase']"));
+
+There are other variants : https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors
+
+
+
