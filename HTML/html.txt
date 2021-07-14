@@ -1,0 +1,283 @@
+https://www.freecodecamp.org/learn/responsive-web-design/?messages=success%5B0%5D%3Dflash.signin-success#basic-html-and-html5
+
+Remember that in order to start a comment, you need to use <!-- and to end a comment, you need to use -->
+
+HTML5 introduces more descriptive HTML tags. These include main, header, footer, nav, video, article, section and others.
+
+These tags give a descriptive structure to your HTML, make your HTML easier to read, and help with Search Engine Optimization (SEO) and accessibility. The main HTML5 tag helps search engines and other developers find the main content of your page.
+
+Example usage, a main element with two child elements nested inside it:
+
+<main> 
+  <h1>Hello World</h1>
+  <p>Hello Paragraph</p>
+</main>
+
+<img src="https://www.freecatphotoapp.com/your-image.jpg">
+***Note that img elements are self-closing.
+
+All img elements must have an alt attribute.
+
+You can use a (anchor) elements to link to content outside of your web page.
+
+a elements need a destination web address called an href attribute. They also need anchor text. Here's an example:
+
+<a href="https://www.freecodecamp.org">this links to freecodecamp.org</a>
+
+a (anchor) elements can also be used to create internal links to jump to different sections within a webpage.
+target is an anchor tag attribute that specifies where to open the link. The value _blank specifies to open the link in a new tab
+
+
+##Link to Internal Sections of a Page with Anchor Elements
+
+To create an internal link, you assign a link's href attribute to a hash symbol # plus the value of the id attribute for the element that you want to internally link to, usually further down the page. You then need to add the same id attribute to the element you are linking to. An id is an attribute that uniquely describes an element.
+
+Below is an example of an internal anchor link and its target element:
+
+<a href="#contacts-header">Contacts</a>
+...
+<h2 id="contacts-header">Contacts</h2>
+
+##Nest an Anchor Element within a Paragraph <a> tags can be nested inside <p>
+
+### Make Dead Links Using the Hash Symbol For example: href="#"
+###Turn an Image into a Link
+Nest your image within an a element. Here's an example:
+
+<a href="#"><img src="https://www.bit.ly/fcc-running-cats" alt="Three kittens running towards the camera."></a>
+Remember to use # as your a element's href property in order to turn it into a dead link.
+
+###Create a Bulleted Unordered List
+
+<ul>
+  <li>milk</li>
+  <li>cheese</li>
+</ul>
+
+###Create an Ordered List
+<ol>
+  <li>Garfield</li>
+  <li>Sylvester</li>
+</ol>
+
+###Create a Text Field
+
+<input type="text">
+Note that input elements are self-closing.
+### Add Placeholder Text to a Text Field
+<input type="text" placeholder="cat photo URL">
+
+###Create a Form Element
+
+You can build web forms that actually submit data to a server using nothing more than pure HTML. You can do this by specifying an action attribute on your form element.
+
+For example:
+
+<form action="/url-where-you-want-to-submit-form-data">
+  <input>
+</form>
+
+  <form action="https://www.freecatphotoapp.com/submit-cat-photo">
+  <input type="text" placeholder="cat photo URL">
+  </form>
+
+###Add a Submit Button to a Form
+Let's add a submit button to your form. Clicking this button will send the data from your form to the URL you specified with your form's action attribute.
+
+Here's an example submit button:
+
+<button type="submit">this button submits the form</button>
+
+###Use HTML5 to Require a Field
+
+<input type="text" required>
+
+Make your text input a required field, so that your user can't submit the form without completing this field.
+
+###Create a Set of Radio Buttons
+
+Radio buttons are a type of input.
+
+Each of your radio buttons can be nested within its own label element. By wrapping an input element inside of a label element it will automatically associate the radio button input with the label element surrounding it.
+
+All related radio buttons should have the same name attribute to create a radio button group. By creating a radio group, selecting any single radio button will automatically deselect the other buttons within the same group ensuring only one answer is provided by the user.
+
+Here's an example of a radio button:
+
+<label> 
+  <input type="radio" name="indoor-outdoor">Indoor 
+  <input type="radio" name="indoor-outdoor">outdoor 
+</label>
+
+
+It is considered best practice to set a for attribute on the label element, with a value that matches the value of the id attribute of the input element. This allows assistive technologies to create a linked relationship between the label and the related input element. For example:
+
+<input id="indoor" type="radio" name="indoor-outdoor">
+<label for="indoor">Indoor</label>
+
+We can also nest the input element within the label tags:
+
+<label for="indoor"> 
+  <input id="indoor" type="radio" name="indoor-outdoor">Indoor 
+</label>
+
+###Create a Set of Checkboxes
+
+Checkboxes are a type of input.
+
+Each of your checkboxes can be nested within its own label element. By wrapping an input element inside of a label element it will automatically associate the checkbox input with the label element surrounding it.
+
+All related checkbox inputs should have the same name attribute.
+
+It is considered best practice to explicitly define the relationship between a checkbox input and its corresponding label by setting the for attribute on the label element to match the id attribute of the associated input element.
+
+Here's an example of a checkbox:
+
+<label for="loving"><input id="loving" type="checkbox" name="personality"> Loving</label>
+
+    <label for="personality">
+      <input id="personality" type="checkbox" name="personality">loving
+      </label>
+      <label for="personality">
+      <input id="personality" type="checkbox" name="personality">caring
+      </label>
+      <label for="personality">
+      <input id="personality" type="checkbox" name="personality">loyal
+    </label>
+
+###Use the value attribute with Radio Buttons and Checkboxes
+When a form gets submitted, the data is sent to the server and includes entries for the options selected. Inputs of type radio and checkbox report their values from the value attribute.
+
+<label for="indoor">
+  <input id="indoor" value="indoor" type="radio" name="indoor-outdoor">Indoor
+</label>
+<label for="outdoor">
+  <input id="outdoor" value="outdoor" type="radio" name="indoor-outdoor">Outdoor
+</label>
+
+If you omit the value attribute, the submitted form data uses the default value, which is on. In this scenario, if the user clicked the "indoor" option and submitted the form, the resulting form data would be indoor-outdoor=on, which is not useful. So the value attribute needs to be set to something to identify the option.
+
+###Check Radio Buttons and Checkboxes by Default
+You can set a checkbox or radio button to be checked by default using the checked attribute.
+
+To do this, just add the word checked to the inside of an input element. For example:
+
+<input type="radio" name="test-name" checked>
+
+###Nest Many Elements within a Single div Element
+The div element, also known as a division element, is a general purpose container for other elements.
+
+The div element is probably the most commonly used HTML element of all.
+
+###Declare the Doctype of an HTML Document
+The challenges so far have covered specific HTML elements and their uses. However, there are a few elements that give overall structure to your page, and should be included in every HTML document.
+
+At the top of your document, you need to tell the browser which version of HTML your page is using
+
+<!DOCTYPE html>
+<html>
+
+</html>
+
+###Define the Head and Body of an HTML Document
+You can add another level of organization in your HTML document within the html tags with the head and body elements. Any markup with information about your page would go into the head tag. Then any markup with the content of the page (what displays for a user) would go into the body tag.
+
+Metadata elements, such as link, meta, title, and style, typically go inside the head element.
+
+Here's an example of a page's layout:
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta />
+  </head>
+  <body>
+    <div>
+    </div>
+  </body>
+</html>
+
+Self closing tags : input, img 
+
+https://www.freecodecamp.org/learn/responsive-web-design/basic-css/change-the-color-of-text
+
+
+<h2 style="color: blue;">CatPhotoApp</h2>
+
+That's one way to specify the style of an element, but there's a better way to apply CSS.
+
+At the top of your code, create a style block like this:
+
+<style>
+</style>
+Inside that style block, you can create a CSS selector for all h2 elements. For example, if you wanted all h2 elements to be red, you would add a style rule that looks like this:
+
+<style>
+  h2 {
+    color: red;
+  }
+</style>
+
+Understand Absolute versus Relative Units
+
+Relative units, such as em or rem, are relative to another length value. For example, em is based on the size of an element's font. If you use it to set the font-size property itself, it's relative to the parent's font-size.
+
+Remember, you can style your body element just like any other HTML element, and all your other elements will inherit your body element's styles.
+
+So we've proven that id declarations override class declarations, regardless of where they are declared in your style element CSS.
+Inline style override id 
+
+Create a custom CSS Variable
+To create a CSS variable, you just need to give it a name with two hyphens in front of it and assign it a value like this:
+
+--penguin-skin: gray;
+This will create a variable named --penguin-skin and assign it the value of gray. Now you can use that variable elsewhere in your CSS to change the value of other elements to gray.
+
+After you create your variable, you can assign its value to other CSS properties by referencing the name you gave it.
+
+background: var(--penguin-skin);
+
+Attach a Fallback value to a CSS Variable
+When using your variable as a CSS property value, you can attach a fallback value that your browser will revert to if the given variable is invalid.
+
+Note: This fallback is not used to increase browser compatibility, and it will not work on IE browsers. Rather, it is used so that the browser has a color to display if it cannot find your variable.
+
+Here's how you do it:
+
+background: var(--penguin-skin, black);
+
+Improve Compatibility with Browser Fallbacks
+When working with CSS you will likely run into browser compatibility issues at some point. This is why it's important to provide browser fallbacks to avoid potential problems.
+
+When your browser parses the CSS of a webpage, it ignores any properties that it doesn't recognize or support. For example, if you use a CSS variable to assign a background color on a site, Internet Explorer will ignore the background color because it does not support CSS variables. In that case, the browser will use whatever value it has for that property. If it can't find any other value set for that property, it will revert to the default value, which is typically not ideal.
+
+This means that if you do want to provide a browser fallback, it's as easy as providing another more widely supported value immediately before your declaration. That way an older browser will have something to fall back on, while a newer browser will just interpret whatever declaration comes later in the cascade.
+
+Inherit CSS Variables
+When you create a variable, it is available for you to use inside the selector in which you create it. It also is available in any of that selector's descendants. This happens because CSS variables are inherited, just like ordinary properties.
+
+To make use of inheritance, CSS variables are often defined in the :root element.
+
+:root is a pseudo-class selector that matches the root element of the document, usually the html element. By creating your variables in :root, they will be available globally and can be accessed from any other selector in the style sheet.
+
+When you create your variables in :root they will set the value of that variable for the whole page.
+
+You can then over-write these variables by setting them again within a specific element.
+
+Use a media query to change a variable
+CSS Variables can simplify the way you use media queries.
+
+For instance, when your screen is smaller or larger than your media query break point, you can change the value of a variable, and it will apply its style wherever it is used.
+
+text-align: justify; causes all lines of text except the last line to meet the left and right edges of the line box.
+
+text-align: center; centers the text
+
+text-align: right; right-aligns the text
+
+And text-align: left; (the default) left-aligns the text.
+
+
+
+
+

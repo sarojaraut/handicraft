@@ -63,4 +63,124 @@ Objects are immutable, which means that an uploaded object cannot change through
 
 
 
-acs 
+Choose where to store your data
+This permanent choice defines the geographic placement of your data and affects cost, performance, and availability. Learn more
+
+Location type
+Multi-region Highest availability across largest area
+Dual-region High availability and low latency across 2 regions
+Region Lowest latency within a single region
+
+Choose a default storage class for your data
+A storage class sets costs for storage, retrieval, and operations. Pick a default storage class based on how long you plan to store your data and how often it will be accessed. Learn more
+
+Standard Best for short-term storage and frequently accessed data
+Nearline Best for backups and data accessed less than once a month
+Coldline Best for disaster recovery and data accessed less than once a quarter
+Archive Best for long-term digital preservation of data accessed less than once a year
+
+Choose how to control access to objects
+Access control
+Uniform Ensure uniform access to all objects in the bucket by using only bucket-level permissions (IAM). This option becomes permanent after 90 days. Learn more
+Fine-grained Specify access to individual objects by using object-level permissions (ACLs) in addition to your bucket-level permissions (IAM). Learn more
+
+Advanced settings (optional)
+Encryption 
+Google-managed encryption key
+No configuration required
+Customer-managed encryption key (CMEK)
+Manage via Google Cloud Key Management Service
+
+Set a retention policy
+Retain object for : number
+then select from drop down seconds, days, months, years 
+
+Task 2: Access Cloud Shell
+
+You can use the Cloud Shell to manage projects and resources via command line without having to install the Cloud SDK and other tools on your computer.
+
+Cloud shell provides the following:
+
+Temporary Compute Engine VM
+Command-line access to the instance via a browser
+5 GB of persistent disk storage ($HOME dir)
+Pre-installed Cloud SDK and other tools
+gcloud: for working with Compute Engine and many Google Cloud services
+gsutil: for working with Cloud Storage
+kubectl: for working with Google Kubernetes Engine and Kubernetes
+bq: for working with BigQuery
+Language support for Java, Go, Python, Node.js, PHP, and Ruby
+Web preview functionality
+Built-in authorization for access to resources and instances
+
+After 1 hour of inactivity, the Cloud Shell instance is recycled. Only the /home directory persists. Any changes made to the system configuration, including environment variables, are lost between sessions.
+
+Task 3: Use Cloud Shell to create a Cloud Storage bucket
+
+gsutil mb gs://saroj-test2
+
+Task 4: Explore more Cloud Shell features
+
+Click the More button (More) in the Cloud Shell toolbar to display further options.
+Click Upload file. Upload any file from your local machine to the Cloud Shell VM. This file will be referred to as [MY_FILE].
+
+gsutil cp 'Core Java Cheat Sheet (VJ).pdf' gs://saroj-test2
+
+Task 5: Create a persistent state in Cloud Shell
+
+In this section you will learn a best practice for using Cloud Shell. The gcloud command often requires you to specify values such as a Region, Zone, or Project ID. Entering them repeatedly increases the chance of making typing errors. If you use Cloud Shell frequently, you may want to set common values in environment variables and use them instead of typing the actual values.
+
+gcloud compute regions list
+
+INFRACLASS_REGION=europe-west1
+
+echo $INFRACLASS_REGION
+
+You can use environment variables like this in gcloud commands to reduce the opportunities for typos and so that you won't have to remember a lot of detailed information.
+
+Every time you close Cloud Shell and reopen it, a new VM is allocated, and the environment variable you just set disappears. In the next steps, you create a file to set the value so that you won't have to enter the command each time Cloud Shell is reset.
+
+
+mkdir infraclass
+touch infraclass/config
+
+echo INFRACLASS_REGION=$INFRACLASS_REGION >> ~/infraclass/config
+
+source infraclass/config
+echo $INFRACLASS_REGION
+
+Modify the bash profile and create persistence
+
+nano .profile
+source infraclass/config
+Press Ctrl+O, ENTER to save the file, and then press Ctrl+X to exit nano.
+
+Close and then re-open Cloud Shell to reset the VM.
+Use the echo command to verify that the variable is still set:
+
+Task 6: Review the Google Cloud interface
+
+The Google Cloud interface consists of two parts: the Cloud Console and Cloud Shell.
+
+The Console:
+
+Provides a fast way to perform tasks.
+Presents options to you, instead of requiring you to know them.
+Performs behind-the-scenes validation before submitting the commands.
+Cloud Shell provides:
+
+Detailed control
+A complete range of options and features
+A path to automation through scripting
+
+
+Task 1: Use Marketplace to build a deployment
+
+Task 2: Examine the deployment
+
+In the right pane, click More about the software to view additional software details. Look at all the software that was installed.
+Copy the Admin user and Admin password values to a text editor.
+Click Visit the site to view the site in another browser tab. If you get an error, you might have to reload the page a couple of times.
+Log in with the Admin user and Admin password values
+
+

@@ -1,0 +1,17 @@
+
+
+# Step 4) How To Write Top Quality Gherkin Scenarios
+
+Secrets To Writing Great Gherkin Scenarios : Five keys
+    declarative not imperatuve
+    describe user behaviour
+    use business language
+    Focus on business value
+    Distinguish the essential from the accidental
+
+Declarative not imperatuve : Declarative means you are stating the requirements, stating the rules, stating the facts. Imperative means what you do as a tester giving step by step instructionss
+
+
+Describe user behaviour : not test behaviour, your scenario is business rules, business flow that business need to understand and relate to. These are communication tools not test scripts. When you use Gherkin as test scripting language then the scenarios tedn to become very long, very detailed and very granular. e.g select this, click here, etc.This becomes very unweildy and hard to mantain after a while. So describe them as behaviour, business intent or business outcome
+
+use business language : It should be domain language and should be usefull to anyone. 

@@ -1,0 +1,127 @@
+5 DICTIONARIES AND STRUCTURING DATA
+https://automatetheboringstuff.com/2e/chapter5/
+
+
+The Dictionary Data Type
+
+Like a list, a dictionary is a mutable collection of many values. But unlike indexes for lists, indexes for dictionaries can use many different data types, not just integers. Indexes for dictionaries are called keys, and a key with its associated value is called a key-value pair.
+
+myCat = {'size': 'fat', 'color': 'gray', 'disposition': 'loud'}
+
+This dictionary’s keys are 'size', 'color', and 'disposition'. The values for these keys are 'fat', 'gray', and 'loud', respectively. 
+myCat['size']
+
+Dictionaries vs. Lists
+
+Unlike lists, items in dictionaries are unordered. The first item in a list named spam would be spam[0]. But there is no “first” item in a dictionary. While the order of items matters for determining whether two lists are the same, it does not matter in what order the key-value pairs are typed in a dictionary.
+
+>>> spam = ['cats', 'dogs', 'moose']
+>>> bacon = ['dogs', 'moose', 'cats']
+>>> spam == bacon
+False
+>>> eggs = {'name': 'Zophie', 'species': 'cat', 'age': '8'}
+>>> ham = {'species': 'cat', 'age': '8', 'name': 'Zophie'}
+>>> eggs == ham
+True
+
+Because dictionaries are not ordered, they can’t be sliced like lists.
+
+Trying to access a key that does not exist in a dictionary will result in a KeyError error message, much like a list’s “out-of-range” IndexError error message. 
+
+The keys(), values(), and items() Methods
+
+There are three dictionary methods that will return list-like values of the dictionary’s keys, values, or both keys and values: keys(), values(), and items(). The values returned by these methods are not true lists: they cannot be modified and do not have an append() method. But these data types (dict_keys, dict_values, and dict_items, respectively) can be used in for loops. To see how these methods work, enter the following into the interactive shell:
+
+>>> spam = {'color': 'red', 'age': 42}
+>>> for v in spam.values():
+...     print(v)
+
+red
+42
+
+>>> for k in spam.keys():
+...     print(k)
+
+>>> for i in spam.items():
+...     print(i)
+
+('color', 'red')
+('age', 42)
+
+If you want a true list from one of these methods, pass its list-like return value to the list() function.
+>>> spam = {'color': 'red', 'age': 42}
+>>> spam.keys()
+dict_keys(['color', 'age'])
+>>> list(spam.keys())
+['color', 'age']
+
+You can also use the multiple assignment trick in a for loop to assign the key and value to separate variables. Enter the following into the interactive shell:
+
+>>> spam = {'color': 'red', 'age': 42}
+>>> for k, v in spam.items():
+...     print('Key: ' + k + ' Value: ' + str(v))
+
+Key: age Value: 42
+Key: color Value: red
+
+Checking Whether a Key or Value Exists in a Dictionary
+
+Recall from the previous chapter that the in and not in operators can check whether a value exists in a list. 
+
+>>> spam = {'name': 'Zophie', 'age': 7}
+>>> 'name' in spam.keys()
+True
+>>> 'Zophie' in spam.values()
+True
+
+The get() Method
+
+It’s tedious to check whether a key exists in a dictionary before accessing that key’s value. Fortunately, dictionaries have a get() method that takes two arguments: the key of the value to retrieve and a fallback value to return if that key does not exist.
+
+Enter the following into the interactive shell:
+
+>>> picnicItems = {'apples': 5, 'cups': 2}
+>>> 'I am bringing ' + str(picnicItems.get('cups', 0)) + ' cups.'
+'I am bringing 2 cups.'
+
+Without using get(), the code would have caused an error message, if key is not present 
+
+The setdefault() Method
+
+You’ll often have to set a value in a dictionary for a certain key only if that key does not already have a value. The code looks something like this:
+
+The setdefault() method offers a way to do this in one line of code. The first argument passed to the method is the key to check for, and the second argument is the value to set at that key if the key does not exist. If the key does exist, the setdefault() method returns the key’s value.
+
+>>> spam = {'name': 'Pooka', 'age': 5}
+>>> spam.setdefault('color', 'black')
+'black'
+>>> spam
+{'color': 'black', 'age': 5, 'name': 'Pooka'}
+>>> spam.setdefault('color', 'white')
+'black'
+>>> spam
+{'color': 'black', 'age': 5, 'name': 'Pooka'}
+
+Pretty Printing
+
+If you import the pprint module into your programs, you’ll have access to the pprint() and pformat() functions that will “pretty print” a dictionary’s values. This is helpful when you want a cleaner display of the items in a dictionary than what print() provides. Modify the previous characterCount.py program and save it as prettyCharacterCount.py.
+
+import pprint
+counting the occurance of each character in a sentence
+
+message = 'It was a bright cold day in April, and the clocks were striking
+thirteen.'
+count = {}
+
+for character in message:
+    count.setdefault(character, 0)
+    count[character] = count[character] + 1
+
+pprint.pprint(count)
+
+
+Answers to questions
+https://automatetheboringstuff.com/2e/appendixc/
+
+Scratch PAD
+https://trinket.io/python3/fdf1394bb8

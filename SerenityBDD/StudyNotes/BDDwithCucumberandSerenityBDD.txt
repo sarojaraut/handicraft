@@ -1,0 +1,237 @@
+BDD with Cucumber and Serenity BDD
+
+Asking user can we give me an example : conversation about concrete example
+uncover ambuigities or overlooking details
+detailed example will give us more meat to chew or more questions to ask.
+what happens if this and that etc 
+That will help us identify and ilustrate business rules
+Focus on what not how. we just need to understand the problem and leave the solution to later stage. How the ui will look like, which button to press what voice command to give etc
+Make us think about the goals and outcome we are actully trying to achieve
+
+BDD and Three Amigos
+BDD fits in lean/agile development
+story mapping or impact mapping high level acceptance criteria or user story 
+Example user story frequent flier
+
+Leaving things to the last responsible moment so that details stay fresh in team members mind 
+
+Key points
+
+Behaviour Driven Development is a collaborative software delivery methodology
+Teams practicing BDD have structured conversations about examples and business rules to build a deep shared understanding of the problem they need to solve
+During the Three Amigos workshop, team members discuss the requirements around a story and identify a number of key examples that will act as acceptance criteria for the story
+use concrete example to understand the happy cases and variations
+Three amigos use techniques like feature mapping and example mapping.
+These two techiniques use color index cards to describe the requirements in more details. easy to understand and through.
+After 3 amigo go away and work offline to generate the gherkin scenarios and then later in sprint planning these can be presented. This is a great way of developing shared understanding and second chance for feedback. Creating gherkin scenarios during 3 amigo sessions would be quite laborious and hence go away and do these offline. In the meeting focus on business scenarios
+
+example mapping : we have conversation about stories and concrete example. Examples are great way to explore problem domain. Great starting point for out automation testing. 
+Stories, examples, rules and questions/assumptions. Story(Yellow), acceptance criteria or rules(blue) example(green), questions/Assumptions(Pink)
+
+Story : Yellow Card
+As a cofee lover whose plan have changed at the last minute
+I want to be able to cancel my order 
+So that I don't pay for cofee that I don't drink.
+
+Acceptance Criteria/Rule : Blue Card(underneath story)
+Orders cancelled less than 5 minutes before pickup time incur a £1 fee 
+Order should appear in the "prepare now" list when the client is 4 minutes away 
+
+Example : Green card. under each rule
+These are simple and we don't express in cucumber gievn-when-then format. We just need min amout of info that allows everyone to rember what we are talking about. friends episode notation
+
+The one where Sera has to cancel at the last minute
+The one where Sera orders her cofee when she is 2 minutes from the shop
+The one where jack has automatic order scheduled each morning.
+Some time we need more details e.g. : JAck has a cappuccino scheduled for 8 Am each morning => it appears in the todo list at 7:50AM.
+
+Record questions : Pink cards
+How does the fee work if cust pays using loyality points?
+
+Pink cards are uncertainty. If we have too many pink cards thie means we may not quite ready yet to pick that story
+
+Feature Mapping:
+Similar to example mapping but focuses more on the alternative paths through stories to identify many significant examples as possible
+Feature mapping builds on example mapping
+
+Feature mapping works on four principles :
+  Rules explain Examples 
+  Examples illustrate Rules
+  Steps explore Examples
+  Questions to challlenge everything.
+
+Example : how would we analyse story refund cancelled orders story using feature mapping.
+Step-1 Anchoring example the conversation starter
+  "Sara leaves her apartment and order her usaul morning latte. She is 30 mins away from Barry's cofee shop. 5 mins later, when she reaches the tube station, she realises that she need to go to different office and won't be going to Barry's cofee shop at all. She cancels the order and she paid by credit card and the rrfund is paid to har card"
+
+Step-2 Layout the rules (Blue)
+  Orders cancelled less than 5 minutes before pickup time incur a £1 fee
+Step-3 Find an example (Green)
+  The one where Sera has to cancel at the last minute
+Step-4 Steps and consequences (Yellow)
+  How the above example plays out. We are looking at more details and flow of the story.
+  Sara order her cofee (Yellow)
+  Sara cancels the order before 25 minutes(Yellow)
+  Sara is fulle refunded (consequence orange card)
+  The order is removed from Barry's order list (consequence orange card)
+  Rule, example, steps consequences are aligned in one straight line horizontally
+  We need to think about all steps and consequences
+  Now hunt for variants
+  Explore requiremnts in all sorts of different directions
+  When we explore variants we explore the steps and ask what else could happen here and what could be the consequeneces
+  e.g. can you give an example when we don't charge the fee 
+  Oh yes, premium customers are only charged 0.5 fee 
+
+We can put guide line cards on left most side to group stories like section header
+
+One of example mapping or feature mapping can be used during three amigo sessions. May be you cna start with example mapping and switch onto feature mapping when you realise that more details needs to be included.
+
+Automated Test : Executable specification
+
+Feature : Order a coffee
+  In order to save time when I pick up my morning cofee
+  As a coffee lover
+  I want to be able to order my cofee in advance
+
+  Scenario : Buyer order a coffee when they are close to the shop
+    Given Cathy is 100 meters away from the cofee shop
+    When Cathy orders a large cappuccino
+    Then Barry should receive the order
+#    And Barry should know that the cofee is urgent
+
+Above is typical Gherkin Feature
+Each feature consists of number os Scenario
+Each scenario indicates name or title of the scenario 
+Given condition is the pre condition / context for the scenario. This is where we setup the system into a state that need to be 
+When clause describes the action the scenaio ellustrates to test. 
+then clause describes the outcome, what action, what occurs. In this case two outcome : receive order and should know it's urgent
+
+scenario always have three things : cotext/precondition, some action and expected outcome
+
+https://github.com/serenity-bdd/serenity-cucumber-starter
+
+clone repo or wget the zip in mac/linux
+from release page copy the url and use wget https://github.com/serenity-bdd/serenity-cucumber-starter/archive/v1.0.1.zip
+unzip v1.0.1.zip
+
+rename project directory to something meaning full : mv serenity-cucumber-starter-1.0.1 caffinate-me
+cd caffinate-me 
+tree 
+
+.
+├── build.gradle
+├── gradle
+│   └── wrapper
+│       ├── gradle-wrapper.jar
+│       └── gradle-wrapper.properties
+├── gradlew
+├── gradlew.bat
+├── LICENSE
+├── pom.xml
+├── README.md
+├── serenity.properties
+└── src
+    ├── main
+    │   └── java
+    │       └── starter
+    │           └── README.md
+    └── test
+        ├── java
+        │   └── starter
+        │       ├── CucumberTestSuite.java
+        │       ├── navigation
+        │       │   ├── NavigateTo.java
+        │       │   └── WikipediaHomePage.java
+        │       ├── search
+        │       │   ├── LookForInformation.java
+        │       │   ├── SearchForm.java
+        │       │   └── WikipediaArticle.java
+        │       └── stepdefinitions
+        │           ├── ParameterDefinitions.java
+        │           └── SearchStepDefinitions.java
+        └── resources
+            ├── features
+            │   └── search
+            │       └── search_by_keyword.feature
+            ├── logback-test.xml
+            └── serenity.conf
+
+15 directories, 21 files
+
+project comes bundled with build scripts both Maven and graddle
+make sure you have maven installed in your machine and you can install from command line
+
+https://maven.apache.org/install.html
+
+project structure
+src/main/java : for application code
+src/test/java : for test automation code
+src/test/resources : for cucumber scenarios
+
+first of lets remove the sample files that comes with this project 
+
+rm -rf src/test/java/starter/stepdefinitions/*
+rm -rf src/test/resources/features/*
+
+now  we need to change the name of the project in build script pom.xml (because maven)
+update group id, artifact id and name to something meaningful
+
+code pom.xml 
+
+
+now we are going to load the project into IDE
+before that
+
+
+mvn verify 
+
+we dont have any scenario at the moment so it will be a dry run but it will load some dependencies
+open pom.xml in intelij and that will open the project
+
+rename package using intellij refactor > rename starter to caffinate me. and choose rename package and it will affect both src/main/java and src/test/java
+
+add feature file order_a_cofee.feature 
+Feature : Order a coffee
+  In order to save time when I pick up my morning cofee
+  As a coffee lover
+  I want to be able to order my cofee in advance
+
+  Scenario : Buyer order a coffee when they are close to the shop
+    Given Cathy is 100 meters away from the cofee shop
+    When Cathy orders a large cappuccino
+    Then Barry should receive the order
+#    And Barry should know that the cofee is urgent
+and run mvn clean verify 
+
+notice we are using verify isnstead of test 
+
+
+
+when you run for the first time it will create a default run configuration and later we can edit and change the values e.g main class as below
+
+
+Run edit configuration
+Main Class : net.serenitybdd.cucumber.cli.Main
+glue : caffinateme
+Feature or Folder Path  : C:/saroj/gitrepos/handicraft/SerenityBDD/caffinate-me/src/test/resources/features/order_a_cofee.feature
+program Arguments
+
+If run option is not visible after right clicking on the faeature file then ensure cucumber plugins has been addedcd
+
+
+
+---------------
+Intellij Settings 
+
+Enable plugins
+Enable Cucumber support
+Gherkin
+
+Cucumber for Java
+
+Cucumber for Groovy (optional: install this plugin if you want to create step definitions in Groovy)
+
+Add the Cucumber library
+From the main menu, select File | Project Structure (Ctrl+Alt+Shift+S) or click the Project Structure button on the toolbar.
+Under Project Settings, select Libraries and click the New Project Library button | From Maven.
+io.cucumber:cucumber-java:jar:6.1.1

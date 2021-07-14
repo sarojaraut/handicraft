@@ -1,0 +1,319 @@
+
+https://automatetheboringstuff.com/2e/chapter4/
+
+4 LISTS
+
+The List Data Type
+A list is a value that contains multiple values in an ordered sequence. The term list value refers to the list itself (which is a value that can be stored in a variable or passed to a function like any other value), not the values inside the list value.
+
+Python will give you an IndexError error message if you use an index that exceeds the number of values in your list value.
+
+IndexError: list index out of range
+Indexes can be only integer values, not floats. ekse will cause a TypeError error:
+
+Lists can also contain other list values. The values in these lists of lists can be accessed using multiple indexes, like so:
+
+>>> spam = [['cat', 'bat'], [10, 20, 30, 40, 50]]
+spam[1][4]
+50
+
+While indexes start at 0 and go up, you can also use negative integers for the index. The integer value -1 refers to the last index in a list, the value -2 refers to the second-to-last index in a list, and so on. Enter the following into the interactive shell:
+
+Getting a List from Another List with Slices
+spam[1:4]
+In a slice, the first integer is the index where the slice starts. The second integer is the index where the slice ends. A slice goes up to, but will not include, the value at the second index. A slice evaluates to a new list value. Enter the following into the interactive shell
+
+>>> spam = ['cat', 'bat', 'rat', 'elephant']
+>>> spam[0:4]
+['cat', 'bat', 'rat', 'elephant']
+>>> spam[1:3]
+['bat', 'rat']
+>>> spam[0:-1]
+['cat', 'bat', 'rat']
+
+As a shortcut, you can leave out one or both of the indexes on either side of the colon in the slice. Leaving out the first index is the same as using 0, or the beginning of the list. Leaving out the second index is the same as using the length of the list, which will slice to the end of the list.
+
+The len() function will return the number of values that are in a list value passed to it, just like it can count the number of characters in a string value. Enter the following into the interactive shell:
+
+>>> spam = ['cat', 'dog', 'moose']
+>>> len(spam)
+3
+
+Lists can be concatenated and replicated just like strings. The + operator combines two lists to create a new list value and the * operator can be used with a list and an integer value to replicate the list. Enter the following into the interactive shell:
+
+>>> [1, 2, 3] + ['A', 'B', 'C']
+[1, 2, 3, 'A', 'B', 'C']
+>>> ['X', 'Y', 'Z'] * 3
+['X', 'Y', 'Z', 'X', 'Y', 'Z', 'X', 'Y', 'Z']
+
+The del statement will delete values at an index in a list. All of the values in the list after the deleted value will be moved up one index. For example, enter the following into the interactive shell:
+
+>>> spam = ['cat', 'bat', 'rat', 'elephant']
+>>> del spam[2]
+
+The del statement can also be used on a simple variable to delete it, as if it were an “unassignment” statement. If you try to use the variable after deleting it, you will get a NameError error because the variable no longer exists. In practice, you almost never need to delete simple variables. The del statement is mostly used to delete values from lists.
+
+catNames = []
+while True:
+    print('Enter the name of cat ' + str(len(catNames) + 1) + ' (Or enter nothing to stop.):')
+    name = input()
+    if name == '':
+        break
+    catNames = catNames + [name]  # list concatenation
+print('The cat names are:')
+for name in catNames:
+    print('  ' + name)
+
+for i in range(len(supplies)):
+
+The in and not in Operators
+You can determine whether a value is or isn’t in a list with the in and not in operators. Like other operators, in and not in are used in expressions and connect two values: a value to look for in a list and the list where it may be found. These expressions will evaluate to a Boolean value. 
+
+The Multiple Assignment Trick
+The multiple assignment trick (technically called tuple unpacking) is a shortcut that lets you assign multiple variables with the values in a list in one line of code. So instead of doing this:
+
+>>> cat = ['fat', 'gray', 'loud']
+>>> size = cat[0]
+>>> color = cat[1]
+>>> disposition = cat[2]
+
+you could type this line of code:
+
+>>> cat = ['fat', 'gray', 'loud']
+>>> size, color, disposition = cat
+
+The number of variables and the length of the list must be exactly equal, or Python will give you a ValueError:
+
+Using the enumerate() Function with Lists
+
+Instead of using the range(len(someList)) technique with a for loop to obtain the integer index of the items in the list, you can call the enumerate() function instead.
+for index, item in enumerate(supplies):
+  print('Index ' + str(index) + ' in supplies is: ' + item)
+
+Using the random.choice() and random.shuffle() Functions with Lists
+
+The random module has a couple functions that accept lists for arguments. The random.choice() function will return a randomly selected item from the list. 
+pets = ['Dog', 'Cat', 'Moose']
+random.choice(pets)
+
+people = ['Alice', 'Bob', 'Carol', 'David']
+random.shuffle(people)
+
+Augmented Assignment Operators
+spam += 1
+
+Augmented assignment statement
+Equivalent assignment statement
+
+spam += 1
+spam = spam + 1
+
+spam -= 1
+spam = spam - 1
+
+spam *= 1
+spam = spam * 1
+
+spam /= 1
+spam = spam / 1
+
+spam %= 1
+spam = spam % 1
+The += operator can also do string and list concatenation, and the *= operator can do string and list replication. 
+
+Finding a Value in a List with the index() Method
+
+List values have an index() method that can be passed a value, and if that value exists in the list, the index of the value is returned. If the value isn’t in the list, then Python produces a ValueError error.
+spam = ['hello', 'hi', 'howdy', 'heyas']
+spam.index('hello')
+
+When there are duplicates of the value in the list, the index of its first appearance is returned. 
+
+Adding Values to Lists with the append() and insert() Methods
+append() method call adds the argument to the end of the list. The insert() method can insert a value at any index in the list. The first argument to insert() is the index for the new value, and the second argument is the new value to be inserted.
+spam = ['cat', 'dog', 'bat']
+spam.append('moose')
+spam
+['cat', 'dog', 'bat', 'moose']
+
+spam = ['cat', 'dog', 'bat']
+spam.insert(1, 'chicken')
+spam
+['cat', 'chicken', 'dog', 'bat']
+
+the return value of append() and insert() is None
+
+Removing Values from Lists with the remove() Method
+
+The remove() method is passed the value to be removed from the list it is called on. Enter the following into the interactive shell:
+
+>>> spam = ['cat', 'bat', 'rat', 'elephant']
+>>> spam.remove('bat')
+
+Attempting to delete a value that does not exist in the list will result in a ValueError error. 
+If the value appears multiple times in the list, only the first instance of the value will be removed. 
+
+Sorting the Values in a List with the sort() Method
+
+Lists of number values or lists of strings can be sorted with the sort() method. For example, enter the following into the interactive shell:
+
+>>> spam = [2, 5, 3.14, 1, -7]
+>>> spam.sort()
+You can also pass True for the reverse keyword argument to have sort() sort the values in reverse order. Enter the following into the interactive shell:
+
+>>> spam.sort(reverse=True)
+
+you cannot sort lists that have both number values and string values in them, since Python doesn’t know how to compare these values. Enter the following into the interactive shell and notice the TypeError error:
+
+sort() uses “ASCIIbetical order” rather than actual alphabetical order for sorting strings. This means uppercase letters come before lowercase letters. Therefore, the lowercase a is sorted so that it comes after the uppercase Z. 
+If you need to sort the values in regular alphabetical order, pass str.lower for the key keyword argument in the sort() method call.
+
+>>> spam = ['a', 'z', 'A', 'Z']
+>>> spam.sort(key=str.lower)
+
+Reversing the Values in a List with the reverse() Method
+
+If you need to quickly reverse the order of the items in a list, you can call the reverse() list method. Enter the following into the interactive shell:
+
+>>> spam = ['cat', 'dog', 'moose']
+>>> spam.reverse()
+>>> spam
+['moose', 'dog', 'cat']
+
+EXCEPTIONS TO INDENTATION RULES IN PYTHON
+
+In most cases, the amount of indentation for a line of code tells Python what block it is in. There are some exceptions to this rule, however. For example, lists can actually span several lines in the source code file. The indentation of these lines does not matter;
+spam = ['apples',
+    'oranges',
+                    'bananas',
+'cats']
+print(spam)
+
+You can also split up a single instruction across multiple lines using the \ line continuation character at the end. Think of \ as saying, “This instruction continues on the next line.” The indentation on the line after a \ line continuation is not significant.
+print('Four score and seven ' + \
+      'years ago...')
+
+Sequence Data Types
+
+Lists aren’t the only data types that represent ordered sequences of values. For example, strings and lists are actually similar if you consider a string to be a “list” of single text characters. The Python sequence data types include lists, strings, range objects returned by range(), and tuples. Many of the things you can do with lists can also be done with strings and other values of sequence types: indexing; slicing; and using them with for loops, with len(), and with the in and not in operators. 
+
+Mutable and Immutable Data Types
+
+But lists and strings are different in an important way. A list value is a mutable data type: it can have values added, removed, or changed. However, a string is immutable: it cannot be changed. Trying to reassign a single character in a string results in a TypeError error
+
+
+The proper way to “mutate” a string is to use slicing and concatenation to build a new string by copying from parts of the old string. Enter the following into the interactive shell:
+
+>>> name = 'Zophie a cat'
+>>> newName = name[0:7] + 'the' + name[8:12]
+
+Although a list value is mutable, the second line in the following code does not modify the list eggs:
+
+>>> eggs = [1, 2, 3]
+>>> eggs = [4, 5, 6]
+>>> eggs
+[4, 5, 6]
+
+The list value in eggs isn’t being changed here; rather, an entirely new and different list value ([4, 5, 6]) is overwriting the old list value ([1, 2, 3]). This is depicted in Figure 4-2.
+
+If you wanted to actually modify the original list in eggs to contain [4, 5, 6], you would have to do something like this:
+
+>>> eggs = [1, 2, 3]
+>>> del eggs[2]
+>>> del eggs[1]
+>>> del eggs[0]
+>>> eggs.append(4)
+>>> eggs.append(5)
+>>> eggs.append(6)
+>>> eggs
+[4, 5, 6]
+
+The Tuple Data Type
+
+The tuple data type is almost identical to the list data type, except in two ways. First, tuples are typed with parentheses, ( and ), instead of square brackets, [ and ]. For example, enter the following into the interactive shell:
+
+>>> eggs = ('hello', 42, 0.5)
+>>> eggs[0]
+'hello'
+>>> eggs[1:3]
+(42, 0.5)
+>>> len(eggs)
+3
+
+But the main way that tuples are different from lists is that tuples, like strings, are immutable. Tuples cannot have their values modified, appended, or removed.
+
+If you have only one value in your tuple, you can indicate this by placing a trailing comma after the value inside the parentheses. Otherwise, Python will think you’ve just typed a value inside regular parentheses. The comma is what lets Python know this is a tuple value. (Unlike some other programming languages, it’s fine to have a trailing comma after the last item in a list or tuple in Python.) 
+
+You can use tuples to convey to anyone reading your code that you don’t intend for that sequence of values to change. If you need an ordered sequence of values that never changes, use a tuple. A second benefit of using tuples instead of lists is that, because they are immutable and their contents don’t change, Python can implement some optimizations that make code using tuples slightly faster than code using lists.
+
+Converting Types with the list() and tuple() Functions
+
+Just like how str(42) will return '42', the string representation of the integer 42, the functions list() and tuple() will return list and tuple versions of the values passed to them. Enter the following into the interactive shell, and notice that the return value is of a different data type than the value passed:
+
+>>> tuple(['cat', 'dog', 5])
+('cat', 'dog', 5)
+>>> list(('cat', 'dog', 5))
+['cat', 'dog', 5]
+>>> list('hello')
+['h', 'e', 'l', 'l', 'o']
+
+References
+
+>>> spam = 42
+>>> cheese = spam
+>>> spam = 100
+>>> spam
+100
+>>> cheese
+42
+
+When you assign 42 to the spam variable, you are actually creating the 42 value in the computer’s memory and storing a reference to it in the spam variable. When you copy the value in spam and assign it to the variable cheese, you are actually copying the reference. Both the spam and cheese variables refer to the 42 value in the computer’s memory. When you later change the value in spam to 100, you’re creating a new 100 value and storing a reference to it in spam. This doesn’t affect the value in cheese. Integers are immutable values that don’t change; changing the spam variable is actually making it refer to a completely different value in memory.
+
+
+References
+spam = 42
+cheese = spam
+print ('ID of spam',id(spam))
+print ('ID of cheese',id(cheese))
+cheese = 50
+print ('id of spam after cheese change',id(spam))
+print ('id of cheese after change',id(cheese))
+print('spam', spam)
+print('cheese', cheese)
+
+When you assign 42 to the spam variable, you are actually creating the 42 value in the computer’s memory and storing a reference to it in the spam variable. When you copy the value in spam and assign it to the variable cheese, you are actually copying the reference. Both the spam and cheese variables refer to the 42 value in the computer’s memory. 
+
+
+
+But lists don’t work this way, because list values can change; that is, lists are mutable. 
+
+spam = [1,2,3]
+cheese = spam
+print ('ID of spam',id(spam))
+print ('ID of cheese',id(cheese))
+cheese[0] = 10
+print ('id of spam after cheese change',id(spam))
+print ('id of cheese after change',id(cheese))
+
+print('spam', spam)
+print('cheese', cheese)
+
+When you create the list, you assign a reference to it in the spam variable. But the next line copies only the list reference in spam to cheese, not the list value itself. This means the values stored in spam and cheese now both refer to the same list. There is only one underlying list because the list itself was never actually copied. So when you modify the first element of cheese, you are modifying the same list that spam refers to.
+
+Passing References
+
+References are particularly important for understanding how arguments get passed to functions. When a function is called, the values of the arguments are copied to the parameter variables. For lists and dictionaries, this means a copy of the reference is used for the parameter.
+
+
+The copy Module’s copy() and deepcopy() Functions
+
+Although passing around references is often the handiest way to deal with lists and dictionaries, if the function modifies the list or dictionary that is passed, you may not want these changes in the original list or dictionary value. For this, Python provides a module named copy that provides both the copy() and deepcopy() functions.
+
+If the list you need to copy contains lists, then use the copy.deepcopy() function instead of copy.copy(). The deepcopy() function will copy these inner lists as well.
+
+
+Answers to questions
+https://automatetheboringstuff.com/2e/appendixc/
+
+Scratch PAD
+https://trinket.io/python3/fdf1394bb8

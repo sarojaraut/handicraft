@@ -1,0 +1,76 @@
+6 MANIPULATING STRINGS
+
+https://automatetheboringstuff.com/2e/chapter5/
+
+String Literals
+
+Typing string values in Python code is fairly straightforward: they begin and end with a single quote.
+
+Double Quotes
+
+Strings can begin and end with double quotes, just as they do with single quotes. One benefit of using double quotes is that the string can have a single quote character in it.
+
+Escape Characters
+
+An escape character lets you use characters that are otherwise impossible to put into a string. An escape character consists of a backslash (\) followed by the character you want to add to the string. (Despite consisting of two characters, it is commonly referred to as a singular escape character.) For example, the escape character for a single quote is \'. You can use this inside a string that begins and ends with single quotes.
+
+spam = 'Say hi to Bob\'s mother.'
+
+print("Hello there!\nHow are you?\nI\'m doing fine.")
+
+Hello there!
+How are you?
+I'm doing fine.
+
+Raw Strings
+
+You can place an r before the beginning quotation mark of a string to make it a raw string. A raw string completely ignores all escape characters and prints any backslash that appears in the string. For example, enter the following into the interactive shell:
+
+>>> print(r'That is Carol\'s cat.')
+That is Carol\'s cat.
+
+spam = 'X\'s book'
+print (spam)
+
+spam = r'X\'s book'
+print (spam)
+
+X's book
+X\'s book
+
+Multiline Strings with Triple Quotes
+
+While you can use the \n escape character to put a newline into a string, it is often easier to use multiline strings. A multiline string in Python begins and ends with either three single quotes or three double quotes. Any quotes, tabs, or newlines in between the “triple quotes” are considered part of the string. Python’s indentation rules for blocks do not apply to lines inside a multiline string.
+
+Escaping single and double quotes is optional in multiline strings.
+
+print('''Dear Alice,
+
+Eve's cat has been arrested for catnapping, cat burglary, and extortion.
+
+Sincerely,
+Bob''')
+
+Multiline Comments
+
+While the hash character (#) marks the beginning of a comment for the rest of the line, a multiline string is often used for comments that span multiple lines. The following is perfectly valid Python code:
+
+"""This is a test Python program.
+Written by Al Sweigart al@inventwithpython.com
+
+This program was designed for Python 3, not Python 2.
+"""
+
+def spam():
+    """This is a multiline comment to help
+    explain what the spam() function does."""
+    print('Hello!')
+
+
+
+
+Answers to questions
+https://automatetheboringstuff.com/2e/appendixc/
+
+Scratch PAD
+https://trinket.io/python3/fdf1394bb8

@@ -1,0 +1,1250 @@
+External CSS : Write CSS in Separate Files
+<head>
+  <link href="style.css" type="text/css" rel="stylesheet">
+</head>
+
+CSS rule set 
+P{
+    color:blue;
+}
+
+p is the selector
+content inside curly brace pair is declaration block
+color is the property and blue is value 
+
+inline CSS are inside the opening tag as a style attribute
+<p style="color: blue;">Hello World</p>
+<h2 style="text-align: center;">Centered text</h2>
+
+Internal CSS - Write CSS in HTML File
+
+<head>
+  <style>
+    h1 {
+      color: blue;
+    }
+  </style>
+</head>
+
+#Selectors : A selector is used to target the specific HTML element(s) to be styled by the declaration. 
+
+type selector/ tag name or element selector
+
+universal selector selects all elements of any type.
+* {
+  border: 1px solid red;
+}
+
+class selector : When working with HTML and CSS a class attribute is one of the most common ways to select an element.
+<p class='brand'>Sole Shoe Company</p>
+.brand {
+ 
+}
+
+it’s possible to add more than one class name to an HTML element’s class attribute.
+<h1 class='green bold'> ... </h1>
+
+.green {
+  color: green;
+}
+ 
+.bold {
+  font-weight: bold;
+}
+
+If an HTML element needs to be styled uniquely, we can give it an ID using the id attribute.
+
+<h1 id='large-title'> ... </h1>
+
+#large-title {
+ 
+}
+
+The attribute selector can be used to target HTML elements that already contain attributes. Elements of the same type can be targeted differently by their attribute or attribute value. This alleviates the need to add new code, like the class or id attributes.
+
+<img src='/images/seasons/cold/winter.jpg'>
+<img src='/images/seasons/warm/summer.jpg'>
+
+
+Attributes can be selected similarly to types, classes, and IDs
+
+[href='value']{
+   color: magenta;
+}
+
+The most basic syntax is an attribute surrounded by square brackets. In the above example: [href] would target all elements with an href attribute and set the color to magenta.
+
+And it can get more granular from there by adding type and/or attribute values. One way is by using type[attribute*=value]. In short, this code selects an element where the attribute contains any instance of the specified value. Let’s take a look at an example.
+
+<img src='/images/seasons/cold/winter.jpg'>
+<img src='/images/seasons/warm/summer.jpg'>
+
+img[src*='winter'] {
+  height: 50px;
+}
+ 
+img[src*='summer'] {
+  height: 100px;
+}
+
+The first ruleset looks for an img element with an attribute of src that contains the string 'winter', and sets the height to 50px.
+The second ruleset looks for an img element with an attribute of src that contains the string 'summer', and sets the height to 100px.
+
+Notice how no new HTML markup (like a class or id) had needed to be added, and we were still able to modify the styles of each image independently. This is one advantage to using the attribute selector!
+
+Pseudo-class selector 
+You may have observed how the appearance of certain elements can change, or be in a different state, after certain user interactions. For instance: 
+highlight in focus
+grayed out and disabled submit button untill completed forms
+anchor link different color to show already visited 
+These are all examples of pseudo-class selectors in action! In fact, :focus, :visited, :disabled, and :active are all pseudo-classes.
+
+A pseudo-class can be attached to any selector. It is always written as a colon : followed by a name. For example p:hover.
+
+p:hover {
+  background-color: lime;
+}
+
+In the above code, whenever the mouse hovers over a paragraph element, that paragraph will have a lime-colored background.
+
+imagine a page with two headlines. One headline needs to be bold and blue, and the other needs to be bold and green. Instead of writing separate CSS rules for each headline that repeat each other’s code, Fit’s better to write a .bold CSS rule, a .green CSS rule, and a .blue CSS rule. Then you can give one headline the bold green class, and the other the bold blue class.
+IDs override the styles of types and classes. Since IDs override these styles, they should be used sparingly and only on elements that need to always appear the same.
+
+Specificity
+Specificity is the order by which the browser decides which CSS styles will be displayed. A best practice in CSS is to style elements while using the lowest degree of specificity so that if an element needs a new style, it is easy to override.
+
+IDs are the most specific selector in CSS, followed by classes, and finally, type.
+
+<h1 class='headline'>Breaking News</h1>
+
+h1 {
+  color: red;
+}
+ 
+.headline {
+  color: firebrick;
+}
+
+In the example code above, the color of the heading would be set to firebrick, as the class selector is more specific than the type selector. 
+
+To make styles easy to edit, it’s best to style with a type selector, if possible. If not, add a class selector. If that is not specific enough, then consider using an ID selector.
+
+selector Chaining
+h1.special {
+ 
+}
+The code above would select only the <h1> elements with a class of special. If a <p> element also had a class of special, the rule in the example would not style the paragraph.
+
+Descendant Combinator
+CSS also supports selecting elements that are nested within other HTML elements, also known as descendants.
+
+For instance, consider the following HTML:
+
+<ul class='main-list'>
+  <li> ... </li>
+  <li> ... </li>
+  <li> ... </li>
+</ul>
+
+The nested <li> elements are descendants of the <ul> element and can be selected with the descendant combinator like so:
+
+.main-list li {
+ 
+}
+
+In the example above, .main-list selects the element with the.main-list class (the <ul> element). The descendant <li>‘s are selected by adding li to the selector, separated by a space. This results in .main-list li as the final selector.
+
+Chaining and Specificity
+
+Adding more than one tag, class, or ID to a CSS selector increases the specificity of the CSS selector.
+
+For instance, consider the following CSS:
+
+Both of these CSS rules define what a <p> element should look like. Since .main p has a class and a p type as its selector, only the <p> elements inside the .main element will appear red. This occurs despite there being another more general rule that states <p> elements should be blue.
+
+Multiple Selectors
+For instance, the following code has repetitive style attributes:
+
+h1 {
+  font-family: Georgia;
+}
+ 
+.menu {
+  font-family: Georgia;
+}
+
+Instead of writing font-family: Georgia twice for two selectors, we can separate the selectors by a comma to apply the same style to both, like this:
+
+h1, 
+.menu {
+  font-family: Georgia;
+}
+
+By separating the CSS selectors with a comma, both the <h1> elements and the elements with the menu class will receive the font-family: Georgia styling.
+
+
+VISUAL RULES
+
+https://www.codecademy.com/courses/learn-css/lessons/css-visual-rules/exercises/introduction-to-visual-rules
+
+
+h1 {
+  font-family: Garamond;
+}
+
+h1 {
+  font-family: 'Courier New';
+}
+
+p {
+  font-size: 18px;
+}
+
+p {
+  font-weight: bold;
+}
+
+h1 {
+  text-align: right;
+}
+
+h1 {
+  color: red;
+  background-color: blue;
+}
+
+color: this property styles an element’s foreground color
+background-color: this property styles an element’s background color
+
+Opacity
+Opacity is the measure of how transparent an element is. It’s measured from 0 to 1, with 1 representing 100%, or fully visible and opaque, and 0 representing 0%, or fully invisible.
+
+.overlay {
+  opacity: 0.5;
+}
+
+CSS has the ability to change the background of an element. One option is to make the background of an element an image. This is done through the CSS property background-image.
+
+.main-banner {
+  background-image: url('https://www.example.com/image.jpg');
+}
+
+!important can be applied to specific declarations, instead of full rules. It will override any style no matter how specific it is. As a result, it should almost never be used. Once !important is used, it is very hard to override.
+
+p {
+  color: blue !important;
+}
+ 
+.main p {
+  color: red;
+}
+
+https://www.codecademy.com/courses/learn-css/lessons/box-model-intro/exercises/box-model-intro
+
+The Box Model
+The box model comprises the set of properties that define parts of an element that take up space on a web page. The model includes the content area’s size (width and height) and the element’s padding, border, and margin. The properties include:
+
+width and height: The width and height of the content area.
+padding: The amount of space between the content area and the border.
+border: The thickness and style of the border surrounding the content area and padding.
+margin: The amount of space between the border and the outside edge of the element.
+
+Height and Width
+An element’s content has two dimensions: a height and a width. By default, the dimensions of an HTML box are set to hold the raw contents of the box.
+
+The CSS height and width properties can be used to modify these default dimensions.
+
+p {
+  height: 80px;
+  width: 240px;
+}
+
+border is a line that surrounds an element, like a frame around a painting. Borders can be set with a specific width, style, and color:
+
+width—The thickness of the border. A border’s thickness can be set in pixels or with one of the following keywords: thin, medium, or thick.
+style—The design of the border. Web browsers can render any of 10 different styles. Some of these styles include: none, dotted, and solid.
+color—The color of the border. Web browsers can render colors using a few different formats, including 140 built-in color keywords.
+p {
+  border: 3px solid coral;
+}
+
+
+The default border is medium none color, where color is the current color of the element.
+
+a border doesn’t have to be square.
+You can modify the corners of an element’s border box with the border-radius property.
+div.container {
+  border: 3px solid blue;
+  border-radius: 5px;
+}
+
+all four corners of the border to a radius of 5 pixels i.e. the same curvature that a circle with a radius of 5 pixels would have.
+
+You can create a border that is a perfect circle by first creating an element with the same width and height, and then setting the radius equal to half the width of the box, which is 50%.
+
+div.container {
+  height: 60px;
+  width: 60px;
+  border: 3px solid blue;
+  border-radius: 50%;
+}
+
+Padding
+The space between the contents of a box and the borders of a box is known as padding. Padding is like the space between a picture and the frame surrounding it. In CSS, you can modify this space with the padding property.
+
+p.content-header {
+  border: 3px solid coral;
+  padding: 10px;
+}
+
+The padding property is often used to expand the background color and make the content look less cramped.
+
+If you want to be more specific about the amount of padding on each side of a box’s content, you can use the following properties:
+
+padding-top: 29;
+padding-right: 30;
+padding-bottom: 20;
+padding-left: 30;
+
+Padding shorthand lets you specify all of the padding properties as values on a single line:
+
+padding-top
+padding-right
+padding-bottom
+padding-left
+
+4 Values
+p.content-header {
+  padding: 6px 11px 4px 9px;
+}
+In the example above, the four values 6px 11px 4px 9px correspond to the amount of padding on each side, in a clockwise rotation. In order, it specifies the padding-top value (6px), the padding-right value (11px), the padding-bottom value (4px), and the padding-left value (9px) of the content.
+
+3 Values
+p.content-header {
+  padding: 5px 10px 20px;
+}
+If the left and right sides of the content can be equal, the padding shorthand property allows for 3 values to be specified. The first value sets the padding-top value (5px), the second value sets the padding-left and padding-right values (10px), and the third value sets the padding-bottom value (20px).
+
+/* Apply to all four sides */
+padding: 1em;
+/* vertical | horizontal */
+padding: 5% 10%;
+/* top | horizontal | bottom */
+padding: 1em 2em 2em;
+/* top | right | bottom | left */
+padding: 5px 1em 0 2em;
+
+Margin
+So far you’ve learned about the following components of the box model: content, borders, and padding. The fourth and final component of the box model is margin.
+
+Margin refers to the space directly outside of the box. The margin property is used to specify the size of this space.
+
+p {
+  border: 1px solid aquamarine;
+  margin: 20px;
+}
+
+If you want to be even more specific about the amount of margin on each side of a box, you can use the following properties:
+
+margin-top
+margin-right
+margin-bottom
+margin-left
+
+similar short hands like padding
+
+Auto
+The margin property also lets you center content. However, you must follow a few syntax requirements. Take a look at the following example:
+
+div.headline {
+  width: 400px;
+  margin: 0 auto;
+}
+In the example above, margin: 0 auto; will center the divs in their containing elements. The 0 sets the top and bottom margins to 0 pixels. The auto value instructs the browser to adjust the left and right margins until the element is centered within its containing element.
+
+In order to center an element, a width must be set for that element. Otherwise, the width of the div will be automatically set to the full width of its containing element
+
+Margin Collapse
+As you have seen, padding is space added inside an element’s border, while margin is space added outside an element’s border. One additional difference is that top and bottom margins, also called vertical margins, collapse, while top and bottom padding does not.
+
+Horizontal margins (left and right), like padding, are always displayed and added together. For example, if two divs with ids #div-one and #div-two, are next to each other, they will be as far apart as the sum of their adjacent margins.
+
+#img-one {
+  margin-right: 20px;
+}
+ 
+#img-two {
+  margin-left: 20px;
+}
+In this example, the space between the #img-one and #img-two borders is 40 pixels. The right margin of #img-one (20px) and the left margin of #img-two (20px) add to make a total margin of 40 pixels.
+
+Unlike horizontal margins, vertical margins do not add. Instead, the larger of the two vertical margins sets the distance between adjacent elements.
+#img-one {
+  margin-bottom: 30px;
+}
+ 
+#img-two {
+  margin-top: 20px;
+}
+In this example, the vertical margin between the #img-one and #img-two elements is 30 pixels. Although the sum of the margins is 50 pixels, the margin collapses so the spacing is only dependent on the #img-one bottom margin.
+
+
+Minimum and Maximum Height and Width
+Because a web page can be viewed through displays of differing screen size, the content on the web page can suffer from those changes in size. To avoid this problem, CSS offers two properties that can limit how narrow or how wide an element’s box can be sized to:
+
+p {
+  min-width: 300px;
+  max-width: 600px;
+}
+
+p {
+  min-height: 150px;
+  max-height: 300px;
+}
+In the example above, the height of all paragraphs will not shrink below 150 pixels and the height will not exceed 300 pixels.
+
+What will happen to the contents of an element’s box if the max-height property is set too low?
+
+How can we ensure that we can view all of an element that is larger than its parent’s containing area?
+
+The overflow property controls what happens to content that spills, or overflows, outside its box. The most commonly used values are:
+
+hidden—when set to this value, any content that overflows will be hidden from view.
+scroll—when set to this value, a scrollbar will be added to the element’s box so that the rest of the content can be viewed by scrolling.
+visible—when set to this value, the overflow content will be displayed outside of the containing element. Note, this is the default value.
+
+The overflow property is set on a parent element to instruct a web browser on how to render child elements. For example, if a div’s overflow property is set to scroll, all children of this div will display overflowing content with a scroll bar.
+
+p {
+  overflow: scroll; 
+}
+
+--
+All major web browsers have a default stylesheet they use in the absence of an external stylesheet. These default stylesheets are known as user agent stylesheets.
+
+Many developers choose to reset these default values so that they can truly work with a clean slate.
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+Visibility
+Elements can be hidden from view with the visibility property.
+
+The visibility property can be set to one of the following values:
+
+hidden — hides an element.
+visible — displays an element.
+collapse — collapses an element.
+<ul>
+  <li>Explore</li>
+  <li>Connect</li>
+  <li class="future">Donate</li>
+</ul>
+.future {
+  visibility: hidden;
+}
+
+Note: What’s the difference between display: none and visibility: hidden? An element with display: none will be completely removed from the web page. An element with visibility: hidden, however, will not be visible on the web page, but the space reserved for it will.
+----------------------------------------------------------------------------------------------------------
+Why Change the Box Model?
+
+The box model, however, has an awkward limitation regarding box dimensions. 
+Unfortunately, under the current box model, the border thickness and the padding will affect the dimensions of the box.
+
+e.g. h1 {
+  border: 1px solid black;
+  height: 200px;
+  width: 300px;
+  padding: 10px;
+}
+
+The 10 pixels of padding increases the height of the box to 220 pixels and the width to 320 pixels. Next, the 1-pixel thick border increases the height to 222 pixels and the width to 322 pixels.
+
+Under this box model, the border thickness and padding are added to the overall dimensions of the box. This makes it difficult to accurately size a box. Over time, this can also make all of a web page’s content difficult to position and manage.
+
+In this box model, the height and width of the box will remain fixed. The border thickness and padding will be included inside of the box, which means the overall dimensions of the box do not change.
+
+<h1>Hello World</h1>
+* {
+  box-sizing: border-box;
+}
+ 
+h1 {
+  border: 1px solid black;
+  height: 200px;
+  width: 300px;
+  padding: 10px;
+}
+In the example above, the height of the box would remain at 200 pixels and the width would remain at 300 pixels. The border thickness and padding would remain entirely inside of the box.
+
+-------------------------------------
+Flow of HTML
+ five properties for adjusting the position of HTML elements in the browser:
+
+position
+display
+z-index
+float
+clear
+
+Each of these properties will allow us to position and view elements on a web page. They can be used in conjunction with any other styling properties you may know.
+
+Block-level elements like these boxes create a block the full width of their parent elements, and they prevent other elements from appearing in the same horizontal space.
+
+The default position of an element can be changed by setting its position property. The position property can take one of five values:
+
+static - the default value (it does not need to be specified)
+relative - offset properties that will move the element away from its default static position
+absolute - 
+fixed - 
+sticky
+
+Position: Relative
+accompanying the position declaration with one or more of the following offset properties that will move the element away from its default static position:
+CSS treats each HTML element as its own box, which is usually referred to as the CSS Box Model. Block-level items automatically start on a new line (think headings, paragraphs, and divs) while inline items sit within surrounding content (like images or spans). The default layout of elements in this way is called the normal flow of a document, but CSS offers the position property to override it.
+
+When the position of an element is set to relative, it allows you to specify how CSS should move it relative to its current position in the normal flow of the page. It pairs with the CSS offset properties of left or right, and top or bottom. These say how many pixels, percentages, or ems to move the item away from where it is normally positioned.
+
+top - moves the element down from the top.
+bottom - moves the element up from the bottom.
+left - moves the element away from the left side (to the right).
+right - moves the element away from the right side (to the left).
+
+Changing an element's position to relative does not remove it from the normal flow - other elements around it still behave as if that item were in its default position.
+
+.green-box {
+  background-color: green;
+  position: relative;
+  top: 50px;
+  left: 120px;
+}
+In the example above, the element of green-box class will be moved down 50 pixels, and to the right 120 pixels, from its default static position. 
+
+Position: Absolute
+Another way of modifying the position of an element is by setting its position to absolute.
+This locks the element in place relative to its parent container. Unlike the relative position, this removes the element from the normal flow of the document, so surrounding items ignore it. The CSS offset properties (top or bottom and left or right) are used to adjust the position.
+
+One nuance with absolute positioning is that it will be locked relative to its closest positioned ancestor. If you forget to add a position rule to the parent item, (this is typically done using position: relative;), the browser will keep looking up the chain and ultimately default to the body tag.
+
+
+When an element’s position is set to absolute, all other elements on the page will ignore the element and act like it is not present on the page. The element will be positioned relative to its closest positioned parent element, while offset properties can be used to determine the final position from there.
+
+Position: Fixed
+When an element’s position is set to absolute, as in the last exercise, the element will scroll with the rest of the document when a user scrolls.
+
+Tgis is a type of absolute positioning that locks an element relative to the browser window. Similar to absolute positioning, it's used with the CSS offset properties and also removes the element from the normal flow of the document. Other items no longer "realize" where it is positioned, which may require some layout adjustments elsewhere.
+
+One key difference between the fixed and absolute positions is that an element with a fixed position won't move when the user scrolls.
+
+We can fix an element to a specific position on the page (regardless of user scrolling) by setting its position to fixed, and accompanying it with the familiar offset properties top, bottom, left, and right.
+
+.title {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+}
+
+In the example above, the .title element will remain fixed to its position no matter where the user scrolls on the page
+
+This technique is often used for navigation bars on a web page.
+
+Push Elements Left or Right with the float Property
+The next positioning tool does not actually use position, but sets the float property of an element. Floating elements are removed from the normal flow of a document and pushed to either the left or right of their containing parent element. It's commonly used with the width property to specify how much horizontal space the floated element requires.
+
+Position: Sticky
+Since static and relative positioned elements stay in the normal flow of the document, when a user scrolls the page (or parent element) these elements will scroll too. 
+
+And since fixed and absolute positioned elements are removed from the document flow, when a user scrolls, these elements will stay at their specified offset position.
+
+The sticky value is another position value that keeps an element in the document flow as the user scrolls, but sticks to a specified position as the page is scrolled further. This is done by using the sticky value along with the familiar offset properties, as well as one new one.
+
+.box-bottom {
+  background-color: darkgreen;
+  position: sticky;
+  top: 240px;
+}
+
+Z-Index
+When boxes on a web page have a combination of different positions, the boxes (and therefore, their content) can overlap with each other, making the content difficult to read or consume.
+
+The z-index property controls how far back or how far forward an element should appear on the web page when elements overlap. This can be thought of as the depth of elements, with deeper elements appearing behind shallower elements.
+
+The z-index property accepts integer values. Depending on their values, the integers instruct the browser on the order in which elements should be layered on the web page.
+
+When elements are positioned to overlap (i.e. using position: absolute | relative | fixed | sticky), the element coming later in the HTML markup will, by default, appear on the top of the other elements. However, the z-index property can specify the order of how elements are stacked on top of one another. It must be an integer (i.e. a whole number and not a decimal), and higher values for the z-index property of an element move it higher in the stack than those with lower values.
+
+Inline Display
+Every HTML element has a default display value that dictates if it can share horizontal space with other elements. Some elements fill the entire browser from left to right regardless of the size of their content. Other elements only take up as much horizontal space as their content requires and can be directly next to other elements.
+
+In this lesson, we’ll cover three values for the display property: inline, block, and inline-block.
+
+The CSS display property provides the ability to make any element an inline element. This includes elements that are not inline by default such as paragraphs, divs, and headings.
+
+h1 {
+  display: inline;
+}
+The CSS in the example above will change the display of all <h1> elements to inline. The browser will render <h1> elements on the same line as other inline elements immediately before or after them (if there are any).
+
+Display: Block
+Some elements are not displayed in the same line as the content around them. These are called block-level elements. These elements fill the entire width of the page by default, but their width property can also be set. Unless otherwise specified, they are the height necessary to accommodate their content.
+
+Elements that are block-level by default include all levels of heading elements (<h1> through <h6>), <p>, <div> and <footer>. 
+
+Display: Inline-Block
+The third value for the display property is inline-block. Inline-block display combines features of both inline and block elements. Inline-block elements can appear next to each other and we can specify their dimensions using the width and height properties.
+
+<div class="rectangle">
+  <p>I’m a rectangle!</p>
+</div>
+<div class="rectangle">
+  <p>So am I!</p>
+</div>
+<div class="rectangle">
+  <p>Me three!</p>
+</div>
+
+.rectangle {
+  display: inline-block;
+  width: 200px;
+  height: 300px;
+}
+There are three rectangular divs that each contain a paragraph of text.
+
+the <div>s below will be displayed on the same line and with the specified dimensions:
+
+Float
+So far, you’ve learned how to specify the exact position of an element using offset properties. If you’re simply interested in moving an element as far left or as far right as possible in the container, you can use the float property.
+
+The float property is commonly used for wrapping text around an image while moving elements left and right for layout purposes is better left to tools like CSS grid and flexbox, which you’ll learn about later on.
+
+The float property is often set using one of the values below:
+
+left - moves, or floats, elements as far left as possible.
+right - moves elements as far right as possible.
+.green-section {
+  width: 50%;
+  height: 150px;
+}
+ 
+.orange-section {
+  background-color: orange;
+  width: 50%;
+  float: right;
+}
+
+Clear
+The float property can also be used to float multiple elements at once. However, when multiple floated elements have different heights, it can affect their layout on the page. Specifically, elements can “bump” into each other and not allow other elements to properly move to the left or right.
+
+The clear property specifies how elements should behave when they bump into each other on the page. It can take on one of the following values:
+
+left—the left side of the element will not touch any other element within the same containing element.
+right—the right side of the element will not touch any other element within the same containing element.
+both—neither side of the element will touch any other element within the same containing element.
+none—the element can touch either side.
+div {
+  width: 200px;
+  float: left;
+}
+ 
+div.special {
+  clear: left;
+}
+In the example above, all <div>s on the page are floated to the left side. The element with class special did not move all the way to the left because a taller <div> blocked its positioning. By setting its clear property to left, the special <div> will be moved all the way to the left side of the page.
+
+https://www.codecademy.com/courses/learn-css/lessons/css-display-positioning/exercises/review-css-display-positioning
+
+
+Introduction to Color
+
+Colors in CSS can be described in three different ways:
+
+Named colors — English words that describe colors, also called keyword colors
+RGB — numeric values that describe a mix of red, green, and blue
+HSL — numeric values that describe a mix of hue, saturation, and lightness
+
+Foreground vs Background
+Before discussing the specifics of color, it’s important to make two distinctions about color. Color can affect the following design aspects:
+
+The foreground color
+The background color
+Foreground color is the color that an element appears in. For example, when a heading is styled to appear green, the foreground color of the heading has been styled.
+
+Conversely, when a heading is styled so that its background appears yellow, the background color of the heading has been styled
+
+In CSS, these two design aspects can be styled with the following two properties:
+
+color - this property styles an element’s foreground color.
+background-color - this property styles an element’s background color.
+
+One syntax that we can use to specify colors is called hexadecimal. Colors specified using this system are called hex colors. A hex color begins with a hash character (#) which is followed by three or six characters. The characters represent values for red, blue and green.
+
+
+black:        #000000 or #000
+white:        #FFFFFF or #FFF
+aqua:         #00FFFF or #0FF
+
+Notice that black, white, and aqua are all represented with both three characters and six characters. This can be done with hex colors whose number pairs are the same characters. In the example above, 
+and the letters can be uppercase or lowercase.
+
+There is another syntax for representing RGB values, commonly referred to as “RGB value” or just “RGB”, that uses decimal numbers rather than hexadecimal numbers, and it looks like this:
+
+h1 {
+  color: rgb(23, 45, 23);
+}
+
+Each of the three values represents a color component, and each can have a decimal number value from 0 to 255. The first number represents the amount of red, the second is green, and the third is blue. These colors are exactly the same as hex, but with a different syntax and a different number system.
+
+In both hex and RGB, we have three values, one for each color. Each can be one of 256 values. Specifically, 256 * 256 * 256 = 16,777,216. That is the amount of colors we can now represent. Compare that to the roughly 140 named CSS colors!
+
+Hue, Saturation, and Lightness
+
+The RGB color scheme is convenient because it’s very close to how computers represent colors internally. There’s another equally powerful system in CSS called the hue-saturation-lightness color scheme, abbreviated as HSL.
+
+The first number represents the degree of the hue, and can be between 0 and 360. The second and third numbers are percentages representing saturation and lightness respectively. Here is an example:
+
+color: hsl(120, 60%, 70%);
+
+Hue is the first number. It refers to an angle on a color wheel. Red is 0 degrees, Green is 120 degrees, Blue is 240 degrees, and then back to Red at 360.
+
+Saturation refers to the intensity or purity of the color. The saturation increases towards 100% as the color becomes richer. The saturation decreases towards 0% as the color becomes grayer.
+
+Lightness refers to how light or dark the color is. Halfway, or 50%, is normal lightness. Imagine a sliding dimmer on a light switch that starts halfway. Sliding the dimmer up towards 100% makes the color lighter, closer to white. Sliding the dimmer down towards 0% makes the color darker, closer to black.
+
+HSL is convenient for adjusting colors. In RGB, making the color a little darker may affect all three color components. In HSL, that’s as easy as changing the lightness value. HSL is also useful for making a set of colors that work well together by selecting various colors that have the same lightness and saturation but different hues.
+
+Opacity and Alpha
+
+All of the colors we’ve seen so far have been opaque, or non-transparent. When we overlap two opaque elements, nothing from the bottom element shows through the top element.
+
+To use opacity in the HSL color scheme, use hsla instead of hsl, and four values instead of three. For example:
+
+color: hsla(34, 100%, 50%, 0.1);
+
+The first three values work the same as hsl. The fourth value (which we have not seen before) is the alpha. This last value is sometimes called opacity.
+
+Alpha is a decimal number from zero to one. If alpha is zero, the color will be completely transparent. If alpha is one, the color will be opaque. The value for half-transparent would be 0.5.
+
+The RGB color scheme has a similar syntax for opacity, rgba. Again, the first three values work the same as rgb and the last value is the alpha. Here’s an example:
+
+color: rgba(234, 45, 98, 0.33);
+
+Typography
+
+https://www.codecademy.com/courses/learn-css/lessons/css-typography/exercises/typography
+
+n this lesson, we’ll focus on typography, the art of arranging text on a page. We’ll look at:
+
+    How to style and transform fonts.
+    How to lay text out on a page.
+    and how to add external fonts to your web pages.
+
+
+Serif
+
+Serifs are the small features at the end of strokes within letters. These features are functional as well as decorative. Serif fonts are widely used for body text (eg. articles) because they are considered easier to read than sans-serif fonts in print.
+
+Serif fonts can often create a feeling of traditionalism and antiquity, due to their common use in printed materials for many years.
+
+
+Sans-Serif
+
+Sans-Serif ('without serif') describes fonts with characters which lack flourishes at the ends of the strokes. Sans-serif fonts have become the most prevalent for display of text on computer screens, as on lower-resolution digital displays, fine details like serifs may disappear or appear too large.
+
+Sans-serif fonts are often used to project an image of simplicity, modernity or minimalism.
+
+
+
+Monospaced
+
+A monospaced font's characters each occupy the same amount of horizontal space. This contrasts with most fonts, where the letters and spacings have different widths. For example, the two high-use letters 'I' and 'E' do not need the same footprint. The first monospaced Western typefaces were designed for typewriters.
+
+Many text editors (like those used to write computer code) use monospaced fonts, which aid in distinguishing between potentially similar characters (like 'l' and '1') and in counting the number of characters in a line.
+
+font of an element can be changed using the font-family property.
+
+h1 {
+  font-family: Arial;
+}
+
+When specifying a typeface with multiple words, like Times New Roman, it is recommended to use quotation marks (' ') to group the words together, like so:
+
+h1 {
+  font-family: 'Times New Roman';
+}
+
+Web safe fonts are good fallback fonts that can be used if your preferred font is not available.
+
+h1 {
+  font-family: Caslon, Georgia, 'Times New Roman';
+}
+
+In the example above, Georgia and Times New Roman are fallback fonts to Caslon. When you specify a group of fonts, you have what is known as a font stack. A font stack usually contains a list of similar-looking fonts. Here, the browser will first try to use the Caslon font. If that’s not available, it will try to use a similar font, Georgia. And if Georgia is not available, it will try to use Times New Roman.
+
+Serif and Sans-Serif
+
+You may be wondering what features make a font similar to another font. The fonts Caslon, Georgia, and Times New Roman are Serif fonts. Serif fonts have extra details on the ends of each letter, as opposed to Sans-Serif fonts, which do not have the extra details.
+
+h1 {
+  font-family: Caslon, Georgia, 'Times New Roman', serif;
+}
+
+In this final example, the font stack has 4 fonts. If the first 3 fonts aren’t available, the browser will use whatever serif font is available on the system.
+
+Font Weight
+
+In CSS, the font-weight property controls how bold or thin text appears. It can be specified with keywords or numerical values.
+Keyword Values
+
+The font-weight property can take any one of these keyword values:
+
+    bold: Bold font weight.
+    normal: Normal font weight. This is the default value.
+    lighter: One font weight lighter than the element’s parent value.
+    bolder: One font weight bolder than the element’s parent value
+
+
+Numerical Values
+
+Numerical values can range from 1 (lightest) to 1000 (boldest), but it is common practice to use increments of 100. A font weight of 400 is equal to the keyword value normal, and a font weight of 700 is equal to bold.
+
+.left-section {
+  font-weight: 700;
+}
+ 
+.right-section {
+  font-weight: bold; 
+}
+
+It’s important to note that not all fonts can be assigned a numeric font weight, and not all numeric font weights are available to all fonts. It’s a good practice to look up the font you are using to see which font-weight values are available.
+
+Font Style
+
+You can also italicize text with the font-style property.
+
+h3 {
+  font-style: italic;
+}
+
+The italic value causes text to appear in italics. The font-style property also has a normal value which is the default.
+
+
+Text Transformation
+
+Text can also be styled to appear in either all uppercase or lowercase with the text-transform property.
+
+h1 {
+  text-transform: uppercase;
+}
+
+Letter Spacing
+
+The letter-spacing property is used to set the horizontal spacing between the individual characters in an element. It’s not common to set the spacing between letters, but it can sometimes help the readability of certain fonts or styles. The letter-spacing property takes length values in units, such as 2px or 0.5em.
+
+p {
+  letter-spacing: 2px;
+}
+
+Word Spacing
+You can set the space between words with the word-spacing property. It’s also not common to increase the spacing between words, but it may help enhance the readability of bolded or enlarged text. The word-spacing property also takes length values in units, such as 3px or 0.2em.
+
+h1 {
+  word-spacing: 0.3em;
+}
+In the example above, the word spacing is set to 0.3em. For word spacing, using em values are recommended because the spacing can be set based on the size of the font.
+
+We can use the line-height property to set how tall we want each line containing our text to be. Line height values can be a unitless number, such as 1.2, or a length value, such as 12px, 5% or 2em.
+
+p {
+  line-height: 1.4;
+}
+In the example above, the height between lines is set to 1.4. Generally, the unitless value is preferred since it is responsive based on the current font size. In other words, if the line-height is specified by a unitless number, changing the font size will automatically readjust the line height.
+
+h1 {
+  text-align: right;
+}
+In the example above, the <h1> element is aligned to the right side, instead of the default left.
+
+text-align: justify;
+
+Web Fonts Using <link>
+Online font services, like Google Fonts, make it easy to find and link to fonts from your site. You can browse and select fonts that match the style of your website.
+
+When you’re done selecting a font and its styles, you can review your selected font family, and a <link> element will be automatically generated for you to use on your site!
+
+<head>
+  <!-- Add the link element for Google Fonts along with other metadata -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap" rel="stylesheet">
+<head>
+
+The generated <link> element needs to be added to the <head> element in your HTML document for it to be ready to be used in your CSS.
+
+p {
+  font-family: 'Roboto', sans-serif;
+}
+
+
+
+https://fonts.google.com/
+
+Web Fonts Using @font-face
+Fonts can also be added using a @font-face ruleset in your CSS stylesheet instead of using a <link> element in your HTML document. As mentioned earlier, fonts can be downloaded just like any other file on the web. They come in a few different file formats, such as:
+
+OTF (OpenType Font)
+TTF (TrueType Font)
+WOFF (Web Open Font Format)
+WOFF2 (Web Open Font Format 2)
+The different formats are a progression of standards for how fonts will work with different browsers, with WOFF2 being the most progressive. It’s a good idea to include TTF, WOFF, and WOFF2 formats with your @font-face rule to ensure compatibility on all browsers.
+
+Within the “Selected Families” section, you can use the “Download” button to download the font files to your computer. The files will be downloaded as a single format, in this case, TTF. You can use a tool such as Google Web Fonts Helper to generate additional file types for WOFF and WOFF2.
+
+When you have the files you need, move them to a folder inside your website’s working directory, and you’re ready to use them in a @font-face ruleset!
+
+@font-face {
+  font-family: 'MyParagraphFont';
+  src: url('fonts/Roboto.woff2') format('woff2'),
+       url('fonts/Roboto.woff') format('woff'),
+       url('fonts/Roboto.ttf') format('truetype');
+}
+
+Let’s take a look at the example above, line by line:
+
+The @font-face at-rule is used as the selector. It’s recommended to define the @font-face ruleset at the top of your CSS stylesheet.
+Inside the declaration block, the font-family property is used to set a custom name for the downloaded font. The name can be anything you choose, but it must be surrounded by quotation marks. In the example, the font is named 'MyParagraphFont', as this font will be used for all paragraphs.
+The src property contains three values, each specifying the relative path to the font file and its format. In this example, the font files are stored inside a folder named fonts within the working directory.
+Once the @font-face at-rule is defined, you can use the font in your stylesheet!
+
+p {
+  font-family: 'MyParagraphFont', sans-serif;
+}
+
+@font-face {
+  font-family: 'GlegooBanner';
+  src: url('fonts/Glegoo-Regular.woff2') format('woff2'),
+       url('fonts/Glegoo-Regular.woff') format('woff'),
+       url('fonts/Glegoo-Regular.ttf') format('truetype');
+}
+
+font-family: 'GlegooBanner', sans-serif;
+
+
+
+https://www.codecademy.com/courses/learn-intermediate-css/lessons/learn-flexbox/exercises/what-is-flexbox
+
+What is Flexbox?
+CSS provides many tools and properties that you can use to position elements on a webpage. Codecademy’s lessons on the box model and CSS display introduce a couple of these techniques.
+
+In this lesson, you will learn about Flexible Box Layout or flexbox, a tool that greatly simplifies how to position elements.
+
+There are two important components to a flexbox layout: flex containers and flex items. A flex container is an element on a page that contains flex items. All direct child elements of a flex container are flex items. This distinction is important because some of the properties you will learn in this lesson apply to flex containers while others apply to flex items.
+
+To designate an element as a flex container, set the element’s display property to flex or inline-flex. Once an item is a flex container, there are several properties we can use to specify how its children behave. In this lesson we will cover these properties:
+
+justify-content
+align-items
+flex-grow
+flex-shrink
+flex-basis
+flex
+flex-wrap
+align-content
+flex-direction
+flex-flow
+
+display: flex
+Any element can be a flex container. Flex containers are helpful tools for creating websites that respond to changes in screen sizes. Child elements of flex containers will change size and location in response to the size and position of their parent container.
+
+For an element to become a flex container, its display property must be set to flex.
+
+div.container {
+  display: flex;
+}
+
+In the example above, all divs with the class container are flex containers. If they have children, the children are flex items. A div with the declaration display: flex; will remain block level — no other elements will appear on the same line as it.
+
+However, it will change the behavior of its child elements. Child elements will not begin on new lines.
+
+when we changed the display value of parent containers to flex or inline-flex, all of the child elements (flex items) moved toward the upper left corner of the parent container. This is the default behavior of flex containers and their children. We can specify how flex items spread out from left to right, along the main axis.
+
+To position the items from left to right, we use a property called justify-content.
+
+.container {
+  display: flex;
+  justify-content: flex-end;
+}
+In the example above, we set the value of justify-content to flex-end. This will cause all of the flex items to shift to the right side of the flex container.
+
+Below are five commonly used values for the justify-content property:
+
+flex-start — all items will be positioned in order, starting from the left of the parent container, with no extra space between or before them.
+flex-end — all items will be positioned in order, with the last item starting on the right side of the parent container, with no extra space between or after them.
+center — all items will be positioned in order, in the center of the parent container with no extra space before, between, or after them.
+space-around — items will be positioned with equal space before and after each item, resulting in double the space between elements.
+space-between — items will be positioned with equal space between them, but no extra space before the first or after the last elements.
+
+---------------------------------------------------------------------------------------------------------------------------------------
+All your other elements will inherit your body element's styles.
+
+Sometimes your HTML elements will receive multiple styles that conflict with one another.
+
+Class selector overrides body styling 
+if element has multiple classes then which class defined later in css file or style section wins.
+Override Class Declarations by Styling ID Attributes
+inline styling overrides all of the above
+Override All Other Styles by using Important
+  .pink-text {
+    color: pink !important;
+  }
+
+
+To create a CSS variable, you just need to give it a name with two hyphens in front of it and assign it a value like this:
+
+--penguin-skin: gray;
+
+To create a CSS variable, you just need to give it a name with two hyphens in front of it and assign it a value like this:
+
+--penguin-skin: gray;
+
+When using your variable as a CSS property value, you can attach a fallback value that your browser will revert to if the given variable is invalid.
+
+Note: This fallback is not used to increase browser compatibility, and it will not work on IE browsers. Rather, it is used so that the browser has a color to display if it cannot find your variable.
+
+Here's how you do it:
+
+background: var(--penguin-skin, black);
+
+When you create a variable, it is available for you to use inside the selector in which you create it. It also is available in any of that selector's descendants. This happens because CSS variables are inherited, just like ordinary properties.
+
+To make use of inheritance, CSS variables are often defined in the :root element.
+
+:root is a pseudo-class selector that matches the root element of the document, usually the html element. By creating your variables in :root, they will be available globally and can be accessed from any other selector in the style sheet.
+
+When you create your variables in :root they will set the value of that variable for the whole page.
+
+You can then over-write these variables by setting them again within a specific element.
+
+https://www.freecodecamp.org/learn/responsive-web-design/applied-visual-design/create-visual-balance-using-the-text-align-property
+
+text-align: justify; causes all lines of text except the last line to meet the left and right edges of the line box.
+text-align: center; centers the text
+text-align: right; right-aligns the text
+And text-align: left; (the default) left-aligns the text.
+
+Adjust the Width of an Element Using the width Property
+
+img {
+  width: 220px;
+}
+
+Adjust the Height of an Element Using the height Property
+img {
+  height: 20px;
+}
+
+Use the strong Tag to Make Text Bold
+To make text bold, you can use the strong tag. This is often used to draw attention to text and symbolize that it is important. With the strong tag, the browser applies the CSS of font-weight: bold; to the element.
+
+Use the u Tag to Underline Text
+To underline text, you can use the u tag. This is often used to signify that a section of text is important, or something to remember. With the u tag, the browser applies the CSS of text-decoration: underline; to the element.
+
+Use the em Tag to Italicize Text
+To emphasize text, you can use the em tag. This displays text as italicized, as the browser applies the CSS of font-style: italic; to the element.
+
+Use the s Tag to Strikethrough Text
+To strikethrough text, which is when a horizontal line cuts across the characters, you can use the s tag. It shows that a section of text is no longer valid. With the s tag, the browser applies the CSS of text-decoration: line-through; to the element.
+
+<h4>Google <s>Alphabet </s></h4>
+
+Create a Horizontal Line Using the hr Element
+You can use the hr tag to add a horizontal line across the width of its containing element. This can be used to define a change in topic or to visually separate groups of content.
+
+Adjust the background-color Property of Text
+Instead of adjusting your overall background or the color of the text to make the foreground easily readable, you can add a background-color to the element holding the text you want to emphasize.
+
+font-size: 27px;
+
+Add a box-shadow to a Card-like Element
+The box-shadow property applies one or more shadows to an element.
+
+The box-shadow property takes values for
+
+offset-x (how far to push the shadow horizontally from the element),
+offset-y (how far to push the shadow vertically from the element),
+blur-radius,
+spread-radius and
+color, in that order.
+The blur-radius and spread-radius values are optional.
+
+#thumbnail{
+  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+}
+
+/* Any number of shadows, separated by commas */
+
+The opacity property in CSS is used to adjust the opacity, or conversely, the transparency for an item
+
+A value of 1 is opaque, which isn't transparent at all.
+A value of 0.5 is half see-through.
+A value of 0 is completely transparent.
+
+opacity : 0.7;
+
+Use the text-transform Property to Make Text Uppercase
+
+Value	Result
+lowercase	"transform me"
+uppercase	"TRANSFORM ME"
+capitalize	"Transform Me"
+initial	Use the default value
+inherit	Use the text-transform value from the parent element
+none	Default: Use the original tex
+
+    font-size: 32px;
+    font-weight: 400;
+
+  The font-size property can be applied to any element containing text.
+
+CSS offers the line-height property to change the height of each line in a block of text. As the name suggests, it changes the amount of vertical space that each line of text gets. line-height: 25px;
+
+
+Center an Element Horizontally Using the margin Property
+Another positioning technique is to center a block element horizontally. One way to do this is to set its margin to a value of auto.
+
+This method works for images, too. Images are inline elements by default, but can be changed to block elements when you set the display property to block.
+
+Learn about Complementary Colors
+Color theory and its impact on design is a deep topic and only the basics are covered in the following challenges. On a website, color can draw attention to content, evoke emotions, or create visual harmony. Using different combinations of colors can really change the look of a website, and a lot of thought can go into picking a color palette that works with your content.
+
+The color wheel is a useful tool to visualize how colors relate to each other - it's a circle where similar hues are neighbors and different hues are farther apart. When two colors are opposite each other on the wheel, they are called complementary colors. They have the characteristic that if they are combined, they "cancel" each other out and create a gray color. However, when placed side-by-side, these colors appear more vibrant and produce a strong visual contrast.
+
+Some examples of complementary colors with their hex codes are:
+
+red (#FF0000) and cyan (#00FFFF)
+green (#00FF00) and magenta (#FF00FF)
+blue (#0000FF) and yellow (#FFFF00)
+
+Learn about Tertiary Colors
+Computer monitors and device screens create different colors by combining amounts of red, green, and blue light. This is known as the RGB additive color model in modern color theory. Red (R), green (G), and blue (B) are called primary colors. Mixing two primary colors creates the secondary colors cyan (G + B), magenta (R + B) and yellow (R + G). You saw these colors in the Complementary Colors challenge. These secondary colors happen to be the complement to the primary color not used in their creation, and are opposite to that primary color on the color wheel. For example, magenta is made with red and blue, and is the complement to green.
+
+Tertiary colors are the result of combining a primary color with one of its secondary color neighbors. For example, within the RGB color model, red (primary) and yellow (secondary) make orange (tertiary). This adds six more colors to a simple color wheel for a total of twelve.
+
+There are various methods of selecting different colors that result in a harmonious combination in design. One example that can use tertiary colors is called the split-complementary color scheme. This scheme starts with a base color, then pairs it with the two colors that are adjacent to its complement. The three colors provide strong visual contrast in a design, but are more subtle than using two complementary colors.
+
+https://www.freecodecamp.org/learn/responsive-web-design/applied-visual-design/adjust-the-color-of-various-elements-to-complementary-colors
+
+Adjust the Color of Various Elements to Complementary Colors
+The Complementary Colors challenge showed that opposite colors on the color wheel can make each other appear more vibrant when placed side-by-side. However, the strong visual contrast can be jarring if it's overused on a website, and can sometimes make text harder to read if it's placed on a complementary-colored background. In practice, one of the colors is usually dominant and the complement is used to bring visual attention to certain content on the page.
+
+
+Adjust the Hue of a Color
+Colors have several characteristics including hue, saturation, and lightness. CSS3 introduced the hsl() property as an alternative way to pick a color by directly stating these characteristics.
+
+Hue is what people generally think of as 'color'. If you picture a spectrum of colors starting with red on the left, moving through green in the middle, and blue on right, the hue is where a color fits along this line. In hsl(), hue uses a color wheel concept instead of the spectrum, where the angle of the color on the circle is given as a value between 0 and 360.
+
+Saturation is the amount of gray in a color. A fully saturated color has no gray in it, and a minimally saturated color is almost completely gray. This is given as a percentage with 100% being fully saturated.
+
+Lightness is the amount of white or black in a color. A percentage is given ranging from 0% (black) to 100% (white), where 50% is the normal color.
+
+Here are a few examples of using hsl() with fully-saturated, normal lightness colors:
+
+Color	HSL
+red	hsl(0, 100%, 50%)
+yellow	hsl(60, 100%, 50%)
+green	hsl(120, 100%, 50%)
+cyan	hsl(180, 100%, 50%)
+blue	hsl(240, 100%, 50%)
+magenta	hsl(300, 100%, 50%)
+
+Adjust the Tone of a Color
+The hsl() option in CSS also makes it easy to adjust the tone of a color. Mixing white with a pure hue creates a tint of that color, and adding black will make a shade. Alternatively, a tone is produced by adding gray or by both tinting and shading. Recall that the 's' and 'l' of hsl() stand for saturation and lightness, respectively. The saturation percent changes the amount of gray and the lightness percent determines how much white or black is in the color. This is useful when you have a base hue you like, but need different variations of it.
+
+
+Create a Gradual CSS Linear Gradient
+Applying a color on HTML elements is not limited to one flat hue. CSS provides the ability to use color transitions, otherwise known as gradients, on elements. This is accessed through the background property's linear-gradient() function. Here is the general syntax:
+
+background: linear-gradient(gradient_direction, color 1, color 2, color 3, ...);
+
+    background: linear-gradient(35deg, #CCFFFF, #FFCCCC)
+    background: linear-gradient(30deg, red, yellow, rgb(204, 204, 255)); 
+
+https://www.freecodecamp.org/learn/responsive-web-design/applied-visual-design/use-a-css-linear-gradient-to-create-a-striped-element
+Use a CSS Linear Gradient to Create a Striped Element
+The repeating-linear-gradient() function is very similar to linear-gradient() with the major difference that it repeats the specified gradient pattern. repeating-linear-gradient() accepts a variety of values, but for simplicity, you'll work with an angle value and color stop values in this challenge.
+
+The angle value is the direction of the gradient. Color stops are like width values that mark where a transition takes place, and are given with a percentage or a number of pixels.
+
+In the example demonstrated in the code editor, the gradient starts with the color yellow at 0 pixels which blends into the second color blue at 40 pixels away from the start. Since the next color stop is also at 40 pixels, the gradient immediately changes to the third color green, which itself blends into the fourth color value red as that is 80 pixels away from the beginning of the gradient.
+
+    background: repeating-linear-gradient(
+      90deg,
+      yellow 0px,
+      blue 40px,
+      green 40px,
+      red 80px
+    );
+
+<style>
+
+  div{
+    border-radius: 20px;
+    width: 70%;
+    height: 400px;
+    margin:  50 auto;
+    background: repeating-linear-gradient(
+      45deg,
+      yellow 0px,
+      yellow 40px,
+      black 40px,
+      black 80px
+    );
+  }
+
+</style>
+
+<div></div>
+
+
+Create Texture by Adding a Subtle Pattern as a Background Image
+One way to add texture and interest to a background and have it stand out more is to add a subtle pattern. The key is balance, as you don't want the background to stand out too much, and take away from the foreground. The background property supports the url() function in order to link to an image of the chosen texture or pattern. The link address is wrapped in quotes inside the parentheses.
+
+Create Texture by Adding a Subtle Pattern as a Background Image
+One way to add texture and interest to a background and have it stand out more is to add a subtle pattern. The key is balance, as you don't want the background to stand out too much, and take away from the foreground. The background property supports the url() function in order to link to an image of the chosen texture or pattern. The link address is wrapped in quotes inside the parentheses.
+
+  body {
+background: url("https://cdn-media-1.freecodecamp.org/imgr/MJAkxbh.png");
+  }
+
+
+Use the CSS Transform scale Property to Change the Size of an Element
+To change the scale of an element, CSS has the transform property, along with its scale() function. The following code example doubles the size of all the paragraph elements on the page:
+
+p {
+  transform: scale(2);
+}
+
+Use the CSS Transform scale Property to Scale an Element on Hover
+The transform property has a variety of functions that let you scale, move, rotate, skew, etc., your elements. When used with pseudo-classes such as :hover that specify a certain state of an element, the transform property can easily add interactivity to your elements.
+
+Here's an example to scale the paragraph elements to 2.1 times their original size when a user hovers over them:
+
+p:hover {
+  transform: scale(2.1);
+}
+Note: Applying a transform to a div element will also affect any child elements contained in the div.
+
+Use the CSS Transform Property skewX to Skew an Element Along the X-Axis
+The next function of the transform property is skewX(), which skews the selected element along its X (horizontal) axis by a given degree.
+
+The following code skews the paragraph element by -32 degrees along the X-axis.
+
+p {
+  transform: skewX(-32deg);
+}
+
+Use the CSS Transform Property skewY to Skew an Element Along the Y-Axis
+Given that the skewX() function skews the selected element along the X-axis by a given degree, it is no surprise that the skewY() property skews an element along the Y (vertical) axis.
+
+
+
+

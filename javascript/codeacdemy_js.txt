@@ -1,0 +1,12 @@
+
+
+https://www.codecademy.com/courses/introduction-to-javascript/lessons/introduction-to-javascript/exercises/properties
+
+Every string instance has a property called length that stores the number of characters in that string.
+
+console.log('Hello'.length); // Prints 5
+
+Remember that methods are actions we can perform. JavaScript provides a number of string methods.
+
+console.log('hello'.toUpperCase()); // Prints 'HELLO'
+console.log('Hey'.startsWith('H')); // Prints true
