@@ -1,0 +1,14 @@
+Closure is when a function is able to remember and access its lexical scope even when that function is executing outside its lexical scope.
+
+Loops and Closure
+The most common canonical example used to illustrate closure involves the humble for loop.
+for (var i=1; i<=5; i++) {
+    setTimeout( function timer(){
+        console.log( i );
+    }, i*1000 );
+}
+
+Logs five sixes,  The timeout function callbacks are all running well after the completion of the loop. In fact, as timers go, even if it was setTimeout(.., 0) on each iteration, all
+those function callbacks would still run strictly after the completion of the loop, and thus print 6 each time.
+
+

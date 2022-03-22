@@ -1,0 +1,614 @@
+
+https://www.freecodecamp.org/news/python-code-examples-sample-script-coding-tutorial-for-beginners/
+Variable Definitions in Python
+
+age = 56
+name = "Nora"
+color = "Blue"
+grades = [67, 100, 87, 56]
+
+Numeric Data Types in Python: Integers, Floats, and Complex
+
+>>> type(1)
+<class 'int'>
+>>> type(0.0)
+<class 'float'>
+>>> complex(4, 5)
+(4+5j)
+
+
+>>> my_string = "Hello"
+
+>>> my_string[-1]
+'o'
+
+String Slicing
+This is the general syntax:
+
+<string_variable>[start:stop:step]
+We can specify two parameters to use the default value of step, which is 1. This will include all the characters between start and stop (not inclusive):
+<string_variable>[start:stop]
+>>> freecodecamp = "freeCodeCamp"
+>>> freecodecamp[0:9:2]
+'feCdC'
+
+
+if we omit start, stop, or both:
+>>> freecodecamp[:8]
+'freeCode'
+>>> freecodecamp[4:]
+'CodeCamp'
+
+# Default start and stop, common way of reversing a string
+>>> freecodecamp[::-1]
+'pmaCedoCeerf'
+
+f-Strings
+In Python 3.6 and more recent versions, we can use a type of string called f-string that helps us format our strings much more easily.
+
+first_name = "Aarush"
+favorite_language = "Python"
+
+print(f"Hi, I'm {first_name}. I'm learning {favorite_language}.")
+
+Hi, I'm Aarush. I'm learning Python.
+
+value = 5
+print(f"{value} multiplied by 2 is: {value * 2}")
+
+5 multiplied by 2 is: 10
+
+String Methods
+>>> freecodecamp = "freeCodeCamp"
+
+>>> freecodecamp.capitalize()
+'Freecodecamp'
+
+>>> freecodecamp.count("C")
+2
+
+>>> freecodecamp.find("e")
+2
+
+>>> freecodecamp.index("p")
+11
+
+>>> freecodecamp.isalnum()
+True
+
+>>> freecodecamp.isalpha()
+True
+
+>>> freecodecamp.isdecimal()
+False
+
+>>> freecodecamp.isdigit()
+False
+
+>>> freecodecamp.isidentifier()
+True
+
+>>> freecodecamp.islower()
+False
+
+>>> freecodecamp.isnumeric()
+False
+
+
+To define a list, we use square brackets [] with the elements separated by a comma.
+
+Lists can contain values of different data types, so this would be a valid list in Python:
+
+[1, "Emily", 3.4]
+
+Nested Lists
+Lists can contain values of any data type, even other lists. These inner lists are called nested lists.
+
+[1, [2, 3, 4], [5, 6, 7], 3.4]
+
+Add a Value to a List
+We can add a new value to the end of a list with the .append() method.
+Remove a Value from a List
+We can remove a value from a list with the .remove() method.
+
+>>> my_list = [1, 2, 3, 4]
+>>> my_list.append(5)
+>>> my_list
+[1, 2, 3, 4, 5]
+
+>>> my_list = [1, 2, 3, 4]
+>>> my_list.remove(3)
+>>> my_list
+[1, 2, 4]
+
+List Slicing
+We can also get a slice of a list using the same syntax that we used with strings
+
+>>> my_list = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
+
+>>> my_list[2:6:2]
+['c', 'e']
+
+Tuples in Python
+To define a tuple in Python, we use parentheses () and separate the elements with a comma.
+
+Tuple Methods
+There are two built-in tuple methods in Python:
+
+>>> my_tuple = (4, 4, 5, 6, 6, 7, 8, 9, 10)
+
+>>> my_tuple.count(6)
+2
+
+>>> my_tuple.index(7)
+5
+
+Tuple Assignment
+# Tuple Assignment
+>>> a, b = 1, 2
+>>> a
+1
+
+>>> b
+2
+
+ Tuple assignment is commonly used to swap the values of two variables:
+ # Swap the values
+>>> a, b = b, a
+
+Dictionaries in Python
+Now let's start diving into dictionaries. This built-in data structure lets us create pairs of values where one value is associated with another one.
+The key is separated from the value with a colon :, like this:
+
+{"a": 1, "b": 2, "c"; 3}
+
+The keys of a dictionary must be of an immutable data type. For example, they can be strings, numbers, or tuples but not lists since lists are mutable.
+
+>>> my_dict = {"a": 1, "b": 2, "c": 3, "d": 4}
+
+>>> len(my_dict)
+4
+
+print(my_dict["a"])
+Add a Key-Value Pair to a Dictionary
+>>> my_dict["e"] = 5
+Delete a Key-Value Pair in a Dictionary
+>>> del my_dict["c"]
+
+
+These are some examples of the most commonly used dictionary methods:
+>>> my_dict = {"a": 1, "b": 2, "c": 3, "d": 4}
+
+>>> my_dict.get("c")
+3
+
+>>> my_dict.items()
+dict_items([('a', 1), ('b', 2), ('c', 3), ('d', 4)])
+
+>>> my_dict.keys()
+dict_keys(['a', 'b', 'c', 'd'])
+
+>>> my_dict.pop("d")
+4
+
+>>> my_dict.popitem()
+('c', 3)
+
+>>> my_dict.setdefault("a", 15)
+1
+
+>>> my_dict
+{'a': 1, 'b': 2}
+
+>>> my_dict.setdefault("f", 25)
+25
+
+>>> my_dict
+{'a': 1, 'b': 2, 'f': 25}
+
+>>> my_dict.update({"c": 3, "d": 4, "e": 5})
+
+>>> my_dict.values()
+dict_values([1, 2, 25, 3, 4, 5])
+
+>>> my_dict.clear()
+
+>>> my_dict
+{}
+
+Comparison Operator Chaining
+>>> a = 1
+>>> b = 2
+>>> c = 3
+
+>>> a < b < c
+True
+
+Logical Operators
+
+There are three logical operators in Python: and, or, and not. 
+
+Assignment Operators
+
+Assignment operators are used to assign a value to a variable.
+
+They are: =, +=, -=, *=, %=, /=, //=, **=
+
+Membership Operators
+
+You can check if an element is in a sequence or not with the operators: in and not in.
+
+>>> "a" not in {"a": 1, "b": 2}
+False
+>>> 1 not in {"a": 1, "b": 2}
+True
+>>> 1 in {"a": 1, "b": 2}
+False
+>>> 1 in {"a": 1, "b": 2}.values()
+true
+
+x = 5
+
+if favorite_season == "Winter":
+    print("That is my favorite season too")
+elif favorite_season == "Summer":
+    print("Summer is amazing")
+elif favorite_season == "Spring":
+    print("I love spring")
+else:
+    print("Fall is my mom's favorite season")
+
+
+For Loops in Python
+
+This is the basic syntax to write a for loop in Python:
+
+for <loop_variable> in <iterable>:
+    <code>
+
+This is the general syntax to write a for loop with range():
+
+for <loop_variable> in range(<start>, <stop>, <step>):
+    <code>
+
+    start: where the sequence of integers will start. By default, it's 0.
+    stop: where the sequence of integers will stop (without including this value).
+    step: the value that will be added to each element to get the next element in the sequence. By default, it's 1. 
+
+You can pass 1, 2, or 3 arguments to range():
+
+    With 1 argument, the value is assigned to the stop parameter and the default values for the other two parameters are used.
+    With 2 arguments, the values are assigned to the start and stop parameters and the default value for step is used.
+    With 3 arguments, the values are assigned to the start, stop, and step parameters (in order).
+
+How to Iterate over Iterables in Python
+
+We can iterate directly over iterables such as lists, tuples, dictionaries, strings, and files using for loops. We will get each one of their elements one at a time per iteration
+
+>>> message = "Hello, World!"
+
+>>> for char in message:
+	print(char)
+
+>>> my_list = [2, 3, 4, 5]
+
+>>> for num in my_list:
+	print(num)
+
+Iterate Over the Keys, Values, and Key-Value Pairs of Dictionaries
+
+We can iterate over the keys, values, and key-value pairs of a dictionary by calling specific dictionary methods.
+
+>>> my_dict = {"a": 1, "b": 2, "c": 3}
+
+>>> for key in my_dict:
+	print(key)
+
+>>> my_dict = {"a": 1, "b": 2, "c": 3}
+
+>>> for value in my_dict.values():
+	print(value)
+
+>>> my_dict = {"a": 1, "b": 2, "c": 3}
+
+>>> for key, value in my_dict.items():
+	print(key, value)
+
+	
+a 1
+b 2
+c 3
+
+If we define only one loop variable, this variable will contain a tuple with the key-value pair:
+
+>>> my_dict = {"a": 1, "b": 2, "c": 3}
+>>> for pair in my_dict.items():
+	print(pair)
+
+	
+('a', 1)
+('b', 2)
+('c', 3)
+
+The Break Statement
+
+The break statement is used to stop the loop immediately.
+
+When a break statement is found, the loop stops and the program returns to its normal execution beyond the loop.
+
+The Continue Statement
+
+The continue statement is used to skip the rest of the current iteration. 
+
+The zip() function in Python
+
+zip() is an amazing built-in function that we can use in Python to iterate over multiple sequences at once, getting their corresponding elements in each iteration.
+
+>>> my_list1 = [1, 2, 3, 4]
+>>> my_list2 = [5, 6, 7, 8]
+
+>>> for elem1, elem2 in zip(my_list1, my_list2):
+	print(elem1, elem2)
+
+	
+1 5
+2 6
+3 7
+4 8
+
+The enumerate() Function in Python
+
+You can also keep track of a counter while the loop runs with the enum() function. It is commonly used to iterate over a sequence and get the corresponding index.
+
+>>> word = "Hello"
+
+>>> for i, char in enumerate(word):
+	print(i, char)
+
+	
+0 H
+1 e
+2 l
+3 l
+4 o
+
+You can start the counter from a different number by passing a second argument to enumerate():
+
+>>> word = "Hello"
+
+>>> for i, char in enumerate(word, 2):
+	print(i, char)
+
+	
+2 H
+3 e
+4 l
+5 l
+6 o
+
+The else Clause
+
+For loops also have an else clause. You can add this clause to the loop if you want to run a specific block of code when the loop completes all its iterations without finding the break statement.
+
+💡 Tip: if break is found, the else clause doesn't run and if break is not found, the else clause runs.
+
+In the example below, we try to find an element greater than 6 in the list. That element is not found, so break doesn't run and the else clause runs.
+
+my_list = [1, 2, 3, 4, 5]
+
+for elem in my_list:
+    if elem > 6:
+        print("Found")
+        break
+else:
+    print("Not Found")
+
+However, if the break statement runs, the else clause doesn't run. We can see this in the example below:
+
+my_list = [1, 2, 3, 4, 5, 8] # Now the list has the value 8
+
+for elem in my_list:
+    if elem > 6:
+        print("Found")
+        break
+else:
+    print("Not Found")
+
+While Loops in Python
+
+While loops are similar to for loops in that they let us repeat a block of code. The difference is that while loops run while a condition is True.
+
+In a while loop, we define the condition, not the number of iterations. The loop stops when the condition is False.
+
+This is the general syntax of a while loop:
+
+while <condition>:
+    <code
+
+Tip: in while loops, you must update the variables that are part of the condition to make sure that the condition will eventually become False.
+
+>>> x = 6
+
+>>> while x < 15:
+	print(x)
+	x += 1
+
+Break and Continue
+
+We can also use break and continue with while loops and they both work exactly the same:
+
+    break stops the while loop immediately.
+    continue stops the current iteration and starts the next one.
+
+The else Clause
+
+We can also add an else clause to a while loop. If break is found, the else clause doesn't run but if the break statement is not found, the else clause runs.
+
+Default Arguments in Python
+
+We can assign default arguments for the parameters of our function. To do this, we just need to write <parameter>=<value> in the list of parameters.
+def print_product(a, b=5):
+    print(a * b)
+
+💡 Tip: parameters with default arguments have to be defined at the end of the list of parameters. Else, you will see this error: SyntaxError: non-default argument follows default argument.
+
+
+
+
+
+
+
+
+
+----  https://www.practicepython.org/exercise/2014/03/19/07-list-comprehensions.html
+List comprehensions
+
+The idea of a list comprehension is to make code more compact to accomplish tasks involving lists. Take for example this code:
+
+  years_of_birth = [1990, 1991, 1990, 1990, 1992, 1991]
+  ages = []
+  for year in years_of_birth: 
+    ages.append(2014 - year)
+
+And at the end, the variable ages has the list [24, 23, 24, 24, 22, 23]. What this code did was translate the years of birth into ages, and it took us a for loop and an append statement to a new list to do that.
+
+Compare to this piece of code:
+
+  years_of_birth = [1990, 1991, 1990, 1990, 1992, 1991]
+  ages = [2014 - year for year in years_of_birth]
+
+The second line here - the line with ages is a list comprehension.
+
+
+>>> [(x, y) for x in [1,2,3] for y in [3,1,4] if x != y]
+[(1, 3), (1, 4), (2, 3), (2, 1), (2, 4), (3, 1), (3, 4)]
+
+and it’s equivalent to:
+combs = []
+for x in [1,2,3]:
+    for y in [3,1,4]:
+        if x != y:
+            combs.append((x, y))
+
+vec = [-4, -2, 0, 2, 4]
+# create a new list with the values doubled
+[x*2 for x in vec]
+
+# filter the list to exclude negative numbers
+[x for x in vec if x >= 0]
+
+# apply a function to all the elements
+[abs(x) for x in vec]
+
+# call a method on each element
+freshfruit = ['  banana', '  loganberry ', 'passion fruit  ']
+[weapon.strip() for weapon in freshfruit]
+
+# create a list of 2-tuples like (number, square)
+[(x, x**2) for x in range(6)]
+
+
+
+----------- Practice Programme
+
+https://www.practicepython.org/
+
+# Make a function lowercase that, given a string, returns the 
+# string, except in all lowercase letters.
+#
+# >>>> lowercase("ARG")
+# arg
+# >>>> lowercase("TRINKET")
+# trinket
+
+# Make a function switch_case that, given a string, 
+# returns the string with uppercase letters in lowercase
+# and vice-versa. Include punction and other non-cased 
+# characters unchanged.
+#
+# >>>> switch_case("Arg!")
+# aRG!
+# >>>> switch_case("TrInKeT")
+# tRiNkEt
+
+
+# Make a function aardvark that, given a string, returns 'aardvark'
+# if the string starts with an a.  Otherwise, return 'zebra'.
+#
+# >>>> aardvark("arg")
+# aardvark
+# >>>> aardvark("Trinket")
+# zebra
+
+# Make a function reverse_string that, given a string, 
+# returns that string in reverse
+#
+# >>>> reverse_string("arg")
+# gra
+# >>>> reverse_string("Hi!")
+# !iH
+
+
+
+# Make a function gerund_infinitive that, given a string ending in "ing", 
+# returns the rest of the string prefixed with "to ". If the string
+# doesn't end in "ing", return "That's not a gerund!"
+#
+# >>>> gerund_infinitive("building")
+# to build
+# >>>> gerund_infinitive("build")
+# That's not a gerund!
+
+
+
+# Make a function commafy that, given a list of three or more things,
+# returns a list with commas.
+#
+# >>>> commafy(["trinket", "learning", "fun"])
+# trinket, learning, and fun
+# >>>> commafy(["lions", "tigers", "bears"])
+# lions, tigers, and bears
+
+
+
+# Make a function how_many that, given a list of a number
+# and a thing name, returns a grmmatically correct sentence
+# describing the number of things.
+#
+# >>>> how_many([5, "trinket"])
+# There are 5 trinkets.
+# >>>> how_many([1, "king"])
+# There is 1 king.
+
+
+# Make a function abbreviator that, given a string, returns the string
+# if the string is less than 5 charactors.  Otherwise, return the first
+# four characters of the string, followed by a ".".
+#
+# >>>> abbreviator("Trinket")
+# Trin.
+# >>>> abbreviator("argh!")
+# argh!
+
+
+
+# Make a function that returns 'apples' if given a string,
+# 'oranges' if given an integer, and 'bananas' if given
+# anything else.
+#
+# >>>> fruit_labeler(4)
+# oranges 
+
+
+
+if type(thing) == type("a string"):
+string=string[0:i]+morse_code[string[i]]+string[i]
+string = string[::-1]
+def switch_case(string):
+  result = ""
+  for i in range(len(string)):
+    if string[i].isupper():
+      result += string[i].lower()
+    else:
+      result += string[i].upper()
+  return result

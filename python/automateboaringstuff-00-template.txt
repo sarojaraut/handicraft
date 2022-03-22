@@ -1,0 +1,10 @@
+8 INPUT VALIDATION
+
+https://automatetheboringstuff.com/2e/chapter8/
+
+
+Answers to questions
+https://automatetheboringstuff.com/2e/appendixc/
+
+Scratch PAD
+https://trinket.io/python3/fdf1394bb8

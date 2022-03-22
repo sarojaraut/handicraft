@@ -1,3 +1,7 @@
+Techniques 
+return el.toLowerCase().indexOf(query.toLowerCase()) !== -1 // returrns true if el contains string query
+Number.isFinite(item.id) && item.id !== 0 // returns if ite.id is neither null nor undefined nor NaN nor 0
+
 /*
 Filter : array.filter(function(currentValue, index, arr), thisValue)
 Map : array.map(function(currentValue, index, arr), thisValue)
@@ -10,8 +14,8 @@ includes : array.includes(element, start)
 
 
 
-The filter() method creates an array filled with all array elements that pass a test (provided as a function).
-The map() method creates a new array with the results of calling a function for every array element.
+The filter() method returns an array filled with all array elements that pass a test (provided as a function).
+The map() method returns a new array with the results of calling a function for every array element.
 The find() method returns the value of the first element in an array that pass a test (provided as a function).
 The forEach() method calls a function once for each element in an array, in order.
 The some() method executes the function once for each element present in the array:
@@ -60,6 +64,10 @@ const costlyItems = items.filter((item) => { return item.price >= 100 });
 // we can remove the bracket around item because it has only one argument
 // we can remove curly brace around function becase it has only one stmt
 console.log(costlyItems);
+
+const a1 = [1, 4, 9, 16];
+
+sqrta1 = a1.map(val => Math.sqrt(val) )
 
 
 
@@ -112,3 +120,64 @@ let book = items[1];
 const hasBook = items.includes(book);
 console.log(hasBook);
 
+--- MDN 
+
+
+
+// Java Script Array Methods : push, pop, shift, unshift 
+let fruits = ['Apple', 'Banana']
+console.log(fruits.length) // 2
+let last = fruits[fruits.length - 1] // Banana
+fruits.forEach(function(item, index, array) {
+  console.log(item, index)
+}) // Apple 0, Banana 1
+
+let first = fruits.shift() // remove Apple from the front
+// ["Banana"]
+let newLength = fruits.unshift('Strawberry') // add to the front
+// ["Strawberry", "Banana"]
+let pos = fruits.indexOf('Banana') // 1
+
+let removedItem = fruits.splice(pos, 1) //Remove an item by index position
+// ["Strawberry", "Mango"]
+
+let vegetables = ['Cabbage', 'Turnip', 'Radish', 'Carrot']
+let pos = 1
+let n = 2
+let removedItems = vegetables.splice(pos, n)
+// this is how to remove items, n defines the number of items to be removed,
+// starting at the index position specified by pos and progressing toward the end of array.
+console.log(vegetables)
+// ["Cabbage", "Carrot"] (the original array is changed)
+console.log(removedItems)
+// ["Turnip", "Radish"]
+
+
+// Using an array to tabulate a set of values
+values = []
+for (let x = 0; x < 10; x++){
+ values.push([
+  2 ** x,
+  2 * x ** 2
+ ])
+}
+console.table(values)
+
+
+let words = ['spray', 'limit', 'exuberant', 'destruction', 'elite', 'present']
+
+const modifiedWords = words.filter( (word, index, arr) => {
+  arr[index+1] +=' extra'
+  return word.length < 6
+})
+
+console.log(modifiedWords)
+
+
+Finding unique values in an array or remove duplicates: [...new Set([1,2,3,4,3,2,1])] // [1, 2, 3, 4]
+
+a = [1,2,3,4,3,2,1]
+a.filter((v,i) => a.indexOf(v) === i) //  [1, 2, 3, 4]
+a.filter((v,i) => a.indexOf(v) !== i) // [3, 2, 1] 
+
+a.reduce((arr,i) => arr.includes(i) ? arr : [...arr, i],[]) //[1, 2, 3, 4] second argument of reduce method is must

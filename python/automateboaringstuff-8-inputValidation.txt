@@ -1,0 +1,40 @@
+8 INPUT VALIDATION
+
+https://automatetheboringstuff.com/2e/chapter8/
+Answers to questions
+https://automatetheboringstuff.com/2e/appendixc/
+Scratch PAD
+https://trinket.io/python3/fdf1394bb8
+
+
+The PyInputPlus Module
+
+PyInputPlus contains functions similar to input() for several kinds of data: numbers, dates, email addresses, and more.
+
+To install PyInputPlus, run pip install --user pyinputplus from the command line.
+
+import pyinputplus
+
+If no errors appear when you import the module, it has been successfully installed.
+
+PyInputPlus has several functions for different kinds of input:
+
+     *
+    ***
+   *****
+  *******
+ *********
+***********
+
+   *
+ ***
+*****
+
+j=15
+for i in range (j):
+  print (('*'*(2*i+1)).rjust(j+i))
+
+
+j=15
+for i in range (j):
+  print (('*'*(i+1)).rjust(j))

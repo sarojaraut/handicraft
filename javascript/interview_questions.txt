@@ -1,0 +1,605 @@
+### What is JSON and its common operations
+JSON is a text-based data format following JavaScript object syntax, which was popularized by Douglas Crockford. It is useful when you want to transmit data across a network and it is basically just a text file with an extension of .json, and a MIME type of application/json
+
+Parsing: Converting a string to a native object
+
+JSON.parse(text)
+Stringification: converting a native object to a string so it can be transmitted across the network
+
+JSON.stringify(object)
+
+### What is the purpose of the array slice method
+The slice() method returns the selected elements in an array as a new array object. It selects the elements starting at the given start argument, and ends at the given optional end argument without including the last element. If you omit the second argument then it selects till the end.
+
+Some of the examples of this method are,
+
+let a = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+let a1 = a.slice(0,2); // returns [1,2]
+let a2 = a.slice(2,3); // returns [3]
+let a3 = a.slice(4); //returns [5, 6, 7, 8, 9] 
+let a4 = a.slice(3, 6); //returns [4, 5, 6] 
+
+### What is the purpose of the array splice method
+The splice() method is used either adds/removes items to/from an array, and then returns the removed item. The first argument specifies the array position for insertion or deletion whereas the optional second argument indicates the number of elements to be deleted. Each additional argument is added to the array.
+
+Some of the examples of this method are,
+
+let ao1 = [1, 2, 3, 4, 5];
+let ao2 = [1, 2, 3, 4, 5];
+let ao3 = [1, 2, 3, 4, 5];
+
+let a1 = ao1.splice(0,2); // returns [1, 2]; ao1: [3, 4, 5]
+let a2 = ao2.splice(3); // returns [4, 5]; ao2: [1, 2, 3]
+let a3 = ao3.splice(3, 1, "a", "b", "c"); //returns [4]; original array: [1, 2, 3, "a", "b", "c", 5]
+
+### What is the difference between == and === operators
+JavaScript provides both strict(===, !==) and type-converting(==, !=) equality comparison. The strict operators take type of variable in consideration, while non-strict operators make type correction/conversion based upon values of variables. The strict operators follow the below conditions for different types,
+
+Two strings are strictly equal when they have the same sequence of characters, same length, and same characters in corresponding positions.
+Two numbers are strictly equal when they are numerically equal. i.e, Having the same number value. There are two special cases in this,
+NaN is not equal to anything, including NaN.
+Positive and negative zeros are equal to one another.
+Two Boolean operands are strictly equal if both are true or both are false.
+Two objects are strictly equal if they refer to the same Object.
+Null and Undefined types are not equal with ===, but equal with ==. i.e, null===undefined --> false but null==undefined --> true
+Some of the example which covers the above cases,
+
+0 == false   // true
+0 === false  // false
+1 == "1"     // true
+1 === "1"    // false
+null == undefined // true
+null === undefined // false
+'0' == false // true
+'0' === false // false
+[]==[] or []===[] //false, refer different objects in memory
+{}=={} or {}==={} //false, refer different objects in memory
+
+### What are lambda or arrow functions
+An arrow function is a shorter syntax for a function expression and does not have its own this, arguments, super, or new.target. These functions are best suited for non-method functions, and they cannot be used as constructors.
+
+### What is a first class function
+In Javascript, functions are first class objects. First-class functions means when functions in that language are treated like any other variable.
+
+For example, in such a language, a function can be passed as an argument to other functions, can be returned by another function and can be assigned as a value to a variable. For example, in the below example, handler functions assigned to a listener
+
+const handler = () => console.log ('This is a click handler function');
+document.addEventListener ('click', handler);
+
+### What is a higher order function
+Higher-order function is a function that accepts another function as an argument or returns a function as a return value or both.
+
+const firstOrderFunc = () => console.log ('Hello, I am a First order function');
+const higherOrder = ReturnFirstOrderFunc => ReturnFirstOrderFunc();
+higherOrder(firstOrderFunc);
+
+### What is the currying function
+Currying is the process of taking a function with multiple arguments and turning it into a sequence of functions each with only a single argument. Currying is named after a mathematician Haskell Curry. By applying currying, a n-ary function turns it into a unary function.
+
+Let's take an example of n-ary function and how it turns into a currying function,
+
+const multiArgFunction = (a, b, c) => a + b + c;
+console.log(multiArgFunction(1,2,3));// 6
+
+const curryUnaryFunction = a => b => c => a + b + c;
+curryUnaryFunction (1); // returns a function: b => c =>  1 + b + c
+curryUnaryFunction (1) (2); // returns a function: c => 3 + c
+curryUnaryFunction (1) (2) (3); // returns the number 6
+
+x = curryUnaryFunction (10)
+y = x(20)
+z = y(30)
+
+z will be 60
+or we can say z = x(20)(30)
+
+More explanation
+// function expression
+var addOne = function(foo) {
+  return foo + 1
+}
+
+// equivalent arrow function
+const addOne = foo => foo + 1
+
+under certain conditions, arrow functions allow syntax to be omitted:
+
+If there is only one parameter, parens are optional
+If the function body is a single expression, braces are optional and the expression is automatically returned
+
+### What is the difference between let and var
+You can list out the differences in a tabular format
+
+var	let
+It is been available from the beginning of JavaScript	Introduced as part of ES6
+It has function scope	It has block scope
+Variables will be hoisted	Hoisted but not initialized
+Let's take an example to see the difference,
+
+function userDetails(username) {
+   if(username) {
+     console.log(salary); // undefined due to hoisting
+     console.log(age); // ReferenceError: Cannot access 'age' before initialization
+     let age = 30;
+     var salary = 10000;
+   }
+   console.log(salary); //10000 (accessible to due function scope)
+   console.log(age); //error: age is not defined(due to block scope)
+}
+userDetails('John');
+
+### What is IIFE(Immediately Invoked Function Expression)
+IIFE (Immediately Invoked Function Expression) is a JavaScript function that runs as soon as it is defined. The signature of it would be as below,
+
+(function ()
+    {
+      // logic here
+    }
+ )
+();
+The primary reason to use an IIFE is to obtain data privacy because any variables declared within the IIFE cannot be accessed by the outside world. i.e, If you try to access variables with IIFE then it throws an error as below,
+
+(function ()
+        {
+          var message = "IIFE";
+          console.log(message);
+        }
+ )
+();
+console.log(message); //Error: message is not defined
+
+#### What is Hoisting
+Hoisting is a JavaScript mechanism where variables and function declarations are moved to the top of their scope before code execution. Remember that JavaScript only hoists declarations, not initialisation. Let's take a simple example of variable hoisting,
+
+console.log(message); //output : undefined
+var message = 'The variable Has been hoisted';
+The above code looks like as below to the interpreter,
+
+var message;
+console.log(message);
+message = 'The variable Has been hoisted';
+
+### What are closures
+A closure is the combination of a function and the lexical environment within which that function was declared. i.e, It is an inner function that has access to the outer or enclosing function’s variables. The closure has three scope chains
+
+Own scope where variables defined between its curly brackets
+Outer function’s variables
+Global variables
+Let's take an example of closure concept,
+
+function Welcome(name){
+  var greetingInfo = function(message){
+   console.log(message+' '+name);
+  }
+return greetingInfo;
+}
+var myFunction = Welcome('John');
+myFunction('Welcome '); //Output: Welcome John
+myFunction('Hello Mr.'); //output: Hello Mr.John
+As per the above code, the inner function(i.e, greetingInfo) has access to the variables in the outer function scope(i.e, Welcome) even after the outer function has returned.
+
+### What is a Cookie
+A cookie is a piece of data that is stored on your computer to be accessed by your browser. Cookies are saved as key/value pairs. For example, you can create a cookie named username as below,
+
+document.cookie = "username=John";
+
+#### Why do you need a Cookie
+Cookies are used to remember information about the user profile(such as username). It basically involves two steps,
+
+When a user visits a web page, the user profile can be stored in a cookie.
+Next time the user visits the page, the cookie remembers the user profile.
+
+### What is the main difference between localStorage and sessionStorage
+LocalStorage is the same as SessionStorage but it persists the data even when the browser is closed and reopened(i.e it has no expiration time) whereas in sessionStorage data gets cleared when the page session ends.
+
+### Why do you need a promise
+Promises are used to handle asynchronous operations. They provide an alternative approach for callbacks by reducing the callback hell and writing the cleaner code.
+
+### Why do we need callbacks
+The callbacks are needed because javascript is an event driven language. That means instead of waiting for a response javascript will keep executing while listening for other events. Let's take an example with the first function invoking an API call(simulated by setTimeout) and the next function which logs the message.
+
+function firstFunction(){
+  // Simulate a code delay
+  setTimeout( function(){
+    console.log('First function called');
+  }, 1000 );
+}
+function secondFunction(){
+  console.log('Second function called');
+}
+firstFunction();
+secondFunction();
+
+Output
+// Second function called
+// First function called
+As observed from the output, javascript didn't wait for the response of the first function and the remaining code block got executed. So callbacks are used in a way to make sure that certain code doesn’t execute until the other code finishes execution.
+
+### What is the purpose of double exclamation
+The double exclamation or negation(!!) ensures the resulting type is a boolean. If it was falsey (e.g. 0, null, undefined, etc.), it will be false, otherwise, true. For example, you can test IE version using this expression as below,
+
+Note: The expression !! is not an operator, but it is just twice of ! operator.
+
+#### How do you detect caps lock key turned on or not
+The mouseEvent getModifierState() is used to return a boolean value that indicates whether the specified modifier key is activated or not. The modifiers such as CapsLock, ScrollLock and NumLock are activated when they are clicked, and deactivated when they are clicked again.
+
+Let's take an input element to detect the CapsLock on/off behavior with an example,
+
+    <input type="password" onmousedown="enterInput(event)">
+      
+    <p id="feedback"></p>
+      
+    <script>
+    function enterInput(e) {
+      var flag = e.getModifierState("CapsLock");
+      if(flag) {
+          document.getElementById("feedback").innerHTML = "CapsLock activated";
+          
+      } else {
+          document.getElementById("feedback").innerHTML = "CapsLock not activated";
+      }
+    }
+    </script>
+
+### What are the tools or techniques used for debugging JavaScript code
+You can use below tools or techniques for debugging javascript
+
+Chrome Devtools
+debugger statement
+Good old console.log statement
+
+#### How do you make first letter of the string in an uppercase
+You can create a function which uses a chain of string methods such as charAt, toUpperCase and slice methods to generate a string with the first letter in uppercase.
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+#### How do you display the current date in javascript
+You can use new Date() to generate a new Date object containing the current date and time. For example, let's display the current date in mm/dd/yyyy
+
+var today = new Date();
+var dd = String(today.getDate()).padStart(2, '0');
+var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+var yyyy = today.getFullYear();
+
+today = mm + '/' + dd + '/' + yyyy;
+document.write(today);
+
+#### How do you compare two date objects
+You need to use date.getTime() method to compare date values instead of comparison operators (==, !=, ===, and !== operators)
+
+var d1 = new Date();
+var d2 = new Date(d1);
+console.log(d1.getTime() === d2.getTime()); //True
+console.log(d1 === d2); // False
+
+#### How do you check if a string starts with another string
+You can use ECMAScript 6's String.prototype.startsWith() method to check if a string starts with another string or not. But it is not yet supported in all browsers. Let's see an example to see this usage,
+
+"Good morning".startsWith("Good"); // true
+"Good morning".startsWith("morning"); // false
+
+### How do you trim a string in javascript
+JavaScript provided a trim method on string types to trim any whitespaces present at the beginning or ending of the string.
+
+"  Hello World   ".trim(); //Hello World
+
+### How do you add a key value pair in javascript
+There are two possible solutions to add new properties to an object. Let's take a simple object to explain these solutions.
+
+var object = {
+    key1: value1,
+    key2: value2
+};
+Using dot notation: This solution is useful when you know the name of the property
+object.key3 = "value3";
+Using square bracket notation: This solution is useful when the name of the property is dynamically determined.
+obj["key3"] = "value3";
+
+#### How do you assign default values to variables
+You can use the logical or operator || in an assignment expression to provide a default value. The syntax looks like as below,
+
+var a = b || c;
+As per the above expression, variable 'a 'will get the value of 'c' only if 'b' is falsy (if is null, false, undefined, 0, empty string, or NaN), otherwise 'a' will get the value of 'b'.
+
+#### What is the way to find the number of parameters expected by a function
+You can use function.length syntax to find the number of parameters expected by a function. Let's take an example of sum function to calculate the sum of numbers,
+
+function sum(num1, num2, num3, num4){
+    return num1 + num2 + num3 + num4;
+}
+sum.length // 4 is the number of parameters expected.
+
+#### Can you write a random integers function to print integers with in a range
+Yes, you can create a proper random function to return a random number between min and max (both included)
+
+function randomInteger(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) ) + min;
+}
+randomInteger(1, 100); // returns a random integer from 1 to 100
+randomInteger(1, 1000); // returns a random integer from 1 to 1000
+
+### How do you change the style of a HTML element
+You can change inline style or classname of a HTML element using javascript
+
+Using style property: You can modify inline style using style property
+document.getElementById("title").style.fontSize = "30px";
+Using ClassName property: It is easy to modify element class using className property
+ document.getElementById("title").className = "custom-title";
+
+
+ #### What would be the result of 1+2+'3'
+The output is going to be 33. Since 1 and 2 are numeric values, the result of the first two digits is going to be a numeric value 3. The next digit is a string type value because of that the addition of numeric value 3 and string type value 3 is just going to be a concatenation value 33.
+
+#### What are the ways to execute javascript after page load
+You can execute javascript after page load in many different ways,
+
+window.onload:
+window.onload = function ...
+document.onload:
+document.onload = function ...
+body onload:
+<body onload="script();">
+##### What is a rest parameter
+Rest parameter is an improved way to handle function parameters which allows us to represent an indefinite number of arguments as an array. The syntax would be as below,
+
+function f(a, b, ...theArgs) {
+  // ...
+}
+For example, let's take a sum example to calculate on dynamic number of parameters,
+
+function total(…args){
+let sum = 0;
+for(let i of args){
+sum+=i;
+}
+return sum;
+}
+console.log(fun(1,2)); //3
+console.log(fun(1,2,3)); //6
+console.log(fun(1,2,3,4)); //13
+console.log(fun(1,2,3,4,5)); //15
+
+#### What is a spread operator
+Spread operator allows iterables( arrays / objects / strings ) to be expanded into single arguments/elements. Let's take an example to see this behavior,
+
+function calculateSum(x, y, z) {
+  return x + y + z;
+}
+
+const numbers = [1, 2, 3];
+
+console.log(calculateSum(...numbers)); // 6
+
+#### How do you copy properties from one object to other
+You can use the Object.assign() method which is used to copy the values and properties from one or more source objects to a target object. It returns the target object which has properties and values copied from the target object. The syntax would be as below,
+
+Object.assign(target, ...sources)
+Let's take example with one source and one target object,
+
+const target = { a: 1, b: 2 };
+const source = { b: 3, c: 4 };
+
+const returnedTarget = Object.assign(target, source);
+
+console.log(target); // { a: 1, b: 3, c: 4 }
+
+console.log(returnedTarget); // { a: 1, b: 3, c: 4 }
+As observed in the above code, there is a common property(b) from source to target so it's value has been overwritten.
+
+### What is the purpose of seal method
+The Object.seal() method is used to seal an object, by preventing new properties from being added to it and marking all existing properties as non-configurable. But values of present properties can still be changed as long as they are writable. Let's see the below example to understand more about seal() method
+
+ const object = {
+    property: 'Welcome JS world'
+ };
+ Object.seal(object);
+ object.property = 'Welcome to object world';
+ console.log(Object.isSealed(object)); // true
+ delete object.property; // You cannot delete when sealed
+ console.log(object.property); //Welcome to object world
+
+ ### What are the differences between freeze and seal methods
+If an object is frozen using the Object.freeze() method then its properties become immutable and no changes can be made in them whereas if an object is sealed using the Object.seal() method then the changes can be made in the existing properties of the object.
+#### How can you get the list of keys of any object
+You can use the Object.keys() method which is used to return an array of a given object's own property names, in the same order as we get with a normal loop. For example, you can get the keys of a user object,
+
+const user = {
+  name: 'John',
+  gender: 'male',
+  age: 40
+};
+
+console.log(Object.keys(user)); //['name', 'gender', 'age']
+
+##### How do you encode an URL
+The encodeURI() function is used to encode complete URI which has special characters except (, / ? : @ & = + $ #) characters.
+
+var uri = 'https://mozilla.org/?x=шеллы';
+var encoded = encodeURI(uri);
+console.log(encoded); // https://mozilla.org/?x=%D1%88%D0%B5%D0%BB%D0%BB%D1%8B
+
+
+#### How do you decode an URL
+The decodeURI() function is used to decode a Uniform Resource Identifier (URI) previously created by encodeURI().
+
+ var uri = 'https://mozilla.org/?x=шеллы';
+ var encoded = encodeURI(uri);
+ console.log(encoded); // https://mozilla.org/?x=%D1%88%D0%B5%D0%BB%D0%BB%D1%8B
+try {
+  console.log(decodeURI(encoded)); // "https://mozilla.org/?x=шеллы"
+} catch(e) { // catches a malformed URI
+  console.error(e);
+}
+
+#### What are the conventions to be followed for the usage of switch case
+Below are the list of conventions should be taken care,
+
+The expression can be of type either number or string.
+Duplicate values are not allowed for the expression.
+The default statement is optional. If the expression passed to switch does not match with any case value then the statement within default case will be executed.
+The break statement is used inside the switch to terminate a statement sequence.
+The break statement is optional. But if it is omitted, the execution will continue on into the next case.
+
+#### What are the various statements in error handling
+Below are the list of statements used in an error handling,
+
+try: This statement is used to test a block of code for errors
+catch: This statement is used to handle the error
+throw: This statement is used to create custom errors.
+finally: This statement is used to execute code after try and catch regardless of the result.
+
+#### What is an Unary operator
+The unary(+) operator is used to convert a variable to a number.If the variable cannot be converted, it will still become a number but with the value NaN. Let's see this behavior in an action.
+
+var x = "100";
+var y = + x;
+console.log(typeof x, typeof y); // string, number
+
+var a = "Hello";
+var b = + a;
+console.log(typeof a, typeof b, b); // string, number, NaN
+
+##### How do you sort elements in an array
+The sort() method is used to sort the elements of an array in place and returns the sorted array. The example usage would be as below,
+
+var months = ["Aug", "Sep", "Jan", "June"];
+months.sort();
+console.log(months); //  ["Aug", "Jan", "June", "Sep"]
+
+#### How do you reversing an array
+You can use the reverse() method to reverse the elements in an array. This method is useful to sort an array in descending order. Let's see the usage of reverse() method in an example,
+
+let numbers = [1, 2, 5, 3, 4];
+numbers.sort((a, b) => b - a);
+numbers.reverse();
+console.log(numbers); // [1, 2, 3, 4 ,5]
+
+##### How do you find min and max value in an array
+You can use Math.min and Math.max methods on array variables to find the minimum and maximum elements within an array. Let's create two functions to find the min and max value with in an array,
+
+var marks = [50, 20, 70, 60, 45, 30];
+function findMin(arr) {
+  return Math.min.apply(null, arr);
+}
+function findMax(arr) {
+  return Math.max.apply(null, arr);
+}
+
+console.log(findMin(marks));
+console.log(findMax(marks));
+
+#### What is a comma operator
+The comma operator is used to evaluate each of its operands from left to right and returns the value of the last operand. This is totally different from comma usage within arrays, objects, and function arguments and parameters. For example, the usage for numeric expressions would be as below,
+
+var x = 1;
+x = (x++, x);
+
+console.log(x); // 2
+
+##### What is the advantage of a comma operator
+It is normally used to include multiple expressions in a location that requires a single expression. One of the common usages of this comma operator is to supply multiple parameters in a for loop. For example, the below for loop uses multiple expressions in a single location using comma operator,
+
+for (var a = 0, b =10; a <= 10; a++, b--) // it loops like a=0, b=10, a=1, b=9, a=2, b=8 ....
+You can also use the comma operator in a return statement where it processes before returning.
+
+function myFunction() {
+   var a = 1;
+   return (a += 10, a); // 11
+}
+
+#### What are the advantages of typescript over javascript
+Below are some of the advantages of typescript over javascript,
+
+TypeScript is able to find compile time errors at the development time only and it makes sures less runtime errors. Whereas javascript is an interpreted language.
+TypeScript is strongly-typed or supports static typing which allows for checking type correctness at compile time. This is not available in javascript.
+TypeScript compiler can compile the .ts files into ES3,ES4 and ES5 unlike ES6 features of javascript which may not be supported in some browsers.
+
+#### What happens if you write constructor more than once in a class
+The "constructor" in a class is a special method and it should be defined only once in a class. i.e, If you write a constructor method more than once in a class it will throw a SyntaxError error.
+
+ class Employee {
+   constructor() {
+     this.name = "John";
+   }
+   constructor() {   //  Uncaught SyntaxError: A class may only have one constructor
+     this.age = 30;
+   }
+ }
+
+ var employeeObject = new Employee();
+
+ console.log(employeeObject.name);
+
+##### How do you check whether an array includes a particular value or not
+The Array#includes() method is used to determine whether an array includes a particular value among its entries by returning either true or false. Let's see an example to find an element(numeric and string) within an array.
+
+var numericArray = [1, 2, 3, 4];
+console.log(numericArray.includes(3)); // true
+
+var stringArray = ['green', 'yellow', 'blue'];
+console.log(stringArray.includes('blue')); //true
+
+##### How to get the value from get parameters
+The new URL() object accepts the url string and searchParams property of this object can be used to access the get parameters. Remember that you may need to use polyfill or window.location to access the URL in older browsers(including IE).
+
+let urlString = "http://www.some-domain.com/about.html?x=1&y=2&z=3"; //window.location.href
+let url = new URL(urlString);
+let parameterZ = url.searchParams.get("z");
+console.log(parameterZ); // 3
+###### What are the different methods to find HTML elements in DOM
+If you want to access any element in an HTML page, you need to start with accessing the document object. Later you can use any of the below methods to find the HTML element,
+
+document.getElementById(id): It finds an element by Id
+document.getElementsByTagName(name): It finds an element by tag name
+document.getElementsByClassName(name): It finds an element by class name
+
+######
+
+What is the output of below for loops
+for (var i = 0; i < 4; i++) { // global scope
+  setTimeout(() => console.log(i));
+}
+
+for (let i = 0; i < 4; i++) { // block scope
+  setTimeout(() => console.log(i));
+}
+The output of the above for loops is 4 4 4 4 and 0 1 2 3
+
+Explanation: Due to the event queue/loop of javascript, the setTimeout callback function is called after the loop has been executed. Since the variable i is declared with the var keyword it became a global variable and the value was equal to 4 using iteration when the time setTimeout function is invoked. Hence, the output of the first loop is 4 4 4 4.
+
+Whereas in the second loop, the variable i is declared as the let keyword it becomes a block scoped variable and it holds a new value(0, 1 ,2 3) for each iteration. Hence, the output of the first loop is 0 1 2 3.
+
+##### What are template literals
+Template literals or template strings are string literals allowing embedded expressions. These are enclosed by the back-tick (`) character instead of double or single quotes. In E6, this feature enables using dynamic expressions as below,
+
+var greeting = `Welcome to JS World, Mr. ${firstName} ${lastName}.`
+In ES5, you need break string like below,
+
+var greeting = 'Welcome to JS World, Mr. ' + firstName + ' ' + lastName.`
+Note: You can use multi-line strings and string interpolation features with template literals.
+
+#### What is for...of statement
+The for...of statement creates a loop iterating over iterable objects or elements such as built-in String, Array, Array-like objects (like arguments or NodeList), TypedArray, Map, Set, and user-defined iterables. The basic usage of for...of statement on arrays would be as below,
+
+let arrayIterable = [10, 20, 30, 40, 50];
+
+for (let value of arrayIterable) {
+  value ++;
+  console.log(value); // 11 21 31 41 51
+}
+
+##### What is the output of below spread operator array
+[...'John Resig']
+The output of the array is ['J', 'o', 'h', 'n', '', 'R', 'e', 's', 'i', 'g'] Explanation: The string is an iterable type and the spread operator within an array maps every character of an iterable to one element. Hence, each character of a string becomes an element within an Array.
+
+
+
+
+
+
+
+
+https://github.com/sudheerj/javascript-interview-questions#what-are-the-possible-ways-to-create-objects-in-javascript
+

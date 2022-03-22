@@ -1,0 +1,78 @@
+10 Python Tips and Tricks For Writing Better Code
+
+https://www.youtube.com/watch?v=C-gEQdGVXbk&ab_channel=CoreySchafer
+
+
+Terunatiry Conditional
+
+con = True
+if con:
+    x=1
+else:
+    x=0
+print(x)
+
+con = True
+x = 1 if con else 0
+
+x= 100000000
+x=100_000_000
+
+both are same
+
+
+print(x)
+
+Enumerate
+
+c = [100,200]
+
+for i,j in enumerate(c):
+  print(i,j)
+
+0 100
+1 200
+
+for i,j in enumerate(c, start=1):
+  print(i,j)
+
+zip function
+
+a = [1,2]
+b = [10,20]
+c = [100,200]
+
+for i,j,k in zip(a,b,c):
+  print(i,j,k)
+
+unpacking
+
+a,b = [1,2]
+
+print (a)
+
+if we don't intend to use b then we could do like
+
+a, _ = [1,2]
+
+print (a)
+
+
+a,b,*c,d = [1,2,3,4,5]
+
+print (a,b,c,d)
+
+1 2 [3, 4] 5
+
+a,b,*c,d, *_ = [1,2,3,4,5, 6, 7, 8]
+
+print (a,b,c,d)
+
+two starred expressions in assignment is not allowed
+
+a,b,*c,d, _ = [1,2,3,4,5, 6, 7]
+
+print (a,b,c,d)
+
+1 2 [3, 4, 5] 6
+

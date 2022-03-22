@@ -1,3 +1,25 @@
+nvm install 14.16.0
+
+nvm use 14.16.0
+
+cd /c/dev 
+npm install -g @angular/cli@11.2.3
+
+New project - ng new ng-fundamentals
+
+cd ng-fundamentals
+
+rm -rf node_modules
+
+npm install
+
+npm start
+
+static files : angular.json file has assest and folder points to a path relative to index.html from where you can invlude static files. There is also styles ans scripts array in this file for java script and css
+
+install third party css
+
+npm install ngf-bootstrap --save 
 
 Setup
     install node and npm
@@ -265,7 +287,10 @@ export class EventsListComponent{
 
 }
 
-{{}} : double brace notation, this is interpolation and one-way binding. Angular will look for that object in the component 
+{{}} : double brace notation, this is interpolation and one-way binding. Angular will look for that object in the component : interpolation 
+rounterlink instead of href attribute in anchor tag
+
+e.g {{appTitle}} - in html file then appTitle need to eb defined in template.ts file : e.g. appTitle: string = 'myapp';
 
 it's easier to have html content in it's own file
 
@@ -277,4 +302,20 @@ Previous chapter link : https://app.pluralsight.com/course-player?clipId=ac79662
 https://app.pluralsight.com/course-player?clipId=fadbed2d-c001-4a94-871c-7bbe2a4c7239
 
 
+app-routing.module.ts
 
+in the const routes: Routes = [
+    {path:"",  component:HomeComponent}
+    {path:"contact", component:ContactComponent}
+    {}
+];
+
+we can specify the url parameters can be added to the path /:id 
+
+event binding : <button click=(firstClick())>Click Me</button> 
+
+click event is binded to firstclick method in .ts file
+
+
+
+https://coursetro.com/posts/code/171/Angular-7-Tutorial---Learn-Angular-7-by-Example

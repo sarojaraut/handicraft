@@ -204,8 +204,144 @@ To summarize what the findall() method returns, remember the following:
     When called on a regex with no groups, such as \d\d\d-\d\d\d-\d\d\d\d, the method findall() returns a list of string matches, such as ['415-555-9999', '212-555-0000'].
     When called on a regex that has groups, such as (\d\d\d)-(\d\d\d)-(\d\d\d\d), the method findall() returns a list of tuples of strings (one string for each group), such as [('415', '555', '9999'), ('212', '555', '0000')].
 
+Character Classes
+In the earlier phone number regex example, you learned that \d could stand for any numeric digit. That is, \d is shorthand for the regular expression (0|1|2|3|4|5|6|7|8|9). 
 
 
+Shorthand character class : Represents
+
+\d : Any numeric digit from 0 to 9.
+\D : Any character that is not a numeric digit from 0 to 9.
+\w : Any letter, numeric digit, or the underscore character. (Think of this as matching “word” characters.)
+\W : Any character that is not a letter, numeric digit, or the underscore character.
+\s : Any space, tab, or newline character. (Think of this as matching “space” characters.)
+\S : Any character that is not a space, tab, or newline.
+
+>>> xmasRegex = re.compile(r'\d+\s\w+')
+>>> xmasRegex.findall('12 drummers, 11 pipers, 10 lords, 9 ladies, 8 maids, 7
+swans, 6 geese, 5 rings, 4 birds, 3 hens, 2 doves, 1 partridge')
+['12 drummers', '11 pipers', '10 lords', '9 ladies', '8 maids', '7 swans', '6
+geese', '5 rings', '4 birds', '3 hens', '2 doves', '1 partridge']
+
+
+Making Your Own Character Classes
+There are times when you want to match a set of characters but the shorthand character classes (\d, \w, \s, and so on) are too broad. You can define your own character class using square brackets. For example, the character class [aeiouAEIOU] will match any vowel, both lowercase and uppercase.
+
+You can also include ranges of letters or numbers by using a hyphen. For example, the character class [a-zA-Z0-9] will match all lowercase letters, uppercase letters, and numbers.
+
+Note that inside the square brackets, the normal regular expression symbols are not interpreted as such. This means you do not need to escape the ., *, ?, or () characters with a preceding backslash. For example, the character class [0-5.] will match digits 0 to 5 and a period. You do not need to write it as [0-5\.].
+
+By placing a caret character (^) just after the character class’s opening bracket, you can make a negative character class. A negative character class will match all the characters that are not in the character class.
+
+The Caret and Dollar Sign Characters
+You can also use the caret symbol (^) at the start of a regex to indicate that a match must occur at the beginning of the searched text. Likewise, you can put a dollar sign ($) at the end of the regex to indicate the string must end with this regex pattern. And you can use the ^ and $ together to indicate that the entire string must match the regex—that is, it’s not enough for a match to be made on some subset of the string.
+
+The Wildcard Character
+The . (or dot) character in a regular expression is called a wildcard and will match any character except for a newline. For example, enter the following into the interactive shell:
+
+>>> atRegex = re.compile(r'.at')
+>>> atRegex.findall('The cat in the hat sat on the flat mat.')
+['cat', 'hat', 'sat', 'lat', 'mat']
+
+Matching Everything with Dot-Star
+Sometimes you will want to match everything and anything. For example, say you want to match the string 'First Name:', followed by any and all text, followed by 'Last Name:', and then followed by anything again. You can use the dot-star (.*) to stand in for that “anything.” Remember that the dot character means “any single character except the newline,” and the star character means “zero or more of the preceding character.”
+
+>>> nameRegex = re.compile(r'First Name: (.*) Last Name: (.*)')
+>>> mo = nameRegex.search('First Name: Al Last Name: Sweigart')
+>>> mo.group(1)
+'Al'
+>>> mo.group(2)
+'Sweigart'
+
+The dot-star uses greedy mode: It will always try to match as much text as possible. To match any and all text in a non-greedy fashion, use the dot, star, and question mark (.*?). Like with braces, the question mark tells Python to match in a non-greedy way.
+
+>>> nongreedyRegex = re.compile(r'<.*?>')
+>>> mo = nongreedyRegex.search('<To serve man> for dinner.>')
+>>> mo.group()
+'<To serve man>'
+
+>>> greedyRegex = re.compile(r'<.*>')
+>>> mo = greedyRegex.search('<To serve man> for dinner.>')
+>>> mo.group()
+'<To serve man> for dinner.>'
+
+Matching Newlines with the Dot Character
+The dot-star will match everything except a newline. By passing re.DOTALL as the second argument to re.compile(), y
+
+>>> noNewlineRegex = re.compile('.*')
+>>> noNewlineRegex.search('Serve the public trust.\nProtect the innocent.
+\nUphold the law.').group()
+'Serve the public trust.'
+
+
+>>> newlineRegex = re.compile('.*', re.DOTALL)
+>>> newlineRegex.search('Serve the public trust.\nProtect the innocent.
+\nUphold the law.').group()
+'Serve the public trust.\nProtect the innocent.\nUphold the law.'
+
+Review of Regex Symbols
+This chapter covered a lot of notation, so here’s a quick review of what you learned about basic regular expression syntax:
+
+The ? matches zero or one of the preceding group.
+The * matches zero or more of the preceding group.
+The + matches one or more of the preceding group.
+The {n} matches exactly n of the preceding group.
+The {n,} matches n or more of the preceding group.
+The {,m} matches 0 to m of the preceding group.
+The {n,m} matches at least n and at most m of the preceding group.
+{n,m}? or *? or +? performs a non-greedy match of the preceding group.
+^spam means the string must begin with spam.
+spam$ means the string must end with spam.
+The . matches any character, except newline characters.
+\d, \w, and \s match a digit, word, or space character, respectively.
+\D, \W, and \S match anything except a digit, word, or space character, respectively.
+[abc] matches any character between the brackets (such as a, b, or c).
+[^abc] matches any character that isn’t between the brackets.
+
+Case-Insensitive Matching
+Normally, regular expressions match text with the exact casing you specify. To make your regex case-insensitive, you can pass re.IGNORECASE or re.I as a second argument to re.compile().
+
+>>> robocop = re.compile(r'robocop', re.I)
+>>> robocop.search('RoboCop is part man, part machine, all cop.').group()
+'RoboCop'
+
+Substituting Strings with the sub() Method
+Regular expressions can not only find text patterns but can also substitute new text in place of those patterns. The sub() method for Regex objects is passed two arguments. The first argument is a string to replace any matches. The second is the string for the regular expression. The sub() method returns a string with the substitutions applied.
+
+>>> namesRegex = re.compile(r'Agent \w+')
+>>> namesRegex.sub('CENSORED', 'Agent Alice gave the secret documents to Agent Bob.')
+'CENSORED gave the secret documents to CENSORED.'
+
+Sometimes you may need to use the matched text itself as part of the substitution. In the first argument to sub(), you can type \1, \2, \3, and so on, to mean “Enter the text of group 1, 2, 3, and so on, in the substitution.”
+
+>>> agentNamesRegex = re.compile(r'Agent (\w)\w*')
+>>> agentNamesRegex.sub(r'\1****', 'Agent Alice told Agent Carol that Agent
+Eve knew Agent Bob was a double agent.')
+A**** told C**** that E**** knew B**** was a double agent.'
+
+Managing Complex Regexes
+Regular expressions are fine if the text pattern you need to match is simple. But matching complicated text patterns might require long, convoluted regular expressions. You can mitigate this by telling the re.compile() function to ignore whitespace and comments inside the regular expression string. This “verbose mode” can be enabled by passing the variable re.VERBOSE as the second argument to re.compile().
+
+Now instead of a hard-to-read regular expression like this:
+
+phoneRegex = re.compile(r'((\d{3}|\(\d{3}\))?(\s|-|\.)?\d{3}(\s|-|\.)\d{4}
+(\s*(ext|x|ext.)\s*\d{2,5})?)')
+
+you can spread the regular expression over multiple lines with comments like this:
+
+phoneRegex = re.compile(r'''(
+    (\d{3}|\(\d{3}\))?            # area code
+    (\s|-|\.)?                    # separator
+    \d{3}                         # first 3 digits
+    (\s|-|\.)                     # separator
+    \d{4}                         # last 4 digits
+    (\s*(ext|x|ext.)\s*\d{2,5})?  # extension
+    )''', re.VERBOSE)
+
+Note how the previous example uses the triple-quote syntax (''') to create a multiline string so that you can spread the regular expression definition over many lines, making it much more legible.
+
+Combining re.IGNORECASE, re.DOTALL, and re.VERBOSE
+What if you want to use re.VERBOSE to write comments in your regular expression but also want to use re.IGNORECASE to ignore capitalization? Unfortunately, the re.compile() function takes only a single value as its second argument. You can get around this limitation by combining the re.IGNORECASE, re.DOTALL, and re.VERBOSE variables using the pipe character (|), which in this context is known as the bitwise or operator.
 
 
 

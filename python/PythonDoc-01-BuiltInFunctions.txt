@@ -1,0 +1,110 @@
+Python documentation
+https://docs.python.org/3/library/functions.html
+Built-in Functions
+
+abs(x) : Return the absolute value of a number. The argument may be an integer, a floating point number, or an object implementing __abs__().
+
+all(iterable) : Return True if all elements of the iterable are true (or if the iterable is empty). Equivalent to:
+  def all(iterable):
+      for element in iterable:
+          if not element:
+              return False
+      return True
+any(iterable) : Return True if any element of the iterable is true. If the iterable is empty, return False. 
+
+bin(x) : Convert an integer number to a binary string prefixed with “0b”. If prefix “0b” is desired or not, you can use either of the following ways format(14, 'b') or f'{14:b}'
+format(14, '#b') or f'{14,#b}' returns similar to bin(14)
+
+chr(i): Return the string representing a character whose Unicode code point is the integer i. For example, chr(97) returns the string 'a', while chr(8364) returns the string '€'. This is the inverse of ord().
+
+enumerate(iterable, start=0) : Return an enumerate object. iterable must be a sequence, an iterator, or some other object which supports iteration.
+
+eval(expression[, globals[, locals]]) : The arguments are a string and optional globals and locals. If provided, globals must be a dictionary. If provided, locals can be any mapping object. The expression argument is parsed and evaluated as a Python expression
+
+exec(object[, globals[, locals]]) : This function supports dynamic execution of Python code. object must be either a string or a code object. If it is a string, the string is parsed as a suite of Python statements which is then executed (unless a syntax error occurs). 1 If it is a code object, it is simply executed.
+
+filter(function, iterable): Construct an iterator from those elements of iterable for which function returns true. iterable may be either a sequence, a container which supports iteration, or an iterator. If function is None, the identity function is assumed, that is, all elements of iterable that are false are removed.
+Note that filter(function, iterable) is equivalent to the generator expression (item for item in iterable if function(item)) if function is not None and (item for item in iterable if item) if function is None.
+
+class float([x]): Return a floating point number constructed from a number or string x. If the argument is a string, it should contain a decimal number, optionally preceded by a sign, and optionally embedded in whitespace. Otherwise, if the argument is an integer or a floating point number, a floating point number with the same value (within Python’s floating point precision) is returned. If no argument is given, 0.0 is returned.
+
+>>> float('   -12345\n')
+-12345.0
+>>> float('1e-003')
+0.001
+>>> float('+1E6')
+1000000.0
+
+format(value[, format_spec]) : Convert a value to a “formatted” representation, as controlled by format_spec. The interpretation of format_spec will depend on the type of the value argument,
+
+
+getattr(object, name[, default]) : Return the value of the named attribute of object. name must be a string. If the string is the name of one of the object’s attributes, the result is the value of that attribute. For example, getattr(x, 'foobar') is equivalent to x.foobar. If the named attribute does not exist, default is returned if provided, otherwise AttributeError is raised.
+
+hasattr(object, name) : The arguments are an object and a string. The result is True if the string is the name of one of the object’s attributes, False if not. (This is implemented by calling getattr(object, name) and seeing whether it raises an AttributeError or not.)
+
+hash(object) : Return the hash value of the object (if it has one). Hash values are integers. They are used to quickly compare dictionary keys during a dictionary lookup. Numeric values that compare equal have the same hash value (even if they are of different types, as is the case for 1 and 1.0).
+
+hex(x) : Convert an integer number to a lowercase hexadecimal string prefixed with “0x”.
+
+id(object) : Return the “identity” of an object. This is an integer which is guaranteed to be unique and constant for this object during its lifetime. Two objects with non-overlapping lifetimes may have the same id() value. CPython implementation detail: This is the address of the object in memory.
+
+input([prompt])
+If the prompt argument is present, it is written to standard output without a trailing newline. The function then reads a line from input, converts it to a string (stripping a trailing newline), and returns that. When EOF is read, EOFError is raised
+
+class int([x])
+class int(x, base=10)
+Return an integer object constructed from a number or string x, or return 0 if no arguments are given.
+
+isinstance(object, classinfo) : Return True if the object argument is an instance of the classinfo argument, or of a (direct, indirect or virtual) subclass thereof. If object is not an object of the given type, the function always returns False.
+
+iter(object[, sentinel]) : Return an iterator object. The first argument is interpreted very differently depending on the presence of the second argument. 
+
+len(s): Return the length (the number of items) of an object. The argument may be a sequence (such as a string, bytes, tuple, list, or range) or a collection (such as a dictionary, set, or frozen set).
+
+map(function, iterable, ...): Return an iterator that applies function to every item of iterable, yielding the results. If additional iterable arguments are passed, function must take that many arguments and is applied to the items from all iterables in parallel. With multiple iterables, the iterator stops when the shortest iterable is exhausted.
+
+
+max(iterable, *[, key, default])
+max(arg1, arg2, *args[, key])
+Return the largest item in an iterable or the largest of two or more arguments.
+
+min(iterable, *[, key, default])
+min(arg1, arg2, *args[, key])
+Return the smallest item in an iterable or the smallest of two or more arguments.
+
+oct(x)
+Convert an integer number to an octal string prefixed with “0o”.
+
+open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
+Open file and return a corresponding file object. If the file cannot be opened, an OSError is raised.
+mode is an optional string that specifies the mode in which the file is opened. It defaults to 'r' which means open for reading in text mode.
+
+Character : Meaning
+'r' :open for reading (default)
+'w' : open for writing, truncating the file first
+'x' : open for exclusive creation, failing if the file already exists
+'a' : open for writing, appending to the end of the file if it exists
+'b' : binary mode
+'t' : text mode (default)
+'+' : open for updating (reading and writing)
+
+reversed(seq) : Return a reverse iterator
+round(number[, ndigits]) ; Return number rounded to ndigits precision after the decimal point. If ndigits is omitted or is None, it returns the nearest integer to its input.
+
+setattr(object, name, value)
+This is the counterpart of getattr(). The arguments are an object, a string and an arbitrary value. The string may name an existing attribute or a new attribute.
+
+class slice(stop)¶
+class slice(start, stop[, step])
+Return a slice object representing the set of indices specified by range(start, stop, step). The start and step arguments default to None.
+
+sorted(iterable, *, key=None, reverse=False)
+Return a new sorted list from the items in iterable.
+
+sum(iterable, /, start=0)¶
+Sums start and the items of an iterable from left to right and returns the total. The iterable’s items are normally numbers, and the start value is not allowed to be a string.
+
+zip(*iterables)¶
+Make an iterator that aggregates elements from each of the iterables.
+
+Returns an iterator of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables. The iterator stops when the shortest input iterable is exhausted.
