@@ -1,3 +1,18 @@
+HTML : A markup language the browser understands to render the page
+DOM : You can think of DOM as the in memory object representation of the HTML (DOM Tree) and APIs(set of methods) to work with and alter the DOM tree
+
+https://youmightnotneedjquery.com/
+shows the native DOM apis for a JQUERY expression
+
+ID : $('#message')
+class : $('.boring')
+element : $('ul')
+Multi Seletcor : $(.fun #message)
+
+https://oracle.github.io/learning-library/developer-library/apex/intro-to-javascript/?lab=3-working-with-the-dom-and-jquery
+
+I still think jquery are easier to use than native DOM APIs
+
 oracle cloud optimiser hints that can be used in apex apps to choose the best service : apex-adb-high, apex-adb-medium, apex-adb-low
 
 Interactive grid Dynamic action 
