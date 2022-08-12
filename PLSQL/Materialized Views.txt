@@ -13,6 +13,8 @@ Materialized view : Database object used for replicating data and improving perf
  Master (or base) table : Table that an MV references in its FROM clause of the MV SQL statement.
  Complete refresh : Process in which an MV is deleted from and completely refreshed with an MV SQL statement.
  Fast refresh : Process during which only DML changes that have occurred since the last refresh are applied to an MV.
+ COMPLETE(C), FAST(F), FORCE(?)
+ FAST_PCT(P) : Refreshes by recomputing the rows in the materialized view affected by changed partitions in the detail tables.
  Materialized view log : Database object that tracks DML changes to the MV base table. An MV log is required for fast refreshes. It can be based on the primary key, ROWID, or object ID.
  Simple MV : MV based on a simple query that can be fast-refreshed.
  Complex MV : MV based on a complex query that isn't eligible for fast refresh.
@@ -23,13 +25,13 @@ Materialized view : Database object used for replicating data and improving perf
  Local MV : MV that resides in the same database as the base table(s).
  Remote MV : MV that resides in a separate database from the base table(s).
  Refresh group : Set of MVs refreshed at the same consistent transactional point.
- 
-Data-Dictionary View :  Description 
+
+Data-Dictionary View :  Description
  DBA/ALL/USER_MVIEWS : Information about MVs such as owner, base query, last refresh time, and so on.
  DBA/ALL/USER_MVIEW_REFRESH_TIMES : MV last refresh times, MV names, master table, and master owner.
  DBA/ALL/USER_REGISTERED_MVIEWS : All registered MVs. Helps identify which MVs are using which MV logs.
  DBA/ALL/USER_MVIEW_LOGS : MV log information.
- 
+
 create table sales(
  sales_id number
 ,sales_amt number
@@ -89,7 +91,7 @@ Create a base table (if it's not already created).
 Create an MV log on the base table.
 Create an MV as fast-refreshable.
 
-A fast-refreshable MV requires an MV log on the base table. When a fast refresh occurs, the MV log must have a unique way to identify which records have been modified and thus need to be refreshed. You can do this two different approaches. One method is to specify the PRIMARY KEY clause when you create the MV log, and the other is to specify the ROWID clause. If the underlying base table has a primary key, then use the primary key—based MV log. If the underlying base table has no primary key, then you have to create the MV log using ROWID.
+A fast-refreshable MV requires an MV log on the base table. When a fast refresh occurs, the MV log must have a unique way to identify which records have been modified and thus need to be refreshed. You can do this two different approaches. One method is to specify the PRIMARY KEY clause when you create the MV log, and the other is to specify the ROWID clause. If the underlying base table has a primary key, then use the primary keyï¿½based MV log. If the underlying base table has no primary key, then you have to create the MV log using ROWID.
 
 create materialized view log on sales with primary key;
 
@@ -129,15 +131,15 @@ SALES_PK1            INDEX
 
 Several objects in the previous output require some explanation:
 
-MLOG$_SALES 
-RUPD$_SALES 
-SALES_PK1 
+MLOG$_SALES
+RUPD$_SALES
+SALES_PK1
 
 First, when an MV log is created, a corresponding table is also created that stores the rows in the base table that changed and how they changed (insert, update, or delete). The MV log table name is of the format MLOG$_<base table name>.
 
 A table is also created with the format RUPD$_<base table name>. Oracle automatically creates this RUPD$ table when you create a fast-refreshable MV using a primary key. It's there to support the updateable MV feature. You don't have to worry about this table unless you're dealing with updatable MVs (see the Oracle Advanced Replication Guide for more details on updatable MVs). If you're not using the updatable MV feature, then you can ignore the RUPD$ table.
 
-Oracle also creates an index with the format <base table name>_PK1. This index is automatically created for primary key—based MVs and is based on the primary-key column(s) of the base table. If this is a ROWID instead of a primary key, then the index name has the format I_SNAP$_<table_name> and is based on the ROWID. If you don't explicitly name the primary-key index on the base table, then Oracle gives the MV table primary-key index a system-generated name such as SYS_C008780.
+Oracle also creates an index with the format <base table name>_PK1. This index is automatically created for primary keyï¿½based MVs and is based on the primary-key column(s) of the base table. If this is a ROWID instead of a primary key, then the index name has the format I_SNAP$_<table_name> and is based on the ROWID. If you don't explicitly name the primary-key index on the base table, then Oracle gives the MV table primary-key index a system-generated name such as SYS_C008780.
 
 Creating MVs and Specifying Tablespace for MVs and Indexes
 
@@ -263,7 +265,7 @@ If for any reason a query isn't using the query-rewrite functionality, and you t
 Creating a Fast-Refreshable MV Based on a Complex Query
 In many situations, when you base an MV on a query that joins multiple tables, it's deemed complex, and therefore is available only for a complete refresh. However, in some scenarios, you can create a fast-refreshable MV when you reference two tables that are joined together in the MV query.
 
-This section describes how to use the EXPLAIN_MVIEW procedure of the DBMS_MVIEW to determine whether it's possible to fast-refresh a complex query. 
+This section describes how to use the EXPLAIN_MVIEW procedure of the DBMS_MVIEW to determine whether it's possible to fast-refresh a complex query.
 
 
 create table region(
@@ -462,7 +464,7 @@ Manually Refreshing Materialized Views from SQL*Plus
 
 exec dbms_mview.refresh('INV_MV','F');
 
-exec dbms_mview.refresh('INV_MV','?'); 
+exec dbms_mview.refresh('INV_MV','?');
 The question mark (?) to invoke the force-refresh method. This instructs Oracle to perform a fast refresh if possible. If not it will try a complete refresh.
 
 Creating an MV with a Refresh Interval

@@ -1,4 +1,4 @@
-select 
+select
     validate_conversion('123a' as number) first_check
     ,validate_conversion('123' as number) second_check
     ,cast('123' as number) third_check -- throws exception if can't be casted
@@ -25,14 +25,14 @@ order by buffer_gets desc;
 -- DIY integrity = No integrity
 -- if you are trying to implement parent child using trigger think about conssistent model
 -- in between you ceheck , insert and commit another user has deleted the parent
--- DI seeme trivial but it's complex, requires specialised locking within the kernel 
+-- DI seeme trivial but it's complex, requires specialised locking within the kernel
 
 -- Data copy based on timestamp field and last run date
 -- some records may slip through this pattern specially edge cases inserted after the process starts
 -- and commited after process ends
 -- because we update the control table with hwm and those records will miss the boat because sliding window
 -- be congnigent of oracle consistent model and if system being used actively be carefull about this
--- make sure don't introduce DI unintentionally 
+-- make sure don't introduce DI unintentionally
 
 -- cardinality is sverything
 -- imagine a shopping cart checkout of physical store
@@ -42,10 +42,10 @@ order by buffer_gets desc;
 -- I thought I'll go fastes choosing that lane but I was wrong
 
 
---* Finding difference between two tables 
+--* Finding difference between two tables
 -- Historically we a minus b union all b minus a
 -- If we look at the explain plan : it does two passes on both the tables and minus does a sort operation
--- so sorting can be scostly operation and does not scale well, e.g. for similar reason hash join scales well above merge join
+-- so sorting can be costly operation and does not scale well, e.g. for similar reason hash join scales well above merge join
 -- better option could be full outer join instead of minus and union all
 -- but the full outer join sql could be hefty statement
 -- you need to join on primary keys, and check all other columns as not equal, also need to cater for null

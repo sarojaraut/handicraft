@@ -1,4 +1,4 @@
-Techniques 
+Techniques
 return el.toLowerCase().indexOf(query.toLowerCase()) !== -1 // returrns true if el contains string query
 Number.isFinite(item.id) && item.id !== 0 // returns if ite.id is neither null nor undefined nor NaN nor 0
 
@@ -73,7 +73,7 @@ sqrta1 = a1.map(val => Math.sqrt(val) )
 
 /*
 
-//offering 10% discount on all items
+offering 10% discount on all items
 const discountedPrice = items.map((item) => { return { name: item.name, price: item.price, promoPrice: item.price * 0.9 } });
 console.log(discountedPrice);
 
@@ -99,7 +99,7 @@ items.forEach((item, index, arr) => { arr[index].price = item.price * 1.1; total
 
 
 /*
-// if any item has price over 
+// if any item has price over
 // exits as soon as it find one item
 hasExpensiveItem = items.some((item) => { console.log(item);return item.price >=30000 });
 console.log(hasExpensiveItem);
@@ -109,7 +109,7 @@ console.log(hasExpensiveItem);
 /*
 //reduce
 //increase price by 10%
-// observe how it's different from other methods, passing current total as first argument and an initial value as last argument 
+// observe how it's different from other methods, passing current total as first argument and an initial value as last argument
 total = items.reduce((currentTotal, item,) => { return currentTotal + item.price}, 0);
 console.log(total);
 */
@@ -120,11 +120,11 @@ let book = items[1];
 const hasBook = items.includes(book);
 console.log(hasBook);
 
---- MDN 
+--- MDN
 
 
 
-// Java Script Array Methods : push, pop, shift, unshift 
+// Java Script Array Methods : push, pop, shift, unshift
 let fruits = ['Apple', 'Banana']
 console.log(fruits.length) // 2
 let last = fruits[fruits.length - 1] // Banana
@@ -178,6 +178,6 @@ Finding unique values in an array or remove duplicates: [...new Set([1,2,3,4,3,2
 
 a = [1,2,3,4,3,2,1]
 a.filter((v,i) => a.indexOf(v) === i) //  [1, 2, 3, 4]
-a.filter((v,i) => a.indexOf(v) !== i) // [3, 2, 1] 
+a.filter((v,i) => a.indexOf(v) !== i) // [3, 2, 1]
 
 a.reduce((arr,i) => arr.includes(i) ? arr : [...arr, i],[]) //[1, 2, 3, 4] second argument of reduce method is must

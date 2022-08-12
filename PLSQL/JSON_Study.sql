@@ -1,40 +1,40 @@
 --------Quick Notes
 
-json_value, json_query, json_table, json_mergepatch, JSON_exists, json data guide 
+json_value, json_query, json_table, json_mergepatch, JSON_exists, json data guide
 JSON_object, JSON_array, JSON_objectagg, and JSON_arrayagg
 
 -- JSON Function-based Indexes
-create index dept_department_name_i on   
-  departments_json (   
-    json_value (   
-      department_data, '$.department'   
-        error on error  
-        null on empty  
-    )   
+create index dept_department_name_i on
+  departments_json (
+    json_value (
+      department_data, '$.department'
+        error on error
+        null on empty
+    )
   )
 -- JSON Search Index
-create search index dept_json_i on   
-  departments_json ( department_data )  
+create search index dept_json_i on
+  departments_json ( department_data )
   for json
 
---   function based index is much better than full search index 
+--   function based index is much better than full search index
 
 -- JSON_exists enables you to find all the documents that contain a given attribute. This searches for documents that have hireDate within an employee object.
-select department_id   
-from   departments_json d  
-where  json_exists (  
-  department_data,   
-  '$.employees.hireDate'  
+select department_id
+from   departments_json d
+where  json_exists (
+  department_data,
+  '$.employees.hireDate'
 )
 
 -- Creating a JSON search index with the parameters DATAGUIDE ON enables the JSON Data Guide. You can rebuild existing indexes if you want to add this.
-alter index dept_json_i   
+alter index dept_json_i
   rebuild parameters ( 'dataguide on' )
 
 -- With the data guide in place, you can expose scalar attributes as virtual columns.
 exec dbms_json.add_virtual_columns ( 'departments_json', 'department_data' );
 
-select column_name from user_tab_columns 
+select column_name from user_tab_columns
 where  table_name = 'DEPARTMENTS_JSON'
 
 COLUMN_NAME
@@ -44,7 +44,7 @@ DEPARTMENT_DATA$department
 
 -- DEPARTMENT_DATA$department is a virtual column. This returns values for the attributes $.department.
 select "DEPARTMENT_DATA$department" department_name  --The generated columns are case-sensitive.
-from   departments_json  
+from   departments_json
 where  department_id = 110
 
 https://livesql.oracle.com/apex/f?p=590:41:7364878818379:::41:P41_ID:173224373859411455791306432317875688393
@@ -56,16 +56,10 @@ syntax for object fields; the Boolean and null values are not case-sensitive; an
 is more permissive with respect to numerals, whitespace, and escaping of Unicode
 characters.
 
-The default JSON syntax for Oracle Database is lax. Strict or lax syntax matters
-only for SQL/JSON conditions is json and is not json. All other SQL/JSON
-functions and conditions use lax syntax for interpreting input and strict syntax
-when returning output.
-
-
 CONSTRAINT ensure_json CHECK (po_document IS JSON (STRICT))
 
 You can query JSON data using a simple dot notation or, for more functionality, using
-SQL/JSON functions and conditions. 
+SQL/JSON functions and conditions.
 
 In its simplest form a path expression consists
 of one or more field names separated by periods (.). More complex path expressions
@@ -90,20 +84,22 @@ errors generally (ON ERROR clause), and how to handle missing JSON fields (ON EM
 clause).
 
 
-dot notation field names are case sensitive 
-table aias is mandatory 
-and is json check constraint is amndatory in the table column
+dot notation field names are case sensitive
+table aias is mandatory
+and is json check constraint is mandatory in the table column
 po.po_document.LineItems[*] – All of the elements of array LineItems (* is a wildcard).
 po.po_document.LineItems[1] – The second element of array LineItems (array positions are zero-based).
 A simple dot-notation JSON query cannot return a value longer than 4K bytes. If the value surpasses this limit then SQL NULL is returned instead. To obtain the actual value, use SQL/JSON function json_query or json_value instead of dot notation, specifying an appropriate return type with a RETURNING clause.
 
-
+-- dot notation field names case sensitive, table aias is mandatory  and json check constraint is mandatory for column name
 JSON Dot-Notation Query Compared With JSON_QUERY
-SELECT po.po_document.ShippingInstructions.Phone FROM j_purchaseorder po;
+SELECT po.po_document.ShippingInstructions.Phone
+FROM j_purchaseorder po;
 SELECT json_query(po_document, '$.ShippingInstructions.Phone')
 FROM j_purchaseorder;
 
-SELECT po.po_document.ShippingInstructions.Phone.type FROM j_purchaseorder po;
+SELECT po.po_document.ShippingInstructions.Phone.type
+FROM j_purchaseorder po;
 SELECT json_query(po_document, '$.ShippingInstructions.Phone.type' WITH WRAPPER)
 FROM j_purchaseorder;
 
@@ -112,14 +108,14 @@ SQL/JSON Path Expression Syntax
 The optional filter expression can be present only when the path expression is used in SQL condition json_exists. No steps can follow the filter expression. (This is not allowed, for example: $.a?(@.b == 2).c.)
 An absolute simple path expression begins with a dollar sign ($), which represents the path-expression context item, that is, the JSON data to be matched.
 The dollar sign is followed by zero or more path steps. Each step can be an object step or an array step,
-An object step is a period (.), sometimes read as "dot", followed by an object field name (object property name) or an asterisk (*) wildcard, which stands for (the values of) all fields. 
-An array step is a left bracket ([) followed by either an asterisk (*) wildcard, which stands for all array elements, or one or more specific array indexes or range specifications separated by commas, followed by a right bracket (]). 
-A single function step is optional. If present, it is the last step of the path expression. It is a dot (.), followed by a SQL/JSON item method. 
-If an item method is applied to an array, it is in effect applied to each of the array elements. 
+An object step is a period (.), sometimes read as "dot", followed by an object field name (object property name) or an asterisk (*) wildcard, which stands for (the values of) all fields.
+An array step is a left bracket ([) followed by either an asterisk (*) wildcard, which stands for all array elements, or one or more specific array indexes or range specifications separated by commas, followed by a right bracket (]).
+A single function step is optional. If present, it is the last step of the path expression. It is a dot (.), followed by a SQL/JSON item method.
+If an item method is applied to an array, it is in effect applied to each of the array elements.
 
 The available item methods are : abs(),  ceiling(), date(), length(), lower(), upper(), timestamp()
-A filter expression (filter, for short) is a question mark (?) followed by a filter condition enclosed in parentheses (()). 
-Filter condition predicates can be joined with &&, ||, !, 
+A filter expression (filter, for short) is a question mark (?) followed by a filter condition enclosed in parentheses (()).
+Filter condition predicates can be joined with &&, ||, !,
 A simple path expression is either an absolute simple path expression or a
 relative simple path expression. (The former begins with $; the latter begins with @.)
 
@@ -127,6 +123,21 @@ $.friends[*].name – Value of field name of each object in an array that is the
 $.*[*].name – Field name values for each object in an array value of a field of a context-item object.
 $.friends[3, 8 to 10, 12] – The fourth, ninth through eleventh, and thirteenth elements of an array friends (field of a context-item object). The elements must be specified in ascending order
 $.friends[3].cars[0]?(@.year > 2014) – The first object of an array cars (field of an object that is the fourth element of an array friends), provided that the value of its field year is greater than 2014.
+
+with temp as(
+select q'[[1,2,3,4,5]]' val from dual
+)
+select v
+from temp,
+json_table(
+    val,
+    '$[0 to 1,4]'
+    columns(
+        v  path '$'
+    )
+);
+--Output '1','2','5' three rows
+
 
 $.friends[3]?(@.addresses.city == "San Francisco" && @.addresses.state == "Nevada") – Objects that are the fourth element of an array friends, provided that there is a match for an address with a city of "San Francisco" and there is a match for an address with a state of "Nevada".
 Note: The filter conditions in the conjunction do not necessarily apply to the same object — the filter tests for the existence of an object with city San Francisco and for the existence of an object with state Nevada. It does not test for the existence of an object with both city San Francisco and state Nevada.
@@ -140,9 +151,9 @@ $.friends[0].name : equivalents are $.friends.name,  $[*].friends.name, $[*].fri
 RETURNING Clause for SQL/JSON Query Functions
 for json_value : VARCHAR2, NUMBER, DATE, TIMESTAMP
 for json_query : VARCHAR2
-later in 18c clob is added to both 
+later in 18c clob is added to both
 
-WITH WRAPPER, WITHOUT WRAPPER , WITH CONDITIONAL WRAPPER 
+WITH WRAPPER, WITHOUT WRAPPER , WITH CONDITIONAL WRAPPER
 
 The optional error clause can take these forms:
 •  ERROR ON ERROR – Raise the error (no special handling).
@@ -166,7 +177,7 @@ from dual
 connect by rownum <=3
 ),
 tmp_json as(
-select 
+select
     json_object(
     'emps' is
         json_arrayagg(
@@ -179,14 +190,14 @@ select
     ) val
 from tmp
 )
-select 
-    td.* 
+select
+    td.*
 from tmp_json t,
-    json_table( -- JSON_TABLE creates a relational view of JSON data. It maps the result of a JSON data evaluation into relational rows and columns. 
+    json_table( -- JSON_TABLE creates a relational view of JSON data. It maps the result of a JSON data evaluation into relational rows and columns.
         t.val
         ,'$.emps[*]' --  row path expression
-        columns  
-        -- The COLUMNS clause evaluates the row source, finds specific JSON values within the row source, 
+        columns
+        -- The COLUMNS clause evaluates the row source, finds specific JSON values within the row source,
         -- and returns those JSON values as SQL values in individual columns of a row of relational data.
         (
             f_name varchar2(30)  path '$.f_name'
@@ -223,17 +234,17 @@ ROW_NUMBER PHONE_TYPE PHONE_NUM
 
 
 with tmp as(
-select 
+select
     json_object(
         'info' is
-            json_arrayagg( 
+            json_arrayagg(
                 json_object(
                     'name' is 'name_'||rownum
                     ,'val' is 'val_'||rownum
                     returning clob
                 )
                 returning clob
-            ) 
+            )
     )jsn
 from dual
 connect by rownum <=2
@@ -246,7 +257,7 @@ from tmp ,
         columns(
             name    varchar2(10) path '$.name'
             ,val    varchar2(10) path '$.val'
-        ) 
+        )
     ) t;
 
 select
@@ -264,8 +275,8 @@ select
 from clr_course;
 
 with person as(
-select 
-    dbms_random.string('u',10)       username -- u - upper case, l - lower case, x - alpha numeric, 
+select
+    dbms_random.string('u',10)       username -- u - upper case, l - lower case, x - alpha numeric,
     ,dbms_random.string('p',10)      password -- p - any printable including special character
     ,round(dbms_random.value(1,100)) age
     ,round(dbms_random.value,5)      probability  -- int between 0 and 1
@@ -281,7 +292,7 @@ select
 from person
 connect by rownum <= turns
 )
-select 
+select
     json_object(
     'username'     value p.username
     ,'password'    value p.password
@@ -294,12 +305,12 @@ join dice_rolls dr
 on p.username=dr.username;
 
 with t as (
-select 
+select
     rownum rn
 from dual
 connect by rownum < 10
 )
-select 
+select
     json_arrayagg(rn)
 from t;
 
@@ -307,7 +318,7 @@ from t;
 
 
 with lists as(
-    select 
+    select
         'ANALYST,CLERK,MANAGER,PRESIDENT'      jobs,
         'ACCOUNTING,OPERATIONS,RESEARCH,SALES' depts
     from dual
@@ -327,18 +338,18 @@ depts as(
     connect by rownum <= regexp_count(depts,',')+1
 ),
 emps as(
-    select 
+    select
         rownum                                   as empno
         ,'E_'||rownum                            as ename
         , mod(rownum,4)                          as job_id
-        , mod(rownum,5)                          as dept_id 
+        , mod(rownum,5)                          as dept_id
         , round(dbms_random.value(30000,100000)) as sal
         , dbms_random.string('u',10)             as rand_string -- u upper case, l lower case, x alphanum, p, printable including special chars
     from dual
     connect by rownum < =10
 ),
 emps_json as(
-    select 
+    select
         json_object(
         'emps' is
             json_arrayagg(
@@ -347,9 +358,9 @@ emps_json as(
                     ,key 'ename'          value e.ename
                     ,key 'sal'            value e.sal
                     ,key 'rand_string'    value e.rand_string
-                    ,key 'job '           value j.job 
+                    ,key 'job '           value j.job
                     ,key 'dept'           value json_object(
-                                                key 'name' value d.dept 
+                                                key 'name' value d.dept
                                                 absent on null)
                     absent on null
                     returning  clob
@@ -363,12 +374,12 @@ emps_json as(
     left join depts d
     on e.dept_id = d.dept_id
 )
-select * 
+select *
 from emps_json;
 
 
 with ord as (
-select 
+select
 '{
     "id": "abece703-bbfa-4250-b1a9-8abb7e5c64d6",
     "order": {
@@ -410,7 +421,7 @@ select
 }' json
 from dual
 )
-select 
+select
     d.*
 from ord o,
 JSON_TABLE(
@@ -461,7 +472,7 @@ DEFAULT on ERROR: The developer specifies a literal value that is returned in th
 
 -- RETURNING is optional but we can set a data type and field length
 -- but if one of the value is exceeding the field length then that will be defaulted to null by default
--- we can change the behaviour e.g 
+-- we can change the behaviour e.g
 -- RETURNING VARCHAR2(10) TRUNCATE will truncate the value to length 10
 -- RETURNING VARCHAR2(10) ERROR ON ERROR will trow error
 -- RETURNING VARCHAR2(10) DEFAULT '#BADCOLOR#' ON ERROR will default to this value
@@ -472,7 +483,7 @@ with temp as (
     union
     select '{"name": "dark orange","rgb": [255,140,0],"hex": "#FF8C00"}' color from dual
 )
-select 
+select
 json_value(color, '$.name' RETURNING VARCHAR2(10)) "NAME"
 from  temp;
 -- black
@@ -486,7 +497,7 @@ with temp as (
     union
     select '{"name": "dark orange","rgb": [255,140,0],"hex": "#FF8C00"}' color from dual
 )
-select 
+select
     json_value(color, '$.name' RETURNING VARCHAR2(10) default 'NO_COLOUR' ON ERROR) "NAME",
     json_value(color, '$.rgb[0]' RETURNING NUMBER) "RED",
     json_value(color, '$.rgb[1]' RETURNING NUMBER) "GREEN",
@@ -496,7 +507,7 @@ from  temp;
 -- NO_COLOUR	255	140	0
 -- orange red	255	69	0
 
-SELECT 
+SELECT
     JSON_VALUE('{"a":true}', '$.a') boolean_string,
     JSON_VALUE('{"a":true}', '$.a' returning  number) boolean_number
 FROM DUAL;
@@ -555,17 +566,17 @@ union
 select '{"custNo":3,"name" : "Jim","status": "Silver","address":[{"Street": "Fastlane4","City": "Atherton","zip": 94027},{"Street": "Slowlane5","City": "SanFrancisco","zip": 94105} ]}' from dual
 )
 SELECT
-    JSON_QUERY(custData, '$.address[*].City' WITH ARRAY WRAPPER) 
+    JSON_QUERY(custData, '$.address[*].City' WITH ARRAY WRAPPER)
 FROM customerTab;
 -- ["San Jose"]
 -- ["Belmont"]
 -- ["Atherton","SanFrancisco"]
 
 with customertab as(
-    select '{"id":1, "name" : "Jeff"}' custData from dual 
+    select '{"id":1, "name" : "Jeff"}' custData from dual
     union
-    select '{"id":2, "name" : "Jane","status":"Gold"}' from dual 
-    union 
+    select '{"id":2, "name" : "Jane","status":"Gold"}' from dual
+    union
     select '{"id":3, "name" : "Jill","status":["Important","Gold"]}' from dual
     union
     select '{"name" : "John","status":"Silver"}' from dual
@@ -576,12 +587,12 @@ FROM customerTab
 WHERE JSON_EXISTS (custData, '$.status');
 -- 3
 -- find gold customer, status=gold
--- query contains a predicate, this is expressed by using a question mark followed by a Boolean condition in parentheses. The symbol’@’ denotes the current context, i.e. the key/value pair selected by the path expression before the predicate. 
+-- query contains a predicate, this is expressed by using a question mark followed by a Boolean condition in parentheses. The symbol’@’ denotes the current context, i.e. the key/value pair selected by the path expression before the predicate.
 with customertab as(
-    select '{"id":1, "name" : "Jeff"}' custData from dual 
+    select '{"id":1, "name" : "Jeff"}' custData from dual
     union
-    select '{"id":2, "name" : "Jane","status":"Gold"}' from dual 
-    union 
+    select '{"id":2, "name" : "Jane","status":"Gold"}' from dual
+    union
     select '{"id":3, "name" : "Jill","status":["Important","Gold"]}' from dual
     union
     select '{"name" : "John","status":"Silver"}' from dual
@@ -603,7 +614,7 @@ JSON_TABLE is actually not an operator (or function) but something we call a ‘
 and leverage any relational mechanism (queries, views, reporting, relational tools) on top of JSON_TABLE.
 
 with feeddata as(
-select 
+select
 '{
     "data": [
         {
@@ -671,7 +682,7 @@ select
 SELECT jt.*
 FROM feeddata fd,
     JSON_TABLE(json_data,
-        '$.data[*]'              -- we need to tell it when to start a new row. 
+        '$.data[*]'              -- we need to tell it when to start a new row.
         -- this row path expr selects every item of the collection (array) that we want to project as a separate row
         COLUMNS (
         -- Then for every item that is selected by this ‘row path expression’ we select the columns values by providing a relative path expression
@@ -690,45 +701,45 @@ FROM feeddata fd,
 
 SELECT jt.*
    FROM feeddata,
-        JSON_TABLE(json_data, '$.data[*]' 
+        JSON_TABLE(json_data, '$.data[*]'
         COLUMNS (
           "Message"                     PATH '$.message',
           "Type"           VARCHAR2(20) PATH '$.type',
           "ShareCount"      NUMBER      PATH '$.shares.count' DEFAULT 0 ON ERROR,
-          NESTED PATH '$.likes.data[*]' 
+          NESTED PATH '$.likes.data[*]'
           COLUMNS (
             "Author"             PATH '$.name'
 ))) "JT";
 --The JOIN between the inner and the outer COLUMNS clause is a so called ‘OUTER JOIN’. This means that data which has no nested array (where the NESTED PATH does not select anything) will not be suppressed - all columns of the inner COLUMNS clause have NULL values instead.
 --As you can see the nested (inner) item is now responsible for the number of row; we see a new row for each item in the inner array. Values for the outer COLUMNS clause are getting repeated because they are the same for all values of the inner array
 
---* Sibling arrays 
+--* Sibling arrays
 
--- Now what happens if multiple arrays are not nested but on the same level? In the Facebook example this would apply for the array of ‘likes’ and the array of ‘comments’. Both arrays are nested under the posting but they’re both on the same level. We call them ‘sibling arrays’. 
+-- Now what happens if multiple arrays are not nested but on the same level? In the Facebook example this would apply for the array of ‘likes’ and the array of ‘comments’. Both arrays are nested under the posting but they’re both on the same level. We call them ‘sibling arrays’.
 Semantically, sibling arrays represent different ‘things’: a like at position X has nothing to do with a comment at the same position X. This is why we return values for sibling arrays in different rows with only one sibling array at the time returning column value. Thus the total number of returned rows is the sum of the items in the sibling array and not sthe (Cartesian) product. (The Join between the sibling arrays is a UNION join.)
 
 SELECT
 "Message", "Author_l",
 "Author_c"
 FROM fb_tab,
-     JSON_TABLE(col, '$.data[*]' 
+     JSON_TABLE(col, '$.data[*]'
      COLUMNS (
         "Message" PATH '$.message',
-        NESTED PATH '$.likes.data[*]' 
+        NESTED PATH '$.likes.data[*]'
         COLUMNS (
             "Author_l"      VARCHAR2(20) PATH '$.name'
         ),
-        NESTED PATH '$.comments.data[*]' 
-        COLUMNS ( 
+        NESTED PATH '$.comments.data[*]'
+        COLUMNS (
             "Author_c"      VARCHAR2(20) PATH '$.from.name'
          )
 )) "JT";
 
 
--- Ordinality Column : 
+-- Ordinality Column :
 -- Let’s assume you have several nested array. How do we keep track of the hierarchy when unnesting the data? Or asked differently: For two or more column value originating from an inner array how do we now if they belong to the same (or different) outer values? In the example above the repeating message may hint the common parent but what if there were duplicates?
 
-We can use "seq_num" FOR ORDINALITY to handle that 
+We can use "seq_num" FOR ORDINALITY to handle that
 
 There are reasons why you may want to consider storing your JSON data as BLOBs:
 
@@ -751,7 +762,7 @@ VALUES(1, utl_raw.cast_to_raw ('
 
 }'));
 
---  ‘utl_raw.cast_to_raw’ performs the type casting so that the insert succeeds if you issue the insert operation inside SQL (e.g. in SQL-Plus or SQLDeveloper). 
+--  ‘utl_raw.cast_to_raw’ performs the type casting so that the insert succeeds if you issue the insert operation inside SQL (e.g. in SQL-Plus or SQLDeveloper).
 
 What happens if you select the BLOB value? Since it is a binary data type it will be displayed as hex by default (something like 0A7B0A20202022636F6C6F72223A2022…).
 
@@ -762,13 +773,13 @@ create or replace function clobToBlob( c IN CLOB ) RETURN BLOB is
   b     BLOB;
   warn  VARCHAR2(255);
   cs_id NUMBER := NLS_CHARSET_ID('AL32UTF8');
-  do    NUMBER := 1; -- dest offset 
-  so    NUMBER := 1; -- src offset 
+  do    NUMBER := 1; -- dest offset
+  so    NUMBER := 1; -- src offset
   lc    NUMBER := 0; -- lang context
 BEGIN
    DBMS_LOB.createTemporary(b, TRUE );
    DBMS_LOB.CONVERTTOBLOB(b, c, DBMS_LOB.LOBMAXSIZE, do, so, cs_id, lc, warn);
-   RETURN b; 
+   RETURN b;
 END clobToBlob;
 /
 
@@ -797,7 +808,7 @@ INSERT INTO j_purchaseorder
   VALUES (
     SYS_GUID(),
     SYSTIMESTAMP,
-    '   
+    '
 {
     "PONumber": 1600,
     "Reference": "ABULL-20140421",
@@ -927,11 +938,11 @@ select
 from dual
 ),
 json_data as(
-select 
+select
     treat (jd.val as json) val
 from data jd
 )
-select 
+select
     jd.val.CostCenter
     ,jd.val.ShippingInstructions.name name
     ,jd.val.ShippingInstructions.Address address
@@ -1170,13 +1181,13 @@ JSON_VALUE( PO_DOCUMENT, '$.ShippingInstructions.Address.zipCode' returning NUMB
     -- [30,"Purchasing",114]
     --! multiple columns like above is not liked by json_arrayagg
 
--- JSON_OBJECT : takes one or more property key-value pairs as input. returns object member for each of those key-value pairs. 
+-- JSON_OBJECT : takes one or more property key-value pairs as input. returns object member for each of those key-value pairs.
     -- JSON_OBJECT(KEY key_expr VALUE value_expr FORMAT JSON NULL ON NULL RETURNING CLOB)
-    -- KEY is optional and is provided for semantic clarity. 
-    -- string specifies the property key name as a case-sensitive text literal. 
+    -- KEY is optional and is provided for semantic clarity.
+    -- string specifies the property key name as a case-sensitive text literal.
     -- expr is any expression that evaluates to a SQL numeric literal or text literal.
     --! VALUE or IS clause is mandatory
-    --  FORMAT JSON is optional 
+    --  FORMAT JSON is optional
     --      Use this optional clause to indicate that the input string is JSON, and will therefore not be quoted in the output.
     -- NULL ON NULL - returns JSON null value. or ABSENT ON NULL default omits the value from the JSON array.
     -- STRICT  verify that the output of the JSON generation function is correct JSON. If the check fails, a syntax error is raised.
@@ -1186,9 +1197,9 @@ JSON_VALUE( PO_DOCUMENT, '$.ShippingInstructions.Address.zipCode' returning NUMB
     --* select json_object('name' is 'saroj' null on null returning clob) from dual;
     --* select json_object('name' is 'Saroj', 'surname' is 'Raut' null on null returning clob) from dual;
     --* select json_object(dummy is rownum, 'surname' is 'Raut' null on null returning clob) from dual;
-    --* select json_object ('name' value 'Foo'  format json strict ) from DUAL; 
+    --* select json_object ('name' value 'Foo'  format json strict ) from DUAL;
     --! Above query Throws ORA-40441: JSON syntax error as FORMAT JSON clause is used which returns value FOO as unquoted and hence syntax error
-    --*  
+    --*
     -- {"name":"Saroj","surname":Raut}
 -- JSON_OBJECTAGG :  makes it easy to generate a JSON object from data that has been stored using Key, Value pair storage.
     -- JSON_OBJECTAGG(KEY key_expr VALUE value_expr FORMAT JSON NULL ON NULL RETURNING CLOB)
@@ -1206,17 +1217,17 @@ JSON_VALUE( PO_DOCUMENT, '$.ShippingInstructions.Address.zipCode' returning NUMB
     FROM departments
     WHERE department_id <= 30;
     -- {"Administration":10,"Marketing":20,"Purchasing":30}
-    select 
-        json_object( 
+    select
+        json_object(
             'departments' is (
                 json_arrayagg(
-                json_object( 
-                    'departmentid' is d.department_id, 
-                    'name'         is d.department_name, 
+                json_object(
+                    'departmentid' is d.department_id,
+                    'name'         is d.department_name,
                     'manager'      is d.manager_id,
-                    'location'     is d.location_id 
+                    'location'     is d.location_id
                     )
-                )  
+                )
             )
         )
     from hr.departments d
@@ -1238,9 +1249,9 @@ where DEPARTMENT_ID <=20
 
  -- The generated object contains a key:value pair for each column referenced in the json_object operator. The name of the key can be supplied using a SQL string or a column.
 
-select json_object( 
-    'departmentId' IS d.DEPARTMENT_ID, 
-    'name'         IS d.DEPARTMENT_NAME, 
+select json_object(
+    'departmentId' IS d.DEPARTMENT_ID,
+    'name'         IS d.DEPARTMENT_NAME,
     'manager'      IS d.MANAGER_ID,
     'location'     IS d.LOCATION_ID ) DEPARTMENT
 from HR.DEPARTMENTS d
@@ -1268,7 +1279,7 @@ and d.MANAGER_ID = e.EMPLOYEE_ID
 and d.DEPARTMENT_ID = 10
 /
 
-select 
+select
     json_object(
         'departmentId' is d.DEPARTMENT_ID,
         'name'         is d. DEPARTMENT_NAME,
@@ -1300,19 +1311,19 @@ SELECT json_object(
         'id'              is pdtl.load_nbr
         ,'chunkId'         is pdtl.chunk_nbr
         ,'totalChunkCount' is total_chunk_count
-        ,'waves'           is ( 
-            select 
+        ,'waves'           is (
+            select
                 json_arrayagg(
                     json_object(
                         'distros' is (
-                            select 
+                            select
                                 json_arrayagg(
                                     json_object(
                                         'orderId'            is ord_id
                                         ,'fromStockLocation' is from_stock_loc
-                                        ,'toStockLocation'   is to_stock_loc 
+                                        ,'toStockLocation'   is to_stock_loc
                                         , 'productLineItems' is (
-                                            select 
+                                            select
                                                 json_arrayagg(
                                                     json_object(
                                                         'itemId'            is '1'
@@ -1324,7 +1335,7 @@ SELECT json_object(
                                                         ,'flatHangingType'  is flat_hang
                                                     )
                                                 )
-                                            from w_io_pick_ord_item oi 
+                                            from w_io_pick_ord_item oi
                                             where oi.load_nbr =  pdtl.load_nbr
                                             and oi.ord_id = ohdr.ord_id
                                         )
@@ -1338,7 +1349,7 @@ SELECT json_object(
                 RETURNING CLOB)
             from dual
         )
-    RETURNING CLOB) 
+    RETURNING CLOB)
 RETURNING CLOB)
 from  w_io_pick_hdr phdr
     JOIN w_io_pick_dtl pdtl
@@ -1351,7 +1362,7 @@ where ID < 105 group by ID
 /
 
 Create a Hashmap of users with JSON_OBJECTAGG
- 
+
 SELECT JSON_OBJECTAGG(to_char(cust_id) VALUE (first ||' '|| last)) FROM customers;
 --------------------------------------------------------------------------------
 {"1":"Eric Cartman","2":"Kenny McCormick","3":"Kyle Brofloski","4":"Stan Marsh"}
@@ -1382,10 +1393,10 @@ SELECT JSON_OBJECT('person' VALUE data) FROM already_json; -- Now this query ret
 
 -- following query returns 5 jsons
 with temp as(
-select 
-    rownum id, 
+select
+    rownum id,
     mod(rownum,5) dept
-from dual 
+from dual
 connect by rownum <= 20)
 select
     json_object('dept-'||dept is json_arrayagg(id))
@@ -1394,10 +1405,10 @@ group by dept;
 
 -- following query returns one aggregated json
 with temp as(
-select 
-    rownum id, 
+select
+    rownum id,
     mod(rownum,5) dept
-from dual 
+from dual
 connect by rownum <= 20)
 select
     json_objectagg('dept-'||dept is json_arrayagg(id order by id absent on null returning clob))
@@ -1405,10 +1416,10 @@ from temp
 group by dept;
 
 with temp as(
-select 
-    rownum id, 
+select
+    rownum id,
     mod(rownum,5) dept
-from dual 
+from dual
 connect by rownum <= 20)
 select
     json_objectagg(key 'dept-'||dept value json_arrayagg(id order by id  returning clob ))
@@ -1421,9 +1432,9 @@ group by dept;
 
 -- The PL/SQL JSON API consists of three PL/SQL objects, JSON_ELEMENT_T, json_object_T and JSON_ARRAY_T. JSON_OJBECT_T and JSON_ARRAY_T extend JSON_ELEMENT_T, so they inherit all of JSON_ELEMENT_T"s methods.
 
-with temp as 
+with temp as
 (
-    select 
+    select
 '{
     "PONumber": 1600,
     "Reference": "ABULL-20140421",
@@ -1475,7 +1486,7 @@ with temp as
 }' json_data
 from dual
 )
-select 
+select
     JSON_VALUE(json_data,'$.PONumber') PONumber,
     JSON_VALUE(json_data,'$.ShippingInstructions.Address.street') street,
     JSON_VALUE(json_data,'$.ShippingInstructions.Address.street1' DEFAULT 'N/A' ON ERROR) street1, -- ERROR ON ERROR
@@ -1486,9 +1497,9 @@ select
 from temp
 where JSON_VALUE(json_data ,'$.PONumber' returning NUMBER(10)) = 1600;
 
-with temp as 
+with temp as
 (
-select 
+select
     '{
         "a": "400",
         "c": "500",
@@ -1519,7 +1530,7 @@ from temp
 /
 
 with ord as (
-select 
+select
 '{
     "id": "abece703-bbfa-4250-b1a9-8abb7e5c64d6",
     "order": {
@@ -1561,7 +1572,7 @@ select
 }' json
 from dual
 )
-select 
+select
     d.*
 from ord o,
 JSON_TABLE(
@@ -1590,7 +1601,7 @@ JSON_TABLE(
 --
 
 with ord as (
-select 
+select
 '{
     "id": "abece703-bbfa-4250-b1a9-8abb7e5c64d6",
     "order": {
@@ -1632,7 +1643,7 @@ select
 }' json
 from dual
 )
-select 
+select
     d.*
 from ord o,
 JSON_TABLE(

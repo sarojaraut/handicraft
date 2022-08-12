@@ -1,0 +1,2941 @@
+
+https://www.freecodecamp.org/learn/javascript-algorithms-and-data-structures/?messages=success%5B0%5D%3Dflash.signin-success
+
+//single line comment 
+
+/*
+Multi line comment
+*/
+
+a=5, b=10, c="I am a";
+
+
+
+When JavaScript variables are declared, they have an initial value of undefined. If you do a mathematical operation on an undefined variable your result will be NaN which means "Not a Number". If you concatenate a string with an undefined variable, you will get a literal string of undefined.
+
+One of the biggest problems with declaring variables with the var keyword is that you can easily overwrite variable declarations:
+
+var camper = "James";
+var camper = "David";
+console.log(camper);
+In the code above, the camper variable is originally declared as James, and is then overridden to be David. The console then displays the string David.
+
+In a small application, you might not run into this type of problem. But as your codebase becomes larger, you might accidentally overwrite a variable that you did not intend to. Because this behavior does not throw an error, searching for and fixing bugs becomes more difficult.
+
+A keyword called let was introduced in ES6, a major update to JavaScript, to solve this potential issue with the var keyword. You'll learn about other ES6 features in later challenges.
+
+If you replace var with let in the code above, it results in an error:
+
+let camper = "James";
+let camper = "David";
+
+const has all the awesome features that let has, with the added bonus that variables declared using const are read-only. They are a constant value, which means that once a variable is assigned with const, it cannot be reassigned:
+
+const FAV_PET = "Cats";
+FAV_PET = "Dogs";
+The console will display an error due to reassigning the value of FAV_PET.
+
+You should always name variables you don't want to reassign using the const keyword. This helps when you accidentally attempt to reassign a variable that is meant to stay constant.
+
+A common practice when naming constants is to use all uppercase letters, with words separated by an underscore.
+
+let myVar = 87;
+
+// Only change code below this line
+myVar = ++myVar;
+
+const remainder = 11%3;
+
+let a = 3;
+a = a + 12;
+a += 12;
+
+const myStr = "I am a \"double quoted\" string inside \"double quotes\"."; // Change this line
+
+Escape Sequences in Strings
+Quotes are not the only characters that can be escaped inside a string. There are two reasons to use escaping characters:
+
+To allow you to use characters you may not otherwise be able to type out, such as a carriage return.
+To allow you to represent multiple quotes in a string without JavaScript misinterpreting what you mean.
+We learned this in the previous challenge.
+
+Code	Output
+\'	single quote
+\"	double quote
+\\	backslash
+\n	newline
+\r	carriage return
+\t	tab
+\b	word boundary
+\f	form feed
+
+let ourStr = "I come first. ";
+ourStr += "I come second.";
+
+////////////////////////////////////////////////////////////////////////////////////////////
+let lastNameLength = 0;
+const LAST_NAME = "Lovelace";
+
+// Only change code below this line
+lastNameLength = LAST)NAME.length;
+////////////////////////////////////////////////////////////////////////////////////////////
+In JavaScript, String values are immutable, which means that they cannot be altered once created.
+
+For example, the following code:
+
+let myStr = "Bob";
+myStr[0] = "J";
+cannot change the value of myStr to Job, because the contents of myStr cannot be altered
+The only way to change myStr would be to assign it with a new string, like this:
+
+let myStr = "Bob";
+myStr = "Job";
+////////////////////////////////////////////////////////////////////////////////////////////
+// Setup
+const myArray = [["John", 23], ["cat", 2]];
+
+// Only change code below this line
+myArray.push(["dog", 3]);
+let removedFromMyArray = myArray.pop();
+removedFromMyArray = myArray.shift(); // Use the .shift() function to remove the first item from myArray
+myArray.unshift(["Paul", 35]);
+////////////////////////////////////////////////////////////////////////////////////////////
+Parameters are variables that act as placeholders for the values that are to be input to a function when it is called. When a function is defined, it is typically defined along with one or more parameters. The actual values that are input (or "passed") into a function when it is called are known as arguments.
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+Global Scope and Functions
+In JavaScript, scope refers to the visibility of variables. Variables which are defined outside of a function block have Global scope. This means, they can be seen everywhere in your JavaScript code.
+
+Variables which are declared without the let or const keywords are automatically created in the global scope. This can create unintended consequences elsewhere in your code or when running a function again. You should always declare your variables with let or const.
+
+Variables which are declared within a function, as well as the function parameters, have local scope. That means they are only visible within that function.
+
+It is possible to have both local and global variables with the same name. When you do this, the local variable takes precedence over the global variable.
+
+
+A function can include the return statement but it does not have to. In the case that the function doesn't have a return statement, when you call it, the function processes the inner code but the returned value is undefined.
+
+////////////////////////////////////////////////////////////////////////////////////////////
+Another data type is the Boolean. Booleans may only be one of two values: true or false. They are basically little on-off switches, where true is on and false is off. These two states are mutually exclusive.
+
+Note: Boolean values are never written with quotes. The strings "true" and "false" are not Boolean and have no special meaning in JavaScript.
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+equality operator (==) and the strict equality operator (===).
+
+typeof 3
+typeof '3'
+
+The inequality operator (!=) is the opposite of the equality operator. It means not equal and returns false where equality would return true and vice versa. Like the equality operator, the inequality operator will convert data types of values while comparing.
+
+The greater than operator (>) compares the values of two numbers. If the number to the left is greater than the number to the right, it returns true. Otherwise, it returns false.
+
+Like the equality operator, the greater than operator will convert data types of values while comparing.
+
+Sometimes you will need to test more than one thing at a time. The logical and operator (&&) returns true if and only if the operands to the left and right of it are true.
+
+The logical or operator (||) returns true if either of the operands is true. Otherwise, it returns false.
+////////////////////////////////////////////////////////////////////////////////////////////
+
+if (num > 15) {
+  return "Bigger than 15";
+} else if (num < 5) {
+  return "Smaller than 5";
+} else {
+  return "Between 5 and 15";
+}
+
+Order is important in if, else if statements.
+
+The function is executed from top to bottom so you will want to be careful of what statement comes first.
+
+switch(lowercaseLetter) {
+  case "a":
+    console.log("A");
+    break;
+  case "b":
+    console.log("B");
+    break;
+}
+
+case values are tested with strict equality (===). The break tells JavaScript to stop executing statements. If the break is omitted, the next statement will be executed.
+In a switch statement you may not be able to specify all possible values as case statements. Instead, you can add the default statement which will be executed if no matching case statements are found. Think of it like the final else statement in an if/else chain.
+switch(val){
+  case "a": answer = "apple";break;
+  case "b": answer = "bird" ;break;
+  case "c": answer = "cat"  ;break;
+  default: answer = "stuff";
+}
+
+If the break statement is omitted from a switch statement's case, the following case statement(s) are executed until a break is encountered. If you have multiple inputs with the same output, you can represent them in a switch statement like this:
+
+let result = "";
+switch(val) {
+  case 1:
+  case 2:
+  case 3:
+    result = "1, 2, or 3";
+    break;
+  case 4:
+    result = "4 alone";
+}
+
+///////////////////////////////////////////////////////////////////////
+let count = 0;
+
+function cc(card) {
+  // Only change code below this line
+
+  var regex = /[JQKA]/;
+  if (card > 1 && card < 7) {
+    count++;
+  } else if (card === 10 || regex.test(card)) {
+    count--;
+  }
+
+  if (count > 0) return count + " Bet";
+  return count + " Hold";
+  return "Change Me";
+  // Only change code above this line
+}
+////////////////////////////////////////////////////////////////////////////////
+Objects are similar to arrays, except that instead of using indexes to access and modify their data, you access the data in objects through what are called properties.
+
+Objects are useful for storing data in a structured way, and can represent real world objects, like a cat.
+However, if your object has any non-string properties, JavaScript will automatically typecast them as strings.
+
+There are two ways to access the properties of an object: dot notation (.) and bracket notation ([]), similar to an array.
+
+Dot notation is what you use when you know the name of the property you're trying to access ahead of time.
+
+Note that property names with spaces in them must be in quotes (single or double).
+Another use of bracket notation on objects is to access a property which is stored as the value of a variable.
+
+// Setup
+const testObj = {
+  12: "Namath",
+  16: "Montana",
+  19: "Unitas"
+};
+
+// Only change code below this line
+const playerNumber = 16;  // Change this line
+const player = testObj[playerNumber];   // Change this line
+
+You can add new properties to existing JavaScript objects the same way you would modify them.
+We can also delete properties from objects like this:
+
+delete ourDog.bark;
+
+Objects can be thought of as a key/value storage, like a dictionary. If you have tabular data, you can use an object to lookup values rather than a switch statement or an if/else chain.
+
+Sometimes it is useful to check if the property of a given object exists or not. We can use the .hasOwnProperty(propname) method of objects to determine if that object has the given property name.
+
+Sometimes you may want to store data in a flexible Data Structure. A JavaScript object is one way to handle flexible data. They allow for arbitrary combinations of strings, numbers, booleans, arrays, functions, and objects.
+
+Here's an example of a complex data structure:
+
+const ourMusic = [
+  {
+    "artist": "Daft Punk",
+    "title": "Homework",
+    "release_year": 1997,
+    "formats": [ 
+      "CD", 
+      "Cassette", 
+      "LP"
+    ],
+    "gold": true
+  }
+];
+This is an array which contains one object inside. The object has various pieces of metadata about an album. It also has a nested formats array. If you want to add more album records, you can do this by adding records to the top level array. 
+
+
+
+var recordCollection = {
+  2548: {
+    albumTitle: 'Slippery When Wet',
+    artist: 'Bon Jovi',
+    tracks: ['Let It Rock', 'You Give Love a Bad Name']
+  },
+  2468: {
+    albumTitle: '1999',
+    artist: 'Prince',
+    tracks: ['1999', 'Little Red Corvette']
+  },
+  1245: {
+    artist: 'Robert Palmer',
+    tracks: []
+  },
+  5439: {
+    albumTitle: 'ABBA Gold'
+  }
+};
+
+// Only change code below this line
+function updateRecords(records, id, prop, value) {
+  if (value === '') {
+    delete records[id][prop];
+  } else if (prop === 'tracks') {
+    records[id] = records[id] || {tracks: []}; // this is called shortcircuit evaluation, see below for explanation *****
+    records[id][prop] = records[id][prop] || []; // this is called shortcircuit evaluation, see below for explanation *****
+    records[id][prop].push(value);
+  } else {
+    records[id][prop] = value;
+  }
+  return records;
+}
+
+updateRecords(recordCollection,5439,'track','x'); // succeed
+updateRecords(recordCollection,1,'track','x'); // Uncaught TypeError: Cannot set properties of undefined (setting 'track')
+
+
+/////////////////////////////////////////////////////////////
+Loops
+
+const ourArray = [];
+let i = 0;
+
+while (i < 5) {
+  ourArray.push(i);
+  i++;
+}
+
+///////////
+For loops are declared with three optional expressions separated by semicolons:
+
+for (a; b; c), where a is the initialization statement, b is the condition statement, and c is the final expression.
+The initialization statement is executed one time only before the loop starts. It is typically used to define and setup your loop variable.
+
+The condition statement is evaluated at the beginning of every loop iteration and will continue as long as it evaluates to true. When the condition is false at the start of the iteration, the loop will stop executing. This means if the condition starts as false, your loop will never execute.
+
+The final expression is executed at the end of each loop iteration, prior to the next condition check and is usually used to increment or decrement your loop counter.
+
+const ourArray = [];
+
+for (let i = 0; i < 5; i++) {
+  ourArray.push(i);
+}
+
+A common task in JavaScript is to iterate through the contents of an array. One way to do that is with a for loop. This code will output each element of the array arr to the console:
+
+const arr = [10, 9, 8, 7, 6];
+
+for (let i = 0; i < arr.length; i++) {
+   console.log(arr[i]);
+}
+
+The next type of loop you will learn is called a do...while loop. It is called a do...while loop because it will first do one pass of the code inside the loop no matter what, and then continue to run the loop while the specified condition evaluates to true.
+
+const ourArray = [];
+let i = 0;
+
+do {
+  ourArray.push(i);
+  i++;
+} while (i < 5);
+The example above behaves similar to other types of loops, and the resulting array will look like [0, 1, 2, 3, 4]. However, what makes the do...while different from other loops is how it behaves when the condition fails on the first check.
+////////////////////////////////////////////////
+function sum(arr, n) {
+  // Only change code below this line
+  if (n==0){
+    return 0;
+  }else{
+    return sum(arr, n-1) + arr[n-1]
+  }
+  // Only change code above this line
+}
+
+sum([1], 0) should equal 0.
+
+sum([2, 3, 4], 1) should equal 2.
+
+sum([2, 3, 4, 5], 3) should equal 9.
+
+Your code should not rely on any kind of loops (for or while or higher order functions such as forEach, map, filter, or reduce.).
+
+You should use recursion to solve this problem.
+
+explanation
+in recursion, there will be a base case. The base case tells the recursive function when it no longer needs to call itself. It is a simple case where the return value is already known. There will also be a recursive call which executes the original function with different arguments. If the function is written correctly, eventually the base case will be reached.
+
+For example, say you want to write a recursive function that returns an array containing the numbers 1 through n. This function will need to accept an argument, n, representing the final number. Then it will need to call itself with progressively smaller values of n until it reaches 1
+
+function countup(n) {
+  if (n < 1) {
+    return [];
+  } else {
+    const countArray = countup(n - 1);
+    countArray.push(n);
+    return countArray;
+  }
+}
+console.log(countup(5));
+The value [1, 2, 3, 4, 5] will be displayed in the console.
+
+At first, this seems counterintuitive since the value of n decreases, but the values in the final array are increasing. This happens because the push happens last, after the recursive call has returned. At the point where n is pushed into the array, countup(n - 1) has already been evaluated and returned [1, 2, ..., n - 1].
+
+Question
+
+We have defined a function called countdown with one parameter (n). The function should use recursion to return an array containing the integers n through 1 based on the n parameter. If the function is called with a number less than 1, the function should return an empty array. For example, calling this function with n = 5 should return the array [5, 4, 3, 2, 1]. Your function must use recursion by calling itself and must not use loops of any kind.
+
+
+Solution 1
+function countdown(n) {
+  if (n < 1) {
+    return [];
+  } else {
+    const arr = countdown(n - 1);
+    arr.unshift(n);
+    return arr;
+  }
+}
+
+Solution 2
+function countdown(n) {
+  if (n < 1) {
+    return [];
+  } else {
+    const arr = countdown(n - 1);
+    arr.splice(0, 0, n);
+    return arr;
+  }
+}
+
+Solution 3
+function countdown(n){
+   return n < 1 ? [] : [n].concat(countdown(n - 1));
+}
+
+Solution 4
+function countdown(n){
+   return n < 1 ? [] : [n, ...countdown(n - 1)];
+}
+
+Question - 2
+
+We have defined a function named rangeOfNumbers with two parameters. The function should return an array of integers which begins with a number represented by the startNum parameter and ends with a number represented by the endNum parameter. The starting number will always be less than or equal to the ending number. Your function must use recursion by calling itself and not use loops of any kind. It should also work for cases where both startNum and endNum are the same.
+
+function rangeOfNumbers(startNum, endNum) {
+  return startNum === endNum
+    ? [startNum]
+    : [...rangeOfNumbers(startNum, endNum - 1), endNum ];
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+// Setup
+const contacts = [
+  {
+    firstName: "Akira",
+    lastName: "Laine",
+    number: "0543236543",
+    likes: ["Pizza", "Coding", "Brownie Points"],
+  },
+  {
+    firstName: "Harry",
+    lastName: "Potter",
+    number: "0994372684",
+    likes: ["Hogwarts", "Magic", "Hagrid"],
+  },
+  {
+    firstName: "Sherlock",
+    lastName: "Holmes",
+    number: "0487345643",
+    likes: ["Intriguing Cases", "Violin"],
+  },
+  {
+    firstName: "Kristian",
+    lastName: "Vos",
+    number: "unknown",
+    likes: ["JavaScript", "Gaming", "Foxes"],
+  },
+];
+
+function lookUpProfile(name, prop) {
+  for (let x = 0; x < contacts.length; x++) {
+    if (contacts[x].firstName === name) {
+      if (contacts[x].hasOwnProperty(prop)) { // also could have used if (prop in contacts[i])
+        return contacts[x][prop];
+      } else {
+        return "No such property";
+      }
+    }
+  }
+  return "No such contact";
+}
+//////////////////////////////////////////////////////////////////////////////////////
+Random numbers are useful for creating random behavior.
+
+JavaScript has a Math.random() function that generates a random decimal number between 0 (inclusive) and 1 (exclusive). Thus Math.random() can return a 0 but never return a 1.
+
+Math.floor(Math.random() * 20); // returns number between 0 and 19
+
+Generate Random Whole Numbers within a Range : Math.floor(Math.random() * (max - min + 1)) + min
+
+///////////////////////////////////////////////////////////
+The parseInt() function parses a string and returns an integer. Here's an example:
+
+const a = parseInt("007");
+The above function converts the string 007 to the integer 7. If the first character in the string can't be converted into a number, then it returns NaN.
+The parseInt() function parses a string and returns an integer. It takes a second argument for the radix, which specifies the base of the number in the string. The radix can be an integer between 2 and 36.
+
+The function call looks like:
+
+parseInt(string, radix);
+
+////////////////////////////////////////////////////////////////////
+Use the Conditional (Ternary) Operator
+The conditional operator, also called the ternary operator, can be used as a one line if-else expression.
+
+The syntax is a ? b : c, where a is the condition, b is the code to run when the condition returns true, and c is the code to run when the condition returns false.
+You can also chain them together to check for multiple conditions.
+
+function findGreaterOrEqual(a, b) {
+  return (a === b) ? "a and b are equal" : (a > b) ? "a is greater" : "b is greater";
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Explore Differences Between the var and let Keywords
+One of the biggest problems with declaring variables with the var keyword is that you can easily overwrite variable declarations:
+
+var camper = "James";
+var camper = "David";
+console.log(camper);
+
+In a small application, you might not run into this type of problem. But as your codebase becomes larger, you might accidentally overwrite a variable that you did not intend to. Because this behavior does not throw an error, searching for and fixing bugs becomes more difficult.
+
+A keyword called let was introduced in ES6, a major update to JavaScript, to solve this potential issue with the var keyword. You'll learn about other ES6 features in later challenges.
+
+If you replace var with let in the code above, it results in an error:
+
+let camper = "James";
+let camper = "David";
+The error can be seen in your browser console.
+
+When you declare a variable with the var keyword, it is declared globally, or locally if declared inside a function.
+
+The let keyword behaves similarly, but with some extra features. When you declare a variable with the let keyword inside a block, statement, or expression, its scope is limited to that block, statement, or expression.
+
+For example:
+
+var numArray = [];
+for (var i = 0; i < 3; i++) {
+  numArray.push(i);
+}
+console.log(numArray);
+console.log(i);
+Here the console will display the values [0, 1, 2] and 3.
+
+With the var keyword, i is declared globally. So when i++ is executed, it updates the global variable. This code is similar to the following:
+
+var numArray = [];
+var i;
+for (i = 0; i < 3; i++) {
+  numArray.push(i);
+}
+console.log(numArray);
+console.log(i);
+Here the console will display the values [0, 1, 2] and 3.
+
+This behavior will cause problems if you were to create a function and store it for later use inside a for loop that uses the i variable. This is because the stored function will always refer to the value of the updated global i variable.
+
+var printNumTwo;
+for (var i = 0; i < 3; i++) {
+  if (i === 2) {
+    printNumTwo = function() {
+      return i;
+    };
+  }
+}
+console.log(printNumTwo());
+Here the console will display the value 3.
+
+As you can see, printNumTwo() prints 3 and not 2. This is because the value assigned to i was updated and the printNumTwo() returns the global i and not the value i had when the function was created in the for loop. The let keyword does not follow this behavior:
+
+let printNumTwo;
+for (let i = 0; i < 3; i++) {
+  if (i === 2) {
+    printNumTwo = function() {
+      return i;
+    };
+  }
+}
+console.log(printNumTwo());
+console.log(i);
+Here the console will display the value 2, and an error that i is not defined.
+
+i is not defined because it was not declared in the global scope. It is only declared within the for loop statement. printNumTwo() returned the correct value because three different i variables with unique values (0, 1, and 2) were created by the let keyword within the loop statement.
+
+////////////////////////////////////////////////////////////////////////////////////////
+Use Destructuring Assignment to Assign Variables from Arrays
+const [a, b] = [1, 2, 3, 4, 5, 6];
+console.log(a, b);
+const [a, b,,, c] = [1, 2, 3, 4, 5, 6];
+console.log(a, b, c);
+
+One key difference between the spread operator and array destructuring is that the spread operator unpacks all contents of an array into a comma-separated list. Consequently, you cannot pick or choose which elements you want to assign to variables.
+
+//////Use Destructuring Assignment with the Rest Parameter to Reassign Array Elements
+const [a, b, ...arr] = [1, 2, 3, 4, 5, 7]; // arr will have the first two items removed from the array
+console.log(a, b);
+console.log(arr);
+///////// Use Destructuring Assignment to Pass an Object as a Function's Parameters
+Consider the code below:
+
+const profileUpdate = (profileData) => {
+  const { name, age, nationality, location } = profileData;
+
+}
+
+This effectively destructures the object sent into the function. This can also be done in-place:
+
+const profileUpdate = ({ name, age, nationality, location }) => {
+
+}
+
+
+///////////////// Create Strings using Template Literals
+A new feature of ES6 is the template literal. This is a special type of string that makes creating complex strings easier.
+
+const person = {
+  name: "Zodiac Hasbro",
+  age: 56
+};
+
+const greeting = `Hello, my name is ${person.name}!
+I am ${person.age} years old.`;
+
+uses backticks (`), not quotes (')
+The ${variable} syntax used above is a placeholder
+\n within strings to have a new line 
+Basically, you won't have to use concatenation with the + operator anymore.
+Similarly, you can include other expressions in your string literal, for example ${a + b}
+
+Example Code
+const result = {
+  success: ["max-length", "no-amd", "prefer-arrow-functions"],
+  failure: ["no-var", "var-on-top", "linebreak"],
+  skipped: ["no-extra-semi", "no-dup-keys"]
+};
+function makeList(arr) {
+  // Only change code below this line
+  const failureItems = [];
+  for (let i of arr){
+    let x = `<li class="text-warning">${i}</li>`;
+    failureItems.push(x);
+  }
+  // Only change code above this line
+
+  return failureItems;
+}
+
+const failuresList = makeList(result.failure);
+
+Solution-2
+
+const result = {
+  success: ["max-length", "no-amd", "prefer-arrow-functions"],
+  failure: ["no-var", "var-on-top", "linebreak"],
+  skipped: ["no-extra-semi", "no-dup-keys"]
+};
+function makeList(arr) {
+  "use strict";
+  // change code below this line
+  const failureItems = arr.map(item => `<li class="text-warning">${item}</li>`);
+  // change code above this line
+  return failureItems;
+}
+const failuresList = makeList(result.failure);
+
+
+//////////// ES6 adds some nice support for easily defining object literals.
+
+Consider the following code:
+
+const getMousePosition = (x, y) => ({
+  x: x,
+  y: y
+});
+
+Here is the same function from above rewritten to use this new syntax:
+
+const getMousePosition = (x, y) => ({ x, y });
+
+///////////////////////////////////// Write Concise Declarative Functions with ES6
+When defining functions within objects in ES5, we have to use the keyword function as follows:
+
+const person = {
+  name: "Taylor",
+  sayHello: function() {
+    return `Hello! My name is ${this.name}.`;
+  }
+};
+With ES6, you can remove the function keyword and colon altogether when defining functions in objects. Here's an example of this syntax:
+
+const person = {
+  name: "Taylor",
+  sayHello() {
+    return `Hello! My name is ${this.name}.`;
+  }
+};
+
+////////////////////////////////// Use class Syntax to Define a Constructor Function
+ES6 provides a new syntax to create objects, using the class keyword.
+
+It should be noted that the class syntax is just syntax, and not a full-fledged class-based implementation of an object-oriented paradigm, unlike in languages such as Java, Python, Ruby, etc.
+
+In ES5, we usually define a constructor function and use the new keyword to instantiate an object.
+
+var SpaceShuttle = function(targetPlanet){
+  this.targetPlanet = targetPlanet;
+}
+var zeus = new SpaceShuttle('Jupiter');
+The class syntax simply replaces the constructor function creation:
+
+class SpaceShuttle {
+  constructor(targetPlanet) {
+    this.targetPlanet = targetPlanet;
+  }
+}
+const zeus = new SpaceShuttle('Jupiter');
+It should be noted that the class keyword declares a new function, to which a constructor is added. This constructor is invoked when new is called to create a new object.
+
+/////////////////////////////////Use getters and setters to Control Access to an Object
+You can obtain values from an object and set the value of a property within an object.
+
+These are classically called getters and setters.
+
+class Book {
+  constructor(author) {
+    this._author = author;
+  }
+  // getter
+  get writer() {
+    return this._author;
+  }
+  // setter
+  set writer(updatedAuthor) {
+    this._author = updatedAuthor;
+  }
+}
+const novel = new Book('anonymous');
+console.log(novel.writer);
+novel.writer = 'newAuthor';
+console.log(novel.writer);
+
+////////////////////////////////// Create a Module Script
+ES6 introduced a way to easily share code among JavaScript files. This involves exporting parts of a file for use in one or more other files, and importing the parts you need, where you need them. In order to take advantage of this functionality, you need to create a script in your HTML document with a type of module. Here’s an example:
+
+<script type="module" src="filename.js"></script>
+A script that uses this module type can now use the import and export features
+
+In order to share variable or function with other files, you first need to export it.
+
+export const add = (x, y) => {
+  return x + y;
+}
+The above is a common way to export a single function, but you can achieve the same thing like this:
+
+const add = (x, y) => {
+  return x + y;
+}
+
+export { add };
+When you export a variable or function, you can import it in another file and use it without having to rewrite the code. You can export multiple things by repeating the first example for each thing you want to export, or by placing them all in the export statement of the second example, like this:
+
+export { add, subtract };
+
+Here's how you can import it to use in another file:
+
+import { add } from './math_functions.js';
+
+You can import more than one item from the file by adding them in the import statement like this:
+
+import { add, subtract } from './math_functions.js';
+
+Suppose you have a file and you wish to import all of its contents into the current file. This can be done with the import * as syntax. Here's an example where the contents of a file named math_functions.js are imported into a file in the same directory:
+
+import * as stringFunctions from "./string_functions.js";
+// Only change code above this line
+
+stringFunctions.uppercaseString("hello");
+stringFunctions.lowercaseString("WORLD!");
+
+//////////////////////There is another export syntax you need to know, known as export default. Usually you will use this syntax if only one value is being exported from a file. It is also used to create a fallback value for a file or module.
+
+Below are examples using export default:
+
+export default function add(x, y) {
+  return x + y;
+}
+
+export default function(x, y) {
+  return x + y;
+}
+The first is a named function, and the second is an anonymous function.
+
+Since export default is used to declare a fallback value for a module or file, you can only have one value be a default export in each module or file. Additionally, you cannot use export default with var, let, or const
+
+To import a default export, you need to use a different import syntax. In the following example, add is the default export of the math_functions.js file. Here is how to import it:
+
+import add from "./math_functions.js";
+The syntax differs in one key place. The imported value, add, is not surrounded by curly braces ({}). add here is simply a variable name for whatever the default export of the math_functions.js file is. You can use any name here when importing a default.
+
+
+//////////////////////////////// Create a JavaScript Promise
+A promise in JavaScript is exactly what it sounds like - you use it to make a promise to do something, usually asynchronously. When the task completes, you either fulfill your promise or fail to do so. Promise is a constructor function, so you need to use the new keyword to create one. It takes a function, as its argument, with two parameters - resolve and reject. These are methods used to determine the outcome of the promise. The syntax looks like this:
+
+const myPromise = new Promise((resolve, reject) => {
+
+});
+
+A promise has three states: pending, fulfilled, and rejected. The promise you created in the last challenge is forever stuck in the pending state because you did not add a way to complete the promise. The resolve and reject parameters given to the promise argument are used to do this. resolve is used when you want your promise to succeed, and reject is used when you want it to fail. These are methods that take an argument, as seen below.
+
+const myPromise = new Promise((resolve, reject) => {
+  if(condition here) {
+    resolve("Promise was fulfilled");
+  } else {
+    reject("Promise was rejected");
+  }
+});
+The example above uses strings for the argument of these functions, but it can really be anything. Often, it might be an object, that you would use data from, to put on your website or elsewhere.
+
+Promises are most useful when you have a process that takes an unknown amount of time in your code (i.e. something asynchronous), often a server request. When you make a server request it takes some amount of time, and after it completes you usually want to do something with the response from the server. This can be achieved by using the then method. The then method is executed immediately after your promise is fulfilled with resolve. Here’s an example:
+
+myPromise.then(result => {
+  
+});
+result comes from the argument given to the resolve method.
+
+catch is the method used when your promise has been rejected. It is executed immediately after a promise's reject method is called. Here’s the syntax:
+
+myPromise.catch(error => {
+  
+});
+error is the argument passed in to the reject method.
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Regular expression
+
+If you want to find the word the in the string The dog chased the cat, you could use the following regular expression: /the/. Notice that quote marks are not required within the regular expression.
+
+JavaScript has multiple ways to use regexes. One way to test a regex is using the .test() method. The .test() method takes the regex, applies it to a string (which is placed inside the parentheses), and returns true or false if your pattern finds something or not.
+
+let testStr = "freeCodeCamp";
+let testRegex = /Code/;
+testRegex.test(testStr);
+The test method here returns true.
+
+Here's another example searching for a literal match of the string Kevin:
+
+let testStr = "Hello, my name is Kevin.";
+let testRegex = /Kevin/;
+testRegex.test(testStr);
+This test call will return true.
+
+Any other forms of Kevin will not match. For example, the regex /Kevin/ will not match kevin or KEVIN.
+
+let wrongRegex = /kevin/;
+wrongRegex.test(testStr);
+This test call will return false.
+
+Match a Literal String with Different Possibilities
+
+This operator matches patterns either before or after it. For example, if you wanted to match the strings yes or no, the regex you want is /yes|no/.
+
+You can also search for more than just two patterns. You can do this by adding more patterns with more OR operators separating them, like /yes|no|maybe/.
+
+Ignore Case While Matching
+You can match both cases using what is called a flag. There are other flags but here you'll focus on the flag that ignores case - the i flag. 
+
+let myString = "freeCodeCamp";
+let fccRegex = /freeCodeCamp/i; // Change this line
+let result = fccRegex.test(myString);
+
+Extract Matches
+extract the actual matches you found with the .match() method.
+To use the .match() method, apply the method on a string and pass in the regex inside the parentheses.
+
+Here's an example:
+
+"Hello, World!".match(/Hello/);
+let ourStr = "Regular expressions";
+let ourRegex = /expressions/;
+ourStr.match(ourRegex);
+
+Here the first match would return ["Hello"] and the second would return ["expressions"].
+
+Note that the .match syntax is the "opposite" of the .test method you have been using thus far:
+
+'string'.match(/regex/);
+/regex/.test('string');
+
+Find More Than the First Match : To search or extract a pattern more than once, you can use the g flag.
+
+let testStr = "Repeat, Repeat, Repeat";
+let ourRegex = /Repeat/;
+testStr.match(ourRegex);
+Here match would return ["Repeat"].
+
+To search or extract a pattern more than once, you can use the g flag.
+
+let repeatRegex = /Repeat/g;
+testStr.match(repeatRegex);
+And here match returns the value ["Repeat", "Repeat", "Repeat"]
+
+Match Anything with Wildcard Period : The wildcard character . will match any one character. The wildcard is also called dot and period. 
+
+For example, if you wanted to match hug, huh, hut, and hum, you can use the regex /hu./ to match all four words.
+
+let humStr = "I'll hum a song";
+let hugStr = "Bear hug";
+let huRegex = /hu./;
+huRegex.test(humStr);
+huRegex.test(hugStr);
+Both of these test calls would return true.
+
+Match Single Character with Multiple Possibilities: 
+You can search for a literal pattern with some flexibility with character classes. Character classes allow you to define a group of characters you wish to match by placing them inside square ([ and ]) brackets.
+
+For example, you want to match bag, big, and bug but not bog. You can create the regex /b[aiu]g/ to do this. The [aiu] is the character class that will only match the characters a, i, or u.
+
+let bigStr = "big";
+let bagStr = "bag";
+let bugStr = "bug";
+let bogStr = "bog";
+let bgRegex = /b[aiu]g/;
+bigStr.match(bgRegex);
+bagStr.match(bgRegex);
+bugStr.match(bgRegex);
+bogStr.match(bgRegex);
+In order, the four match calls would return the values ["big"], ["bag"], ["bug"], and null.
+
+Use a character class with vowels (a, e, i, o, u) in your regex vowelRegex to find all the vowels in the string quoteSample.
+
+Note: Be sure to match both upper- and lowercase vowels.
+let quoteSample = "Beware of bugs in the above code; I have only proved it correct, not tried it.";
+let vowelRegex = /[aeiou]/ig; // Change this line
+let result = quoteSample.match(vowelRegex); // Change this line
+
+Match Letters of the Alphabet
+Inside a character set, you can define a range of characters to match using a hyphen character: -.
+
+For example, to match lowercase letters a through e you would use [a-e].
+
+For example, to match lowercase letters a through e you would use [a-e].
+
+let catStr = "cat";
+let batStr = "bat";
+let matStr = "mat";
+let bgRegex = /[a-e]at/;
+catStr.match(bgRegex);
+batStr.match(bgRegex);
+matStr.match(bgRegex);
+
+In order, the three match calls would return the values ["cat"], ["bat"], and null.
+Using the hyphen (-) to match a range of characters is not limited to letters. It also works to match a range of numbers.
+
+For example, /[0-5]/ matches any number between 0 and 5, including the 0 and 5.
+
+Also, it is possible to combine a range of letters and numbers in a single character set.
+
+let jennyStr = "Jenny8675309";
+let myRegex = /[a-z0-9]/ig;
+jennyStr.match(myRegex);
+
+Match Single Characters Not Specified
+So far, you have created a set of characters that you want to match, but you could also create a set of characters that you do not want to match. These types of character sets are called negated character sets.
+
+To create a negated character set, you place a caret character (^) after the opening bracket and before the characters you do not want to match.
+
+For example, /[^aeiou]/gi matches all characters that are not a vowel. Note that characters like ., !, [, @, / and white space are matched - the negated vowel character set only excludes the vowel characters.
+
+Create a single regex that matches all characters that are not a number or a vowel. Remember to include the appropriate flags in the regex.
+let quoteSample = "3 blind mice.";
+let myRegex = /[^aeiou^0-9]/gi; // Change this line also works without second carrot
+let result = myRegex; // Change this line
+
+/////////////////// Match Characters that Occur One or More Times
+
+Sometimes, you need to match a character (or group of characters) that appears one or more times in a row. This means it occurs at least once, and may be repeated.
+
+You can use the + character to check if that is the case. Remember, the character or pattern has to be present consecutively. That is, the character has to repeat one after the other.
+
+For example, /a+/g would find one match in abc and return ["a"]. Because of the +, it would also find a single match in aabc and return ["aa"].
+
+If it were instead checking the string abab, it would find two matches and return ["a", "a"] because the a characters are not in a row - there is a b between them. Finally, since there is no a in the string bcd, it wouldn't find a match.
+
+/////////////////////////////// Match Characters that Occur Zero or More Times
+The last challenge used the plus + sign to look for characters that occur one or more times. There's also an option that matches characters that occur zero or more times.
+
+The character to do this is the asterisk or star: *.
+let soccerWord = "gooooooooal!";
+let gPhrase = "gut feeling";
+let oPhrase = "over the moon";
+let goRegex = /go*/;
+soccerWord.match(goRegex);
+gPhrase.match(goRegex);
+oPhrase.match(goRegex);
+In order, the three match calls would return the values ["goooooooo"], ["g"], and null.
+
+////////////////////////////////Find Characters with Lazy Matching
+In regular expressions, a greedy match finds the longest possible part of a string that fits the regex pattern and returns it as a match. The alternative is called a lazy match, which finds the smallest possible part of the string that satisfies the regex pattern.
+
+You can apply the regex /t[a-z]*i/ to the string "titanic". This regex is basically a pattern that starts with t, ends with i, and has some letters in between.
+
+Regular expressions are by default greedy, so the match would return ["titani"]. It finds the largest sub-string possible to fit the pattern.
+
+However, you can use the ? character to change it to lazy matching. "titanic" matched against the adjusted regex of /t[a-z]*?i/ returns ["ti"].
+
+//////////////////////////// Match Beginning String Patterns using ^
+
+let firstString = "Ricky is first and can be found.";
+let firstRegex = /^Ricky/;
+firstRegex.test(firstString);
+let notFirst = "You can't find Ricky now.";
+firstRegex.test(notFirst);
+The first test call would return true, while the second would return false.
+
+///////////////////////////// Match Ending String Patterns using $
+
+let theEnding = "This is a never ending story";
+let storyRegex = /story$/;
+storyRegex.test(theEnding);
+let noEnding = "Sometimes a story will have to end";
+storyRegex.test(noEnding);
+The first test call would return true, while the second would return false.
+
+////////////////////////// Match All Letters and Numbers
+
+let longHand = /[A-Za-z0-9_]+/;
+let shortHand = /\w+/;
+let numbers = "42";
+let varNames = "important_var";
+longHand.test(numbers);
+shortHand.test(numbers);
+longHand.test(varNames);
+shortHand.test(varNames);
+All four of these test calls would return true.
+
+These shortcut character classes are also known as shorthand character classes.
+
+Use the shorthand character class \w to count the number of alphanumeric characters in various quotes and strings.
+
+let quoteSample = "The five boxing wizards jump quickly.";
+let alphabetRegexV2 = /\w/g; // Change this line
+let result = quoteSample.match(alphabetRegexV2).length;
+
+Your regex should use the global flag.
+
+Your regex should use the shorthand character \w to match all characters which are alphanumeric.
+
+Your regex should find 31 alphanumeric characters in the string The five boxing wizards jump quickly.
+
+Your regex should find 32 alphanumeric characters in the string Pack my box with five dozen liquor jugs.
+
+Your regex should find 30 alphanumeric characters in the string How vexingly quick daft zebras jump!
+
+Your regex should find 36 alphanumeric characters in the string 123 456 7890 ABC def GHI jkl MNO pqr STU vwx YZ.
+///////////////////////// Match Everything But Letters and Numbers
+You've learned that you can use a shortcut to match alphanumerics [A-Za-z0-9_] using \w. A natural pattern you might want to search for is the opposite of alphanumerics.
+
+You can search for the opposite of the \w with \W. Note, the opposite pattern uses a capital letter. This shortcut is the same as [^A-Za-z0-9_].
+
+let shortHand = /\W/;
+let numbers = "42%";
+let sentence = "Coding!";
+numbers.match(shortHand);
+sentence.match(shortHand);
+The first match call would return the value ["%"] and the second would return ["!"].
+
+/////////////////////////////////////////////////////////Match All Numbers
+The shortcut to look for digit characters is \d, with a lowercase d. This is equal to the character class [0-9], which looks for a single character of any number between zero and nine.
+
+The shortcut to look for non-digit characters is \D. This is equal to the character class [^0-9], which looks for a single character that is not a number between zero and nine.
+
+//count how many non-digits are in movie titles.
+let movieName = "2001: A Space Odyssey";
+let noNumRegex = /\D/g; // Change this line
+let result = movieName.match(noNumRegex).length;
+
+Usernames can only use alpha-numeric characters.
+The only numbers in the username have to be at the end. There can be zero or more of them at the end. Username cannot start with the number.
+Username letters can be lowercase and uppercase.
+Usernames have to be at least two characters long. A two-character username can only use alphabet letters as characters.
+
+/^[^0-9]\d*$/
+
+let username = "JackOfAllTrades";
+let userCheck = /^[a-z][a-z]+\d*$|^[a-z]\d\d+$/i;
+let result = userCheck.test(username);
+console.log(result)
+
+const userCheck = /^[a-z]([0-9]{2,}|[a-z]+\d*)$/i;
+
+Your regex should match the string JACK
+Your regex should not match the string J
+Your regex should match the string Jo
+Your regex should match the string Oceans11
+Your regex should match the string RegexGuru
+Your regex should not match the string 007
+Your regex should not match the string 9
+Your regex should not match the string A1
+Your regex should not match the string BadUs3rnam3
+Your regex should match the string Z97
+Your regex should not match the string c57bT3
+Your regex should match the string AB1
+Your regex should not match the string J%4
+
+/////////////////// Match Whitespace
+You can search for whitespace using \s, which is a lowercase s. This pattern not only matches whitespace, but also carriage return, tab, form feed, and new line characters. You can think of it as similar to the character class [ \r\t\f\n\v].
+
+let whiteSpace = "Whitespace. Whitespace everywhere!"
+let spaceRegex = /\s/g;
+whiteSpace.match(spaceRegex);
+This match call would return [" ", " "].
+
+Search for non-whitespace using \S, which is an uppercase s. This pattern will not match whitespace, carriage return, tab, form feed, and new line characters. You can think of it being similar to the character class [^ \r\t\f\n\v].
+
+//////////////////////////////Specify Upper and Lower Number of Matches
+You can specify the lower and upper number of patterns with quantity specifiers. Quantity specifiers are used with curly brackets ({ and }). You put two numbers between the curly brackets - for the lower and upper number of patterns.
+
+For example, to match only the letter a appearing between 3 and 5 times in the string ah, your regex would be /a{3,5}h/.
+
+let A4 = "aaaah";
+let A2 = "aah";
+let multipleA = /a{3,5}h/;
+multipleA.test(A4);
+multipleA.test(A2);
+The first test call would return true, while the second would return false.
+
+To only specify the lower number of patterns, keep the first number followed by a comma.
+
+For example, to match only the string hah with the letter a appearing at least 3 times, your regex would be /ha{3,}h/.
+
+let A4 = "haaaah";
+let A2 = "haah";
+let A100 = "h" + "a".repeat(100) + "h";
+let multipleA = /ha{3,}h/;
+multipleA.test(A4);
+multipleA.test(A2);
+multipleA.test(A100);
+
+To specify exactly certain number of patterns, just have that one number between the curly brackets.
+
+For example, to match only the word hah with the letter a 3 times, your regex would be /ha{3}h/.
+
+let A4 = "haaaah";
+let A3 = "haaah";
+let A100 = "h" + "a".repeat(100) + "h";
+let multipleHA = /ha{3}h/;
+multipleHA.test(A4);
+multipleHA.test(A3);
+multipleHA.test(A100);
+In order, the three test calls would return false, true, and false.
+///////////////////
+You can specify the possible existence of an element with a question mark, ?. This checks for zero or one of the preceding element. You can think of this symbol as saying the previous element is optional.
+
+For example, there are slight differences in American and British English and you can use the question mark to match both spellings.
+
+let american = "color";
+let british = "colour";
+let rainbowRegex= /colou?r/;
+rainbowRegex.test(american);
+rainbowRegex.test(british);
+Both uses of the test method would return true.
+
+//////////////////////////Positive and Negative Lookahead
+
+Lookaheads are patterns that tell JavaScript to look-ahead in your string to check for patterns further along. This can be useful when you want to search for multiple patterns over the same string.
+
+There are two kinds of lookaheads: positive lookahead and negative lookahead.
+
+A positive lookahead will look to make sure the element in the search pattern is there, but won't actually match it. A positive lookahead is used as (?=...) where the ... is the required part that is not matched.
+
+On the other hand, a negative lookahead will look to make sure the element in the search pattern is not there. A negative lookahead is used as (?!...) where the ... is the pattern that you do not want to be there. The rest of the pattern is returned if the negative lookahead part is not present.
+
+Lookaheads are a bit confusing but some examples will help.
+
+let quit = "qu";
+let noquit = "qt";
+let quRegex= /q(?=u)/;
+let qRegex = /q(?!u)/;
+quit.match(quRegex);
+noquit.match(qRegex);
+Both of these match calls would return ["q"].
+
+A more practical use of lookaheads is to check two or more patterns in one string. Here is a (naively) simple password checker that looks for between 3 and 6 characters and at least one number:
+
+let password = "abc123";
+let checkPass = /(?=\w{3,6})(?=\D*\d)/;
+checkPass.test(password);
+
+Use lookaheads in the pwRegex to match passwords that are greater than 5 characters long, and have two consecutive digits.
+let sampleWord = "astronaut";
+let pwRegex =  /(?=\w{6})(?=\w*\d{2})/;
+let result = pwRegex.test(sampleWord);
+
+
+////////////////////////////////Check For Mixed Grouping of Characters
+Sometimes we want to check for groups of characters using a Regular Expression and to achieve that we use parentheses ().
+
+If you want to find either Penguin or Pumpkin in a string, you can use the following Regular Expression: /P(engu|umpk)in/g
+
+Then check whether the desired string groups are in the test string by using the test() method.
+
+let testStr = "Pumpkin";
+let testRegex = /P(engu|umpk)in/;
+testRegex.test(testStr);
+The test method here would return true.
+
+/////////////////////////Reuse Patterns Using Capture Groups
+Say you want to match a word that occurs multiple times like below.
+
+let repeatStr = "row row row your boat";
+You could use /row row row/, but what if you don't know the specific word repeated? Capture groups can be used to find repeated substrings.
+
+Capture groups are constructed by enclosing the regex pattern to be captured in parentheses. In this case, the goal is to capture a word consisting of alphanumeric characters so the capture group will be \w+ enclosed by parentheses: /(\w+)/.
+
+The substring matched by the group is saved to a temporary "variable", which can be accessed within the same regex using a backslash and the number of the capture group (e.g. \1). Capture groups are automatically numbered by the position of their opening parentheses (left to right), starting at 1.
+
+The example below matches a word that occurs thrice separated by spaces:
+
+let repeatRegex = /(\w+) \1 \1/;
+repeatRegex.test(repeatStr); // Returns true
+repeatStr.match(repeatRegex); // Returns ["row row row", "row"]
+Using the .match() method on a string will return an array with the matched substring, along with its captured groups.
+
+//////////////////////////////////////////////////////Use Capture Groups to Search and Replace
+Searching is useful. However, you can make searching even more powerful when it also changes (or replaces) the text you match.
+
+You can search and replace text in a string using .replace() on a string. The inputs for .replace() is first the regex pattern you want to search for. The second parameter is the string to replace the match or a function to do something.
+
+let wrongText = "The sky is silver.";
+let silverRegex = /silver/;
+wrongText.replace(silverRegex, "blue");
+The replace call would return the string The sky is blue..
+
+You can also access capture groups in the replacement string with dollar signs ($).
+
+"Code Camp".replace(/(\w+)\s(\w+)/, '$2 $1');
+The replace call would return the string Camp Code.
+
+Write a regex and use the appropriate string methods to remove whitespace at the beginning and end of strings.
+
+Note: The String.prototype.trim() method would work here, but you'll need to complete this challenge using regular expressions.
+let hello = "   Hello, World!  ";
+let wsRegex = /^\s+|\s+$/g; // Change this line
+let result = hello.replace(wsRegex, ""); // Change this line
+
+let hello = "   Hello, World!  ";
+hello.match(/(\s+)(\S+)(\s+)/);
+
+///////////////// debuging
+console.log(output)
+console.clear()
+
+Use typeof to Check the Type of a Variable
+Here are some examples using typeof:
+
+console.log(typeof "");
+console.log(typeof 0);
+console.log(typeof []);
+console.log(typeof {});
+In order, the console will display the strings string, number, object, and object.
+
+JavaScript recognizes six primitive (immutable) data types: Boolean, Null, Undefined, Number, String, and Symbol (new with ES6) and one type for mutable items: Object. Note that in JavaScript, arrays are technically a type of object.
+
+Transposed, missing, or mis-capitalized characters in a variable or function name will have the browser looking for an object that doesn't exist - and complain in the form of a reference error. JavaScript variable and function names are case-sensitive.
+
+Catch Unclosed Parentheses, Brackets, Braces and Quotes
+Catch Use of Assignment Operator Instead of Equality Operator
+Catch mixed use of double and single quote
+Catch Missing Open and Closing Parenthesis After a Function Call
+Catch Arguments Passed in the Wrong Order When Calling a Function
+Catch Off By One Errors When Using Indexing
+Off by one errors (sometimes called OBOE) crop up when you're trying to target a specific index of a string or array (to slice or access a segment), or when looping over the indices of them. JavaScript indexing starts at zero, not one, which means the last index is always one less than the length of the item. If you try to access an index equal to the length, the program may throw an "index out of range" reference error or print undefined.
+Use Caution When Reinitializing Variables Inside a Loop
+Prevent Infinite Loops with a Valid Terminal Condition
+
+/////////////////////////////////////////////////////////////Basic Data Structures
+Access an Array's Contents Using Bracket Notation
+Add Items to an Array with push() and unshift()
+
+We can programmatically modify an array using Array.push() and Array.unshift().
+Both methods take one or more elements as parameters and add those elements to the array the method is being called on; the push() method adds elements to the end of an array, and unshift() adds elements to the beginning. Consider the following:
+
+
+let twentyThree = 'XXIII';
+let twentyFour = 'XXIV';
+let romanNumerals = ['XXI', 'XXII'];
+romanNumerals.unshift('XIX', 'XX'); // ['XIX', 'XX', 'XXI', 'XXII', 'XXIII']
+romanNumerals.push(twentyThree, twentyFour);
+
+unshift and push mutates the array and returns the count of element in the array after change.
+Remove Items from an Array with pop() and shift()
+
+let greetings = ['whats up?', 'hello', 'see ya!'];
+let popped = greetings.pop();
+let shifted = greetings.shift();
+Remove Items from an Array with pop() and shift()
+///////////////////////////////////////////////////////////Remove Items Using splice()
+Ok, so we've learned how to remove elements from the beginning and end of arrays using shift() and pop(), but what if we want to remove an element from somewhere in the middle? Or remove more than one element at once? Well, that's where splice() comes in. splice() allows us to do just that: remove any number of consecutive elements from anywhere in an array.
+
+splice() can take up to 3 parameters, 
+First parameter represents the index on the array from which to begin removing elements
+The second parameter indicates the number of elements to delete. For example:
+The third parameter, comprised of one or more element(s), to add to the array. This can be incredibly useful for quickly switching out an element, or a set of elements, for another.
+
+let array = ['today', 'was', 'not', 'so', 'great'];
+
+array.splice(2, 2);
+Here we remove 2 elements, beginning with the third element (at index 2). resutling array would have the value ['today', 'was', 'great'] and splicce operation would return the deleted items : ['not', 'so']
+
+const numbers = [10, 11, 12, 12, 15];
+const startIndex = 3;
+const amountToDelete = 1;
+
+numbers.splice(startIndex, amountToDelete, 13, 14);
+console.log(numbers);
+The second occurrence of 12 is removed, and we add 13 and 14 at the same index. The numbers array would now be [ 10, 11, 12, 13, 14, 15 ].
+
+///////////////////////////////////////////////////////////////////Copy Array Items Using slice()
+The next method we will cover is slice(). Rather than modifying an array, slice() copies or extracts a given number of elements to a new array, leaving the array it is called upon untouched. slice() takes only 2 parameters — the first is the index at which to begin extraction, and the second is the index at which to stop extraction (extraction will occur up to, but not including the element at this index). Consider this:
+
+let weatherConditions = ['rain', 'snow', 'sleet', 'hail', 'clear'];
+
+let todaysWeather = weatherConditions.slice(1, 3);
+
+//////////////////////////////Copy an Array with the Spread Operator
+let thisArray = [true, true, undefined, false, null];
+let thatArray = [...thisArray];
+
+Combine Arrays with the Spread Operator
+Another huge advantage of the spread operator is the ability to combine arrays, or to insert all the elements of one array into another, at any index. With more traditional syntaxes, we can concatenate arrays, but this only allows us to combine arrays at the end of one, and at the start of another.
+let thisArray = ['sage', 'rosemary', 'parsley', 'thyme'];
+
+let thatArray = ['basil', 'cilantro', ...thisArray, 'coriander'];
+
+
+Check For The Presence of an Element With indexOf()
+indexOf() takes an element as a parameter, and when called, it returns the position, or index, of that element, or -1 if the element does not exist on the array.
+
+For example:
+
+let fruits = ['apples', 'pears', 'oranges', 'peaches', 'pears'];
+
+fruits.indexOf('dates');
+fruits.indexOf('oranges');
+fruits.indexOf('pears');
+
+////////////////////////////////////////////////Iterate Through All an Array's Items Using For Loops
+JavaScript offers several built in methods that each iterate over arrays in slightly different ways to achieve different results (such as every(), forEach(), map(), etc.), however the technique which is most flexible and offers us the greatest amount of control is a simple for loop.
+
+Consider the following:
+
+function greaterThanTen(arr) {
+  let newArr = [];
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] > 10) {
+      newArr.push(arr[i]);
+    }
+  }
+  return newArr;
+}
+
+greaterThanTen([2, 12, 8, 14, 80, 0, 1]);
+
+//////////////////////////////////Add Key-Value Pairs to JavaScript Objects
+Iterate Through the Keys of an Object with a for...in Statement
+Sometimes you may need to iterate through all the keys within an object. This requires a specific syntax in JavaScript called a for...in statement. For our users object, this could look like:
+
+for (let user in users) {
+  console.log(user);
+}
+
+////////////////////////////Generate an Array of All Object Keys with Object.keys()
+function getArrayOfUsers(obj) {
+  // Only change code below this line
+  return Object.keys(obj);
+  // Only change code above this line
+}
+
+/////////////////////////////////// Modify an Array Stored in an Object
+
+find the length of longest word in a sentence : return Math.max(...str.split(" ").map(word => word.length));
+
+  return s.split(' ')
+    .reduce(function(longest, word) {
+      return Math.max(longest, word.length)
+    }, 0);
+
+///Check if a string (first argument, str) ends with the given target string (second argument, target).
+function confirmEnding(str, target) {
+  // "Never give up and good luck will find you."
+  // -- Falcor
+
+  let re = new RegExp(target + "$", "i");
+
+  return re.test(str);
+}
+
+console.log(confirmEnding("Bastian", "n"));
+
+
+
+function confirmEnding(str, target) {
+  // "Never give up and good luck will find you."
+  // -- Falcor
+
+  return str.slice(str.length - target.length) === target;
+}
+
+function confirmEnding(str, target) {
+  return str.slice(-target.length) === target
+}
+
+confirmEnding("Bastian", "n");
+////Repeat a String Repeat a String
+function repeatStringNumTimes(str, num) {
+  return num > 0 ? str + repeatStringNumTimes(str,num-1): "";
+}
+
+repeatStringNumTimes("abc", 3);
+
+///////// Title Case a Sentence
+function titleCase(str) {
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map(val => val.replace(val.charAt(0), val.charAt(0).toUpperCase()))
+    .join(" ");
+}
+
+titleCase("I'm a little tea pot");
+
+function titleCase(str) {
+  return str
+    .toLowerCase()
+    .replace(/(^|\s)\S/g, L => L.toUpperCase());
+}
+
+Return the lowest index at which a value (second argument) should be inserted into an array (first argument) once it has been sorted. The returned value should be a number.
+
+function getIndexToIns(arr, num) {
+  return arr.filter(val => num > val).length;
+}
+
+getIndexToIns([10, 20, 30, 40, 50], 35) should return 3.
+getIndexToIns([10, 20, 30, 40, 50], 30) should return 2.
+
+function getIndexToIns(arr, num) {
+  return arr
+    .concat(num)
+    .sort((a, b) => a - b)
+    .indexOf(num);
+}
+
+getIndexToIns([1, 3, 4], 2);
+
+function getIndexToIns(arr, num) {
+  // sort and find right index
+  let index = arr
+    .sort((curr, next) => curr - next)
+    .findIndex(currNum => num <= currNum);
+  // Returns index or total length of arr
+  return index === -1 ? arr.length : index;
+}
+
+//////////// Return true if the string in the first element of the array contains all of the letters of the string in the second element of the array.
+function mutation(arr) {
+  return arr[1]
+    .toLowerCase()
+    .split("")
+    .every(function(letter) {
+      return arr[0].toLowerCase().indexOf(letter) !== -1;
+    });
+}
+//////////Write a function that splits an array (first argument) into groups the length of size (second argument) and returns them as a two-dimensional array.
+
+function chunkArrayInGroups(arr, size) {
+  let newArr = [];
+  while (arr.length > 0) {
+    newArr.push(arr.splice(0, size));
+  }
+  return newArr;
+}
+
+function chunkArrayInGroups(arr, size) {
+  // Break it up.
+  let newArr = [];
+  for (let i = 0; i < arr.length; i += size) {
+    newArr.push(arr.slice(i, i + size));
+  }
+  return newArr;
+}
+
+//// Don't know why this functions does not work
+// https://www.freecodecamp.org/learn/javascript-algorithms-and-data-structures/basic-algorithm-scripting/chunky-monkey
+function chunkArrayInGroups(arr, size) {
+  let result = [];
+  for (i=0; i< arr.length; i+=size){
+    result.push(arr.splice(0,size));
+  }
+  return result;
+}
+
+chunkArrayInGroups(["a", "b", "c", "d"], 2);
+/////////////////////////////////////////////////////////////////////////////////// Object Oriented Programming
+
+Constructors are functions that create new objects. They define properties and behaviors that will belong to the new object. Think of them as a blueprint for the creation of new objects.
+
+Here is an example of a constructor:
+
+function Bird() {
+  this.name = "Albert";
+  this.color = "blue";
+  this.numLegs = 2;
+}
+This constructor defines a Bird object with properties name, color, and numLegs set to Albert, blue, and 2, respectively. Constructors follow a few conventions:
+
+Constructors are defined with a capitalized name to distinguish them from other functions that are not constructors.
+Constructors use the keyword this to set properties of the object they will create. Inside the constructor, this refers to the new object it will create.
+Constructors define properties and behaviors instead of returning a value as other functions might.
+
+let blueBird = new Bird();
+NOTE: this inside the constructor always refers to the object being created.
+
+Notice that the new operator is used when calling a constructor. This tells JavaScript to create a new instance of Bird called blueBird. Without the new operator, this inside the constructor would not point to the newly created object, giving unexpected results.
+
+////Extend Constructors to Receive Arguments
+function Bird(name, color) {
+  this.name = name;
+  this.color = color;
+  this.numLegs = 2;
+}
+
+Verify an Object's Constructor with instanceof
+
+let crow = new Bird("Alexis", "black");
+
+crow instanceof Bird;
+
+////////////////////////////////////Use Prototype Properties to Reduce Duplicate Code
+Here's how to add numLegs to the Bird prototype:
+
+Bird.prototype.numLegs = 2;
+Now all instances of Bird have the numLegs property.
+
+console.log(duck.numLegs);
+console.log(canary.numLegs);
+
+Since all instances automatically have the properties on the prototype, think of a prototype as a "recipe" for creating objects. Note that the prototype for duck and canary is part of the Bird constructor as Bird.prototype. 
+
+Here is how you add duck's own properties to the array ownProps and prototype properties to the array prototypeProps:
+
+let ownProps = [];
+let prototypeProps = [];
+
+for (let property in duck) {
+  if(duck.hasOwnProperty(property)) {
+    ownProps.push(property);
+  } else {
+    prototypeProps.push(property);
+  }
+}
+
+///////////////////
+There is a special constructor property located on the object instances duck and beagle that were created in the previous challenges:
+let duck = new Bird();
+let beagle = new Dog();
+
+console.log(duck.constructor === Bird); 
+console.log(beagle.constructor === Dog);
+Both of these console.log calls would display true in the console.
+
+Note: Since the constructor property can be overwritten (which will be covered in the next two challenges) it’s generally better to use the instanceof method to check the type of an object.
+
+A more efficient way is to set the prototype to a new object that already contains the properties. This way, the properties are added all at once:
+
+Bird.prototype = {
+  numLegs: 2, 
+  eat: function() {
+    console.log("nom nom nom");
+  },
+  describe: function() {
+    console.log("My name is " + this.name);
+  }
+};
+
+There is one crucial side effect of manually setting the prototype to a new object. It erases the constructor property! This property can be used to check which constructor function created the instance, but since the property has been overwritten, it now gives false results:
+
+To fix this, whenever a prototype is manually set to a new object, remember to define the constructor property:
+
+Bird.prototype = {
+  constructor: Bird,
+  numLegs: 2,
+  eat: function() {
+    console.log("nom nom nom");
+  },
+  describe: function() {
+    console.log("My name is " + this.name); 
+  }
+};
+
+Just like people inherit genes from their parents, an object inherits its prototype directly from the constructor function that created it. For example, here the Bird constructor creates the duck object:
+
+function Bird(name) {
+  this.name = name;
+}
+
+let duck = new Bird("Donald");
+duck inherits its prototype from the Bird constructor function. You can show this relationship with the isPrototypeOf method:
+
+Bird.prototype.isPrototypeOf(duck);
+
+/////////////////////////////////////////////////////////////// Understand the Prototype Chain
+All objects in JavaScript (with a few exceptions) have a prototype. Also, an object’s prototype itself is an object.
+
+function Bird(name) {
+  this.name = name;
+}
+
+typeof Bird.prototype;
+Because a prototype is an object, a prototype can have its own prototype! In this case, the prototype of Bird.prototype is Object.prototype:
+
+Object.prototype.isPrototypeOf(Bird.prototype);
+How is this useful? You may recall the hasOwnProperty method from a previous challenge:
+
+let duck = new Bird("Donald");
+duck.hasOwnProperty("name");
+The hasOwnProperty method is defined in Object.prototype, which can be accessed by Bird.prototype, which can then be accessed by duck. This is an example of the prototype chain. In this prototype chain, Bird is the supertype for duck, while duck is the subtype. Object is a supertype for both Bird and duck. Object is a supertype for all objects in JavaScript. Therefore, any object can use the hasOwnProperty method.
+
+/////////////////////////////////Use Inheritance So You Don't Repeat Yourself
+There's a principle in programming called Don't Repeat Yourself (DRY). The reason repeated code is a problem is because any change requires fixing code in multiple places. This usually means more work for programmers and more room for errors.
+
+Inherit Behaviors from a Supertype
+In the previous challenge, you created a supertype called Animal that defined behaviors shared by all animals:
+
+function Animal() { }
+Animal.prototype.eat = function() {
+  console.log("nom nom nom");
+};
+This and the next challenge will cover how to reuse the methods of Animal inside Bird and Dog without defining them again. It uses a technique called inheritance. This challenge covers the first step: make an instance of the supertype (or parent). You already know one way to create an instance of Animal using the new operator:
+
+let animal = new Animal();
+There are some disadvantages when using this syntax for inheritance, which are too complex for the scope of this challenge. Instead, here's an alternative approach without those disadvantages:
+
+let animal = Object.create(Animal.prototype);
+Object.create(obj) creates a new object, and sets obj as the new object's prototype. Recall that the prototype is like the "recipe" for creating an object. By setting the prototype of animal to be the prototype of Animal, you are effectively giving the animal instance the same "recipe" as any other instance of Animal.
+
+animal.eat();
+animal instanceof Animal;
+The instanceof method here would return true.
+
+////////////Set the Child's Prototype to an Instance of the Parent
+In the previous challenge you saw the first step for inheriting behavior from the supertype (or parent) Animal: making a new instance of Animal.
+
+This challenge covers the next step: set the prototype of the subtype (or child)—in this case, Bird—to be an instance of Animal.
+
+Bird.prototype = Object.create(Animal.prototype);
+Remember that the prototype is like the "recipe" for creating an object. In a way, the recipe for Bird now includes all the key "ingredients" from Animal.
+
+let duck = new Bird("Donald");
+duck.eat();
+duck inherits all of Animal's properties, including the eat method.
+
+function Animal() { }
+function Bird() { }
+function Dog() { }
+
+Bird.prototype = Object.create(Animal.prototype);
+Dog.prototype = Object.create(Animal.prototype);
+
+// Only change code below this line
+
+
+
+let duck = new Bird();
+let beagle = new Dog();
+
+duck.constructor
+ƒ Animal() { }
+
+to fix this we have to add 
+Bird.prototype.constructor = Bird;
+Dog.prototype.constructor = Dog;
+duck.constructor
+ƒ Bird() { }
+
+///////////////////////////////////////////////////////Add Methods After Inheritance
+A constructor function that inherits its prototype object from a supertype constructor function can still have its own methods in addition to inherited methods.
+
+For example, Bird is a constructor that inherits its prototype from Animal:
+
+function Animal() { }
+Animal.prototype.eat = function() {
+  console.log("nom nom nom");
+};
+function Bird() { }
+Bird.prototype = Object.create(Animal.prototype);
+Bird.prototype.constructor = Bird;
+In addition to what is inherited from Animal, you want to add behavior that is unique to Bird objects. Here, Bird will get a fly() function. Functions are added to Bird's prototype the same way as any constructor function:
+
+Bird.prototype.fly = function() {
+  console.log("I'm flying!");
+};
+Now instances of Bird will have both eat() and fly() methods:
+
+let duck = new Bird();
+duck.eat();
+duck.fly();
+duck.eat() would display the string nom nom nom in the console, and duck.fly() would display the string I'm flying!.
+
+///////////////////////////////////////////Override Inherited Methods
+In previous lessons, you learned that an object can inherit its behavior (methods) from another object by referencing its prototype object:
+
+ChildObject.prototype = Object.create(ParentObject.prototype);
+Then the ChildObject received its own methods by chaining them onto its prototype:
+
+ChildObject.prototype.methodName = function() {...};
+It's possible to override an inherited method. It's done the same way - by adding a method to ChildObject.prototype using the same method name as the one to override. Here's an example of Bird overriding the eat() method inherited from Animal:
+
+function Animal() { }
+Animal.prototype.eat = function() {
+  return "nom nom nom";
+};
+function Bird() { }
+
+Bird.prototype = Object.create(Animal.prototype);
+
+Bird.prototype.eat = function() {
+  return "peck peck peck";
+};
+If you have an instance let duck = new Bird(); and you call duck.eat(), this is how JavaScript looks for the method on the prototype chain of duck:
+
+duck => Is eat() defined here? No.
+Bird => Is eat() defined here? => Yes. Execute it and stop searching.
+Animal => eat() is also defined, but JavaScript stopped searching before reaching this level.
+Object => JavaScript stopped searching before reaching this level.
+
+///////////////////////////////////// Use a Mixin to Add Common Behavior Between Unrelated Objects
+As you have seen, behavior is shared through inheritance. However, there are cases when inheritance is not the best solution. Inheritance does not work well for unrelated objects like Bird and Airplane. They can both fly, but a Bird is not a type of Airplane and vice versa.
+
+For unrelated objects, it's better to use mixins. A mixin allows other objects to use a collection of functions.
+
+let flyMixin = function(obj) {
+  obj.fly = function() {
+    console.log("Flying, wooosh!");
+  }
+};
+The flyMixin takes any object and gives it the fly method.
+
+let bird = {
+  name: "Donald",
+  numLegs: 2
+};
+
+let plane = {
+  model: "777",
+  numPassengers: 524
+};
+
+flyMixin(bird);
+flyMixin(plane);
+Here bird and plane are passed into flyMixin, which then assigns the fly function to each object. Now bird and plane can both fly:
+
+bird.fly();
+plane.fly();
+The console would display the string Flying, wooosh! twice, once for each .fly() call.
+
+Note how the mixin allows for the same fly method to be reused by unrelated objects bird and plane.
+
+/////////////////////////////////////////////////////Use Closure to Protect Properties Within an Object from Being Modified Externally
+In the previous challenge, bird had a public property name. It is considered public because it can be accessed and changed outside of bird's definition.
+
+bird.name = "Duffy";
+Therefore, any part of your code can easily change the name of bird to any value. Think about things like passwords and bank accounts being easily changeable by any part of your codebase. That could cause a lot of issues.
+
+The simplest way to make this public property private is by creating a variable within the constructor function. This changes the scope of that variable to be within the constructor function versus available globally. This way, the variable can only be accessed and changed by methods also within the constructor function.
+
+function Bird() {
+  let hatchedEgg = 10;
+
+  this.getHatchedEggCount = function() { 
+    return hatchedEgg;
+  };
+}
+let ducky = new Bird();
+ducky.getHatchedEggCount();
+Here getHatchedEggCount is a privileged method, because it has access to the private variable hatchedEgg. This is possible because hatchedEgg is declared in the same context as getHatchedEggCount. In JavaScript, a function always has access to the context in which it was created. This is called closure.
+
+//////////////////////////////////////////////////////////Understand the Immediately Invoked Function Expression (IIFE)
+A common pattern in JavaScript is to execute a function as soon as it is declared:
+
+(function () {
+  console.log("Chirp, chirp!");
+})();
+This is an anonymous function expression that executes right away, and outputs Chirp, chirp! immediately.
+
+Note that the function has no name and is not stored in a variable. The two parentheses () at the end of the function expression cause it to be immediately executed or invoked. This pattern is known as an immediately invoked function expression or IIFE.
+
+////////////////////////////////////////////////// Understand the Immediately Invoked Function Expression (IIFE)
+A common pattern in JavaScript is to execute a function as soon as it is declared:
+
+(function () {
+  console.log("Chirp, chirp!");
+})();
+This is an anonymous function expression that executes right away, and outputs Chirp, chirp! immediately.
+
+Note that the function has no name and is not stored in a variable. The two parentheses () at the end of the function expression cause it to be immediately executed or invoked. This pattern is known as an immediately invoked function expression or IIFE.
+
+//////////////////////////////////////////////////////// Learn About Functional Programming
+Functional programming is a style of programming where solutions are simple, isolated functions, without any side effects outside of the function scope: INPUT -> PROCESS -> OUTPUT
+
+Functional programming is about:
+
+Isolated functions - there is no dependence on the state of the program, which includes global variables that are subject to change
+
+Pure functions - the same input always gives the same output
+
+Functions with limited side effects - any changes, or mutations, to the state of the program outside the function are carefully controlled
+
+ let's cover some functional terminology:
+
+Callbacks are the functions that are slipped or passed into another function to decide the invocation of that function. You may have seen them passed to other methods, for example in filter, the callback function tells JavaScript the criteria for how to filter an array.
+
+Functions that can be assigned to a variable, passed into another function, or returned from another function just like any other normal value, are called first class functions. In JavaScript, all functions are first class functions.
+
+The functions that take a function as an argument, or return a function as a return value are called higher order functions.
+
+When functions are passed in to or returned from another function, then those functions which were passed in or returned can be called a lambda.
+
+// Function that returns a string representing a cup of green tea
+const prepareGreenTea = () => 'greenTea';
+
+// Function that returns a string representing a cup of black tea
+const prepareBlackTea = () => 'blackTea';
+
+/*
+Given a function (representing the tea type) and number of cups needed, the
+following function returns an array of strings (each representing a cup of
+a specific type of tea).
+*/
+const getTea = (prepareTea, numOfCups) => {
+  const teaCups = [];
+
+  for(let cups = 1; cups <= numOfCups; cups += 1) {
+    const teaCup = prepareTea();
+    teaCups.push(teaCup);
+  }
+  return teaCups;
+};
+
+// Only change code below this line
+const tea4GreenTeamFCC = getTea(prepareGreenTea,27);
+const tea4BlackTeamFCC = getTea(prepareBlackTea,13);
+// Only change code above this line
+
+console.log(
+  tea4GreenTeamFCC,
+  tea4BlackTeamFCC
+);
+
+One of the core principles of functional programming is to not change things. Changes lead to bugs. It's easier to prevent bugs knowing that your functions don't change anything, including the function arguments or any global variable.
+
+The previous example didn't have any complicated operations but the splice method changed the original array, and resulted in a bug.
+
+Recall that in functional programming, changing or altering things is called mutation, and the outcome is called a side effect. A function, ideally, should be a pure function, meaning that it does not cause any side effects.
+
+/////Pass Arguments to Avoid External Dependence in a Function
+Another principle of functional programming is to always declare your dependencies explicitly. This means if a function depends on a variable or object being present, then pass that variable or object directly into the function as an argument.
+
+There are several good consequences from this principle. The function is easier to test, you know exactly what input it takes, and it won't depend on anything else in your program.
+
+This can give you more confidence when you alter, remove, or add new code. You would know what you can or cannot change and you can see where the potential traps are.
+
+Finally, the function would always produce the same output for the same set of inputs, no matter what part of the code executes it.
+
+Refactor Global Variables Out of Functions
+So far, we have seen two distinct principles for functional programming:
+
+Don't alter a variable or object - create new variables and objects and return them if need be from a function. Hint: using something like const newArr = arrVar, where arrVar is an array will simply create a reference to the existing variable and not a copy. So changing a value in newArr would change the value in arrVar.
+
+Declare function parameters - any computation inside a function depends only on the arguments passed to the function, and not on any global object or variable.
+
+Rewrite the code so the global array bookList is not changed inside either function. The add function should add the given bookName to the end of the array passed to it and return a new array (list). The remove function should remove the given bookName from the array passed to it.
+// the global variable
+var bookList = ["The Hound of the Baskervilles", "On The Electrodynamics of Moving Bodies", "Philosophiæ Naturalis Principia Mathematica", "Disquisitiones Arithmeticae"];
+
+/* This function should add a book to the list and return the list */
+// New parameters should come before bookName
+
+function add(list, bookName) {
+  return [...list, bookName];
+}
+
+/* This function should remove a book from the list and return the list */
+// New parameters should come before the bookName one
+
+function remove(list, bookName) {
+  return list.filter(book => book !== bookName);
+}
+
+var newBookList = add(bookList, 'A Brief History of Time');
+var newerBookList = remove(bookList, 'On The Electrodynamics of Moving Bodies');
+var newestBookList = remove(add(bookList, 'A Brief History of Time'), 'On The Electrodynamics of Moving Bodies');
+
+console.log(bookList);
+
+Functions are considered first class objects in JavaScript, which means they can be used like any other object. They can be saved in variables, stored in an object, or passed as function arguments.
+
+Let's start with some simple array functions, which are methods on the array object prototype. In this exercise we are looking at Array.prototype.map(), or more simply map.
+
+The map method iterates over each item in an array and returns a new array containing the results of calling the callback function on each element. It does this without mutating the original array.
+
+When the callback is used, it is passed three arguments. The first argument is the current element being processed. The second is the index of that element and the third is the array upon which the map method was called.
+
+See below for an example using the map method on the users array to return a new array containing only the names of the users as elements. For simplicity, the example only uses the first argument of the callback.
+
+const users = [
+  { name: 'John', age: 34 },
+  { name: 'Amy', age: 20 },
+  { name: 'camperCat', age: 10 }
+];
+
+const names = users.map(user => user.name);
+console.log(names);
+The console would display the value [ 'John', 'Amy', 'camperCat' ].
+
+const ratings = watchList.map(item => ({
+  title: item["Title"],
+  rating: item["imdbRating"]
+}));
+const ratings = watchList.map(({ Title: title, imdbRating: rating }) => ({title, rating}));
+
+/////////////////Write your own Array.prototype.myMap(), which should behave exactly like Array.prototype.map(). You should not use the built-in map method. The Array instance can be accessed in the myMap method using this.
+
+// the global Array
+var s = [23, 65, 98, 5];
+
+Array.prototype.myMap = function(callback) {
+  var newArray = [];
+  // Add your code below this line
+  this.forEach(a => newArray.push(callback(a)));
+  // Add your code above this line
+  return newArray;
+};
+
+var new_s = s.myMap(function(item) {
+  return item * 2;
+});
+
+
+//////////////////////////////Use the filter Method to Extract Data from an Array
+Another useful array function is Array.prototype.filter(), or simply filter().
+
+filter calls a function on each element of an array and returns a new array containing only the elements for which that function returns true. In other words, it filters the array, based on the function passed to it. Like map, it does this without needing to modify the original array.
+
+The callback function accepts three arguments. The first argument is the current element being processed. The second is the index of that element and the third is the array upon which the filter method was called.
+
+const users = [
+  { name: 'John', age: 34 },
+  { name: 'Amy', age: 20 },
+  { name: 'camperCat', age: 10 }
+];
+
+const usersUnder30 = users.filter(user => user.age < 30);
+console.log(usersUnder30); 
+
+
+////////////////////////////////////Return Part of an Array Using the slice Method
+The slice method returns a copy of certain elements of an array. It can take two arguments, the first gives the index of where to begin the slice, the second is the index for where to end the slice (and it's non-inclusive).
+
+ If the arguments are not provided, the default is to start at the beginning of the array through the end, which is an easy way to make a copy of the entire array. The slice method does not mutate the original array, but returns a new one.
+
+Here's an example:
+
+const arr = ["Cat", "Dog", "Tiger", "Zebra"];
+const newArray = arr.slice(1, 3);
+newArray would have the value ["Dog", "Tiger"].
+
+////////////////////Remove Elements from an Array Using slice Instead of splice
+const cities = ["Chicago", "Delhi", "Islamabad", "London", "Berlin"];
+cities.splice(3, 1);
+Here splice returns the string London and deletes it from the cities array. cities will have the value ["Chicago", "Delhi", "Islamabad", "Berlin"].
+
+/////////////////////////////////////////Combine Two Arrays Using the concat Method
+Concatenation means to join items end to end. JavaScript offers the concat method for both strings and arrays that work in the same way. For arrays, the method is called on one, then another array is provided as the argument to concat, which is added to the end of the first array. It returns a new array and does not mutate either of the original arrays. Here's an example:
+
+[1, 2, 3].concat([4, 5, 6]);
+The returned array would be [1, 2, 3, 4, 5, 6].
+
+//////////////Use the reduce Method to Analyze Data
+Array.prototype.reduce(), or simply reduce(), is the most general of all array operations in JavaScript. You can solve almost any array processing problem using the reduce method.
+
+The reduce method allows for more general forms of array processing, and it's possible to show that both filter and map can be derived as special applications of reduce. The reduce method iterates over each item in an array and returns a single value (i.e. string, number, object, array). This is achieved via a callback function that is called on each iteration.
+
+The callback function accepts four arguments. The first argument is known as the accumulator, which gets assigned the return value of the callback function from the previous iteration, the second is the current element being processed, the third is the index of that element and the fourth is the array upon which reduce is called.
+
+In addition to the callback function, reduce has an additional parameter which takes an initial value for the accumulator. If this second parameter is not used, then the first iteration is skipped and the second iteration gets passed the first element of the array as the accumulator.
+
+See below for an example using reduce on the users array to return the sum of all the users' ages. For simplicity, the example only uses the first and second arguments.
+
+const users = [
+  { name: 'John', age: 34 },
+  { name: 'Amy', age: 20 },
+  { name: 'camperCat', age: 10 }
+];
+
+const sumOfAges = users.reduce((sum, user) => sum + user.age, 0);
+console.log(sumOfAges);
+
+In another example, see how an object can be returned containing the names of the users as properties with their ages as values.
+
+const users = [
+  { name: 'John', age: 34 },
+  { name: 'Amy', age: 20 },
+  { name: 'camperCat', age: 10 }
+];
+
+const usersObj = users.reduce((obj, user) => {
+  obj[user.name] = user.age;
+  return obj;
+}, {});
+console.log(usersObj);
+The console would display the value { John: 34, Amy: 20, camperCat: 10 }.
+
+/////////////// Finding Average from array of Complex object
+// the global variable
+const watchList = [
+  {
+    Title: "Inception",
+    Year: "2010",
+    Rated: "PG-13",
+    Released: "16 Jul 2010",
+    Runtime: "148 min",
+    Genre: "Action, Adventure, Crime",
+    Director: "Christopher Nolan",
+    Writer: "Christopher Nolan",
+    Actors: "Leonardo DiCaprio, Joseph Gordon-Levitt, Ellen Page, Tom Hardy",
+    Plot:
+      "A thief, who steals corporate secrets through use of dream-sharing technology, is given the inverse task of planting an idea into the mind of a CEO.",
+    Language: "English, Japanese, French",
+    Country: "USA, UK",
+    Awards: "Won 4 Oscars. Another 143 wins & 198 nominations.",
+    Poster:
+      "http://ia.media-imdb.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
+    Metascore: "74",
+    imdbRating: "8.8",
+    imdbVotes: "1,446,708",
+    imdbID: "tt1375666",
+    Type: "movie",
+    Response: "True"
+  },
+  {
+    Title: "Interstellar",
+    Year: "2014",
+    Rated: "PG-13",
+    Released: "07 Nov 2014",
+    Runtime: "169 min",
+    Genre: "Adventure, Drama, Sci-Fi",
+    Director: "Christopher Nolan",
+    Writer: "Jonathan Nolan, Christopher Nolan",
+    Actors: "Ellen Burstyn, Matthew McConaughey, Mackenzie Foy, John Lithgow",
+    Plot:
+      "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+    Language: "English",
+    Country: "USA, UK",
+    Awards: "Won 1 Oscar. Another 39 wins & 132 nominations.",
+    Poster:
+      "http://ia.media-imdb.com/images/M/MV5BMjIxNTU4MzY4MF5BMl5BanBnXkFtZTgwMzM4ODI3MjE@._V1_SX300.jpg",
+    Metascore: "74",
+    imdbRating: "8.6",
+    imdbVotes: "910,366",
+    imdbID: "tt0816692",
+    Type: "movie",
+    Response: "True"
+  },
+  {
+    Title: "The Dark Knight",
+    Year: "2008",
+    Rated: "PG-13",
+    Released: "18 Jul 2008",
+    Runtime: "152 min",
+    Genre: "Action, Adventure, Crime",
+    Director: "Christopher Nolan",
+    Writer:
+      "Jonathan Nolan (screenplay), Christopher Nolan (screenplay), Christopher Nolan (story), David S. Goyer (story), Bob Kane (characters)",
+    Actors: "Christian Bale, Heath Ledger, Aaron Eckhart, Michael Caine",
+    Plot:
+      "When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, the caped crusader must come to terms with one of the greatest psychological tests of his ability to fight injustice.",
+    Language: "English, Mandarin",
+    Country: "USA, UK",
+    Awards: "Won 2 Oscars. Another 146 wins & 142 nominations.",
+    Poster:
+      "http://ia.media-imdb.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_SX300.jpg",
+    Metascore: "82",
+    imdbRating: "9.0",
+    imdbVotes: "1,652,832",
+    imdbID: "tt0468569",
+    Type: "movie",
+    Response: "True"
+  },
+  {
+    Title: "Batman Begins",
+    Year: "2005",
+    Rated: "PG-13",
+    Released: "15 Jun 2005",
+    Runtime: "140 min",
+    Genre: "Action, Adventure",
+    Director: "Christopher Nolan",
+    Writer:
+      "Bob Kane (characters), David S. Goyer (story), Christopher Nolan (screenplay), David S. Goyer (screenplay)",
+    Actors: "Christian Bale, Michael Caine, Liam Neeson, Katie Holmes",
+    Plot:
+      "After training with his mentor, Batman begins his fight to free crime-ridden Gotham City from the corruption that Scarecrow and the League of Shadows have cast upon it.",
+    Language: "English, Urdu, Mandarin",
+    Country: "USA, UK",
+    Awards: "Nominated for 1 Oscar. Another 15 wins & 66 nominations.",
+    Poster:
+      "http://ia.media-imdb.com/images/M/MV5BNTM3OTc0MzM2OV5BMl5BanBnXkFtZTYwNzUwMTI3._V1_SX300.jpg",
+    Metascore: "70",
+    imdbRating: "8.3",
+    imdbVotes: "972,584",
+    imdbID: "tt0372784",
+    Type: "movie",
+    Response: "True"
+  },
+  {
+    Title: "Avatar",
+    Year: "2009",
+    Rated: "PG-13",
+    Released: "18 Dec 2009",
+    Runtime: "162 min",
+    Genre: "Action, Adventure, Fantasy",
+    Director: "James Cameron",
+    Writer: "James Cameron",
+    Actors: "Sam Worthington, Zoe Saldana, Sigourney Weaver, Stephen Lang",
+    Plot:
+      "A paraplegic marine dispatched to the moon Pandora on a unique mission becomes torn between following his orders and protecting the world he feels is his home.",
+    Language: "English, Spanish",
+    Country: "USA, UK",
+    Awards: "Won 3 Oscars. Another 80 wins & 121 nominations.",
+    Poster:
+      "http://ia.media-imdb.com/images/M/MV5BMTYwOTEwNjAzMl5BMl5BanBnXkFtZTcwODc5MTUwMw@@._V1_SX300.jpg",
+    Metascore: "83",
+    imdbRating: "7.9",
+    imdbVotes: "876,575",
+    imdbID: "tt0499549",
+    Type: "movie",
+    Response: "True"
+  }
+];
+
+function getRating(watchList) {
+  // Add your code below this line
+  const nolanData = watchList
+    .reduce((data, { Director: director, imdbRating: rating }) => {
+      if (director === 'Christopher Nolan') {
+        data.count++;
+        data.sum += Number(rating);
+      }
+      return data;
+    }, { sum: 0, count: 0 });
+  const averageRating = nolanData.sum / nolanData.count;
+  // Add your code above this line
+  return averageRating;
+}
+
+console.log(getRating(watchList));
+
+//////////////////////////////Complete the code for the squareList function using any combination of map(), filter(), and reduce(). The function should return a new array containing the squares of only the positive integers (decimal numbers are not integers) when an array of real numbers is passed to it. An example of an array of real numbers is [-3, 4.8, 5, 3, -3.2].
+
+const squareList = arr => {
+  // Only change code below this line
+  return arr.filter(item => item > 0 && Math.ceil(item)== item )
+  .map(item => item*item);
+  // Only change code above this line
+};
+
+const squaredIntegers = squareList([-3, 4.8, 5, 3, -3.2]);
+console.log(squaredIntegers);
+//// ALternate Sol
+const squareList = (arr) => {
+  // Only change code below this line
+  return arr
+          .filter(num => num > 0 && num % parseInt(num) === 0)
+          .map(num => Math.pow(num, 2));
+  // Only change code above this line
+};
+
+const squaredIntegers = squareList([-3, 4.8, 5, 3, -3.2]);
+console.log(squaredIntegers);
+
+/////// Alternate Solution
+const squareList = arr => {
+  return arr.reduce((sqrIntegers, num) => {
+    return Number.isInteger(num) && num > 0
+      ? sqrIntegers.concat(num * num)
+      : sqrIntegers;
+  }, []);
+};
+
+///////////////////////////////////// Sort an Array Alphabetically using the sort Method ; Sort mutates the array
+The sort method sorts the elements of an array according to the callback function.
+
+JavaScript's default sorting method is by string Unicode point value, which may return unexpected results. Therefore, it is encouraged to provide a callback function to specify how to sort the array items. When such a callback function, normally called compareFunction, is supplied, the array elements are sorted according to the return value of the compareFunction: If compareFunction(a,b) returns a value less than 0 for two elements a and b, then a will come before b. If compareFunction(a,b) returns a value greater than 0 for two elements a and b, then b will come before a. If compareFunction(a,b) returns a value equal to 0 for two elements a and b, then a and b will remain unchanged.
+
+
+
+function ascendingOrder(arr) {
+  return arr.sort(function(a, b) {
+    return a - b;
+  });
+}
+
+ascendingOrder([1, 5, 2, 3, 4]);
+This would return the value [1, 2, 3, 4, 5].
+
+function reverseAlpha(arr) {
+  return arr.sort(function(a, b) {
+    return a === b ? 0 : a < b ? 1 : -1;
+  });
+}
+
+reverseAlpha(['l', 'h', 'z', 'b', 's']);
+This would return the value ['z', 's', 'l', 'h', 'b'].
+
+////////////////////////////////////////////
+Split a String into an Array Using the split Method
+The split method splits a string into an array of strings. It takes an argument for the delimiter, which can be a character to use to break up the string or a regular expression. For example, if the delimiter is a space, you get an array of words, and if the delimiter is an empty string, you get an array of each character in the string.
+
+Here are two examples that split one string by spaces, then another by digits using a regular expression:
+
+const str = "Hello World";
+const bySpace = str.split(" ");
+
+const otherString = "How9are7you2today";
+const byDigits = otherString.split(/\d/);
+
+/// finds words in a string
+function splitify(str) {
+  // Add your code below this line
+  return str.split(/\W/);
+  // Add your code above this line
+}
+splitify("Hello World,I-am code");
+/////////////////////////////////////////////////////////Combine an Array into a String Using the join Method
+The join method is used to join the elements of an array together to create a string. It takes an argument for the delimiter that is used to separate the array elements in the string.
+
+Here's an example:
+
+const arr = ["Hello", "World"];
+const str = arr.join(" ");
+str would have a value of the string Hello World.
+
+////////////////////////////////////////////////////////////////////////////////////Apply Functional Programming to Convert Strings to URL Slugs
+// the global variable
+var globalTitle = "Winter Is Coming";
+
+// Add your code below this line
+function urlSlug(title) {
+  return title
+    .toLowerCase()
+    .trim()
+    .split(/\s+/)
+    .join("-");
+}
+// Add your code above this line
+
+var winterComing = urlSlug(globalTitle); // Should be "winter-is-coming"
+
+///////////////////////////////////////////////////////////////// Use the every Method to Check that Every Element in an Array Meets a Criteria
+The every method works with arrays to check if every element passes a particular test. It returns a Boolean value - true if all values meet the criteria, false if not.
+
+For example, the following code would check if every element in the numbers array is less than 10:
+
+const numbers = [1, 5, 8, 0, 10, 11];
+
+numbers.every(function(currentValue) {
+  return currentValue < 10;
+});
+The every method would return false here.
+//////////////////////////////////////////////////////////////// Use the some Method to Check that Any Elements in an Array Meet a Criteria
+The some method works with arrays to check if any element passes a particular test. It returns a Boolean value - true if any of the values meet the criteria, false if not.
+
+For example, the following code would check if any element in the numbers array is less than 10:
+
+const numbers = [10, 50, 8, 220, 110, 11];
+
+numbers.some(function(currentValue) {
+  return currentValue < 10;
+});
+The some method would return true.
+
+/////////////////////////////////////////////////////////////// Introduction to Currying and Partial Application
+The arity of a function is the number of arguments it requires. Currying a function means to convert a function of N arity into N functions of arity 1.
+
+In other words, it restructures a function so it takes one argument, then returns another function that takes the next argument, and so on.
+
+Here's an example:
+
+function unCurried(x, y) {
+  return x + y;
+}
+
+function curried(x) {
+  return function(y) {
+    return x + y;
+  }
+}
+
+const curried = x => y => x + y
+
+curried(1)(2)
+curried(1)(2) would return 3.
+
+This is useful in your program if you can't supply all the arguments to a function at one time. You can save each function call into a variable, which will hold the returned function reference that takes the next argument when it's available. Here's an example using the curried function in the example above:
+
+const funcForY = curried(1);
+console.log(funcForY(2)); // 3
+Similarly, partial application can be described as applying a few arguments to a function at a time and returning another function that is applied to more arguments. Here's an example:
+
+function impartial(x, y, z) {
+  return x + y + z;
+}
+
+const partialFn = impartial.bind(this, 1, 2);
+partialFn(10); // 13
+
+
+///////////////// We'll pass you an array of two numbers. Return the sum of those two numbers plus the sum of all the numbers between them. The lowest number will not always come first.
+
+function sumAll(arr) {
+  let sumBetween = 0;
+  for (let i = Math.min(...arr); i <= Math.max(...arr); i++) {
+    sumBetween += i;
+  }
+  return sumBetween;
+}
+
+sumAll([1, 4]);
+
+///////////////////////////// Diff Two Arrays
+Compare two arrays and return a new array with any items only found in one of the two given arrays, but not both. In other words, return the symmetric difference of the two arrays.
+function diffArray(arr1, arr2) {
+  return arr1
+    .concat(arr2)
+    .filter(item => !arr1.includes(item) || !arr2.includes(item));
+}
+
+diffArray([1, 2, 3, 5], [1, 2, 3, 4, 5]);
+
+Solution-2
+function diffArray(arr1, arr2) {
+  return [...diff(arr1, arr2), ...diff(arr2, arr1)];
+
+  function diff(a, b) {
+    return a.filter(item => b.indexOf(item) === -1);
+  }
+}
+
+////////////////////////////////////////////////// Seek and Destroy
+You will be provided with an initial array (the first argument in the destroyer function), followed by one or more arguments. Remove all elements from the initial array that are of the same value as these arguments.
+
+
+function destroyer(arr, ...valsToRemove) {
+  return arr.filter(elem => !valsToRemove.includes(elem));
+}
+
+Sol-2
+
+function destroyer(arr) {
+  var valsToRemove = Array.from(arguments).slice(1);
+  return arr.filter(function(val) {
+    return !valsToRemove.includes(val);
+  });
+}
+
+Sol-3
+
+function destroyer(arr) {
+  let valsToRemove = Object.values(arguments).slice(1);
+
+  for (let i = 0; i < arr.length; i++) {
+    for (let j = 0; j < valsToRemove.length; j++) {
+      if (arr[i] === valsToRemove[j]) {
+        delete arr[i];
+      }
+    }
+  }
+  return arr.filter(item => item !== null);
+}
+/////////////////////////////// Wherefore art thou
+Make a function that looks through an array of objects (first argument) and returns an array of all objects that have matching name and value pairs (second argument). Each name and value pair of the source object has to be present in the object from the collection if it is to be included in the returned array.
+
+function whatIsInAName(collection, source) {
+  // "What's in a name? that which we call a rose
+  // By any other name would smell as sweet.”
+  // -- by William Shakespeare, Romeo and Juliet
+  var srcKeys = Object.keys(source);
+
+  return collection.filter(function(obj) {
+    return srcKeys.every(function(key) {
+      return obj.hasOwnProperty(key) && obj[key] === source[key];
+    });
+  });
+}
+
+//////////////////////////////////////////////////Spinal Tap Case
+Convert a string to spinal case. Spinal case is all-lowercase-words-joined-by-dashes.
+
+spinalCase("This Is Spinal Tap") should return the string this-is-spinal-tap.
+
+spinalCase("thisIsSpinalTap") should return the string this-is-spinal-tap.
+
+spinalCase("The_Andy_Griffith_Show") should return the string the-andy-griffith-show.
+
+spinalCase("Teletubbies say Eh-oh") should return the string teletubbies-say-eh-oh.
+
+spinalCase("AllThe-small Things") should return the string all-the-small-things.
+
+function spinalCase(str) {
+  // Replace low-upper case to low-space-uppercase
+  str = str.replace(/([a-z])([A-Z])/g, "$1 $2");
+  // Split on whitespace and underscores and join with dash
+  return str
+    .toLowerCase()
+    .split(/(?:_| )+/)
+    .join("-");
+}
+
+Sol-2
+function spinalCase(str) {
+  // "It's such a fine line between stupid, and clever."
+  // --David St. Hubbins
+
+  return str
+    .split(/\s|_|(?=[A-Z])/)
+    .join("-")
+    .toLowerCase();
+}
+Code Explanation
+Split the string at one of the following conditions (converted to an array)
+a whitespace character [\s] is encountered
+underscore character [_] is encountered
+or is followed by an uppercase letter [(?=[A-Z])]
+Join the array using a hyphen (-)
+Lowercase the whole resulting string
+
+
+
+//////////////////////////////////////////////////////////////// Pig Latin
+Pig Latin is a way of altering English Words. The rules are as follows:
+
+- If a word begins with a consonant, take the first consonant or consonant cluster, move it to the end of the word, and add ay to it.
+
+- If a word begins with a vowel, just add way at the end.
+
+Sol-1
+function translatePigLatin(str) {
+  let consonantRegex = /^[^aeiou]+/;
+  let myConsonants = str.match(consonantRegex);
+  return myConsonants !== null
+    ? str
+        .replace(consonantRegex, "")
+        .concat(myConsonants)
+        .concat("ay")
+    : str.concat("way");
+}
+
+Sol-2
+function translatePigLatin(str) {
+  if (str.match(/^[aeiou]/)) return str + "way";
+
+  const consonantCluster = str.match(/^[^aeiou]+/)[0];
+  return str.substring(consonantCluster.length) + consonantCluster + "ay";
+}
+
+Sol-3
+function translatePigLatin(str) {
+  return str
+    .replace(/^[aeiou]\w*/, "$&way")
+    .replace(/(^[^aeiou]+)(\w*)/, "$2$1ay");
+}
+
+// test here
+translatePigLatin("consonant");
+///////////////////////////////////////////// Search and Replace
+Perform a search and replace on the sentence using the arguments provided and return the new sentence.
+
+First argument is the sentence to perform the search and replace on.
+
+Second argument is the word that you will be replacing (before).
+
+Third argument is what you will be replacing the second argument with (after).
+
+Note: Preserve the case of the first character in the original word when you are replacing it. For example if you mean to replace the word Book with the word dog, it should be replaced as Dog
+
+
+sol
+// Add new method to the String object, not overriding it if one exists already
+String.prototype.capitalize =
+  String.prototype.capitalize ||
+  function() {
+    return this[0].toUpperCase() + this.slice(1);
+  };
+
+const Util = (function() {
+  // Create utility module to hold helper functions
+  function textCase(str, tCase) {
+    // Depending if the tCase argument is passed we either set the case of the
+    // given string or we get it.
+    // Those functions can be expanded for other text cases.
+
+    if (tCase) {
+      return setCase(str, tCase);
+    } else {
+      return getCase(str);
+    }
+
+    function setCase(str, tCase) {
+      switch (tCase) {
+        case "uppercase":
+          return str.toUpperCase();
+        case "lowercase":
+          return str.toLowerCase();
+        case "capitalized":
+          return str.capitalize();
+        default:
+          return str;
+      }
+    }
+
+    function getCase(str) {
+      if (str === str.toUpperCase()) {
+        return "uppercase";
+      }
+      if (str === str.toLowerCase()) {
+        return "lowercase";
+      }
+      if (str === str.capitalize()) {
+        return "capitalized";
+      }
+      return "normal";
+    }
+  }
+
+  return {
+    textCase
+  };
+})();
+
+function myReplace(str, before, after) {
+  const { textCase } = Util;
+  const regex = new RegExp(before, "gi");
+  const replacingStr = textCase(after, textCase(before));
+
+  return str.replace(regex, replacingStr);
+}
+
+Sol-2
+
+function myReplace(str, before, after) {
+  // create a function that will change the casing of any number of letter in parameter "target"
+  // matching parameter "source"
+  function applyCasing(source, target) {
+    // split the source and target strings to array of letters
+    var targetArr = target.split("");
+    var sourceArr = source.split("");
+    // iterate through all the items of sourceArr and targetArr arrays till loop hits the end of shortest array
+    for (var i = 0; i < Math.min(targetArr.length, sourceArr.length); i++) {
+      // find out the casing of every letter from sourceArr using regular expression
+      // if sourceArr[i] is upper case then convert targetArr[i] to upper case
+      if (/[A-Z]/.test(sourceArr[i])) {
+        targetArr[i] = targetArr[i].toUpperCase();
+      }
+      // if sourceArr[i] is not upper case then convert targetArr[i] to lower case
+      else targetArr[i] = targetArr[i].toLowerCase();
+    }
+    // join modified targetArr to string and return
+    return targetArr.join("");
+  }
+
+  // replace "before" with "after" with "before"-casing
+  return str.replace(before, applyCasing(before, after));
+}
+
+Sol-3
+function myReplace(str, before, after) {
+  // Check if first character of argument "before" is a capital or lowercase letter and change the first character of argument "after" to match the case
+  if (/^[A-Z]/.test(before)) {
+    after = after[0].toUpperCase() + after.substring(1)
+  } else {
+    after = after[0].toLowerCase() + after.substring(1)
+  }
+
+  // return string with argument "before" replaced by argument "after" (with correct case)
+  return str.replace(before, after);
+}
+
+//////////////////////////////////////// Missing letters
+Find the missing letter in the passed letter range and return it.
+
+If all letters are present in the range, return undefined.
+
+fearNotLetter("abce") should return the string d.
+
+fearNotLetter("abcdefghjklmno") should return the string i.
+
+fearNotLetter("stvwx") should return the string u.
+
+fearNotLetter("bcdf") should return the string e.
+
+fearNotLetter("abcdefghijklmnopqrstuvwxyz") should return undefined.
+
+function fearNotLetter(str) {
+  for (let i = 1; i < str.length; ++i) {
+    if (str.charCodeAt(i) - str.charCodeAt(i - 1) > 1) {
+      return String.fromCharCode(str.charCodeAt(i - 1) + 1);
+    }
+  }
+}
+
+///////////////////////////////////////////////////// Sorted Union
+Write a function that takes two or more arrays and returns a new array of unique values in the order of the original provided arrays.
+
+In other words, all values present from all arrays should be included in their original order, but with no duplicates in the final array.
+
+The unique numbers should be sorted by their original order, but the final array should not be sorted in numerical order.
+
+
+function uniteUnique(...arrays) {
+  //make an array out of the given arrays and flatten it (using the spread operator)
+  const flatArray = [].concat(...arrays);
+
+  // create a Set which clears any duplicates since it's a regular set and not a multiset
+  return [...new Set(flatArray)];
+}
+
+function uniteUnique(...arr) {
+  return [...new Set(arr.flat())]
+}
+
+// Or as an arrow function
+const uniteUnique = (...arr) => [...new Set(arr.flat())]
+///////////////////////////////////////////////////////////////// Convert HTML Entities
+Convert the characters &, <, >, " (double quote), and ' (apostrophe), in a string to their corresponding HTML entities.
+
+function convertHTML(str) {
+  // Use Object Lookup to declare as many HTML entities as needed.
+  const htmlEntities = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&apos;"
+  };
+  //Use map function to return a filtered str with all entities changed automatically.
+  return str
+    .split("")
+    .map(entity => htmlEntities[entity] || entity)
+    .join("");
+}
+
+// test here
+convertHTML("Dolce & Gabbana");
+
+///////////////////////////////////////
+
+function convertHTML(str) {
+  // Use Object Lookup to declare as many HTML entities as needed.
+  const htmlEntities = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&apos;"
+  };
+  // Using a regex, replace characters with it's corresponding html entity
+  return str.replace(/([&<>\"'])/g, match => htmlEntities[match]);
+}
+
+// test here
+convertHTML("Dolce & Gabbana");
+
+///////////////////////////////////////////////////////////////////// Sum All Odd Fibonacci Numbers
+Given a positive integer num, return the sum of all odd Fibonacci numbers that are less than or equal to num.
+
+The first two numbers in the Fibonacci sequence are 1 and 1. Every additional number in the sequence is the sum of the two previous numbers. The first six numbers of the Fibonacci sequence are 1, 1, 2, 3, 5 and 8.
+
+function sumFibs(num) {
+  // Perform checks for the validity of the input
+  if (num <= 0) return 0;
+
+  // Create an array of fib numbers till num
+  const arrFib = [1, 1];
+  let nextFib = 0;
+
+  // We put the new Fibonacci numbers to the front so we
+  // don't need to calculate the length of the array on each
+  // iteration
+  while ((nextFib = arrFib[0] + arrFib[1]) <= num) {
+    arrFib.unshift(nextFib);
+  }
+
+  // We filter the array to get the odd numbers and reduce them to get their sum.
+  return arrFib.filter(x => x % 2 != 0).reduce((a, b) => a + b);
+}
+
+
+////////////////// Sum All Primes
+
+function sumPrimes(num) {
+  // Helper function to check primality
+  function isPrime(num) {
+    for (let i = 2; i <= Math.sqrt(num); i++) {
+      if (num % i == 0)
+        return false;
+    }
+    return true;
+  }
+
+  // Check all numbers for primality
+  let sum = 0;
+  for (let i = 2; i <= num; i++) {
+    if (isPrime(i))
+      sum += i;
+  }
+  return sum;
+}
+
+///////////////// Drop it
+Given the array arr, iterate through and remove each element starting from the first element (the 0 index) until the function func returns true when the iterated element is passed through it.
+
+function dropElements(arr, func) {
+  while (arr.length > 0 && !func(arr[0])) {
+    arr.shift();
+  }
+  return arr;
+}
+
+// test here
+dropElements([1, 2, 3, 4], function(n) {
+  return n >= 3;
+});
+
+SOl-2
+
+function dropElements(arr, func) {
+  let sliceIndex = arr.findIndex(func);
+  return arr.slice(sliceIndex >= 0 ? sliceIndex : arr.length);
+}
+
+// test here
+dropElements([1, 2, 3, 4], function(n) {
+  return n >= 3;
+});
+////////////////////////////////////////////// Steamroller
+Flatten a nested array. You must account for varying levels of nesting.
+
+Sol-1 recursive Pattern
+
+function steamrollArray(arr) {
+  const flattenedArray = [];
+  // Loop over array contents
+  for (let i = 0; i < arr.length; i++) {
+    if (Array.isArray(arr[i])) {
+      // Recursively flatten entries that are arrays
+      //  and push into the flattenedArray
+      flattenedArray.push(...steamrollArray(arr[i]));
+    } else {
+      // Copy contents that are not arrays
+      flattenedArray.push(arr[i]);
+    }
+  }
+  return flattenedArray;
+};
+
+or
+
+function steamrollArray(arr) {
+  const flat = [].concat(...arr);
+  return flat.some(Array.isArray) ? steamrollArray(flat) : flat;
+}
+
+////////////////////////////////////////////Binary Agents
+Return an English translated sentence of the passed binary string.
+
+function binaryAgent(str) {
+  return String.fromCharCode(
+    ...str.split(" ").map(function(char) {
+      return parseInt(char, 2);
+    })
+  );
+}
+
+///////////////////////////////////// 
+
+
+function addTogether() {
+  const [first, second] = arguments;
+  if (typeof(first) !== "number")
+    return undefined;
+  if (second === undefined)
+    return (second) => addTogether(first, second);
+  if (typeof(second) !== "number")
+    return undefined;
+  return first + second;
+}
+
+
+/////////////////////////////////////// Make a Person
+Fill in the object constructor with the following methods below:
+
+getFirstName()
+getLastName()
+getFullName()
+setFirstName(first)
+setLastName(last)
+setFullName(firstAndLast)
+Run the tests to see the expected output for each method. The methods that take an argument must accept only one argument and it has to be a string. These methods must be the only available means of interacting with the object.
+
+
+
+var Person = function(firstAndLast) {
+  let fullName = firstAndLast;
+
+  this.getFirstName = function() {
+    return fullName.split(" ")[0];
+  };
+
+  this.getLastName = function() {
+    return fullName.split(" ")[1];
+  };
+
+  this.getFullName = function() {
+    return fullName;
+  };
+
+  this.setFirstName = function(name) {
+    fullName = name + " " + fullName.split(" ")[1];
+  };
+
+  this.setLastName = function(name) {
+    fullName = fullName.split(" ")[0] + " " + name;
+  };
+
+  this.setFullName = function(name) {
+    fullName = name;
+  };
+};
+
+var bob = new Person("Bob Ross");
+bob.getFullName();
+
+//////////////////////////////////// Palindrome Checker https://www.freecodecamp.org/learn/javascript-algorithms-and-data-structures/javascript-algorithms-and-data-structures-projects/palindrome-checker
+Return true if the given string is a palindrome. Otherwise, return false.
+
+A palindrome is a word or sentence that's spelled the same way both forward and backward, ignoring punctuation, case, and spacing.
+
+function palindrome(str) {
+  console.log(str.replace(/[^a-zA-Z-0-9]|-/ig,''));
+  return str.toLowerCase().replace(/[^a-zA-Z-0-9]|-/ig,'').split('').reverse().join('') === str.toLowerCase().replace(/[^a-zA-Z-0-9]|-/ig,'');
+}
+//////////////////////////// Roman Numeral Converter
+Convert the given number into a roman numeral.
+
+function convertToRoman(num) {
+    if (isNaN(num))
+        return NaN;
+    var digits = String(+num).split(""),
+        key = ["","C","CC","CCC","CD","D","DC","DCC","DCCC","CM",
+               "","X","XX","XXX","XL","L","LX","LXX","LXXX","XC",
+               "","I","II","III","IV","V","VI","VII","VIII","IX"],
+        roman = "",
+        i = 3;
+    while (i--)
+        roman = (key[+digits.pop() + (i * 10)] || "") + roman;
+    return Array(+digits.join("") + 1).join("M") + roman;
+}
+
+convertToRoman(123);
+
+///////////////////////////////////// Caesars Cipher
+One of the simplest and most widely known ciphers is a Caesar cipher, also known as a shift cipher. In a shift cipher the meanings of the letters are shifted by some set amount.
+
+A common modern use is the ROT13 cipher, where the values of the letters are shifted by 13 places. Thus A ↔ N, B ↔ O and so on.
+
+////////////////////////////////////////// Telephone Number Validator
+Return true if the passed string looks like a valid US phone number.
+
+The user may fill out the form field any way they choose as long as it has the format of a valid US number. The following are examples of valid formats for US numbers (refer to the tests below for other variants):
+
+function telephoneCheck(str) {
+  let regx = /^1?(-| )?[0-9]{3}(-| )?[0-9]{3}(-| )?[0-9]{4}$|^1?(-| )?\([0-9]{3}\)(-| )?[0-9]{3}(-| )?[0-9]{4}$/
+  return regx.test(str);
+}
+
+
+
+
+
+///////////////////// Few tricks
+
+creating an copy of an array :
+
+x = [1,2,3,4,5]
+
+xCopy = [].concat(x);
+or 
+xCopy = x.slice()
+//////////////////////////////////////////////////////////////////////////////
+Array.from : The Array.from() static method creates a new, shallow-copied Array instance from an array-like or iterable object.
+console.log(Array.from('foo'));
+// expected output: Array ["f", "o", "o"]
+
+console.log(Array.from([1, 2, 3], x => x + x));
+// expected output: Array [2, 4, 6]
+
+// Generate a sequence of numbers
+// Since the array is initialized with `undefined` on each position,
+// the value of `v` below will be `undefined`
+Array.from({length: 5}, (v, i) => i);
+// [0, 1, 2, 3, 4]
+
+////////////////////////////////
+Object.values
+
+The Object.values() method returns an array of a given object's own enumerable property values, in the same order as that provided by a for...in loop. (The only difference is that a for...in loop enumerates properties in the prototype chain as well.)
+
+const object1 = {
+  a: 'somestring',
+  b: 42,
+  c: false
+};
+
+console.log(Object.values(object1));
+// expected output: Array ["somestring", 42, false]
+
+object.keys();
+
+Fetcch all arguments of a funcction using arguments.
+
+if we need an array of all arguments we can use [...arguments]
+
+uniteUnique([1, 3, 2], [5, 2, 1, 4], [2, 1]);
+
+  console.log(arguments); // { '0': [ 1, 3, 2 ], '1': [ 5, 2, 1, 4 ], '2': [ 2, 1 ] }
+  console.log([...arguments]) // [ [ 1, 3, 2 ], [ 5, 2, 1, 4 ], [ 2, 1 ] ]
+  Object.values(arguments); // [ [ 1, 3, 2 ], [ 5, 2, 1, 4 ], [ 2, 1 ] ]
+  Array.prototype.slice.call(arguments); // does the same thing
+
+function add(a,b){return a+b}
+let a=[1,2,3,4,5]
+a.reduce(add); // 15

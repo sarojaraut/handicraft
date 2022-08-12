@@ -56,7 +56,7 @@ explain plan - traditional way(corelated sub query makes 3 passes on emp table w
 • LAG
 • LEAD
 • Usage:  LAG ( field_name, num_recs ) OVER ( )
-• Return the value from a field when looking one record (or more) behind/ahead 
+• Return the value from a field when looking one record (or more) behind/ahead
 • Using the order specified
 • ORDER BY is required
 • Does not have to be order in the main query
@@ -85,7 +85,7 @@ FROM scott.emp
 
 These functions are analytic only, All three functions return a number, Difference between functions is how they handle ties
 
-RANK and DENSE_RANK will assign the same number to multiple records  with the same sort value, ROW_NUMBER assigns a unique number to each record. The highest value assigned by  ROW_NUMBER will be equal to COUNT(*) 
+RANK and DENSE_RANK will assign the same number to multiple records  with the same sort value, ROW_NUMBER assigns a unique number to each record. The highest value assigned by  ROW_NUMBER will be equal to COUNT(*)
 
 -------
 SELECT deptno, ename, sal
@@ -109,7 +109,7 @@ RANGE BETWEEN INTERVAL '10' DAY PRECEDING AND INTERVAL '10' DAY FOLLOWING -- Ana
 
 SELECT empno, ename, hiredate
 , COUNT(*) OVER ( ORDER BY hiredate
-RANGE BETWEEN 
+RANGE BETWEEN
 INTERVAL '1 3' DAY TO HOUR FOLLOWING
 AND INTERVAL '1-6' YEAR TO MONTH FOLLOWING ) AS
 
@@ -123,7 +123,7 @@ AND INTERVAL '1-6' YEAR TO MONTH FOLLOWING ) AS
 SELECT INTERVAL '3' DAY AS interv_1
 , INTERVAL '3 00:00:00' DAY TO SECOND AS interv_2
 , INTERVAL '72' HOUR AS interv_3
-, INTERVAL '4320' MINUTE AS interv_4 
+, INTERVAL '4320' MINUTE AS interv_4
 FROM dual;
 
 All of these express the interval three days, ensure to enclose the values within single quote otherwise you will get weird errors
@@ -185,8 +185,8 @@ ORDER BY deptno, empno, HIRE_YR;
 
 ---------
 
-You should probably avoid FIRST and LAST in favour of the FIRST_VALUE and LAST_VALUE Analytic Functions, which follow the normal analytic function syntax. 
-FIRST_VALUE 
+You should probably avoid FIRST and LAST in favour of the FIRST_VALUE and LAST_VALUE Analytic Functions, which follow the normal analytic function syntax.
+FIRST_VALUE
   { (expr) [ {RESPECT | IGNORE} NULLS ]
   | (expr [ {RESPECT | IGNORE} NULLS ])
   }
@@ -195,7 +195,7 @@ FIRST_VALUE
 SELECT empno,
        deptno,
        sal,
-       FIRST_VALUE(sal) IGNORE NULLS 
+       FIRST_VALUE(sal) IGNORE NULLS
          OVER (PARTITION BY deptno ORDER BY sal) AS lowest_in_dept
 FROM   emp;
 
@@ -220,7 +220,7 @@ FROM   emp;
 -------------
 SELECT empno, deptno, sal, AVG(sal) OVER (PARTITION BY deptno) AS avg_dept_sal FROM   emp;
 
-Defining the PARTITOIN BY and ORDER BY clauses on indexed columns (ordered in accordance with the PARTITION CLAUSE and then the ORDER BY clause in analytic function) will provide optimum performance. 
+Defining the PARTITOIN BY and ORDER BY clauses on indexed columns (ordered in accordance with the PARTITION CLAUSE and then the ORDER BY clause in analytic function) will provide optimum performance.
 
 SELECT deptno
 ,      ename

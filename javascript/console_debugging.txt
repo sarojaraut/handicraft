@@ -1,0 +1,8 @@
+
+console.dir(domElement);
+console.table(arrayOrObject);
+console.log({itemInsteadofcommaSeparatedNameandValue});
+console.time();
+console.timeEnd();
+
+you ccan add debugger inside your code and the proccess will halt their and we can use the browser debugger tool for next step and etc.

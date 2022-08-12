@@ -1,4 +1,4 @@
- 
+
 
 
 
@@ -23,7 +23,7 @@ If the value for DEL_LF_ROWS/LF_ROWS is greater than 2, or LF_ROWS is lower than
 
 If any process is consuming majro portion of CPU or Memory find out the process details
 
-consider the option  of reduce context switch using forall bulk binding, insertall instead of individual inserts, merge instead of separate insert update, doing it in sql way if possible, analytic queries, pivoting/unpivoting 
+consider the option  of reduce context switch using forall bulk binding, insertall instead of individual inserts, merge instead of separate insert update, doing it in sql way if possible, analytic queries, pivoting/unpivoting
 
 ps -aef|grep 5946
 
@@ -33,22 +33,21 @@ where p.spid = 5946
 and s.paddr = p.addr;
 
 
-
-Various tools like EXPLAIN PLAN, Using Autotrace, TKPROF, TOP, VMSTAT, MEMSTAT, can give fair amount of indication about what could be the problem. Once you understand where the time is being spent then you can take remedy action.
+Various tools like EXPLAIN PLAN, Using Autotrace, TKPROF, c Once you understand where the time is being spent then you can take remedy action.
 
 -------------
 First you have to understand that the database itself is never slow or fast�it has a constant speed. The sessions connected to the database, however, slow down when they hit a bump in the road. To resolve a session performance issue, you need to identify the bump and remove it.
 
 In my experience, the vast majority of poorly performing execution plans can be because of two reasons >
 1. Optimizer may not have sufficient information to correctly estimate cardinalities (estimated row counts) -> dbms_stats.create_extended_stats(null,'customers', '(cust_state_province,country_id)');
-2. Optimiser does understand the data distribution. -> 
+2. Optimiser does understand the data distribution. ->
  By adding the FOR COLUMNS clause, you can have the database create the new column group as well as collect statistics for it, all in one step, as shown here:
 exec dbms_Stats.gather_table_stats(
      ownname=>null,-
      tabname=>'customers',-
      method_opt=>'for all columns size skewonly,-
      for columns (cust_state_province,country_id) size skewonly');
-     
+
 exec dbms_stats.gather_table_stats(null,'customers',
      method_opt=>'for all columns size skewonly,
      for columns (lower(cust_state_province)) size skewonly');
@@ -65,17 +64,17 @@ Monitoring the session in v$session and getting more information about the probl
 1. What is the query?
 2. What is the execution plan.
 3. What is the state of the session during most of the time of execution(idle, processing or waiting)
-4. If the session is waiting then how long the session has been waiting(seconds_in_wait is curren wait and wait_time is last wait time, wait_time is in centi second), A very long wait usually indicates some sort of bottleneck. 
+4. If the session is waiting then how long the session has been waiting(seconds_in_wait is curren wait and wait_time is last wait time, wait_time is in centi second), A very long wait usually indicates some sort of bottleneck.
 5. if it is waiting then retrive more information on the event it is waiting (event column of v$session) "enq: TX - row lock contention" or "db file sequential read" on DML lock identify the object name and row number. if you see event "db file sequential read" then you know that the session is waiting for I/O from the disk to complete. To make the session go faster, you have to reduce that waiting period. There are several ways to reduce the wait one of the simple option is moving the data object to a faster disk or tune the query to do reduce the I/O required. for finding the data object refer the P1 and P2 column which shows the object id and segment id.
 If the wait event is "enq: TX - row lock contention" then find out the exact object and row (dbms_rowid.rowid_create) which is locked and by which session.
 6. if session is idle then it is not a database problem, may be the application server or ETL server is causing the delay.
 7. Is the number of block I/O required is higher compared to the number of rows fetched, then may be rows are chained and rebuilding the table or index might be the solution.
-8. OS level CPU/Memory spike is observed during the query running? May be because of rapid switching of logs, 
+8. OS level CPU/Memory spike is observed during the query running? May be because of rapid switching of logs,
 9. Read consistency is causing the problem?
 10. Is the index fragmented because of vast DML poeration? If the value for DEL_LF_ROWS/LF_ROWS is greater than 2, or LF_ROWS is lower than LF_BLKS, or HEIGHT is 4 then the index should be rebuilt.
 12. Is the problem is with insert query during vast number of record inserttion, use of APEND hint direct path load, nologging might be the solution?
 13. is the problem is during deleting major portion of rows from a table, then truncate and insert from tem table can be the solution? or partitioning to enble fast data purgning using partition drop might be the solution.
-14. is it causing a full table scan and should we create a new index, what type of index, normal btree, bitmap, bitmap joined, reverse key, function based. 
+14. is it causing a full table scan and should we create a new index, what type of index, normal btree, bitmap, bitmap joined, reverse key, function based.
 15. Should we use a GTT or IOT
 
 
@@ -163,18 +162,18 @@ Materialised View
 
 SELECT /*+ MERGE(v) */ e1.last_name, e1.salary, v.avg_salary
    FROM employees e1,
-   (SELECT department_id, avg(salary) avg_salary 
+   (SELECT department_id, avg(salary) avg_salary
       FROM employees e2
-      GROUP BY department_id) v 
+      GROUP BY department_id) v
    WHERE e1.department_id = v.department_id AND e1.salary > v.avg_salary;
-   
+
 The NO_QUERY_TRANSFORMATION hint instructs the optimizer to skip all query transformations, including but not limited to OR-expansion, view merging, subquery unnesting, star transformation, and materialized view rewrite. For example:
 
 The NO_USE_HASH hint instructs the optimizer to exclude hash joins when joining each specified table to another row source using the specified table as the inner table.  /*+ NO_USE_HASH(e d) */
-The NO_USE_NL hint instructs the optimizer to exclude nested loops joins when joining each specified table to another row source using the specified table as the inner table. /*+ NO_USE_NL(l h) */ 
+The NO_USE_NL hint instructs the optimizer to exclude nested loops joins when joining each specified table to another row source using the specified table as the inner table. /*+ NO_USE_NL(l h) */
 The ORDERED hint instructs Oracle to join tables in the order in which they appear in the FROM clause. Oracle recommends that you use the LEADING hint, which is more versatile than the ORDERED hint.
 /*+ FULL(hr_emp) PARALLEL(hr_emp, 5) */
-/*+ FULL(hr_emp) PARALLEL(hr_emp, DEFAULT) */ 
+/*+ FULL(hr_emp) PARALLEL(hr_emp, DEFAULT) */
 -- Specifying DEFAULT or no value signifies that the query coordinator should examine the settings of the initialization parameters to determine the default degree of parallelism.
 The STAR_TRANSFORMATION hint instructs the optimizer to use the best plan in which the transformation has been used. /*+ STAR_TRANSFORMATION */
 
@@ -183,15 +182,15 @@ The STAR_TRANSFORMATION hint instructs the optimizer to use the best plan in whi
 -----------------
 First you have to understand that the database itself is never slow or fast�it has a constant speed. The sessions connected to the database, however, slow down when they hit a bump in the road. To resolve a session performance issue, you need to identify the bump and remove it.
 
-An Oracle Database session is always in one of three states: 
+An Oracle Database session is always in one of three states:
 
 Idle. Not doing anything�just waiting to be given some work.
 Processing. Doing something useful�running on the CPU.
 Waiting. Waiting for something, such as a block to come from disk or a lock to be released.
 
 select sid, state, event
-from v$session 
-where username = 'XXX'; 
+from v$session
+where username = 'XXX';
 
 SID   STATE              EVENT
 ����� �����������������  ����������������������������
@@ -200,10 +199,10 @@ SID   STATE              EVENT
 
 You must look at the STATE column first to determine whether the session is waiting or working and then inspect the EVENT column.
 
-After you determine that a session is waiting for something, the next thing you need to find out is how long the session has been waiting. A very long wait usually indicates some sort of bottleneck. 
+After you determine that a session is waiting for something, the next thing you need to find out is how long the session has been waiting. A very long wait usually indicates some sort of bottleneck.
 
 Query for displaying sessions, session state, and wait details
- 
+
 col "Description" format a50
 select sid,
         decode(state, 'WAITING','Waiting',
@@ -220,7 +219,7 @@ where username = 'ARUP';
 
 Output:
 
- 
+
 SID   STATE       Description
 ����� ����������  �������������������������������������������������������
 2832  Working     Last waited 2029 secs for SQL*Net message from client
@@ -234,7 +233,7 @@ Session 4208 is idle, so any complaints that session 4208 is slow just aren�t 
 
 The story of session 3346 is different. This session is truly a bottleneck to the application. Now that you know why this session appears slow�it is waiting for a row lock�the next logical question is which session holds that lock.
 
-select 
+select
   blocking_session B_SID,
   blocking_instance B_Inst
 from v$session
@@ -252,7 +251,7 @@ select row_wait_obj#,
        row_wait_file#,
        row_wait_block#,
        row_wait_row#
-from v$session 
+from v$session
 where sid = 3346;
 
 ROW_WAIT_OBJ#  ROW_WAIT_FILE#  ROW_WAIT_BLOCK#  ROW_WAIT_ROW#
@@ -260,7 +259,7 @@ ROW_WAIT_OBJ#  ROW_WAIT_FILE#  ROW_WAIT_BLOCK#  ROW_WAIT_ROW#
 241876         1024            2307623          0
 
 To get the object information:
- 
+
 select owner, object_type, object_name, data_object_id
 from dba_objects
 where object_id = 241876;
@@ -269,20 +268,20 @@ OWNER  OBJECT_TYPE  OBJECT_NAME   DATA_OBJECT_ID
 �����  ������������ ������������  ��������������
 ARUP   TABLE        T1                    241877
 
-The output shows that some row in the T1 table is the point of the row lock contention. But which specific row is locked? That data is available in three V$SESSION view 
+The output shows that some row in the T1 table is the point of the row lock contention. But which specific row is locked? That data is available in three V$SESSION view
 
-REM  1. owner 
-REM  2. table name 
+REM  1. owner
+REM  2. table name
 REM  3. data_object_id
-REM  4. relative file ID 
+REM  4. relative file ID
 REM  5. block ID
-REM  6. row Number 
+REM  6. row Number
 REM
 select *
 from &1..&2
 where rowid =
         dbms_rowid.rowid_create (
-                rowid_type      =>  1, 
+                rowid_type      =>  1,
                 object_number   => &3,
                 relative_fno    => &4,
                 block_number    => &5,
@@ -295,15 +294,15 @@ SQL> @rowinfo ARUP T1 241877 1024 2307623 0
 COL1  C
 ����� �
   1   x
-  
+
 The output above shows the specific row on which a lock is being requested but that is locked by another session. So far you have identified not only the source session of the locking but the specific row being locked as well.
 
 More on the Session
 
-select SID, osuser, machine, terminal, service_name, 
+select SID, osuser, machine, terminal, service_name,
        logon_time, last_call_et
 from v$session
-where username = 'ARUP'; 
+where username = 'ARUP';
 
 SID   OSUSER  MACHINE   TERMINAL  SERVICE_NAME  LOGON_TIME LAST_CALL_ET
 ����� ������  �������   ��������  ������������  ���������� ������������
@@ -346,7 +345,7 @@ SQL_FULLTEXT
 update t1 set col2 = 'y' where col1 = 1
 
 Another major cause of contention is disk I/O. When a session retrieves data from the database data files on disk to the buffer cache, it has to wait until the disk sends the data. This wait shows up for that session as �db file sequential read� (for index scans) or �db file scattered read� (for full-table scans) in the EVENT column, as shown below:
- 
+
 select event
 from v$session
 where sid = 3011;
@@ -365,10 +364,10 @@ Tune the I/O subsystem to return data faster.
 To find the table causing a wait, you will again use the V$SESSION view. The view�s P1 and P2 columns provide information about the segment the session is waiting for. Listing 7 shows a query of P1 and P2, and the output.
 
 Code Listing 7: Checking data access waits
- 
+
 select SID, state, event, p1, p2
 from v$session
-where username = 'ARUP'; 
+where username = 'ARUP';
 
 SID  STATE     EVENT                   P1 P2
 ���� �������   ����������������������� �� ����
@@ -379,7 +378,7 @@ The P1 column shows the file ID, and the P2 column shows the block ID.
 select owner, segment_name
 from dba_extents
 where file_id = 5
-and 3011 between block_id 
+and 3011 between block_id
 and block_id + blocks;
 
 OWNER  SEGMENT_NAME
@@ -392,12 +391,12 @@ You can move the table to a high-speed disk for faster I/O, or, alternatively, y
 Part - 2 - Diagnose the Past
 
 select sid from v$session  where username = 'ARUP';
- 
+
  SID
 �����
   37
-  
-History of wait events in a specific session 
+
+History of wait events in a specific session
 
 set lines 120 trimspool on
 col event head "Waited for" format a30
@@ -435,23 +434,23 @@ The �Max Wait (ms)� column shows the maximum time the session had to wait fo
 
 Although the V$SESSION_EVENT view shows what the session waited for earlier, it doesn�t show when. That information is visible in another view�V$ACTIVE_SESSION_HISTORY
 
-Although wait events are great for helping with understanding the speed bumps the sessions experience, they do not show another important attribute of sessions: the use of resources such as CPU, I/O, and memory. A resource-hogging session deprives other sessions of the same resources, thus causing performance issues. When the root of the problem is that the session is consuming too much CPU, you should look at resource consumption�not the events waited for�by a session. 
+Although wait events are great for helping with understanding the speed bumps the sessions experience, they do not show another important attribute of sessions: the use of resources such as CPU, I/O, and memory. A resource-hogging session deprives other sessions of the same resources, thus causing performance issues. When the root of the problem is that the session is consuming too much CPU, you should look at resource consumption�not the events waited for�by a session.
 
 CPU Spike
 
-Output of the top command 
-top - 10:56:49 up 18 days, 18:48,  4 users,  load average: 1.02, 0.92, 0.48 
-Tasks: 180 total,   2 running, 178 sleeping,   0 stopped,   0 zombie 
+Output of the top command
+top - 10:56:49 up 18 days, 18:48,  4 users,  load average: 1.02, 0.92, 0.48
+Tasks: 180 total,   2 running, 178 sleeping,   0 stopped,   0 zombie
 Cpu(s): 49.8%us,  0.5%sy,  0.0%ni, 49.2%id,  0.5%wa,  0.0%hi,  0.0%si,  0.0%st
-Mem:   1815256k total,  1771772k used,    43484k free,    66120k buffers 
-Swap:  2031608k total,   734380k used,  1297228k free,   747740k cached 
- 
+Mem:   1815256k total,  1771772k used,    43484k free,    66120k buffers
+Swap:  2031608k total,   734380k used,  1297228k free,   747740k cached
+
   PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
  5946 oracle    25   0  706m 177m 159m R  100 10.0   9:20.26 oracle
  6104 oracle    15   0  2324 1060  800 R    1  0.1   0:00.12 top
 31446 oracle    15   0  688m 135m 129m S    0  7.7   0:08.24 oracle
 
-In the output in Listing 2, you can see that the process with ID 5946 consumes the most CPU (100 percent) and memory (10 percent) and therefore should be the focus of your attention. To find out more about the process, enter the following command at the UNIX prompt: 
+In the output in Listing 2, you can see that the process with ID 5946 consumes the most CPU (100 percent) and memory (10 percent) and therefore should be the focus of your attention. To find out more about the process, enter the following command at the UNIX prompt:
 $ ps -aef|grep 5946
 
 oracle    5946  5945 63 10:59 ? 00:01:52 oracleD112D2 (DESCRIPTION=(LOCAL=YES)(ADDRESS=(PROTOCOL=beq)))
@@ -469,7 +468,7 @@ SID
 
 Once you know the SID, you can get everything you need to know about the session�the user who established the session, the machine it came from, the operating system user, the SQL it is executing, and so on�from the V$SESSION view.
 
-Then you need to know if the CPU consumption was recent or if the session has been chewing it up since the beginning. This is where the V$SESSTAT view comes in very handy�it shows the resource consumption (CPU in this case) by a specific session. To find out the CPU used by session 37, you would use the following query: 
+Then you need to know if the CPU consumption was recent or if the session has been chewing it up since the beginning. This is where the V$SESSTAT view comes in very handy�it shows the resource consumption (CPU in this case) by a specific session. To find out the CPU used by session 37, you would use the following query:
 
 select s.value
 from v$sesstat s, v$statname n
@@ -483,7 +482,7 @@ VALUE
 
 The output shows the number of CPU �ticks� that have been consumed by this session since it started. Considering that this session has been running for about two minutes, the CPU consumption is pretty high, so it is likely that this session has been consuming CPU all the time. Again, checking the session�s other details, such as the SQL it is executing, makes it fairly easy to understand why this is the case
 
-Let�s revisit the current problem by checking the CPU consumption once again with this: 
+Let�s revisit the current problem by checking the CPU consumption once again with this:
 select s.valuez
 from v$sesstat s, v$statname n
 where s.sid = 37
@@ -496,7 +495,7 @@ VALUE
 
 Now the result�the CPU used�is 69,724. Note that this number is larger than the number the last time I checked CPU usage (47,379). This is because the statistic value increases over time.
 
-All session statistics 
+All session statistics
 
 select name, value
 from v$sesstat s, v$statname n
@@ -526,7 +525,7 @@ DB time                                     70007
 CPU used by this session                    69724
 
 
-In the output, note the �table scan rows gotten� statistic value: 1.0236E+10 �about 10 billion rows( 1.0236E+10 = 10,236,000,000)! This is indeed a very high number of rows to be accessed by one session in two minutes.  
+In the output, note the �table scan rows gotten� statistic value: 1.0236E+10 �about 10 billion rows( 1.0236E+10 = 10,236,000,000)! This is indeed a very high number of rows to be accessed by one session in two minutes.
 The value for the �consistent gets� statistic is 25,898,543�about 25.9 million blocks read from the buffer cache. The high number of buffer gets takes up a considerable amount of CPU.
 Also note the �parse count (total)� statistic, a very high number at 143,292. It means that the session had to parse�not just execute�SQL statements that many times in about two minutes, which is quite unusual.
 Therefore, you surmise from the output that there are two causes of high CPU usage for this session: a high number of buffer gets and a high number of parses.
@@ -534,7 +533,7 @@ Also note two other sets of statistics: �session pga memory max� and �sess
 
 Redo Spike
 
-Occasionally you may have a performance issue that will not appear as clearly at the OS level as CPU and memory consumption. One such case is redo generation by the database instance, which, in turn, increases both the rapid switching of redo logs and the creation rate and number of archived logs. This may cause an increase in overall I/O on file systems, causing a systemwide performance issue. To alleviate this type of issue, you need to locate the session or sessions that caused the generation of high amounts of redo, but looking at OS metrics will not provide any insights into the offending session. In this case, you need to look at the sessions responsible for most of the load: the sessions generating maximum redo. Again, this information is available quite easily in the same V$SESSTAT view. The following query shows the sessions generating the most redo: 
+Occasionally you may have a performance issue that will not appear as clearly at the OS level as CPU and memory consumption. One such case is redo generation by the database instance, which, in turn, increases both the rapid switching of redo logs and the creation rate and number of archived logs. This may cause an increase in overall I/O on file systems, causing a systemwide performance issue. To alleviate this type of issue, you need to locate the session or sessions that caused the generation of high amounts of redo, but looking at OS metrics will not provide any insights into the offending session. In this case, you need to look at the sessions responsible for most of the load: the sessions generating maximum redo. Again, this information is available quite easily in the same V$SESSTAT view. The following query shows the sessions generating the most redo:
 select sid, value
 from v$sesstat s, v$statname n
 where n.statistic# = s.statistic#
@@ -549,12 +548,12 @@ order by value desc;
  26     571324
 
  It�s clear from the output that SID 13 produced most of the redo, followed by SID 10, and so on.
- 
-Here are some other useful statistics visible in the V$SESSTAT view: 
+
+Here are some other useful statistics visible in the V$SESSTAT view:
 
 physical reads: the number of database blocks retrieved from disk
 db block changes: the number of database blocks changed in the session
-bytes sent via SQL*Net to client: the bytes received from the client over the network, which is used to determine the data traffic from the client 
+bytes sent via SQL*Net to client: the bytes received from the client over the network, which is used to determine the data traffic from the client
 These are just a few of the 604 such statistics available in the V$SESSTAT view.
 --
 --
@@ -565,9 +564,9 @@ SELECT *
   2    FROM t t1
   3   WHERE t1.object_type = 'TABLE'
   4     AND t1.object_id > (SELECT MAX(t2.object_id) - 500000 FROM t t2);
-  
-Here is the slow query I would like to tune, along with its plan: 
- 
+
+Here is the slow query I would like to tune, along with its plan:
+
 SQL> SELECT *
   2    FROM t t1
   3   WHERE t1.object_type = 'TABLE'
@@ -601,8 +600,8 @@ Predicate Information (identified by operation id):
   10 - access("T1"."OBJECT_TYPE"='TABLE')
 
 
- 
- Here is the query and the faster plan I would like it to use:  
+
+ Here is the query and the faster plan I would like it to use:
 
 SQL> SELECT MAX(t2.object_id) - 500000 FROM t t2;
 
@@ -643,13 +642,13 @@ SQL> select /*+ opt_param( '_b_tree_bitmap_plans', 'FALSE' ) */ *
   2    FROM t t1
   3   WHERE t1.object_type = 'TABLE'
   4     AND t1.object_id > (SELECT MAX(t2.object_id) - 500000 FROM t t2);
-  
+
 --
 -- On Constraints, Metadata, and Truth : By Tom Kyte
 --
 
 Many people think of constraints as a data integrity thing, and it�s true�they are. But constraints are used by the optimizer as well when determining the optimal execution plan. The optimizer takes as inputs
- 
+
 The query to optimize
 All available database object statistics
 System statistics, if available (CPU speed, single-block I/O speed, and so on�metrics about the physical hardware)
@@ -660,7 +659,7 @@ People tend to skip constraints in a data warehouse/reporting system. The argume
 
 If you have a view containing union of two tables and two tables contains mutually exclusive data(e.g one contains object_type=table and  other objects type=view) and these are defined as constraint. Any query on the view with filter as object_type=table will only access the first table.
 
-if you have a index on not null column and you execute count(*) it will use the index by default(INDEX FAST FULL SCAN). if you donot put the not null constraint it will be a full table scan. (if all columns in an index key are null, no entry will be made in the index), 
+if you have a index on not null column and you execute count(*) it will use the index by default(INDEX FAST FULL SCAN). if you donot put the not null constraint it will be a full table scan. (if all columns in an index key are null, no entry will be made in the index),
 
 select * from t where object_type is null;
 That shows that if OBJECT_TYPE is nullable, the optimizer will not (in fact, cannot) use the index to satisfy �OBJECT_TYPE IS NULL.� If we add an attribute to the index that is not null, the plan will change, however. Here I�ll add the constant zero to the index. (Any not null column will do, and in this case, I just need something not null, and zero is very small and known to be not null.)
@@ -696,7 +695,7 @@ SQL> create or replace view emp_dept
   2    as
   3    select emp.ename, dept.dname
   4      from emp, dept
-  5     where emp.deptno = dept.deptno; 
+  5     where emp.deptno = dept.deptno;
 View created.
 
 SQL> begin
@@ -704,7 +703,7 @@ SQL> begin
   3           ( user, 'EMP', numrows=>1000000, numblks=>100000 );
   4       dbms_stats.set_table_stats
   5           ( user, 'DEPT', numrows=>100000, numblks=>10000 );
-  6    end; 
+  6    end;
   7    /
 PL/SQL procedure successfully completed.
 
@@ -722,20 +721,20 @@ insert into t (a)
  select r+1 from data where r+1 <= 100
  )
  select * from data
- 
+
 In short, the index clustering factor is a measure of how many I/Os the database would perform if it were to read every row in that table via the index in index order.
 If the rows of a table on disk are sorted in about the same order as the index keys, the database will perform a minimum number of I/Os on the table to read the entire table via the index. That is because the next row needed from an index key would likely be the next row in the table block as well. The query would not be skipping all over the table to find row after row�they are naturally next to each other on the block. Conversely, if the rows in the table are not in the same order on disk as the index keys�if the data is scattered�the query will tend to perform the maximum number of I/Os on the table, as many as one I/O for every row in the table. That is because as the database scans through the index, the next row needed will probably not be on the same block as the last row. The database will have to discard that block and get another block from the buffer cache. The query will end up reading every block from the buffer as many times as it has rows on it.
 
-So if a table and an index key are in about the same order, the clustering factor will be near the number of blocks in the table and the index will be useful for very large index range scans and for retrieving numerous rows from the table. On the other hand, if the data is randomly scattered, the clustering factor will be near the number of rows in the table, and given that the number of rows in a table is usually at least an order of magnitude more than the number of blocks, the index will be less efficient for returning numerous rows. 
+So if a table and an index key are in about the same order, the clustering factor will be near the number of blocks in the table and the index will be useful for very large index range scans and for retrieving numerous rows from the table. On the other hand, if the data is randomly scattered, the clustering factor will be near the number of rows in the table, and given that the number of rows in a table is usually at least an order of magnitude more than the number of blocks, the index will be less efficient for returning numerous rows.
 
-For example, if a table is 100 blocks in size and has 100 rows per block, an index with a clustering factor of 100 (near the number of blocks) will perform about 2 I/Os against the table to retrieve 200 rows. That is because when the database reads the first table block to get row #1, rows 2�100 are probably on that same block, so the query will be able to get the first 100 rows by reading the table block once. The process will be similar for rows 101�200. 
+For example, if a table is 100 blocks in size and has 100 rows per block, an index with a clustering factor of 100 (near the number of blocks) will perform about 2 I/Os against the table to retrieve 200 rows. That is because when the database reads the first table block to get row #1, rows 2�100 are probably on that same block, so the query will be able to get the first 100 rows by reading the table block once. The process will be similar for rows 101�200.
 
 If the index has a clustering factor of 10,000�the number of rows in the table�the number of I/Os required against the table will be approximately 200, even though there are only 100 blocks! That is because the first row in the index will be on a different block than the second row, which, in turn, will be on a different block than the third row, and so on�the database will probably never be able to get more than one row from a table block at a time.
 
 SQL> create table organized
   2  as
   3  select x.*
-  4    from (select * from stage 
+  4    from (select * from stage
              order by object_name) x
   5  /
 Table created.
@@ -743,7 +742,7 @@ Table created.
 SQL> create table disorganized
   2  as
   3  select x.*
-  4    from (select * from stage 
+  4    from (select * from stage
           order by dbms_random.random) x
   5  /
 Table created.
@@ -779,10 +778,10 @@ PL/SQL procedure successfully completed.
 
 SQL> select table_name, blocks, num_rows from user_tables where table_name like '%ORGANIZED' order by 1;
 
-TABLE_NAME        BLOCKS   NUM_ROWS  
-����������������  �������  ������� 
-DISORGANIZED      1064     72839  
-ORGANIZED         1064     72839  
+TABLE_NAME        BLOCKS   NUM_ROWS
+����������������  �������  �������
+DISORGANIZED      1064     72839
+ORGANIZED         1064     72839
 
 SQL> select table_name, index_name, clustering_factor  from user_indexes  where table_name like '%ORGANIZED' order by 1;
 
@@ -793,7 +792,7 @@ ORGANIZED       ORGANIZED_IDX                1038
 
 As you can see in Listing 1, both tables have the same number of rows and the same number of blocks. That is expected�they contain exactly the same rows, just in a different order. But when I look at the clustering factor, I see a large difference between the two. The ORGANIZED index has a clustering factor very near the number of blocks in the table, whereas the DISORGANIZED index has a clustering factor near the number of rows in the table. Again, this clustering factor metric is a measure of how many I/Os the database will perform against the table in order to read every row via the index. I can verify this fact by executing a query with tracing enabled that will, in fact, read every row of the table via the index. I�ll do that by using an index hint to force the optimizer to use my index and count the non-null occurrences of a nullable column that is not in the index. That will force the database to go from index to table for every single row:
 
- 
+
 SQL> select /*+ index( organized organized_idx) */
   2    count(subobject_name)
   3    from organized;
@@ -814,7 +813,7 @@ Reviewing the TKPROF report for reading every row via the index, I discover the 
 
 Code Listing 2: Information on index scans on both tables
 
- 
+
 select /*+ index( organized organized_idx) */
   count(subobject_name)
  from organized
@@ -842,7 +841,7 @@ So, for one table, the database performs 1,401 total I/Os to retrieve exactly th
 Obviously, one of these indexes is going to be more useful for retrieving a larger number of rows than the other. If I am going to read more than 1,038 blocks of the table via the index, I certainly should be doing a full table scan instead of using an index. I can observe this fact as well, by using autotrace on a few queries against both tables, as shown in Listing 3.
 
 Code Listing 3: Comparing costs of using an index on two tables
- 
+
 SQL> select * from organized where object_name like 'F%';
 
 ����������������������������������������������������������������������������
@@ -863,16 +862,16 @@ SQL> select * from disorganized where object_name like 'F%';
 |*  2 |   INDEX RANGE SCAN          | DISORGANIZED_IDX |  149 |       |    3 |
 
 
- 
 
-As you can see in Listing 3, both plans expect to return the same number of rows: 149. Both plans are using an index range scan. But the two plans have radically different costs: one has a low cost of 6 and the other a much higher cost of 152�even though both plans are going after exactly the same set of rows from two tables that contain the same data! The reason for the cost difference is easy to explain: the optimizer computes the cost column value as a function of the number of expected I/Os and the CPU cost. For this simple query, the CPU cost is negligible, so most of the cost is simply the number of I/Os. 
+
+As you can see in Listing 3, both plans expect to return the same number of rows: 149. Both plans are using an index range scan. But the two plans have radically different costs: one has a low cost of 6 and the other a much higher cost of 152�even though both plans are going after exactly the same set of rows from two tables that contain the same data! The reason for the cost difference is easy to explain: the optimizer computes the cost column value as a function of the number of expected I/Os and the CPU cost. For this simple query, the CPU cost is negligible, so most of the cost is simply the number of I/Os.
 
 Walking through the first plan, I see there is a cost of 3 for using the index for the ORGANIZED table and index�about three I/Os against the index, which makes sense. The query will hit the root block, branch, and probably the leaf block. Then the query will be doing about three more I/Os against the table, because the rows needed are all next to each other on a few database blocks, for a total cost of 6. The DISORGANIZED index, on the other hand, does the math a little differently. The plan still has the same three I/Os against the index�that won�t change�but because the rows needed from the table are not next to each other, the optimizer estimates that the query will have to perform an I/O against the table for every row it retrieves, and its estimated cost for 149 rows is 149 rows + 3 I/Os = 152.
 
 If I change the query slightly, I can see what kind of effect this might have on the query plans shown in Listing 4.
 
 Code Listing 4: Changing queries, changing costs
- 
+
 SQL> select * from organized where object_name like 'A%';
 
 ����������������������������������������������������������������������������
@@ -901,7 +900,7 @@ In fact, I have enough information to figure out when the optimizer would stop u
 
 Many of you might think the following demonstration is not possible, but it is. I�ll start with the tables:
 
- 
+
 SQL> create table p
   2  ( x int,
   3    y int,
@@ -915,19 +914,19 @@ SQL> create table c
   2  ( x int,
   3    y int,
   4    z int,
-  5    constraint c_fk_p 
-  6    foreign key (x,y) 
+  5    constraint c_fk_p
+  6    foreign key (x,y)
   7    references p(x,y)
   8  )
-  9  / 
+  9  /
 Table created.
 
 
- 
+
 
 Looks like a normal parent-child relationship: a row may exist in C if and only if a parent row exists in P. But if that is true, how can this happen?
 
- 
+
 SQL> select count( x||y ) from p;
 
 COUNT(X||Y)
@@ -943,19 +942,19 @@ COUNT(X||Y)
 There are zero records in P�none. There is at least one record in C, and that record has a non-null foreign key. What is happening?
 
 It has to do with NULLs, foreign keys, and the default MATCH NONE rule for composite foreign keys. If your foreign key allows NULLs and your foreign key is a composite key, you must be careful of the condition in which only some of the foreign key attributes are not null. For example, to achieve the above magic, I inserted
- 
+
 SQL> insert into c values ( 1, null, 0 );
 1 row created.
 
 The database cannot validate a foreign key when it is partially null. In order to enforce the MATCH FULL rule for composite foreign keys, you would add a constraint to your table:
 
- 
-SQL> alter table c add constraint 
+
+SQL> alter table c add constraint
 check_nullness
-  2  check ( ( x is not null 
+  2  check ( ( x is not null
   3            and y is not null ) or
-  4          ( x is null 
-  5             and y is null ) ) 
+  4          ( x is null
+  5             and y is null ) )
   6  /
 Table altered.
 
@@ -1028,7 +1027,7 @@ SQL> select x, count(*)
   5  /
 
          X   COUNT(*)
-�����������  �����������  
+�����������  �����������
          0     249995
          1     250000
          2     250000
@@ -1046,7 +1045,7 @@ SQL> select /*+ gather_plan_statistics */
 COUNT(DATA)
 ����������������
           5
- 
+
 SQL> select *
   2    from table(
   3          dbms_xplan.display_cursor( format=> 'allstats last' )
@@ -1057,9 +1056,9 @@ PLAN_TABLE_OUTPUT
 ����������������������������������
 SQL_ID  cdwn5mqb0cpg1, child number 0
 ����������������������������������
-select /*+ gather_plan_statistics */        
-count(data)   
-from t  
+select /*+ gather_plan_statistics */
+count(data)
+from t
 where x = 5
 
 Plan hash value: 2966233522
@@ -1132,9 +1131,9 @@ PLAN_TABLE_OUTPUT
 ����������������������������������
 SQL_ID  cdwn5mqb0cpg1, child number 0
 ����������������������������������
-select /*+ gather_plan_statistics */        
-count(data)   
-from t  
+select /*+ gather_plan_statistics */
+count(data)
+from t
 where x = 5
 
 Plan hash value: 1789076273
@@ -1209,7 +1208,7 @@ Cardinalities
 
 SQL> create or replace type str2tblType as table of varchar2(30)
   2  /
-Type created. 
+Type created.
 
 SQL> create or replace
   2  function str2tbl( p_str in varchar2, p_delim in varchar2 default ',' )
@@ -1227,8 +1226,8 @@ SQL> create or replace
  14      end loop;
  15  end;
  16  /
- 
- Once I have that function installed, I can try it out by executing a query like this: 
+
+ Once I have that function installed, I can try it out by executing a query like this:
 SQL> variable x varchar2(15)
 
 SQL> exec :x := '1,2,3,a,b,c'
@@ -1248,7 +1247,7 @@ c
 
 6 rows selected.
 
-Optimizer making 8 K cardinality estimate 
+Optimizer making 8 K cardinality estimate
 SQL> select * from table(dbms_xplan.display_cursor);
 
 PLAN_TABLE_OUTPUT
@@ -1266,13 +1265,13 @@ Plan hash value: 2407808827
 | 1| COLLECTION ITERATOR PICKLER...|STR2TBL|8168|16336|  29    (0)|00:00:01|
 
 
- 
+
  As you can see, there is that magic 8,168 number in the ROWS column. The optimizer assumes that the collection returned by this function is going to have more than 8,000 entries�you can imagine how that might affect the choices made by the optimizer regarding whether to use an index when processing a query
 
- 
+
  Solution - 1
- 
- Using the CARDINALITY hint 
+
+ Using the CARDINALITY hint
 SQL> select * from table(dbms_xplan.display_cursor);
 
 PLAN_TABLE_OUTPUT
@@ -1299,11 +1298,11 @@ SQL> select 10/8168 from dual;
     10/8168
 ����������������
   .00122429
- 
+
 I want 10 instead of 8,168, so I need to use a scaling factor of 0.00122429. When I do that, I get the result in Listing 7.
 
-Code Listing 7: Using the OPT_ESTIMATE hint 
-select /*+ opt_estimate(table, sq, scale_rows=0.00122429) */ * 
+Code Listing 7: Using the OPT_ESTIMATE hint
+select /*+ opt_estimate(table, sq, scale_rows=0.00122429) */ *
   from table(str2tbl(:x)) sq
 
 Plan hash value: 2407808827
@@ -1315,16 +1314,16 @@ Plan hash value: 2407808827
 
 
  I achieve the desired result again: a cardinality estimate of 10.
- 
+
  Solution -3
- 
- Using Cardinality Feedback (and the WITH factored subquery and materialize hint) 
-with sq 
+
+ Using Cardinality Feedback (and the WITH factored subquery and materialize hint)
+with sq
 as (
-select /*+ materialize */ *    
+select /*+ materialize */ *
   from table( str2tbl( :x ) )
-) 
-select * 
+)
+select *
   from sq
 
 Plan hash value: 630596523
@@ -1344,7 +1343,7 @@ Plan hash value: 630596523
 
 Note that the first time I execute this query, the cardinality estimate is way off�it is that magic number 8,168 (again). However, the optimizer learns from its mistake, and when I execute the query again, I get the result in Listing 10.
 
-Run the query Again > Getting the corrected cardinality with Cardinality Feedback 
+Run the query Again > Getting the corrected cardinality with Cardinality Feedback
 with sq as (select /*+ materialize */ *    from table( str2tbl( :x ) )
 ) select * from sq
 
@@ -1372,7 +1371,7 @@ Note
 --Active Session History : By Arup Nanda
 --
 --
-Looking at performance issues in old sessions is easy with an Oracle Database feature called Active Session History. Note that the use of Active Session History requires Oracle Diagnostics Pack, a licensed option of Oracle Database available since Oracle Database 10g Release 1. 
+Looking at performance issues in old sessions is easy with an Oracle Database feature called Active Session History. Note that the use of Active Session History requires Oracle Diagnostics Pack, a licensed option of Oracle Database available since Oracle Database 10g Release 1.
 
 Here are a few of the important columns of the V$ACTIVE_SESSION_HISTORY view:
 
@@ -1387,13 +1386,13 @@ WAIT_TIME. If the session is doing productive work�not in a WAITING state�th
 SQL_ID. The ID of the SQL statement the session was executing at the time the sample was taken.
 SQL_CHILD_NUMBER. The child number of the cursor. If this is the only version of the cursor, the child number will be 0.
 
-To begin the identification, you need to pose two questions to the application owners or users executing the SQL statements that experienced slow performance: 
+To begin the identification, you need to pose two questions to the application owners or users executing the SQL statements that experienced slow performance:
 
 Which username was used to connect to the database?
-What was the time interval (start and end times) of the period when the performance issues occurred? 
+What was the time interval (start and end times) of the period when the performance issues occurred?
 
 select user_id from dba_users where username = 'ARUP'; -- 92
-        
+
 select session_id, sample_time, session_state, event, wait_time, time_waited, sql_id, sql_child_number CH#
 from v$active_session_history
 where user_id = 92
@@ -1403,7 +1402,7 @@ and sample_time between
     to_date('29-SEP-12 05.05.00 PM','dd-MON-yy hh:mi:ss PM')
 order by session_id, sample_time;
 
-Because Active Session History collects information on all active sessions, you need to order the output by SID, which identifies a session (shown under SESSION_ID), and then by the collection time 
+Because Active Session History collects information on all active sessions, you need to order the output by SID, which identifies a session (shown under SESSION_ID), and then by the collection time
 
 
 
@@ -1416,7 +1415,7 @@ SESSION_ID SAMPLE_TIME             SESSION_STATE   EVENT                        
         39 29-SEP-12 04.55.06.379 PM WAITING  enq: TX - row lock contention           0           0 fx60htyzmz6wv   0
         39 29-SEP-12 04.55.07.389 PM WAITING  enq: TX - row lock contention           0           0 fx60htyzmz6wv   0
 � output truncated �
-        39 29-SEP-12 05.16.52.078 PM WAITING  enq: TX - row lock contention           0  1310761160      
+        39 29-SEP-12 05.16.52.078 PM WAITING  enq: TX - row lock contention           0  1310761160
         44 29-SEP-12 04.55.34.419 PM WAITING  resmgr:cpu quantum                      0      109984 92ty3097fqfwg   0
         44 29-SEP-12 04.55.35.419 PM ON CPU                                      110005           0 a5wts2yzmws18   0
         44 29-SEP-12 04.55.36.419 PM WAITING  resmgr:cpu quantum                      0      110016 61q5r7d0ztn6n   0
@@ -1432,10 +1431,10 @@ SESSION_ID SAMPLE_TIME             SESSION_STATE   EVENT                        
         46 29-SEP-12 04.57.23.555 PM WAITING  resmgr:cpu quantum                      0      111998 f7kmq72a8h7pt   0
         46 29-SEP-12 04.57.24.555 PM WAITING  resmgr:cpu quantum                      0      108975 f7kmq72a8h7pt   0
 
-The first row of the output. It shows that the session identified by SESSION_ID 39 was waiting for the �enq: TX - row lock contention� event on 29-SEP-12 at 04.55.02.379 PM. Because the session was in a WAITING state, the value of the WAIT_TIME column is irrelevant, so it shows up as 0. Because the session was still in a WAITING state when Active Session History captured the state, the TIME_WAITED column shows 0. When the session finally got the lock, it could do what it had to do and stopped waiting. At that point, the total time the session had waited was updated in Active Session History (Row logged at 39 29-SEP-12 05.16.52.078) 1,310,761,160 microseconds (shown in the TIME_WAITED column), or about 22 minutes. And it was running SQL fx60htyzmz6wv. 
-        
-select SQL_TEXT 
-from v$sql 
+The first row of the output. It shows that the session identified by SESSION_ID 39 was waiting for the �enq: TX - row lock contention� event on 29-SEP-12 at 04.55.02.379 PM. Because the session was in a WAITING state, the value of the WAIT_TIME column is irrelevant, so it shows up as 0. Because the session was still in a WAITING state when Active Session History captured the state, the TIME_WAITED column shows 0. When the session finally got the lock, it could do what it had to do and stopped waiting. At that point, the total time the session had waited was updated in Active Session History (Row logged at 39 29-SEP-12 05.16.52.078) 1,310,761,160 microseconds (shown in the TIME_WAITED column), or about 22 minutes. And it was running SQL fx60htyzmz6wv.
+
+select SQL_TEXT
+from v$sql
 where sql_id = 'fx60htyzmz6wv';
 
 update test1 set status = 'D' where object_id = :b1
@@ -1452,8 +1451,8 @@ and sample_time between
 and session_id = 39
 and event = 'enq: TX - row lock contention'
 order by sample_time;
-        
-        
+
+
 Getting specific row information
 select
     owner||'.'||object_name||':'||nvl(subobject_name,'-') obj_name,
@@ -1504,7 +1503,7 @@ SAMPLE_TIME                _STATE   EVENT               CONSUMER_GROUP_ID
 29-SEP-12 04.55.39.419 PM  ON CPU                                   12162
 29-SEP-12 04.55.40.419 PM  ON CPU                                   12162
 
-select name from v$rsrc_consumer_group where id in (12166,12162);     
+select name from v$rsrc_consumer_group where id in (12166,12162);
 
    ID  NAME
 ������ ������������
@@ -1517,7 +1516,7 @@ Now you should examine why the OTHER_GROUPS consumer group was activated earlier
 
 The next obvious question is why session 44 consumed so much CPU that it had to be constrained by Database Resource Management. The answer lies in the SQL statement that session 44 was executing at that time (not now).
 
-suppose a user complains that things seemed to have been slow from a specific client machine�prolaps01�between 4:55 p.m. and 5:05 p.m. on September 29. Because Active Session History also records the machine name, you can use the query 
+suppose a user complains that things seemed to have been slow from a specific client machine�prolaps01�between 4:55 p.m. and 5:05 p.m. on September 29. Because Active Session History also records the machine name, you can use the query
 
 select event, count(1)
 from v$active_session_history
@@ -1545,7 +1544,7 @@ You can generate an Active Session History report from Oracle Enterprise Manager
 
 Oracle Database archives the information from the ASH buffer to a database table to make it persistent. This archived table data is visible in a view called DBA_HIST_ACTIVE_SESS_HISTORY. If you don�t find the data in the V$ACTIVE_SESSION_HISTORY view, check for it in the DBA_HIST_ACTIVE_SESS_HISTORY view
 
-Getting row lock information from the Active Session History archive 
+Getting row lock information from the Active Session History archive
 
 select sample_time, session_state, blocking_session,
 owner||'.'||object_name||':'||nvl(subobject_name,'-') obj_name,
@@ -1581,9 +1580,9 @@ select sid, serial# from v$session where username = 'SH';
 
 begin
   dbms_monitor.session_trace_enable (
-    session_id => <SID>, 
-    serial_num => <serial#>, 
-    waits      => true, 
+    session_id => <SID>,
+    serial_num => <serial#>,
+    waits      => true,
     binds      => true
     plan_stat  => 'all_executions');
 end;
@@ -1625,7 +1624,7 @@ Rows (1st) Rows (avg) Rows (max) Row Source Operation
 ���������� ���������� ���������� �������������������������������������������
          1          1          1 SORT AGGREGATE (cr=3 pr=0 pw=0 time=61 us)
          1          1          1  MAT_VIEW REWRITE ACCESS FULL CAL_MONTH_
-                                  SALES_MV (cr=3 pr=0 pw=0 time=52 us cost=3 
+                                  SALES_MV (cr=3 pr=0 pw=0 time=52 us cost=3
                                   size=15 card=1)
 COUNT. The number of times that type of call has been made.
 ELAPSED. The total time of the call, including CPU. (This is the directly observable metric. The greater the elapsed time, the more time the session is taking.)
@@ -1634,7 +1633,7 @@ QUERY. How many blocks were accessed (queried) by the call (whether from disk or
 DISK. How many of those queried blocks came from the disk.
 
 In the above example the DISK column value is shown as 0, meaning that the query got all of its blocks from the buffer cache without needing to go to the physical disk. The QUERY column shows the number of rows retrieved at that stage. In this case, three rows were retrieved.
-                                  
+
 The CLIENT_ID_TRACE procedure:
 The trace will persist after a database restart and you�ll have to explicitly disable it.
 DBMS_MONITOR.CLIENT_ID_TRACE_ENABLE(
@@ -1690,13 +1689,13 @@ The downside of 100 percent coding for applications is that developers are gener
 
 Therefore, I am happy to trade off some loss of control for dramatic improvements in productivity and maintainability. When a framework can do a lot of work for you
 
-I suggest following these guidelines when writing PL/SQL code in Oracle Application Express applications: 
+I suggest following these guidelines when writing PL/SQL code in Oracle Application Express applications:
 
 The only SQL statements you should write in the Application Builder (the Oracle Application Express UI for building applications) are queries to populate reports and tables. Even then, you should simplify those queries as much as possible through use of views and, for some complex scenarios, table functions.
 Avoid repetition of code whenever possible. This advice is not specific to Oracle Application Express; it is one of the most important guidelines for high-quality programming overall.
 Keep the volume of code inside the Oracle Application Express application to a minimum. Move as much code as possible to PL/SQL packages.
 
-Condition on the Reviewer Actions region 
+Condition on the Reviewer Actions region
 DECLARE
    l_dummy   CHAR (1);
 BEGIN
@@ -1745,20 +1744,20 @@ EXCEPTION
    WHEN TOO_MANY_ROWS
    THEN
       RETURN TRUE;
-END; 
+END;
 
 
- And then I could call the function from Application Builder as 
-IF qdb_review_mgr.is_reviewer_or_author 
+ And then I could call the function from Application Builder as
+IF qdb_review_mgr.is_reviewer_or_author
 THEN
 
 
-There are, unfortunately, two big problems with this approach: 
+There are, unfortunately, two big problems with this approach:
 
 1.If the name of the item ever changes, that name change will be �hidden� behind the literal and will not be felt until testing�runtime, that is�instead of compile time.
 2.The person maintaining the application cannot tell by looking at the function call what it is dependent on and will have to open the package body and search out the code.
 
-IS_REVIEWER_OR_AUTHOR function as parameterized function 
+IS_REVIEWER_OR_AUTHOR function as parameterized function
 CREATE OR REPLACE FUNCTION is_reviewer_or_author (
    user_id_in          INTEGER,
    question_id_in   IN INTEGER)

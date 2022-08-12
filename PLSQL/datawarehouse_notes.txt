@@ -1,24 +1,24 @@
-Fact tables are the foundation of the data warehouse. They contain the fundamental measurements of the enterprise, and they are the ultimate target of most data warehouse queries. 
+Fact tables are the foundation of the data warehouse. They contain the fundamental measurements of the enterprise, and they are the ultimate target of most data warehouse queries.
 
-Stay True to the Grain 
+Stay True to the Grain
 
-The first and most important design step is declaring the fact table grain. The grain is the business definition of what a single fact table record represents. The grain declaration is not a list of dimensional foreign keys that implement a primary key for the fact table. Rather, the grain is the description of the measurement event in the physical world that gives rise to a measurement. When the grocery store scanner measures the quantity and the charged price of a product being purchased, the grain is literally the beep of the scanner. That is a great grain definition! 
+The first and most important design step is declaring the fact table grain. The grain is the business definition of what a single fact table record represents. The grain declaration is not a list of dimensional foreign keys that implement a primary key for the fact table. Rather, the grain is the description of the measurement event in the physical world that gives rise to a measurement. When the grocery store scanner measures the quantity and the charged price of a product being purchased, the grain is literally the beep of the scanner. That is a great grain definition!
 
-Immediately after declaring the grain, it is possible to list the dimensional foreign keys that exist at that grain. By declaring the grain first, the discussion of foreign keys remains grounded and precise. 
+Immediately after declaring the grain, it is possible to list the dimensional foreign keys that exist at that grain. By declaring the grain first, the discussion of foreign keys remains grounded and precise.
 
-The real purpose of the fact table is to be the repository of the numeric facts that are observed during the measurement event. It is critically important for these facts to be true to the grain. The grocery store “beep” measures the quantity and extended price of the product being scanned. We never include other numeric measurements that violate the grain, such as the overall category sales or the sales of this product last month. Even though these other measurements might be narrowly helpful for selected calculations, they cannot be combined across fact records and they introduce weird asymmetries in the design of applications. We let our business intelligence (BI) tools compute these off-topic values at query time rather than hard coding them into our fact tables. 
+The real purpose of the fact table is to be the repository of the numeric facts that are observed during the measurement event. It is critically important for these facts to be true to the grain. The grocery store “beep” measures the quantity and extended price of the product being scanned. We never include other numeric measurements that violate the grain, such as the overall category sales or the sales of this product last month. Even though these other measurements might be narrowly helpful for selected calculations, they cannot be combined across fact records and they introduce weird asymmetries in the design of applications. We let our business intelligence (BI) tools compute these off-topic values at query time rather than hard coding them into our fact tables.
 
 Fact tables at the lowest grain are the most expressive because they have the most complete set of possible dimensions for that business process. The beep grain fact table could have Date, Store, Product, Cashier, Manager, Customer, Promotion, Competition, Basket and even Weather if all these data sources can be marshaled when the fact records are created. Higher grain aggregated tables such as category sales by district cannot support all these dimensions and therefore are much less expressive.
 
-Three Kinds of Fact Tables 
+Three Kinds of Fact Tables
 
 If you stay true to the grain, then all of your fact tables can be grouped into just three types: transaction grain, periodic snapshot grain and accumulating snapshot grain (the three types are shown in Figure 1).
 
-The transaction grain corresponds to a measurement taken at a single instant. The grocery store beep is a transaction grain. The measured facts are valid only for that instant and for that event. The next measurement event could happen one millisecond later or next month or never. Thus, transaction grain fact tables are unpredictably sparse or dense. We have no guarantee that all the possible foreign keys will be represented. Transaction grain fact tables can be enormous, with the largest containing many billions of records. 
+The transaction grain corresponds to a measurement taken at a single instant. The grocery store beep is a transaction grain. The measured facts are valid only for that instant and for that event. The next measurement event could happen one millisecond later or next month or never. Thus, transaction grain fact tables are unpredictably sparse or dense. We have no guarantee that all the possible foreign keys will be represented. Transaction grain fact tables can be enormous, with the largest containing many billions of records.
 
 The periodic snapshot grain corresponds to a predefined span of time, often a financial reporting period.  The measured facts summarize activity during or at the end of the time span. The periodic snapshot grain carries a powerful guarantee that all of the reporting entities. even if there is no activity. The periodic snapshot is predictably dense, and applications can rely on combinations of keys always being present.
 
-The accumulating snapshot fact table corresponds to a predictable process that has a well-defined beginning and end. Order processing, claims processing, service call resolution and college admissions are typical candidates. The grain of an accumulating snapshot for order processing, for example, is usually the line item on the order. Accumulating snapshot records are revisited and overwritten as the process progresses through its steps from beginning to end. Accumulating snapshot fact tables generally are much smaller than the other two types because of this overwriting strategy. 
+The accumulating snapshot fact table corresponds to a predictable process that has a well-defined beginning and end. Order processing, claims processing, service call resolution and college admissions are typical candidates. The grain of an accumulating snapshot for order processing, for example, is usually the line item on the order. Accumulating snapshot records are revisited and overwritten as the process progresses through its steps from beginning to end. Accumulating snapshot fact tables generally are much smaller than the other two types because of this overwriting strategy.
 
 
 
@@ -31,9 +31,9 @@ Very simply, there are 6 types of Slowly Changing Dimension that are commonly us
         Update record directly, there is no record of historical values, only current state. Easy to follow, no maintenance cost or storage cost.
     Type 2 – Row Versioning, add new row
         Track changes as version records with current flag & active dates and other metadata
-    Type 3 – Previous Value column, add new column to store attributes current and old value 
+    Type 3 – Previous Value column, add new column to store attributes current and old value
         Track change to a specific attribute, add a column to show the previous value, which is updated as further changes occur
-    Type 4 – History Table, mini dimension table for rapidly changing dimension 
+    Type 4 – History Table, mini dimension table for rapidly changing dimension
         Show current value in dimension table but track all changes in separate table
         Frequently-used attributes in multi-million row dimension tables are also mini-dimension design candidates, even if they don’t change frequently.
         The surrogate keys of both the base dimension and mini-dimension profile are captured as foreign keys in the fact table.
@@ -42,7 +42,7 @@ Very simply, there are 6 types of Slowly Changing Dimension that are commonly us
     Type 6 – Hybrid SCD
         Utilise techniques from SCD Types 1, 2 and 3 to track change
 
-Historically it has been  type 1 (overwrite), type 2 (add a row), and type 3 (add a column). 
+Historically it has been  type 1 (overwrite), type 2 (add a row), and type 3 (add a column).
 
 Type 0: Retain Original
 
@@ -54,7 +54,7 @@ The type 4 technique is used when a group of dimension attributes are split off 
 
 Customer dim split off into customer and customer profile, fact table contains customer key and customer profile key
 
-Type 5: Add Mini-Dimension and Type 1 Outrigger          
+Type 5: Add Mini-Dimension and Type 1 Outrigger
 
 The type 5 technique builds on the type 4 mini-dimension by embedding a “current profile” mini-dimension key in the base dimension that’s overwritten as a type 1 attribute. This approach, called type 5 because 4 + 1 equals 5, allows the currently-assigned mini-dimension attribute values to be accessed along with the base dimension’s others without linking through a fact table. Logically, we typically represent the base dimension and current mini-dimension profile outrigger as a single table in the presentation layer.
 
@@ -63,7 +63,7 @@ dimensions customer, customer_profile and customer_profile_current customer dime
 
 Type 6: Add Type 1 Attributes to Type 2 Dimension(2 + 3 + 2)
 
-Type 6 builds on the type 2 technique by also embedding current attributes in the dimension so that fact rows can be filtered or grouped by either the type 2 value in effect when the measurement occurred or the attribute’s current value. 
+Type 6 builds on the type 2 technique by also embedding current attributes in the dimension so that fact rows can be filtered or grouped by either the type 2 value in effect when the measurement occurred or the attribute’s current value.
 
 product dimension with historic dept and current dept, start date, end date, is_active
 
@@ -79,7 +79,6 @@ Dimension Table
 This is a table in a star schema of a data warehouse. Data warehouses are built using dimensional data models which consist of fact and dimension tables. The latter is used to describe dimensions. They contain dimension keys, values and attributes.
 
 
-
 Degenerated Dimension Tables
 Sometimes a dimension is deﬁned that has no content except for its primary key. For example, when an invoice has multiple line items, the line item fact rows inherit all the descriptive dimension foreign keys of the invoice, and the invoice is left with no unique content. But the invoice number remains a valid dimension key for fact tables at the line item level. This degenerate dimension is placed in the fact table with the explicit acknowledgment that there is no associated dimension table. Degenerate dimensions are most common with transaction and accumulating snapshot fact tables.
 
@@ -93,16 +92,15 @@ Junk dimensions are used to reduce the number of dimensions in the dimensional m
 
 Conformed Dimension- This is used in multiple locations. It helps in creating consistency so that the same can be maintained across the fact tables. Different tables can use the table across the fact table and it can help in creating different reports.
 
-
 Based on the frequency of data change below are the types of Dimension Tables:
 Unchanging or static dimension (UCD) : Dimensions values are static and will not change
 Rapidly changing Dimension (RCD) : Attribute values changes rapidly
 Slowly changing dimension (SCD) : Attribute values changes slowly over time. Based on the frequency of data change and history preservation, there are various slowly changing dimensions available.
 
 
-An ETL workflow is responsible for the extraction of data from the source systems, their cleaning, transformation, and loading into the target data warehouse. There are existing formal methods to model the schema of source systems or databases such as entity-relationship diagram (ERD).
+aQ2 §An ETL workflow is responsible for the extraction of data from the source systems, their cleaning, transformation, and loading into the target data warehouse. There are existing formal methods to model the schema of source systems or databases such as entity-relationship diagram (ERD).
 
-Destination data warehouse can follow well-accepted standard data models such as star schema and snowflake schema. 
+Destination data warehouse can follow well-accepted standard data models such as star schema and snowflake schema.
 
 Currently, there are few approaches to model the ETL workflow. An ETL workflow can be modeled using (1) mapping expressions and guidelines, (2) conceptual constructs, (3) entity mapping, and (4) UML notations
 
@@ -112,7 +110,7 @@ To build an ETL pipeline with batch processing, you need to:
 Create reference data: create a dataset that defines the set of permissible values your data may contain. For example, in a country data field, specify the list of country codes allowed.
 Extract data from different sources: the basis for the success of subsequent ETL steps is to extract data correctly. Take data from a range of sources, such as APIs, non/relational databases, XML, JSON, CSV files, and convert it into a single format for standardized processing.
 Validate data: Keep data that have values in the expected ranges and reject any that do not. For example, if you only want dates from the last year, reject any values older than 12 months. Analyze rejected records, on an on-going basis, to identify issues, correct the source data, and modify the extraction process to resolve the problem in future batches.
-Transform data: Remove duplicate data (cleaning), apply business rules, check data integrity (ensure that data has not been corrupted or lost), and create aggregates as necessary. For example, if you want to analyze revenue, you can summarize the dollar amount of invoices into a daily or monthly total. You need to program numerous functions to transform the data automatically. 
+Transform data: Remove duplicate data (cleaning), apply business rules, check data integrity (ensure that data has not been corrupted or lost), and create aggregates as necessary. For example, if you want to analyze revenue, you can summarize the dollar amount of invoices into a daily or monthly total. You need to program numerous functions to transform the data automatically.
 Stage data: You do not typically load transformed data directly into the target data warehouse. Instead, data first enters a staging database which makes it easier to roll back if something goes wrong. At this point, you can also generate audit reports for regulatory compliance, or diagnose and repair data problems.
 Publish to your data warehouse: Load data to the target tables. Some data warehouses overwrite existing information whenever the ETL pipeline loads a new batch - this might happen daily, weekly, or monthly. In other cases, the ETL workflow can add data without overwriting, including a timestamp to indicate it is new. You must do this carefully to prevent the data warehouse from “exploding” due to disk space and performance limitations.
 
@@ -122,7 +120,7 @@ Following are 3 chief types of multidimensional schemas each having its unique a
 
 Star Schema
 Snowflake Schema
-galaxy schema 
+galaxy schema
 
 Star Schema in data warehouse, in which the center of the star can have one fact table and a number of associated dimension tables. It is known as star schema as its structure resembles a star. The Star Schema data model is the simplest type of Data Warehouse schema. It is also known as Star Join Schema and is optimized for querying large data sets.
 
@@ -175,13 +173,13 @@ Dimension table is a table which contain attributes of measurements stored in fa
 
 What is Fact Table?
 
-Fact table contains the measurement of business processes, and it contains foreign keys for the dimension tables. 
+Fact table contains the measurement of business processes, and it contains foreign keys for the dimension tables.
 Example – If the business process is storing pos system
 
 What is factless fact tables?
 
 A factless fact tables are the fact table which doesn’t contain numeric fact column in the fact table. It is essentially an intersection of dimensions (it contains nothing but dimensional keys).
-say an investment bank assigns a broker to each customer.  Each row in this factless fact table represents a bounded time period during which a broker was assigned to a particular customer. 
+say an investment bank assigns a broker to each customer.  Each row in this factless fact table represents a bounded time period during which a broker was assigned to a particular customer.
 
 What are the types of Dimensional Modeling?
 

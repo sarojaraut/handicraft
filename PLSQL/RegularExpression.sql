@@ -24,7 +24,7 @@ If you omit match_param, then:
     A period (.) does not match the newline character.
     The source string is treated as a single line.
 
-subexpr : is a nonnegative integer from 0 to 9 indicating which subexpression in pattern is to be returned by the function. 
+subexpr : is a nonnegative integer from 0 to 9 indicating which subexpression in pattern is to be returned by the function.
 
 Examples:
 
@@ -35,7 +35,7 @@ SELECT REGEXP_COUNT('123123123123', '123', 3, 'i') COUNT FROM DUAL; -- 3
 SELECT REGEXP_INSTR('500 Oracle Parkway, Redwood Shores, CA', '[^ ]+', 1, 2) "REGEXP_INSTR" FROM DUAL; -- 5
 SELECT REGEXP_INSTR('500 Oracle Parkway, Redwood Shores, CA', '[^ ]+', 1, 3) "REGEXP_INSTR" FROM DUAL; -- 12
 -- looking for occurrences of words beginning with s, r, or p, regardless of case, followed by any six alphabetic characters.
-SELECT REGEXP_INSTR('500 Oracle Parkway, Redwood Shores, CA', '[O|r|p][[:alpha:]]{6}', 1, 1, 0,'i') "REGEXP_INSTR" FROM DUAL; -- 12 (Parkway) 
+SELECT REGEXP_INSTR('500 Oracle Parkway, Redwood Shores, CA', '[O|r|p][[:alpha:]]{6}', 1, 1, 0,'i') "REGEXP_INSTR" FROM DUAL; -- 12 (Parkway)
 SELECT REGEXP_INSTR('500 Oracle Parkway, Redwood Shores, CA', '[O|r|p][[:alpha:]]{6}', 1, 1, 1,'i') "REGEXP_INSTR" FROM DUAL; -- 19 (position of , after Parkway)
 -- use subexpr argument to search for a particular subexpression in pattern, returns the position in the source string of the first character in the first subexpression, which is '123':
 SELECT REGEXP_INSTR('1234567890', '(123)(4(56)(78))', 1, 1, 0, 'i', 1) "REGEXP_INSTR" FROM DUAL; --1
@@ -47,7 +47,7 @@ SELECT REGEXP_INSTR('1234567890', '(123)(4(56)(78))', 1, 1, 0, 'i',4 ) "REGEXP_I
 
 SELECT REGEXP_SUBSTR('500 Oracle Parkway, Redwood Shores, CA',',[^,]+,') "REGEXPR_SUBSTR" FROM DUAL; -- , Redwood Shores,
 SELECT REGEXP_SUBSTR('http://www.example.com/products','http://([[:alnum:]]+\.?){3,4}/?') "REGEXP_SUBSTR"   FROM DUAL; -- http://www.example.com/
-SELECT REGEXP_SUBSTR('1234567890','(123)(4(56)(78))', 1, 1, 'i', 3) "REGEXP_SUBSTR" FROM DUAL; -- 123
+SELECT REGEXP_SUBSTR('1234567890','(123)(4(56)(78))', 1, 1, 'i', 3) "REGEXP_SUBSTR" FROM DUAL; -- 56
 SELECT REGEXP_SUBSTR('1234567890','(123)(4(56)(78))', 1, 1, 'i', 4)  "REGEXP_SUBSTR" FROM DUAL; -- 78
 
 
@@ -70,13 +70,13 @@ SELECT data FROM t1 WHERE  NOT REGEXP_LIKE(data, '[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A
 
 Players > player_id, first_name, last_name, title, gender, dob, present address, permanent address (if you want to allow multiple address then you have to create another address table)
 team > team_name, player_id
-Grounds > Ground name, City name, address part 1, address pa post code, 
+Grounds > Ground name, City name, address part 1, address pa post code,
 Schedule > date, ground
 
 
 
 
--- 
+--
 -- Fetching fourth word
 SELECT
 regexp_substr( 'This is a regexp_substr demo', '[[:alpha:]]+', 1, 4
@@ -84,73 +84,73 @@ regexp_substr( 'This is a regexp_substr demo', '[[:alpha:]]+', 1, 4
 FROM
 dual;
 
-with strings as ( 
-    select 'LHRJFK/010315/SAXONMR' str from dual union all 
-    select 'CDGLAX/050515/SMITHMRS' str from dual union all 
-    select 'LAXCDG/220515/SMITHMRS' str from dual union all 
-    select 'SFOJFK/010615/JONESMISS' str from dual 
-) 
-select regexp_substr(str, '[A-Z]{6}'), /* Returns the first string of 6 characters */  
-        regexp_substr(str, '[0-9]+'), /* Returns the first matching numbers */  
-        regexp_substr(str, '[A-Z].*$'), /* Returns the first letter followed by all other characters */  
-        regexp_substr(str, '/[A-Z].*$') /* Returns / followed by a letter then all other characters */  
+with strings as (
+    select 'LHRJFK/010315/SAXONMR' str from dual union all
+    select 'CDGLAX/050515/SMITHMRS' str from dual union all
+    select 'LAXCDG/220515/SMITHMRS' str from dual union all
+    select 'SFOJFK/010615/JONESMISS' str from dual
+)
+select regexp_substr(str, '[A-Z]{6}'), /* Returns the first string of 6 characters */
+        regexp_substr(str, '[0-9]+'), /* Returns the first matching numbers */
+        regexp_substr(str, '[A-Z].*$'), /* Returns the first letter followed by all other characters */
+        regexp_substr(str, '/[A-Z].*$') /* Returns / followed by a letter then all other characters */
 from   strings;
 
 --Convert multiple spaces into a single space
-WITH strings AS (   
-    SELECT 'Hello  World' s FROM dual union all   
-    SELECT 'Hello        World' s FROM dual union all   
-    SELECT 'Hello,   World  !' s FROM dual   
-)   
-SELECT s "STRING", regexp_replace(s, ' {2,}', ' ') "MODIFIED_STRING"  
+WITH strings AS (
+    SELECT 'Hello  World' s FROM dual union all
+    SELECT 'Hello        World' s FROM dual union all
+    SELECT 'Hello,   World  !' s FROM dual
+)
+SELECT s "STRING", regexp_replace(s, ' {2,}', ' ') "MODIFIED_STRING"
 FROM   strings
 
 --Convert camel case string to lowercase with underscores between words
-WITH strings as (   
-    SELECT 'AddressLine1' s FROM dual union all   
-    SELECT 'ZipCode' s FROM dual union all   
-    SELECT 'Country' s FROM dual   
-)   
-SELECT s "STRING",  
-        lower(regexp_replace(s, '([A-Z0-9])', '_\1', 2)) "MODIFIED_STRING"  
+WITH strings as (
+    SELECT 'AddressLine1' s FROM dual union all
+    SELECT 'ZipCode' s FROM dual union all
+    SELECT 'Country' s FROM dual
+)
+SELECT s "STRING",
+        lower(regexp_replace(s, '([A-Z0-9])', '_\1', 2)) "MODIFIED_STRING"
 FROM strings
 
 --Convert yyyy-mm-dd date formats to dd.mm.yyyy
-WITH date_strings AS (   
-    SELECT  '2015-01-01' d from dual union all   
-    SELECT '2000-12-31' d from dual union all   
-    SELECT '900-01-01' d from dual   
-)   
-SELECT d "STRING",   
-        regexp_replace(d, '([[:digit:]]+)-([[:digit:]]{2})-([[:digit:]]{2})', '\3.\2.\1') "MODIFIED_STRING"  
+WITH date_strings AS (
+    SELECT  '2015-01-01' d from dual union all
+    SELECT '2000-12-31' d from dual union all
+    SELECT '900-01-01' d from dual
+)
+SELECT d "STRING",
+        regexp_replace(d, '([[:digit:]]+)-([[:digit:]]{2})-([[:digit:]]{2})', '\3.\2.\1') "MODIFIED_STRING"
 FROM date_strings
 
 --Remove all letters from a string
-WITH strings as (   
-    SELECT 'NEW YORK' s FROM dual union all   
-    SELECT 'New York' s FROM dual union all   
-    SELECT 'new york' s FROM dual   
-)   
-SELECT s "STRING",  
-    regexp_replace(s, '[a-z]', '1', 1, 0, 'i') "CASE_INSENSITIVE",  
-    regexp_replace(s, '[a-z]', '1', 1, 0, 'c') "CASE_SENSITIVE",  
-    regexp_replace(s, '[a-zA-Z]', '1', 1, 0, 'c') "CASE_SENSITIVE_MATCHING"  
+WITH strings as (
+    SELECT 'NEW YORK' s FROM dual union all
+    SELECT 'New York' s FROM dual union all
+    SELECT 'new york' s FROM dual
+)
+SELECT s "STRING",
+    regexp_replace(s, '[a-z]', '1', 1, 0, 'i') "CASE_INSENSITIVE",
+    regexp_replace(s, '[a-z]', '1', 1, 0, 'c') "CASE_SENSITIVE",
+    regexp_replace(s, '[a-zA-Z]', '1', 1, 0, 'c') "CASE_SENSITIVE_MATCHING"
 FROM  strings
 
 --XML validator for checking a closing tag of an element
-with xml as (   
-    select '<element>test<element>' as x from dual union all /* Incorrect closing tag '/' missing */  
-    select '<element>test</different_element>' as x from dual union all /* Different opening and closing tags */  
-    select '<element>test</element>' as x from dual /* Valid open and close tags*/  
-)   
-select * from xml   
+with xml as (
+    select '<element>test<element>' as x from dual union all /* Incorrect closing tag '/' missing */
+    select '<element>test</different_element>' as x from dual union all /* Different opening and closing tags */
+    select '<element>test</element>' as x from dual /* Valid open and close tags*/
+)
+select * from xml
 where  regexp_like (x, '<.*>.*</.*>')
 
 --XML validator for checking the opening and closing tags match
-with xml as (   
-    select '<element>test<element>' as x from dual union all /* Incorrect closing tag '/' missing */  
-    select '<element>test</different_element>' as x from dual union all /* Different opening and closing tags */  
-    select '<element>test</element>' as x from dual /* Valid open and close tags*/ 
-)   
-select * from xml   
+with xml as (
+    select '<element>test<element>' as x from dual union all /* Incorrect closing tag '/' missing */
+    select '<element>test</different_element>' as x from dual union all /* Different opening and closing tags */
+    select '<element>test</element>' as x from dual /* Valid open and close tags*/
+)
+select * from xml
 where  regexp_like (x, '<(.*)>.*</(\1)>')
