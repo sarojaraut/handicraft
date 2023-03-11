@@ -1,0 +1,174 @@
+Map VS Objects
+
+How they are same.
+    Both contain key value pairs
+    Both allow you to get, set, check and delete key value pairs
+
+Key Differences
+    Map does not have default keys
+    Map keys can be any value not only strings or symbols
+    Map has a size property
+
+Every map.set call returns the map itself, so we can “chain” the calls:
+
+const bestPctures  = new Map();
+bestPctures.set(2020 , "Parasite");
+bestPctures.set(2019 , "Green Book");
+bestPctures.set(2018 , "The Shape of Water");
+bestPctures.set(2017 , "Moonlight");
+bestPctures.set(2016 , "Spotlight");
+bestPctures.set(2015 , "Birdman");
+bestPctures.set(2014 , "12 Years a Slave");
+bestPctures.set(2013 , "Argo");
+
+bestPctures.get(2015);
+bestPctures.has(2010);
+bestPctures.size; // Size is not a method a propertty
+
+const years = bestPctures.keys();
+years.next();
+years.next();
+years.next().value;
+
+const movies = bestPctures.values();
+movies.next();
+movies.next();
+movies.next();
+movies.next().value;
+
+bestPctures.forEach((v,k) => console.log(k,v))
+
+bestPctures.delete(2013); // returns true if deleted and false if not there
+bestPctures.clear();
+console.log("Confirm bestPctures is empty", bestPctures.size)
+
+
+//What is the first key in your saturday Map object?
+const bestPctureYears = bestPctures.keys(); // returns and iterator
+const firstYear = bestPctureYears.next().value;
+console.log("First key", firstYear);
+
+//What is the third set of entries in your saturday Map object?
+const bestPcturesEntries = bestPctures.entries(); // returns a map iterator
+bestPcturesEntries.next();
+bestPcturesEntries.next();
+const thirdEntry = bestPcturesEntries.next().value; // returns an array : (2) [2018, 'The Shape of Water']
+
+//Using the forEach method, if a key is equal to 2018,
+//console log the value of the key.
+saturday.forEach((value, key) => {
+    if(key === 2018) {
+        console.log(`It's time for ${value}`);
+    }
+})
+
+
+Differnece between Object and Map
+1. The construction is of course different
+const gamesObj = {
+  1: 'Citadels',
+  2: 'Tzolkin'
+};
+
+const gamesMap = new Map([
+  [1, 'Citadels'],
+  [2, 'Tzolkin']
+]);
+
+2. Keys on objects are strings, on maps keys are of any type
+
+Indeed objects are collections of key-value pairs but the key can only be a string. While the key of a Map can be of any type.
+gamesObj[1] is same as gamesObj['1']
+
+When using maps the key can be of any type so the 1 number key is different from the '1' string key.
+
+3. Object maps inherit unwanted keys from the prototype
+only Object.create(null) builds an object with no prototype. All other ways of creating object inherits prototype.
+
+4. Maps preserve the order of their keys, objects do not
+
+5. Maps offer a nicer interface for accessing entries
+
+gamesMap.has(1);
+//true
+gamesMap.get(3);
+//false
+
+gamesObj.hasOwnProperty(1);
+//true
+gamesObj.hasOwnProperty(3);
+//false
+
+gamesMap.delete(1);
+delete gamesObl[1];
+
+console.log(gamesMap.size);
+
+Here is how we can test for emptiness on a map.
+gamesMap.size === 0
+
+const size = Object.keys(gamesObj).length;
+console.log(size);
+
+6. Objects require helpers functions for accessing the key-values pairs
+
+const gamesMap = new Map([
+  [1, 'Citadels'],
+  [2, 'Tzolkin']
+]);
+gamesMap.forEach((value, key)=>{
+   console.log(`${key} - ${value}`)
+  });
+
+Object.entries() returns an array of [key, value] pairs with all the owned properties of an object. Once we have that we can use the array methods likes forEach.
+
+const gamesObj = {
+  1: 'Citadels',
+  2: 'Tzolkin'
+};
+Object
+  .entries(gamesObj)
+  .forEach(([key, value])=>{
+    console.log(`${key} - ${value}`)
+  });
+
+7. JSON offers support for objects but not for maps
+
+// array of [key, value] pairs
+let map = new Map([
+  ['1',  'str1'],
+  [1,    'num1'],
+  [true, 'bool1']
+]);
+
+console.log( map.get('1') ); // str1
+
+If we have a plain object, and we’d like to create a Map from it, then we can use built-in method Object.entries(obj)
+
+let obj = {
+  name: "John",
+  age: 30
+};
+
+let map = new Map(Object.entries(obj));
+
+console.log( map.get('name') ); // John
+
+There’s Object.fromEntries method that does the reverse: given an array of [key, value] pairs, it creates an object from them:
+
+prices = Object.fromEntries([
+  ['banana', 1],
+  ['orange', 2],
+  ['meat', 4]
+]);
+
+// now prices = { banana: 1, orange: 2, meat: 4 }
+
+console.log(prices.orange); // 2
+
+Object to array : obj = {  name: "John",   age: 30 }; Object.entries(obj)
+Array of array to object : prices = Object.fromEntries([ ['banana', 1],  ['orange', 2],  ['meat', 4] ]);
+Array of array to map : let map = new Map([ ['1',  'str1'], [1,    'num1'], [true, 'bool1'] ]);
+Map to Array of arrays : let map = new Map(); map.set('banana', 1); map.set('orange', 2); map.set('meat', 4); map.entries();
+
+Map to object : let map = new Map(); map.set('banana', 1); map.set('orange', 2); map.set('meat', 4); let obj = Object.fromEntries(map.entries()); or let obj = Object.fromEntries(map);

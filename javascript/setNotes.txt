@@ -1,0 +1,71 @@
+Set
+A Set is a special type collection – “set of values” (without keys), where each value may occur only once.
+
+Its main methods are:
+
+new Set([iterable]) – creates the set, and if an iterable object is provided (usually an array), copies values from it into the set.
+set.add(value) – adds a value, returns the set itself.
+set.delete(value) – removes the value, returns true if value existed at the moment of the call, otherwise false.
+set.has(value) – returns true if the value exists in the set, otherwise false.
+set.clear() – removes everything from the set.
+set.size – is the elements count.
+
+let set = new Set();
+
+let john = { name: "John" };
+let pete = { name: "Pete" };
+let mary = { name: "Mary" };
+
+// visits, some users come multiple times
+set.add(john);
+set.add(pete);
+set.add(mary);
+set.add(john);
+set.add(mary);
+
+for (let user of set) {
+  console.log(user.name); // John (then Pete and Mary)
+}
+
+Iteration over Set
+We can loop over a set either with for..of or using forEach:
+
+set.forEach((value, valueAgain, set) => console.log(value.name));
+
+let set = new Set(["oranges", "apples", "bananas"]);
+
+
+//Create a Set using the letters guessed thus far.
+
+let guessedLetters = new Set(['r', 's', 't', 'l', 'n', 'e']);
+
+//2. Your friend takes another guess: p. Before you add it to the set check
+//to see if the Set has 'p'. If not, add it to the Set.
+alreadyGuessed = guessedLetters.has('p');
+
+guessedLetters.add('p');
+
+//3. At this point, we will assume your friend hasn't tried to guess the same letter twice.
+//The size of the Set will indicate how many guesses he's made. How many guesses
+//has your friend made?
+guessedLetters.size;
+
+//4. Delete the letter 'l' from your Set.
+guessedLetters.delete('l');
+
+//5. What is the second value in your Set?
+letters = guessedLetters.values();
+letters.next();
+letters.next().value;
+//6. What is the first entry in your Set?
+const guessesEntries = guesses.entries();
+const firstEntry = guessesEntries.next().value;
+
+//7. For each entry in your Set, log out whether the guess was a consonant or a vowel.
+//This one is a little challenging!
+const vowels = ["a", "e", "i", "o", "u"];
+
+//8. Clear your Set!
+
+guessedLetters.clear();
+console.log("Checking size to make sure", guessedLetters.size);

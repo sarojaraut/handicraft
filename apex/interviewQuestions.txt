@@ -1,10 +1,53 @@
-What is Oracle Application Express? 
+First of all I think SQL and PL/SQL is a crutial stepping stone to the APEX world, so you can explore some SQL and PL/SQL questions in the older article and here are some updates to the basic concepts questions:
+
+Can FK contains NULL values?
+Explain the autonomous transaction.
+What is the advantage of compound trigger?
+What is view with the CHECK OPTION?
+How can you rollback a transaction after the DDL statement?
+Can you do DML operations on a view?
+How to solve the mutating table error?
+What is a deadlock?
+Explain difference between NLV, NVL2, NULLIF and COALESCE.
+How to handle duplicate rows exception during INSERT?
+How can you refactor query from Oracle JOIN sytax to ANSI syntax?
+What is a whitelisting in PL/SQL?
+
+
+And now to the APEX questions, they are about basic concepts, performance, security and clean code:
+
+What you have to do to make new IG editable?
+How many columns you have available to adjust page layout?
+How do you proceed when you want a two pages/regions share exactly the same query?
+When you create a chart with multiple series, where will you put the query?
+Where you can and where you should store custom CSS/JS?
+How do you proceed when a page is slow?
+What is debug mode 9?
+How can you add message to the APEX debug log from PL/SQL?
+In which view we can see APEX debug messages?
+In which view we can see APEX page items?
+How can you get and set page item values from PL/SQL?
+How can you filter report/grid on page load programatically?
+How can you use the APEX_COLLECTIONS?
+What does #TIMING# on a region?
+What are plugins in APEX and whar are the plugin types?
+What is the difference between PUT and POST REST method?
+Have you created unit tests for APEX app?
+Explain best practices for APEX developers.
+How can you load CSV, JSON and XML files to table by using APEX API?
+How can you evaluate auth scheme on individual page components?
+How can you move the app to a different environment?
+What skills are required for APEX developers?
+
+
+
+What is Oracle Application Express?
 Oracle Application Express (APEX formerly called as HTML DB) is a low-code development platform that enables you to build scalable, secure enterprise apps, with world-class features. Developers claim to build web application 10x faster and with 100x less code compared to traditional hand coding using popular java script frameworks.
 
-There are numerous complexities involved in developing a modern web application, including security, accessibility, efficient data access, performance, and globalization. hese are typically addressed by hand written code. 
+There are numerous complexities involved in developing a modern web application, including security, accessibility, efficient data access, performance, and globalization. hese are typically addressed by hand written code.
 Oracle APEX enables you to focus on your business problem by eliminating this burden and providing world-class components, a deeply customizable user interface, native web service integration, and a whole lot more, out of the box.
 
-Various components provided are : faceted search, interactive grid, interactive report, charting and dashboards, data entry forms, master detail form, calenders, navigation menu, webservice access. All these can be built and customised in a declarative manner. 
+Various components provided are : faceted search, interactive grid, interactive report, charting and dashboards, data entry forms, master detail form, calenders, navigation menu, webservice access. All these can be built and customised in a declarative manner.
 
 Oracle APEX components are rigorously tested for usability, accessibility, performance, and security, out of the box. No coding required.
 
@@ -16,7 +59,7 @@ Oracle APEX uses a database encapsulated simple metadata-driven architecture tha
 
 Oracle APEX uses a simple 3-tier architecture where requests are sent from the browser, through a web server, to the database. All processing, data manipulation and business logic is executed in the database. This architecture guarantees zero latency data access, top performance, and scalability, out of the box.
 
-browser <-> ords <-> Oracle DB with Apex 
+browser <-> ords <-> Oracle DB with Apex
 
 Oracle  REST Data Services (ORDS) : ORDS is a Java application that enables developers with SQL and database skills to develop REST APIs for Oracle Database. It acts as a web listner for APEX
 
@@ -24,7 +67,7 @@ Metadata Driven
 
 When you create or extend an application, Oracle APEX creates or modifies the metadata stored in its database tables. When the application is run, the Oracle APEX engine then reads the metadata and displays the requested page or processes page submissions.
 
-To provide stateful behavior within an application, Oracle APEX transparently manages session state in the database. Application developers can get and set session state using simple substitutions as well as standard SQL bind variable syntax. 
+To provide stateful behavior within an application, Oracle APEX transparently manages session state in the database. Application developers can get and set session state using simple substitutions as well as standard SQL bind variable syntax.
 
 All processing is performed by PL/SQL acting directly on the data schemas in the database. Therefore, Oracle APEX apps are very efficient as data is manipulated directly in the database, and the results are sent back to your web browser. A single API call invokes all of the necessary data processing, based on the metadata definition, in a single request rather than requiring multiple calls to the database.
 
@@ -32,7 +75,7 @@ Stateless Access
 
 Oracle APEX is vastly scalable and can support tens of thousands of concurrent users due to the manner in which it manages database requests. The API calls to the Oracle APEX engine use the standard Oracle database connection pool. This means that once an API call is processed and the response sent back to the browser, the connection used is returned to the database connection pool, and can be used by any other request.
 
-The database sessions are only active when performing a request, otherwise, the users' session is inactive and does not consume any database resources. 
+The database sessions are only active when performing a request, otherwise, the users' session is inactive and does not consume any database resources.
 
 What are the uses of APEX?
     Builds professional looking web applications that are both fast and secure.
@@ -50,7 +93,7 @@ What kind of activities you have done for apex as apex dba?
     Security modal definition
     ad hoc issue and resolution
     Patching /Performance /
-    install ords and deployed ORDS on tomcat and configrue nginx as reverse proxy 
+    install ords and deployed ORDS on tomcat and configrue nginx as reverse proxy
 
 How do you know what version apex is installed in the system?
 If dba view access then select comp_name, version, status from dba_registry or schema user
@@ -70,14 +113,14 @@ APEX is installed on Oracle database.
 At the time of installation it creates several schamas and stored apex objects in those scehmas.
 Objects comprises of meta data in tables, pl/sql code and extensive JavaScript APIs.
 When we create workspace, users and applications details are stored in the metadata tables.
-When we create build new applications app metadata is stored in the corresponding tables and when we run the application 
+When we create build new applications app metadata is stored in the corresponding tables and when we run the application
 The URL request from the browser is translated into appropriate APEX PL/SQL call by ords. After the data is processed, results are relayed back to browser as HTML. This cycle happens each time user request or submit a page. The application session state is maintained in database tables.
 
 What are versions of APEX you have worked with?
-4.0 - dynamic action, plug-in support and restful webservices 
-5.0 - new IDE, page designer, responsive universal theme and theme roller 
-5.1 - IG 
-18.1 - new create application wizard(blue print) ,ew creat page(dashboard page, side by side master detail page), apex spot light search, new rest workshop, rest enabled sql 
+4.0 - dynamic action, plug-in support and restful webservices
+5.0 - new IDE, page designer, responsive universal theme and theme roller
+5.1 - IG
+18.1 - new create application wizard(blue print) ,ew creat page(dashboard page, side by side master detail page), apex spot light search, new rest workshop, rest enabled sql
 192 - faceted search, enahnced list of value, enahnced pop list of values, rest enabled IG, UT improvements(dark mode, collapsible menu, new login page style)
 20.1 - Friendly URLs, better version Software control, Faceted Search, Mega Menus, Redwood User Interface (UI), PDF printing
 
@@ -85,7 +128,7 @@ What are versions of APEX you have worked with?
 What are skills required for APEX Developers?
 SQL, PL/SQL are essential. HTML, CSS and JavaScript are good to have skills to understand and customize look and feel (themes, templates, …. ).
 
-What are the different type of apex users 
+What are the different type of apex users
 Users are divided into three primary roles developer, Workspace administrators  and Instance administrators
 
 Some views of apex
@@ -99,14 +142,14 @@ How will you direct your application to use https instead of http?
 
 
 How is APEX a RAD Tool?
-You can prototype screens while sitting with the user. The Object Browser allows you to create database objects such as tables in addition to viewing those same objects. Quick SQL allows you to create objects on the fly and then build tables around those objects. Al you need is a browser and all applications are run within a browser. Turn-around time is immediate. 
+You can prototype screens while sitting with the user. The Object Browser allows you to create database objects such as tables in addition to viewing those same objects. Quick SQL allows you to create objects on the fly and then build tables around those objects. Al you need is a browser and all applications are run within a browser. Turn-around time is immediate.
 
-Because APEX is declarative, you can easily make changes in real-time via the built-in wizards. 
+Because APEX is declarative, you can easily make changes in real-time via the built-in wizards.
 
-By default APEX manages : 
-session information for you, 
+By default APEX manages :
+session information for you,
 use the security framework built into the Oracle Database,
-manages connection to database 
+manages connection to database
 manages your authentication and authorisation
 you can concentration delivering applications, not on connection configuration and other typical web development time wasters.
 
@@ -159,12 +202,12 @@ In this case one workspace will be used by developers and the other will be the 
 
 What kind of applications you have created?
 1. Last project we made web app for managing the clearing process.
-Clearing is the process which gives last chance to students to get their place secured in an uni. 
-The overall process is universities still have some vacant places they want to fill and some students who have not got a confirmed place in any university. Every year UK govering body UCAS declares dates for clearing. 
+Clearing is the process which gives last chance to students to get their place secured in an uni.
+The overall process is universities still have some vacant places they want to fill and some students who have not got a confirmed place in any university. Every year UK govering body UCAS declares dates for clearing.
 
 Before that the university departments need to setup the courses partcipating in clearing and the number of vacancies in the course
-They also need to setup which are the list of qualifications, subjects and grades acceptable a specific course and they also need to set up a tariff for such qualification/subject and grade. let's say A level physics grade A* is 96 points. And also they need to announce total tariff required for offering a place. minimu cut off without which cnddidates can be outrightly rejected. And all other students be referred in case they still have some empty places to fill. 
-Setting up all these meta data and reviewing that is done using internal app. 
+They also need to setup which are the list of qualifications, subjects and grades acceptable a specific course and they also need to set up a tariff for such qualification/subject and grade. let's say A level physics grade A* is 96 points. And also they need to announce total tariff required for offering a place. minimu cut off without which cnddidates can be outrightly rejected. And all other students be referred in case they still have some empty places to fill.
+Setting up all these meta data and reviewing that is done using internal app.
 reports and manually offering applicants.
 taking phone calls and revewing application adding notes
 
@@ -172,13 +215,13 @@ taking phone calls and revewing application adding notes
 internal facing app for setting up courses which are available for clearing
 
 public facing app for collecting student details( e.g their personal details like name, email telephone, qualification detais, qualification, subject, year, grade), Collecting qualification was a bit tricky because there is no standard set of attributes some internation qualification like IELTS, TOFEL, and IB has completely different set of attributes, like read, write, listen, spoken grades and there is no subject to choose.
-then finally app running the validation process to see if applicant is eligible for offer/reject or review 
+then finally app running the validation process to see if applicant is eligible for offer/reject or review
 accordingly shows the message on screen and sends notificatiob email and text message.
 
-department staff can review applications of their own course and take action against them 
+department staff can review applications of their own course and take action against them
 department users have roles as admin, editor, reader
 authenticated by coprorate active directory
-creating application users 
+creating application users
 self service registration
 
 When to go for APEX and When not to go for APEX?
@@ -191,10 +234,10 @@ Explain the URL structure of an application.
 How will you debug an application? (Debug flag)
 
 How will you define page cache?
-Enabling region caching is an effective way to improve the performance of static regions such as regions containing lists that do not use conditions or regions containing static HTML.When you enable region caching, the Application Express engine renders a region from a cached (or stored) repository instead of rendering it dynamically. 
+Enabling region caching is an effective way to improve the performance of static regions such as regions containing lists that do not use conditions or regions containing static HTML.When you enable region caching, the Application Express engine renders a region from a cached (or stored) repository instead of rendering it dynamically.
 Server Cache = Disabled, Enabled, Enabled, Cache by Session
 
-Specifying a static region ID is useful when creating custom JavaScript or cascading style sheets. 
+Specifying a static region ID is useful when creating custom JavaScript or cascading style sheets.
 
 Where will you add Java Script coding?
 
@@ -215,10 +258,10 @@ There are two primary places to include JavaScript functions:
 
 https://docs.oracle.com/en/database/oracle/application-express/19.1/aexjs/index.html
 
-APEX provides a number of specific places for you to add JavaScript code. 
-You should avoid entering your own <script> tags in places where markup is allowed. 
+APEX provides a number of specific places for you to add JavaScript code.
+You should avoid entering your own <script> tags in places where markup is allowed.
 Also avoid entering JavaScript code using the javascript: pseudo-protocol in places where URLs are allowed.
-Various components may have specific attributes for JavaScript code snippets. For example some regions and items have an Advanced: JavaScript Initialization Code attribute that is used for advanced configuration of the region or item. 
+Various components may have specific attributes for JavaScript code snippets. For example some regions and items have an Advanced: JavaScript Initialization Code attribute that is used for advanced configuration of the region or item.
 Dynamic Actions added to the Global Page can apply to all pages subject to any Server-Side Condition.
 
 Each page can have its own specific JavaScript code added to it using the following page attributes in the "JavaScript" section:
@@ -237,7 +280,7 @@ value = apex.item( "P1_ITEM" ).getValue();
 
 What is the use of Page Group? Or what is Page Group feature? How will you create a page group?
 Page groups do not have any function other than to help developers organize their application pages.
-utilities > page group from right hand side 
+utilities > page group from right hand side
 
 What is ‘page zero‘? How can you restrict page zero items across application?
 
@@ -255,7 +298,8 @@ To view a rendered version of your application,you request it from the Applicati
 
 Oracle Application Express issues implicit commits at the following points:
 •On load, after a page finishes rendering
-•On submit, before branching to another page•On submit, if one or more validations fail, before re-rendering the page
+•On submit, before branching to another page
+•On submit, if one or more validations fail, before re-rendering the page
 •After a computation
 •After changing the value of an item, for example after a PL/SQL processthat modifies a bind variable value or when APEX_UTIL.SET_SESSION_STATE is called.
 •When APEX_MAIL.PUSH_QUEUE is called
@@ -335,7 +379,7 @@ Authentication
 
     What are the authentication methods available?
     Application Express Accounts, Custom Authentication, Database Accounts, HTTP Header Variable, LDAP Directory, Open Door Credentials, Social Sign-In
-    
+
     How will you create a custom authentication?
     for custom auth create a function returning boolean and taking two arguments p_username and p_password
     DBMS_LDAP.init, DBMS_LDAP.simple_bind_s
@@ -345,12 +389,12 @@ Interview Questions on Security
 
     What are the security options available for APEX applications?
     Implement SSL, define association between schema and workspace, Restricting User Access by IP Address(comma delimited IP list), configure appropriate session timeout, enable minimum password strength, restrict password reuse,max password life time. When sensitive data must persist in a session, it should be saved in Oracle Application Express session state tables in encrypted form. To use this feature, set the page item's Store value encrypted in session state attribute to On. Encrypted stored values are automatically decrypted when read.
-    shared components > Session State Protection status (Enabled or Disabled) then we need to specify "Page Access Protection" and "Application Item Protection" and "Page Item Protection" values can be 
-    Unrestricted - Arguments Must Have Checksum - If Request, Clear Cache, or Name/Value arguments appear in the URL, a checksum must also be provided. 
+    shared components > Session State Protection status (Enabled or Disabled) then we need to specify "Page Access Protection" and "Application Item Protection" and "Page Item Protection" values can be
+    Unrestricted - Arguments Must Have Checksum - If Request, Clear Cache, or Name/Value arguments appear in the URL, a checksum must also be provided.
     Arguments Must Have Checksum - If Request, Clear Cache, or Name/Value arguments appear in the URL, a checksum must also be provided.
     No Arguments Allowed - A URL may be used to request the page but no Request, Clear Cache, or Name/Value arguments are allowed.
     No URL Access - The page may not be accessed using a URL; however, the page may be the target of a Branch to Page branch type, which does not do a URL redirect.
-    Application Item Protection : 
+    Application Item Protection :
     Unrestricted - The item's session state may be set by passing the item name/value in a URL or in a form. No checksum is required in the URL.
     Checksum Required: Application Level - The item's session state may be set by passing the item name/value in a URL if a checksum specific to the schema is provided. You can also use a user-level checksum or a session-level checksum (see next bullets). Use this option when you want to allow the item to be set only by URLs having checksums that were generated by any user running the same application in the current workspace but in a different session.
 
@@ -359,13 +403,13 @@ Interview Questions on Security
     Checksum Required: Session Level - The item's session state may be set by passing the item name/value in a URL if a checksum specific to the current session is also provided. Use this option when you want to allow this item to be set only by URLs having checksums that were generated in the current session.
 
     Restricted - May not be set from browser - The item may not be altered using the URL or POSTDATA. Use this option when you want to restrict the way that the item value can be set to internal processes, computations, and so on. This attribute is applicable only to items that cannot be used as data entry items and is always observed even if Session State Protection is disabled.
-    
-    SSP can be set at application level, page level and item level 
+
+    SSP can be set at application level, page level and item level
 
     How will you disable SQL injections?
     substitution variable syntax &. is useful when displaying text dynamically in html but dangreous when used in sql. bind variable syntax should be used instead While building dynamic queries use bind variable instead of concate operation. Use CREATE_COLLECTION_FROM_QUERY_B CREATE_COLLECTION_FROM_QUERY_B2 instead of CREATE_COLLECTION_FROM_QUERY as former use bind variable syntax. Use HTF.ESCAPE_SC and APEX_JAVASCRIPT.ESCAPE for displaying any report where fields are inputed by any form by end user to avoid XSS problem. The HTP.PS function should be used to escape any data from the database. This will automatically escape the <,>,”,& characters.
     begin
-    sys.htp.p(apex_escape.html_whitelist('<h1>Hello<script>alert("XSS");</script></h1>')); 
+    sys.htp.p(apex_escape.html_whitelist('<h1>Hello<script>alert("XSS");</script></h1>'));
     end;
     https://explorer.co.uk/securing-vulnerability-exploits-apex-part-3/
     How will you use check sums? APEX_ITEM.MD5_CHECKSUM. Check sums in URLs.
@@ -386,7 +430,7 @@ Interview Questions on Sessions
 
     JS escapes reserved characters in a JavaScript context, for example:  Item: &P1_DEPTNO!JS. Interactive grid column: &ENAME!JS. Columns in other reports: #ENAME!JS#
     STRIPHTML removes HTML tags from the output and escapes reserved HTML characters, for example: Item: &P1_DEPTNO!STRIPHTML.
-: 
+:
     Built-in Substitution Strings : APP_PAGE_ID, APP_REGION_ID, APP_SESSION, APP_UNIQUE_PAGE_ID, APP_USER, HOME_LINK, LOGIN_URL, LOGOUT_URL, REQUEST, SYSDATE_YYYYMMDD, WORKSPACE_ID
 
 
@@ -401,9 +445,9 @@ Each application button sets the value of REQUEST to the name of the button or t
 
 
 
-    To clear cached items on a single page, specify the numeric page number. 
-    To clear cached items on multiple pages, use a comma-separated list of page numbers. 
-    Clearing a page's cache also resets any stateful processes on the page. Individual or comma-separated values can also include collection names to be reset or the keyword RP, which resets region pagination on the requested page. 
+    To clear cached items on a single page, specify the numeric page number.
+    To clear cached items on multiple pages, use a comma-separated list of page numbers.
+    Clearing a page's cache also resets any stateful processes on the page. Individual or comma-separated values can also include collection names to be reset or the keyword RP, which resets region pagination on the requested page.
     The keyword APP clears cache for all pages and all application-level items in the current
     application and removes sort preferences for the current user. The keyword SESSION achieves the same result as the APP keyword, but
     clears items associated with all applications that have been used in the current session.
@@ -415,7 +459,7 @@ Each application button sets the value of REQUEST to the name of the button or t
     About Controlling How Items Write Session State
 
     Per Request (Memory Only) - Do not save state in the database. State is only available when processing the current request. When AJAX requests need to use an item, make sure to pass the item name using the Page Items To Submit attribute.
-    Per Session (Disk) - Maintain for each session by storing the value in the database, to access it across requests. 
+    Per Session (Disk) - Maintain for each session by storing the value in the database, to access it across requests.
     Per User (Disk) - Value is saved in a user attribute repository and it is also available for later APEX sessions.
 
     The following example resets the value of the items THE_EMPNO and THE_DEPTNO:
@@ -426,7 +470,7 @@ Each application button sets the value of REQUEST to the name of the button or t
     •  Clears the current session's cache for items on page 6003
     •  Indicates to not show debug information (NO)
     •  Sets the value of MY_ITEM1 to 1234, sets the value of MY_ITEM2 to null (indicated by the comma used as placeholder), and sets the value of MY_ITEM3 to 5678
-    
+
     About Clearing Report Regions
     RR - Resets interactive report, interacitve grids, or classic report and also resets report pagination. If the target page contains interactive report or interacvie grids, the report is returned to the default report settings specified by the developer or saved by the user.  If the target page contains classic report, the report sorting resets to developer defined sorting.
     CR - This applies only to interactive report. CR clears interactive report and resets report pagination. This clears all of the session report settings such as control break, aggregate, flashback, chart, number of rows to display, filter, highlight, computation, group by, and pivot.
@@ -451,7 +495,7 @@ Build Option
     Import / Export options.
     How will you disable developer toolbar?
 
-    Use build options to conditionally include or exclude application components and functionality. 
+    Use build options to conditionally include or exclude application components and functionality.
     Build options enable developers to enable or disable application components and functionality when the application installs or at runtime using the APEX_UTIL.GET_BUILD_OPTION_STATUS and APEX_UTIL.SET_BUILD_OPTION_STATUS APIs.
     You can apply build options to most application components (such as pages, regions, items, validations, and so on) and specify whether to include or exclude them in the runtime application.
     Build options have two possible values:
@@ -462,7 +506,7 @@ Build Option
     Use Case 2: Hiding Incomplete Functionality in Various Environments
     Use Case 3: Determining the Consequences of Removing Functionality
 
-    Creating Build Options > Shared Components > Build Options > Create : 
+    Creating Build Options > Shared Components > Build Options > Create :
     Identifies the application to which this build option applies.
     Enter a descriptive name for this build option.
     Status - Options: Include or Exclude
@@ -587,9 +631,9 @@ pattern="[0-9a-zA-Z]{4}" data-valid-message="Four character UCAS Code needed"
 
 apex_application.g_print_success_message := 'Course linked to department '||:p23_dept_id||' and email rules and course subjects cloned from the most recently updated course of this department';
 
-:APEX$ROW_STATUS = 'D' , 'C', U' for manual IG processing 
+:APEX$ROW_STATUS = 'D' , 'C', U' for manual IG processing
 
-validation : va;ue required = yes, template required and server side validation not null. 
+validation : va;ue required = yes, template required and server side validation not null.
 
 APEX_UTIL.PREPARE_URL(
             p_url => 'f?p=' || :APP_ID || ':30:' || :APP_SESSION || '::NO:RP:P30_RULE_ID:' || rh.id
@@ -617,7 +661,7 @@ https://guruparan18.wordpress.com/2010/06/20/oracle-application-express-apex-int
 Standard Dynamic Action using java script
 
 dynamic action condition = $v(this.triggeringElement.Id) === 'Y'
-$v is a function provided by the JavaScript APIs for APEX. It returns the value of an item. 
+$v is a function provided by the JavaScript APIs for APEX. It returns the value of an item.
 
 Action = execute java script to show the region having static id and page item with static id
 $('#product-image-reg').show();
@@ -625,7 +669,7 @@ $('#P6_PRODUCT_IMAGE')
 .closest('.t-Form-fieldContainer')
 .show();
 
-opposite action code 
+opposite action code
 $('#product-image-reg').hide();
 $('#P6_PRODUCT_IMAGE')
 .closest('.t-Form-fieldContainer')
@@ -645,7 +689,7 @@ Code in that property executes in a function scope - after the DOM load event an
 
 ------------
 
-In any Chart region, JavaScript Initialization Code section 
+In any Chart region, JavaScript Initialization Code section
 
 function(options) {
   options.dataFilter = function(data) {
@@ -662,7 +706,7 @@ This anonymous function accepts an options object and modifies it by adding a da
 
 --------------
 
-create static file 
+create static file
 
 function doWork() {
   console.log('doWork fired!');
@@ -678,7 +722,7 @@ function styleSalesByCatChart(options) {
   return options;
 }
 
-including a static file 
+including a static file
 Navigate to the Shared Components > Static Application Files. Click Upload File, use the File(s) item to pick the sample-db-app.js file created in the previous step, and then click Upload. Note the string in the Reference column for the newly uploaded file: #APP_IMAGES#sample-db-app.js.
 Select the page-level attributes (root node under the rendering tab) and put the following file reference in the File URL(s) item in the JavaScript section: #APP_IMAGES#sample-db-app.js
 Attributes of the required region and set the value in JavaScript Initialization Code = just the function name e.g. styleSalesByCatChart

@@ -1,0 +1,47 @@
+
+https://www.freecodecamp.org/news/free-8-hour-node-express-course/
+
+Tip-1
+var {length, 0:x1, [length-1]:x2}=x
+
+Tip-2
+    var myDetails = {name:'Saroj', surname: 'Raut', id: 10}
+    myUpdatedDetails = {...myDetails }
+    delete myUpdatedDetails.id
+    myUpdatedDetails
+
+    {id, ...myDetailsWithoutID} = myDetails
+
+Tip-3
+    Array.from({length:3}) Creates  array with three elements all as undefined : [undefined, undefined, undefined]
+    Array.from({length:3}, (_,i)=>i) Creates  array with three elements : [0, 1, 2]
+    Array.from({length:3}, (_,i)=>({i:`Item-${i}`}))
+
+    Use console.dir() to see the properties of an element when console.log() gives you a DOM element
+
+Tip-4
+    Use rename symbol instead of find and repllace
+
+Tip-5
+    const countryCodes = { in: 'India', ca: 'Canada', gb: 'Great Britain'}
+    console.table(countrycoodes)
+    const sales = [{code:'in',count:10}, {code:'ca',count:20}, {code:'gb',count:30}]
+    const salesMix = sales.map(sale => ({...sale, country:countryCodes[sale.code]}))
+
+console.table(salesMix)
+
+Tip-6
+
+    const [product, course, coupon] = "ES6-ES62-COUPON".split("-")
+
+Tip-7
+
+    Skip Youtube pre-roll ads with: $('video').currentTime = $('video').duration
+
+Tip-8
+
+    const sayHello = ({first, last, id}) => console.log(`Hello ${first} ${last}, yoour is id is #${id}`)
+    person = { first:'Saroj', id:1, last:'Raut' }
+    sayHello(person);
+
+    vowels = [...'aeiou']

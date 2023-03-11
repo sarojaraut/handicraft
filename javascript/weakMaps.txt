@@ -1,0 +1,33 @@
+A Map is an unordered list of key-value pairs where the key and the value can be of any type like string, boolean, number, etc.
+In a Weak Map, every key can only be an object and function. It used to store weak object references.
+In a Weak Map, every key can only be an object and function. It used to store weak object references.
+Maps are iterable.	WeakMaps are not iterable.
+Maps have some properties : .set, .get, .delete, .size, .has, .forEach, Iterators.
+WeakMaps have some properties : .set, .get, .delete, .has.
+
+const newYork = { city: "New York" };
+const nola = { city: "New Orleans" };
+const chicago = { city: "Chicago" };
+const losAngeles = { city: "Los Angeles" };
+
+//Create a WeakMap using the provided variables as keys.
+//Set the value to whatever term you think of when you hear
+//those cities. The value can be anything. Hint: use set()
+const cities = new WeakMap();
+cities.set(newYork, "Big Apple");
+cities.set(nola, "Mardi Gras");
+cities.set(chicago, "Windy City");
+cities.set(losAngeles, "Hollywood");
+
+const bestPctures  = new WeakMap();
+bestPctures.set(2020 , "Parasite"); // Invalid value used as weak map key
+
+
+const newYork = { city: "New York" };
+const cities = new WeakMap();
+cities.set(newYork, "Big Apple");
+nola = { city: "New Orleans" };
+cities.set(nola, "Mardi Gras");
+cities.has(nola) // true
+nola={}
+cities.has(nola) // false

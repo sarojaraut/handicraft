@@ -5,13 +5,41 @@ Number.isFinite(item.id) && item.id !== 0 // returns if ite.id is neither null n
 /*
 Filter : array.filter(function(currentValue, index, arr), thisValue)
 Map : array.map(function(currentValue, index, arr), thisValue)
-Find : array.find(function(currentValue, index, arr),thisValue)
+Find : array.find(function(currentValue, index, arr),thisValue), The findLast() is same as find but iterates the array in reverse order and returns the first element from end.
 forEach : array.forEach(function(currentValue, index, arr), thisValue)
 some : array.some(function(currentValue, index, arr), thisValue)
 every : array.every(function(currentValue, index, arr), thisValue)
 reduce : array.reduce(function(total, currentValue, currentIndex, arr), initialValue)
 includes : array.includes(element, start)
+Array.at() :The at() method is equivalent to the bracket notation when index is non-negative. but bracket notation does not support negative indexing.
+  e.g. for last item of array a we can sar a.at(-1) but using bracket notation we need to specify a[a.length-1]
 
+concat() :is used to merge two or more arrays. This method does not change the existing arrays, but instead returns a new array. patamayers are arrays and/or values to concatenate into a new array.
+  const array1 = ['a', 'b', 'c'];
+  const array2 = ['d', 'e', 'f'];
+  const array3 = array1.concat(array2);
+
+  console.log(array3);
+  expected output: Array ["a", "b", "c", "d", "e", "f"]
+
+
+Array.prototype.flat()
+The flat() method creates a new array with all sub-array elements concatenated into it recursively up to the specified depth.
+
+flat()
+flat(depth) : The depth level specifying how deep a nested array structure should be flattened. Defaults to 1.
+
+const arr2 = [1, 2, [3, 4, [5, 6]]];
+arr2.flat();
+// [1, 2, 3, 4, [5, 6]]
+
+const arr3 = [1, 2, [3, 4, [5, 6]]];
+arr3.flat(2);
+// [1, 2, 3, 4, 5, 6]
+
+const arr4 = [1, 2, [3, 4, [5, 6, [7, 8, [9, 10]]]]];
+arr4.flat(Infinity);
+// [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]s
 
 
 The filter() method returns an array filled with all array elements that pass a test (provided as a function).
@@ -121,7 +149,35 @@ const hasBook = items.includes(book);
 console.log(hasBook);
 
 --- MDN
+Sample code
 
+function isPrime(element, index, array) {
+  let start = 2;
+  while (start <= Math.sqrt(element)) {
+    if (element % start++ < 1) {
+      return false;
+    }
+  }
+  return element > 1;
+}
+
+console.log([4, 6, 8, 12].find(isPrime)); // undefined, not found
+console.log([4, 5, 8, 12].find(isPrime)); // 5
+
+function isPrime(element) {
+  if (element % 2 === 0 || element < 2) {
+    return false;
+  }
+  for (let factor = 3; factor <= Math.sqrt(element); factor += 2) {
+    if (element % factor === 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+console.log([4, 6, 8, 9, 12].findIndex(isPrime)); // -1, not found
+console.log([4, 6, 7, 9, 12].findIndex(isPrime)); // 2 (array[2] is 7)
 
 
 // Java Script Array Methods : push, pop, shift, unshift
@@ -152,6 +208,30 @@ console.log(vegetables)
 console.log(removedItems)
 // ["Turnip", "Radish"]
 
+splice(start)
+splice(start, deleteCount)
+splice(start, deleteCount, item1)
+splice(start, deleteCount, item1, item2, itemN)
+
+item1, …, itemN Optional
+The elements to add to the array, beginning from start.
+
+Return value  : An array containing the deleted elements.
+
+// Remove 0 (zero) elements before index 2, and insert "drum"
+const myFish = ["angel", "clown", "mandarin", "sturgeon"];
+const removed = myFish.splice(2, 0, "drum");
+// Remove 1 element at index 2, and insert "trumpet"
+const myFish = ["angel", "clown", "drum", "sturgeon"];
+const removed = myFish.splice(2, 1, "trumpet");
+
+// myFish is ["angel", "clown", "trumpet", "sturgeon"]
+// removed is ["drum"]
+
+
+// myFish is ["angel", "clown", "drum", "mandarin", "sturgeon"]
+// removed is [], no elements removed
+
 
 // Using an array to tabulate a set of values
 values = []
@@ -181,3 +261,53 @@ a.filter((v,i) => a.indexOf(v) === i) //  [1, 2, 3, 4]
 a.filter((v,i) => a.indexOf(v) !== i) // [3, 2, 1]
 
 a.reduce((arr,i) => arr.includes(i) ? arr : [...arr, i],[]) //[1, 2, 3, 4] second argument of reduce method is must
+
+// Find the Symmetric Difference L A = {1, 2, 3} and B = {2, 3, 4}, A △ B = {1, 4}. also A △ B △ C = (A △ B) △ C
+
+function sym(...args) {
+  let result = new Set();
+  args.forEach(
+    s => new Set(s).forEach( e => result.has(e) ? result.delete(e) : result.add(e))
+  )
+  return Array.from(result);
+}
+
+sym([1, 2, 3, 3], [5, 2, 1, 4]);
+
+console.log(sym([1, 2, 3, 3], [5, 2, 1, 4]))
+
+sym([3, 3, 3, 2, 5], [2, 1, 5, 7], [3, 4, 6, 6], [1, 2, 3], [5, 3, 9, 8], [1]) should return [1, 2, 4, 5, 6, 7, 8, 9].
+
+// Inventory Update https://www.freecodecamp.org/learn/coding-interview-prep/algorithms/inventory-update
+// Compare and update the inventory stored in a 2D array against a second 2D array of a fresh delivery. Update the current existing inventory item quantities (in arr1). If an item cannot be found, add the new item and quantity into the inventory array. The returned inventory array should be in alphabetical order by item.
+
+function updateInventory(arr1, arr2) {
+  let result = new Map();
+  arr1.forEach( q => result.set(q[1],q[0]));
+  arr2.forEach( q => result.has(q[1]) ?
+      result.set(q[1],result.get(q[1]) + q[0]) : result.set(q[1],q[0]) )
+  return Array.from(result).map( q => [q[1], q[0]]).sort(
+      (x,y) => x[1] < y[1] ? -1 : 1);
+}
+
+// Example inventory lists
+var curInv = [
+  [21, "Bowling Ball"],
+  [2, "Dirty Sock"],
+  [1, "Hair Pin"],
+  [5, "Microphone"]
+];
+
+var newInv = [
+  [2, "Hair Pin"],
+  [3, "Half-Eaten Apple"],
+  [67, "Bowling Ball"],
+  [7, "Toothpaste"]
+];
+
+console.log(updateInventory(curInv, newInv));
+
+// sorting compareFn(a, b) return value	sort order
+// < 0	sort a before b
+// > 0	sort a after b
+// === 0	keep original order of a and b

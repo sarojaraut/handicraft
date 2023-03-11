@@ -1,13 +1,13 @@
 Genaral Guide lines
 
 Choose proper table :
-    heap table : default use unless any compelling reason to use other 
-    partitioned table : for large data set, making use of partition pruning, easier data purge 
-    mv : for storing pre computed data 
+    heap table : default use unless any compelling reason to use other
+    partitioned table : for large data set, making use of partition pruning, easier data purge
+    mv : for storing pre computed data
     choose appropriate pctfree for tables which are heavily updated with more data later
     define fk where appropriate this gives usefull insight to optimiser along with data integrity
-    global temporary tables for avoiding redo generation 
-maximise data loading speed : make table as no logging and use append and append_values hint as appropriate ctas 
+    global temporary tables for avoiding redo generation
+maximise data loading speed : make table as no logging and use append and append_values hint as appropriate ctas
 efficient data removal : truncate table, alter table f_sales truncate partition p_2012;
 --
 analyze table emp list chained rows;
@@ -21,7 +21,7 @@ where rowid in
 (select head_rowid from chained_rows where table_name = 'EMP');
 insert into emp select * from temp_emp;
 select count(*) from user_extents where segment_name='EMP';
-ALTER TABLE...SHRINK SPACE or truncate table 
+ALTER TABLE...SHRINK SPACE or truncate table
 alter table emp enable row movement;
 alter table emp shrink space;
 alter table emp shrink space cascade; -- shrink space for index as well
@@ -30,13 +30,13 @@ sometimes we need to enable/disble constraint for loading very large volume of d
 compress indexes whereever applicable : create index cust_cidx1 on cust(last_name, first_name) compress 1; -- last_name are mostly repeated
 bitmap index on foreign key columns and may disable them during data loading
 faster index creation with no logging
-avoid accidental full table scan by applying any function on indexed column trunc or to_char or lower 
+avoid accidental full table scan by applying any function on indexed column trunc or to_char or lower
 --
-use pipelined function for returning complex dataset 
-use plsql associative array for faster look up 
-identify plsql that needs to be pinned 
-use identity columns wherever possible 
-leverage plsql reslt cache 
+use pipelined function for returning complex dataset
+use plsql associative array for faster look up
+identify plsql that needs to be pinned
+use identity columns wherever possible
+leverage plsql reslt cache
 avoid not clause in sql wherever possible not might lead to unwanted fulltable scan
 --
 alter table sales cache;
@@ -53,9 +53,9 @@ exec DBMS_MONITOR.CLIENT_ID_TRACE_DISABLE('this is a test');
 --
 begin
   dbms_monitor.session_trace_enable (
-    session_id => <SID>, 
-    serial_num => <serial#>, 
-    waits      => true, 
+    session_id => <SID>,
+    serial_num => <serial#>,
+    waits      => true,
     binds      => true
     plan_stat  => 'all_executions');
 end;
@@ -63,7 +63,7 @@ end;
 ALTER SESSION SET sql_trace=TRUE;
 --
 set autotrace traceonly explain
-autotrace on explain 
+autotrace on explain
 --
 select
    r.value                                ||'\diag\rdbms\ '||
@@ -111,7 +111,7 @@ TK Prof takeaway
 parsing numbers are high : use bind variable or increase shared_pool_size
 parse elapsed time is high : may be problem with the number of open cursors
 disk reads are high : indexes are not being used or index absent
-query/current reads are high : indexes may be on lowe cardinality column, use histogram, poor join order etc 
+query/current reads are high : indexes may be on lowe cardinality column, use histogram, poor join order etc
 Number of rows processed is very high compared to number of rows returned : could be poorly written query or poor execution plan picked by optimiser because of lack of dbms_application_info
 
 select disk_reads, sql_text from v$sqlarea
@@ -125,7 +125,7 @@ exec dbms_Stats.gather_table_stats(
      tabname=>'customers',-
      method_opt=>'for all columns size skewonly,-
      for columns (cust_state_province,country_id) size skewonly');
-     
+
 exec dbms_stats.gather_table_stats(null,'customers',
      method_opt=>'for all columns size skewonly,
      for columns (lower(cust_state_province)) size skewonly');
@@ -154,9 +154,9 @@ Types of Hints : Hints can be of the following general types:
 Hints by Category : Optimizer hints are grouped into the following categories:
 
 �Hints for Optimization Approaches and Goals : ALL_ROWS, FIRST_ROWS(N)
-�Hints for Access Paths : FULL, HASH, INDEX, NO_INDEX, INDEX_FFS, NO_INDEX_FFS, 
+�Hints for Access Paths : FULL, HASH, INDEX, NO_INDEX, INDEX_FFS, NO_INDEX_FFS,
 �Hints for Query Transformations : �NO_QUERY_TRANSFORMATION, STAR_TRANSFORMATION, NO_STAR_TRANSFORMATION, FACT, NO_FACT, UNNEST
-�Hints for Join Orders : LEADING, ORDERED, 
+�Hints for Join Orders : LEADING, ORDERED,
 �Hints for Join Operations : USE_NL, NO_USE_NL, USE_HASH, NO_USE_HASH, USE_MERGE, NO_USE_MERGE
 �Hints for Parallel Execution : PARALLEL, NO_PARALLEL
 �Additional Hints : APPEND, PUSH_PRED, NO_PUSH_PRED, DRIVING_SITE
@@ -198,7 +198,7 @@ For the general case I�m not sure if there is always a solution; but for this 
         use_hash(tab2) swap_join_inputs(tab2)
         use_nl(tab4)
 */
- 
+
 The leading() hint allows you to specify the join order, and the use_nl(tab3) ensures we get a nested loop from tab1 to tab3. We then have to join to t2 because of the leading() hint, but the  swap_join_inputs() would make tab2 the build (first) table and the intermediate result the probe (second) table in the hash join. Finally we specify a nested loop for the join to tab4. (For 9i, just change the leading() hint to an ordered() hint, in this case, and swap the order of tab2 and tab3 in the from clause))
 
 col "Description" format a50
