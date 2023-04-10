@@ -171,14 +171,16 @@ EMPTY ON ERROR – Same as EMPTY ARRAY ON ERROR. DEFAULT 'literal_return_value' 
 with tmp as
 (
 select
-    'F'||rownum   f_name
-    ,'L'||rownum  l_name
+    'F'||mod(rownum,4)   f_name
+    ,'L'||mod(rownum,4)  l_name
+    ,'D'||trunc(rownum/4) d_name
 from dual
-connect by rownum <=3
+connect by rownum <=15
 ),
 tmp_json as(
 select
     json_object(
+    key 'dept' value d_name,
     'emps' is
         json_arrayagg(
             json_object(
@@ -189,8 +191,10 @@ select
         )
     ) val
 from tmp
+group by d_name
 )
 select
+    json_value(t.val,'$.dept') dept,
     td.*
 from tmp_json t,
     json_table( -- JSON_TABLE creates a relational view of JSON data. It maps the result of a JSON data evaluation into relational rows and columns.
@@ -303,6 +307,36 @@ select
 from person p
 join dice_rolls dr
 on p.username=dr.username;
+
+-- ABove query is not goinng to generate dice rolled for each user we need to use lateral clause for dynamicity
+with person as(
+select
+    dbms_random.string('u',10)       username -- u - upper case, l - lower case, x - alpha numeric,
+    ,dbms_random.string('p',10)      password -- p - any printable including special character
+    ,round(dbms_random.value(1,100)) age
+    ,round(dbms_random.value,5)      probability  -- int between 0 and 1
+    ,round(dbms_random.value(1,5))   turns
+from dual
+connect by rownum < 10
+)
+select
+    json_object(
+    'username'     value p.username
+    ,'password'    value p.password
+    ,'age'         value p.age
+    ,'probability' value p.probability
+    ,'turns'       value p.turns
+    ,'rolledDice'  value dice.val
+    ) as rec
+from person p,
+    lateral(
+        select
+            round(dbms_random.value(1,5))   val
+        from dual
+        connect by rownum <= p.turns
+    ) dice;
+
+
 
 with t as (
 select
