@@ -3,14 +3,25 @@ External CSS : Write CSS in Separate Files
   <link href="style.css" type="text/css" rel="stylesheet">
 </head>
 
-CSS rule set 
+CSS rule set
 P{
     color:blue;
 }
 
 p is the selector
-content inside curly brace pair is declaration block
-color is the property and blue is value 
+content inside curly brace pair is declaration block or ruleset
+color is the property and blue is value
+
+Apart from the selector, each ruleset must be wrapped in curly braces. ({})
+Within each declaration, you must use a colon (:) to separate the property from its value or values.
+Within each ruleset, you must use a semicolon (;) to separate each declaration from the next one.
+
+You can also select multiple elements and apply a single ruleset to all of them. Separate multiple selectors by commas.
+p,
+li,
+h1 {
+  color: red;
+}
 
 inline CSS are inside the opening tag as a style attribute
 <p style="color: blue;">Hello World</p>
@@ -26,7 +37,7 @@ Internal CSS - Write CSS in HTML File
   </style>
 </head>
 
-#Selectors : A selector is used to target the specific HTML element(s) to be styled by the declaration. 
+#Selectors : A selector is used to target the specific HTML element(s) to be styled by the declaration.
 
 type selector/ tag name or element selector
 
@@ -38,7 +49,7 @@ universal selector selects all elements of any type.
 class selector : When working with HTML and CSS a class attribute is one of the most common ways to select an element.
 <p class='brand'>Sole Shoe Company</p>
 .brand {
- 
+
 }
 
 it’s possible to add more than one class name to an HTML element’s class attribute.
@@ -47,7 +58,7 @@ it’s possible to add more than one class name to an HTML element’s class att
 .green {
   color: green;
 }
- 
+
 .bold {
   font-weight: bold;
 }
@@ -57,7 +68,7 @@ If an HTML element needs to be styled uniquely, we can give it an ID using the i
 <h1 id='large-title'> ... </h1>
 
 #large-title {
- 
+
 }
 
 The attribute selector can be used to target HTML elements that already contain attributes. Elements of the same type can be targeted differently by their attribute or attribute value. This alleviates the need to add new code, like the class or id attributes.
@@ -82,7 +93,7 @@ And it can get more granular from there by adding type and/or attribute values. 
 img[src*='winter'] {
   height: 50px;
 }
- 
+
 img[src*='summer'] {
   height: 100px;
 }
@@ -92,11 +103,11 @@ The second ruleset looks for an img element with an attribute of src that contai
 
 Notice how no new HTML markup (like a class or id) had needed to be added, and we were still able to modify the styles of each image independently. This is one advantage to using the attribute selector!
 
-Pseudo-class selector 
-You may have observed how the appearance of certain elements can change, or be in a different state, after certain user interactions. For instance: 
+Pseudo-class selector
+You may have observed how the appearance of certain elements can change, or be in a different state, after certain user interactions. For instance:
 highlight in focus
 grayed out and disabled submit button untill completed forms
-anchor link different color to show already visited 
+anchor link different color to show already visited
 These are all examples of pseudo-class selectors in action! In fact, :focus, :visited, :disabled, and :active are all pseudo-classes.
 
 A pseudo-class can be attached to any selector. It is always written as a colon : followed by a name. For example p:hover.
@@ -120,18 +131,18 @@ IDs are the most specific selector in CSS, followed by classes, and finally, typ
 h1 {
   color: red;
 }
- 
+
 .headline {
   color: firebrick;
 }
 
-In the example code above, the color of the heading would be set to firebrick, as the class selector is more specific than the type selector. 
+In the example code above, the color of the heading would be set to firebrick, as the class selector is more specific than the type selector.
 
 To make styles easy to edit, it’s best to style with a type selector, if possible. If not, add a class selector. If that is not specific enough, then consider using an ID selector.
 
 selector Chaining
 h1.special {
- 
+
 }
 The code above would select only the <h1> elements with a class of special. If a <p> element also had a class of special, the rule in the example would not style the paragraph.
 
@@ -149,7 +160,7 @@ For instance, consider the following HTML:
 The nested <li> elements are descendants of the <ul> element and can be selected with the descendant combinator like so:
 
 .main-list li {
- 
+
 }
 
 In the example above, .main-list selects the element with the.main-list class (the <ul> element). The descendant <li>‘s are selected by adding li to the selector, separated by a space. This results in .main-list li as the final selector.
@@ -168,14 +179,14 @@ For instance, the following code has repetitive style attributes:
 h1 {
   font-family: Georgia;
 }
- 
+
 .menu {
   font-family: Georgia;
 }
 
 Instead of writing font-family: Georgia twice for two selectors, we can separate the selectors by a comma to apply the same style to both, like this:
 
-h1, 
+h1,
 .menu {
   font-family: Georgia;
 }
@@ -234,7 +245,7 @@ CSS has the ability to change the background of an element. One option is to mak
 p {
   color: blue !important;
 }
- 
+
 .main p {
   color: red;
 }
@@ -372,7 +383,7 @@ Horizontal margins (left and right), like padding, are always displayed and adde
 #img-one {
   margin-right: 20px;
 }
- 
+
 #img-two {
   margin-left: 20px;
 }
@@ -382,7 +393,7 @@ Unlike horizontal margins, vertical margins do not add. Instead, the larger of t
 #img-one {
   margin-bottom: 30px;
 }
- 
+
 #img-two {
   margin-top: 20px;
 }
@@ -416,7 +427,7 @@ visible—when set to this value, the overflow content will be displayed outside
 The overflow property is set on a parent element to instruct a web browser on how to render child elements. For example, if a div’s overflow property is set to scroll, all children of this div will display overflowing content with a scroll bar.
 
 p {
-  overflow: scroll; 
+  overflow: scroll;
 }
 
 --
@@ -450,7 +461,7 @@ Note: What’s the difference between display: none and visibility: hidden? An e
 ----------------------------------------------------------------------------------------------------------
 Why Change the Box Model?
 
-The box model, however, has an awkward limitation regarding box dimensions. 
+The box model, however, has an awkward limitation regarding box dimensions.
 Unfortunately, under the current box model, the border thickness and the padding will affect the dimensions of the box.
 
 e.g. h1 {
@@ -470,7 +481,7 @@ In this box model, the height and width of the box will remain fixed. The border
 * {
   box-sizing: border-box;
 }
- 
+
 h1 {
   border: 1px solid black;
   height: 200px;
@@ -497,8 +508,8 @@ The default position of an element can be changed by setting its position proper
 
 static - the default value (it does not need to be specified)
 relative - offset properties that will move the element away from its default static position
-absolute - 
-fixed - 
+absolute -
+fixed -
 sticky
 
 Position: Relative
@@ -520,7 +531,7 @@ Changing an element's position to relative does not remove it from the normal fl
   top: 50px;
   left: 120px;
 }
-In the example above, the element of green-box class will be moved down 50 pixels, and to the right 120 pixels, from its default static position. 
+In the example above, the element of green-box class will be moved down 50 pixels, and to the right 120 pixels, from its default static position.
 
 Position: Absolute
 Another way of modifying the position of an element is by setting its position to absolute.
@@ -554,7 +565,7 @@ Push Elements Left or Right with the float Property
 The next positioning tool does not actually use position, but sets the float property of an element. Floating elements are removed from the normal flow of a document and pushed to either the left or right of their containing parent element. It's commonly used with the width property to specify how much horizontal space the floated element requires.
 
 Position: Sticky
-Since static and relative positioned elements stay in the normal flow of the document, when a user scrolls the page (or parent element) these elements will scroll too. 
+Since static and relative positioned elements stay in the normal flow of the document, when a user scrolls the page (or parent element) these elements will scroll too.
 
 And since fixed and absolute positioned elements are removed from the document flow, when a user scrolls, these elements will stay at their specified offset position.
 
@@ -590,7 +601,7 @@ The CSS in the example above will change the display of all <h1> elements to inl
 Display: Block
 Some elements are not displayed in the same line as the content around them. These are called block-level elements. These elements fill the entire width of the page by default, but their width property can also be set. Unless otherwise specified, they are the height necessary to accommodate their content.
 
-Elements that are block-level by default include all levels of heading elements (<h1> through <h6>), <p>, <div> and <footer>. 
+Elements that are block-level by default include all levels of heading elements (<h1> through <h6>), <p>, <div> and <footer>.
 
 Display: Inline-Block
 The third value for the display property is inline-block. Inline-block display combines features of both inline and block elements. Inline-block elements can appear next to each other and we can specify their dimensions using the width and height properties.
@@ -627,7 +638,7 @@ right - moves elements as far right as possible.
   width: 50%;
   height: 150px;
 }
- 
+
 .orange-section {
   background-color: orange;
   width: 50%;
@@ -647,7 +658,7 @@ div {
   width: 200px;
   float: left;
 }
- 
+
 div.special {
   clear: left;
 }
@@ -685,7 +696,7 @@ black:        #000000 or #000
 white:        #FFFFFF or #FFF
 aqua:         #00FFFF or #0FF
 
-Notice that black, white, and aqua are all represented with both three characters and six characters. This can be done with hex colors whose number pairs are the same characters. In the example above, 
+Notice that black, white, and aqua are all represented with both three characters and six characters. This can be done with hex colors whose number pairs are the same characters. In the example above,
 and the letters can be uppercase or lowercase.
 
 There is another syntax for representing RGB values, commonly referred to as “RGB value” or just “RGB”, that uses decimal numbers rather than hexadecimal numbers, and it looks like this:
@@ -812,9 +823,9 @@ Numerical values can range from 1 (lightest) to 1000 (boldest), but it is common
 .left-section {
   font-weight: 700;
 }
- 
+
 .right-section {
-  font-weight: bold; 
+  font-weight: bold;
 }
 
 It’s important to note that not all fonts can be assigned a numeric font weight, and not all numeric font weights are available to all fonts. It’s a good practice to look up the font you are using to see which font-weight values are available.
@@ -988,7 +999,7 @@ All your other elements will inherit your body element's styles.
 
 Sometimes your HTML elements will receive multiple styles that conflict with one another.
 
-Class selector overrides body styling 
+Class selector overrides body styling
 if element has multiple classes then which class defined later in css file or style section wins.
 Override Class Declarations by Styling ID Attributes
 inline styling overrides all of the above
@@ -1166,7 +1177,7 @@ Applying a color on HTML elements is not limited to one flat hue. CSS provides t
 background: linear-gradient(gradient_direction, color 1, color 2, color 3, ...);
 
     background: linear-gradient(35deg, #CCFFFF, #FFCCCC)
-    background: linear-gradient(30deg, red, yellow, rgb(204, 204, 255)); 
+    background: linear-gradient(30deg, red, yellow, rgb(204, 204, 255));
 
 https://www.freecodecamp.org/learn/responsive-web-design/applied-visual-design/use-a-css-linear-gradient-to-create-a-striped-element
 Use a CSS Linear Gradient to Create a Striped Element

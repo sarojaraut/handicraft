@@ -1842,3 +1842,56 @@ conn TEST/test@//localhost:1521/TEST
 -- Create JSON table holidng a JSON document
 CREATE TABLE JSON (doc CLOB CONSTRAINT check_is_valid_json CHECK (doc IS JSON));
 
+
+
+create view temp_data_ubr as
+select j.BDcode,
+    j.BdDescription,
+    j.BUDescription,
+    j.UBRcode,
+    j.UBRlevel,
+    j.UBRDescription
+from temp_data p,
+json_table (
+    p.data ,
+    '$.businessDivisions[*]'
+    columns(
+        BDcode            varchar2(100) path '$.code',
+        BDDescription   varchar2(100) path '$.Description',
+        nested path '$.businessUnits[*]'
+        columns (
+            BUDescription   varchar2(100) path '$.Description',
+            nested path '$.UBRs[*]'
+            columns (
+                UBRcode             varchar2(100) path '$.code',
+                UBRlevel         varchar2(100) path '$.level',
+                UBRDescription   varchar2(100) path '$.Description'
+            )
+        )
+    )
+) j;
+
+create table all_bd_bu_ubr as
+select * from(
+select distinct bddescription  as descr, bdcode as bdcode, null as bu,       null as  ubrcode,'BD' as level_type, null as UBRlevel from temp_data_ubr
+union
+select distinct budescription,           null as bdcode, budescription as bu,null as  ubrcode, 'BU' as level_type, null as UBRlevel from temp_data_ubr
+union
+select distinct ubrdescription,         bdcode,        budescription as bu,   ubrcode,          'UBR' as level_type, UBRlevel from temp_data_ubr
+);
+
+drop table all_bd_bu_ubr_word purge;
+create table all_bd_bu_ubr_word as
+select w.word, bdcode, bu, ubrcode
+from all_bd_bu_ubr temp,
+    lateral(
+        select regexp_substr(temp.descr, '\w+',1,rownum) word
+        from dual
+        connect by rownum < regexp_count(temp.descr, '\w+')+1
+    ) w;
+
+
+select word, count(distinct bdcode), count(distinct bu), count(distinct ubrcode), count(distinct bdcode)+ count(distinct bu)+ count(distinct ubrcode) as total_count
+from all_bd_bu_ubr_word
+group by word
+order by  total_count desc;
