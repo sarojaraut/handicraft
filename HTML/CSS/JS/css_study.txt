@@ -1,3 +1,7 @@
+
+https://css-tricks.com/snippets/css/a-guide-to-flexbox/
+
+
 External CSS : Write CSS in Separate Files
 <head>
   <link href="style.css" type="text/css" rel="stylesheet">
@@ -145,6 +149,19 @@ h1.special {
 
 }
 The code above would select only the <h1> elements with a class of special. If a <p> element also had a class of special, the rule in the example would not style the paragraph.
+
+.classname1.classname2 : elements with both name1 and name2 set within its class attribute
+.classname1 .classname2 : select all elements with name2 that is a child of an element with name1
+element element :
+element, element : div, p{property:value;} /* Selects all <div> elements and all <p> elements */
+element>element: div>p{property:value;} elements where the parent is a <div>
+element+element: div+p{property:value;} /* Selects all <p> elements that are placed immediately after <div> elements */
+[attribute^=value] a[href^="https"]{property:value;} /* Selects every <a> element whose href attribute value begins with "https" */
+[attribute$=value]
+<style>
+p::before{content: "Read this:"} /*
+Inserts something before the content of each <p> element */
+</style>
 
 Descendant Combinator
 CSS also supports selecting elements that are nested within other HTML elements, also known as descendants.
@@ -952,16 +969,93 @@ There are two important components to a flexbox layout: flex containers and flex
 
 To designate an element as a flex container, set the element’s display property to flex or inline-flex. Once an item is a flex container, there are several properties we can use to specify how its children behave. In this lesson we will cover these properties:
 
-justify-content
-align-items
-flex-grow
-flex-shrink
-flex-basis
-flex
-flex-wrap
-align-content
-flex-direction
-flex-flow
+justify-content : Horizontal placing in container
+align-items : Verticcal placing in container
+flex-grow : flex items shrink if container is small. but the flex items will not stretch by default. The flex-grow property specify if items should grow (1)
+flex-shrink : which elements will shrink and in what proportions (1)
+flex-basis : Another way of specifying the width of a flex item(150px)
+flex : shorthand to declare flex-grow, flex-shrink, and flex-basis all in one line
+flex-wrap :  flex items to move to the next line when necessary
+align-content : align-items is for aligning elements within a single row. we can use align-content to space the rows from top to bottom in multi row content.
+    flex-start — all rows positioned at the top of the parent container with no extra space between.
+    flex-end — all rows positioned at the bottom of the parent container with no extra space between.
+    center — all rows at the center of the parent element with no extra space between.
+    space-between — all rows spaced evenly from the top to the bottom of the container with no space above the first or below the last.
+    space-around — all rows spaced evenly from the top to the bottom of the container with the same amount of space at the top and bottom and between each element.
+    stretch — if a minimum height or no height is specified, the rows of elements will stretch to fill the parent container from top to bottom (default value).
+flex-direction  : flex containers have two axes: a main axis and a cross axis. By default, the main axis is horizontal and the cross axis is vertical
+    The main axis is used to position flex items with the following properties:
+    justify-content
+    flex-wrap
+    flex-grow
+    flex-shrink
+    flex-flow
+
+    The cross axis is used to position flex items with the following properties:
+    align-items
+    align-content
+
+    The main axis and cross axis are interchangeable. We can switch them using the flex-direction property. If we add the flex-direction property and give it a value of column
+    flex-direction property can accept four values:
+
+    row — elements will be positioned from left to right across the parent element starting from the top left corner (default).
+    row-reverse — elements will be positioned from right to left across the parent element starting from the top right corner.
+    column — elements will be positioned from top to bottom of the parent element starting from the top left corner.
+    column-reverse — elements will be positioned from the bottom to the top of the parent element starting from the bottom left corner.
+flex-flow : Like the shorthand flex property, the shorthand flex-flow property is used to declare both the flex-wrap and flex-direction properties in one line.
+  flex-direction value and the second is a flex-wrap
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+}
+
+.container {
+  display: flex;
+  flex-flow: column wrap;
+}
+
+
+e.g. flex short hand for grow, shrink and basis
+
+.big {
+  flex-grow: 2;
+  flex-shrink: 1;
+  flex-basis: 150px;
+}
+
+.small {
+  flex-grow: 1;
+  flex-shrink: 2;
+  flex-basis: 100px;
+}
+
+Keep in mind, this doesn’t mean big items will be twice as big as small items, they’ll just take up more of the extra space.
+
+.big {
+  flex: 2 1 150px;
+}
+
+.small {
+  flex: 1 2 100px;
+}
+
+.big {
+ flex: 2 1;
+}
+
+declare flex-grow and flex-shrink, but not flex-basis
+
+.small {
+  flex: 1 20px;
+}
+
+declare flex-grow and flex-basis. Note that there is no way to set only flex-shrink and flex-basis using 2 values.
+
+
+shorthand for above
+
 
 display: flex
 Any element can be a flex container. Flex containers are helpful tools for creating websites that respond to changes in screen sizes. Child elements of flex containers will change size and location in response to the size and position of their parent container.

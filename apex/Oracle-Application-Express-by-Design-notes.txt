@@ -1,0 +1,95 @@
+Book - Oracle Application Express by Design
+
+APEX development teams to move through the classic team building stages of:
+• Forming. Shaking hands, introductions.
+• Storming. Each team member expresses strong opinions about how to best use APEX.
+• Norming. Optimal compromises are agreed upon and documented.
+• Performing. The team pulls together and gets on with the job.
+
+
+Stake Holders
+Infrastructure
+Security
+UX Design
+Developers
+QA
+Support team
+Busiiness Users
+Project Management
+
+must satisfy a large group of stakeholders who all have different and often conflicting wants and needs.
+
+An optimal design must make the appropriate and complex trade-offs in order to maximize the benefits to the overall organization at the expense of individual stakeholder groups.
+
+Trade-Offs and Quality
+Do trade-offs compromise quality? The short answer is “no” and the long answer is, “let’s look at the question in more detail so we can be on the same page”.
+
+conundrum of Good, Fast, and Cheap. These are mutually exclusive targets where a “good” artifact will be slow and expensive to build.
+When you want a fast and cheap artifact, the “good” aspect will suffer.
+The Fast and Cheap targets are measurebale, might not be precisely and accurately but to a precission point
+But Good is more of being open-ended without precision. This reflects the need for trade-offs due to the many different definitions of Good.
+
+Inside vs. Outside of the Box
+
+Working inside the box refers to building APEX applications by using APEX’s declarative framework exclusively.
+Working outside the box refers to using the APEX declarative framework + custom code and other programming tools that are used to build artifacts that
+cannot be built directly by the APEX declarative framework.
+
+Inside the BOX :
+    Pros
+        Simple architecture
+        Relatively few moving parts
+        Professional looking interface
+        Acceptable User Experience (UX)
+        Fast development
+        Low development cost
+        Stable applications
+        Easy maintenance
+        Small teams get big results
+        Secure
+    Cons
+        User interface is not fully branded
+        Limited to APEX’s components
+        Many pages
+        Full page refreshes
+        Many extra clicks
+
+Outside the box : You take the control of UI/UX and has infinite  posibilities. But depending on how far you go down the line it may be disadventagous
+        Architecture becomes more complex
+        More moving parts
+        Slower development
+        Higher development cost
+        Risk of instability/ May face issues during APEX upgrade
+        Difficult to maintain/ Oracle support not availablle for custom coding
+        Need larger team with more skillsets
+        Risk of security issues
+
+From a high  level
+User Experience (UX) : Do we need to support drag and drop, one click delete iinstead of context menu, do we need many partial region refresh, is the count of clicks too many.
+Updating the Database : Do we need to use TAPI to be consistent with other
+Branding : Do we need custom template with many sustitution strings
+
+you must accept the fact that you will probably be forced at some point to step outside and when you do, you must decide how far to go and make sure you have a road map so you do not get lost in the myriad of external tools
+
+How can we approach the decision? Here are a few considerations:
+• Study APEX. Find out what is inside the APEX box. In many cases you will be pleasantly surprised.
+Build APEX applications. Do not try to build Forms, .NET, or Java applications with APEX. Many developers who are new to APEX use development techniques that were well suited to their previous toolset. This usually does not work because a lot of time and cost are wasted by forcing proverbial square pegs into round holes.
+• Show your business analysts how APEX works. They are generally concerned with results and are happy to frame requirements in a manner that suits APEX when they become familiar with the ways APEX can achieve positive results.
+• Before stepping outside the APEX box, do explicit cost-benefit and risk analyses. This step is the key to optimizing your design so that it provides maximum benefit to the overall organization.
+
+Database Design for APEX
+Surrogate. A surrogate key column uniquely identifies a row in a table by using a unique but arbitrary number value.
+Natural. A natural key is a set of real-world data that uniquely defines a row in a database table.
+
+Most experienced APEX developers will recommend using single column surrogate primary keys iinsstead of ccompposite PK when you have the luxury of designing your database schema from scratch. This will save you a bit of extra work when you are building APEX pages and regions using the declarative wizards. This efficiency can add up to significant time savings when hundreds of tables are involved in your environment.
+
+Better thick Database Design
+
+Data integrity is ensured by using database components that prevent bad data from entering the data
+tables. The main data integrity components are:
+• Unique indexes
+• Constraints
+• Foreign keys
+• PL/SQL packages that enforce business rules
+
+Many Light Pages vs. One Heavy Page

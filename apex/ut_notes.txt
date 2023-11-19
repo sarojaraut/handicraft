@@ -1,0 +1,5 @@
+<div class="u-color-1 padding-md mxw500 margin-auto u-textCenter">Region (Blank with Attributes) example.</div>
+
+--ut-body-title-background-color: var(--rw-dark-body-title-background-color);
+--ut-header-menubar-background-color: var(--rw-palette-neutral-30);
+

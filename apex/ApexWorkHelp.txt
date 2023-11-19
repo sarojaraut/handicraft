@@ -1,3 +1,78 @@
+Sidhamula:Jul07
+IG Validation
+Custom Attributes of NAME column : pattern="^[-A-Z a-z']*$" data-valid-message="Name is required and must not contain special characters or numbers"
+
+
+To prevent users from posting blank rows, under Client-side Condition, we need to set type as Javascript expression.
+
+apex.item('P1_FILE_BLOB').value.length>0 ||
+apex.item('P1_POST_COMMENT').value.length>0
+
+apex_util.get_since(p.created) post_date,
+
+$(this.triggeringElement).val() -- Dynamic acction on a  field
+
+$('#id') : Jquery selector
+
+Add a click event handler
+$('img').on('click', function() {
+  console.log('You clicked an image!');
+});
+
+$('#P1_SEARCH').attr('disabled', 'disabled');
+$('#P1_SEARCH').removeAttr('disabled');
+
+$('#dashboard-reg').hide();
+$('#dashboard-reg').show();
+
+$('.t-NavigationBar').children().eq(1).addClass('icon-only');
+$('.t-NavigationBar').children().eq(1).removeClass('icon-only');
+
+// Update Badge Text
+apex.jQuery(".js-shopping-cart-item .t-Button-badge").text(this.data.P18_SHOPPING_CART_ITEMS);
+
+// Update Icon
+apex.jQuery(".js-shopping-cart-item .t-Icon").removeClass('fa-cart-empty').addClass('fa-cart-full');
+
+
+
+For Target > URL, enter #action$like?id=&ID.
+Target > URL: #action$delete?id=&ID.
+
+We need this Page Item P1_ACTION_ID to be on the page so that this javascript can store the particular CARD ID when a user clicks either buttons, which in turn, will execute either the like or the delete operations from the URL link targets.
+
+
+apex.actions.add([{
+    name: "like",
+    action: (event, element, args) => {
+        apex.items.P1_ACTION_ID.value = args.id;
+        apex.event.trigger(document, 'action-like');
+        }
+    }, {
+    name: "delete",
+    action: (event, element, args) => {
+        apex.items.P1_ACTION_ID.value = args.id;
+        apex.event.trigger(document, 'action-delete');
+        }
+    }]);
+
+
+
+VAlidate Sal dynamic action :
+
+Execute JS
+var sal = apex.item("cSal"),
+    num = sal.getValue();
+if ( num !== "" && (parseFloat(num) != num || num < 0 || num > 10000)) {
+    sal.node.setCustomValidity("invalid number"); // this message is only shown if there is no data-valid-message attribute on the column item
+} else {
+    sal.node.setCustomValidity(""); // clear the error
+}
+
+And set custom Attribute : data-valid-message="Salary must be a valid number between 0 and 10000."
+
+IG we can column level validation as well as entiree grid level validation
+
 HTML : A markup language the browser understands to render the page
 DOM : You can think of DOM as the in memory object representation of the HTML (DOM Tree) and APIs(set of methods) to work with and alter the DOM tree
 
@@ -15,7 +90,7 @@ I still think jquery are easier to use than native DOM APIs
 
 oracle cloud optimiser hints that can be used in apex apps to choose the best service : apex-adb-high, apex-adb-medium, apex-adb-low
 
-Interactive grid Dynamic action 
+Interactive grid Dynamic action
 ------------------------------------
 var view = apex.region("RuleQualification").widget().interactiveGrid("getViews", "grid");
 var records = view.getSelectedRecords();
@@ -26,7 +101,7 @@ $s("P15_SELECTED_QUAL_ID",records[0][3].v);
 // for ( i = 0; i < records.length; i++) {
 //     //if dealing with LOV for example
 //     console.log(view.model.getValue(records[i], "DOC_REFERENCE").v);
-   
+
 //     //if dealing with regular text type for example
 //     // console.log(view.model.getValue(records[i], "rule_id"));
 // }
@@ -36,8 +111,8 @@ $s("P15_SELECTED_QUAL_ID",records[0][3].v);
 https://www.svgbackgrounds.com/#spectrum-gradient
 
 
-declare 
-    l_context apex_exec.t_context;    
+declare
+    l_context apex_exec.t_context;
     l_emailsidx  pls_integer;
     l_namesids    pls_integer;
     l_region_id number;
@@ -49,7 +124,7 @@ begin
      where application_id = :APP_ID
        and page_id        = 1
        and static_id      = 'CUSTOMERS';
- 
+
     -- Get the query context for the CUSTOMERS IR Region
     -- Documentation: https://docs.oracle.com/en/database/oracle/application-express/19.2/aeapi/OPEN_QUERY_CONTEXT-Function.html
     l_context := apex_region.open_query_context (
@@ -58,28 +133,28 @@ begin
     -- Get the column positions for EMAIL and NAME columns
     l_emailsidx := apex_exec.get_column_position( l_context, 'EMAIL' );
     l_namesids := apex_exec.get_column_position( l_context, 'NAME' );
-    
+
     -- Loop throught the query of the context
-    while apex_exec.next_row( l_context ) loop        
+    while apex_exec.next_row( l_context ) loop
         apex_mail.send (
         p_to                 => apex_exec.get_varchar2( l_context, l_emailsidx ),
         p_template_static_id => 'NEW_YEAR_2020_PROMOTION_DUBAI_BRANCH',
         p_placeholders       => '{' ||
         '    "CUSTOMER":'            || apex_json.stringify( apex_exec.get_varchar2( l_context, l_namesids )) ||
         '   ,"START_DATE":'          || apex_json.stringify( :P2_START_DATE ) ||
-        '   ,"END_DATE":'            || apex_json.stringify( :P2_END_DATE ) ||        
-        '   ,"LOCATION":'            || apex_json.stringify( :P2_LOCATION ) ||        
+        '   ,"END_DATE":'            || apex_json.stringify( :P2_END_DATE ) ||
+        '   ,"LOCATION":'            || apex_json.stringify( :P2_LOCATION ) ||
         '   ,"NOTES":'               || apex_json.stringify( :P2_NOTES ) ||
         '   ,"ITEMS":'               || apex_json.stringify( :P2_ITEMS ) ||
-        '   ,"MY_APPLICATION_LINK":' || apex_json.stringify( apex_mail.get_instance_url || apex_page.get_url( 1 )) ||        
+        '   ,"MY_APPLICATION_LINK":' || apex_json.stringify( apex_mail.get_instance_url || apex_page.get_url( 1 )) ||
         '}' );
      end loop;
- 
+
      apex_exec.close( l_context );
 exception
      when others then
          apex_exec.close( l_context );
-     raise; 
+     raise;
 end;
 
 
@@ -87,30 +162,30 @@ Text to display for the blob download column in a report
 <span title="Download #FILE_NAME# #FILE_SIZE#" aria-hidden="true" class="fa fa-download-alt fam-ellipsis-h fam-is-success fa-lg"></span>
 
 
-select 
-    replace(t.name,'Err at ','') name, 
-    case 
-        when t.name = 'Data Error'  
+select
+    replace(t.name,'Err at ','') name,
+    case
+        when t.name = 'Data Error'
             then 'Fix the following errors before re-try'
         else t.val
     end                           value,
-    case 
-        when name like 'Err at Line%'      
+    case
+        when name like 'Err at Line%'
             then 'color:#e91e63; font-style:italic; text-align:center;'
-        when name like '**Error Records%' or t.name = 'Data Error' 
+        when name like '**Error Records%' or t.name = 'Data Error'
             then 'color:#ff1744; font-weight:bold; text-align:center;'
         when t.name in( 'Ignoring worksheet' ,'Delete count')
             then 'color:#ef6c00; font-weight:italic; text-align:center;'
-        when t.name in ('Export count','Insert count')        
-            then 'color:#43a047; font-weight:bold; text-align:center;'  
+        when t.name in ('Export count','Insert count')
+            then 'color:#43a047; font-weight:bold; text-align:center;'
         else null
     end name_style,
-    case 
+    case
         when name like 'Err at Line%'                         then 'color:#e91e63; font-style:italic;'
         when name like '**Error Records%'                     then 'color:#ff1744; font-style:italic; text-align:center;'
         when t.name = 'Data Error'                            then 'color:#ff1744; font-weight:bold; text-align:center;'
         when t.name in ('Ignoring worksheet','Delete count')  then 'color:#ef6c00; font-weight:italic; text-align:center;'
-        when t.name in ('Export count','Insert count')        then 'color:#43a047; font-weight:bold; text-align:center;' 
+        when t.name in ('Export count','Insert count')        then 'color:#43a047; font-weight:bold; text-align:center;'
         else null
     end val_style
 from ref_data_activity_log ,
@@ -120,7 +195,7 @@ from ref_data_activity_log ,
         columns(
             name    varchar2(4000) path '$.name'
             ,val    varchar2(4000) path '$.val'
-        ) 
+        )
     ) t
 where id = :P33_ID;
 
@@ -131,13 +206,13 @@ where id = :P33_ID;
 Disabled items are not submitted to page session in apex and sometimes you may need to disable some items to stop end users from changing the value but want to submit the value to session state
 -- Create a dynamic action on event before page submit and execute java script = $(':disabled').removeAttr('disabled');
 
-Bulk operations 
+Bulk operations
 
-How can you make sure each ambassaddor has got a feel of one success, one failure and one tough calls 
+How can you make sure each ambassaddor has got a feel of one success, one failure and one tough calls
 
 --- Manual Form proccessing
 
-begin 
+begin
     logger.log(':request = '||:request);
     case :request
         when 'CREATE' then
@@ -151,7 +226,7 @@ begin
             -- Most likely course has been linked to a new department
             -- so need cleanup of old settings and load fresh
             -- We could have done another check to ensure dept id is really changed
-            -- but considering it will be rarely used simpler solution of 
+            -- but considering it will be rarely used simpler solution of
             -- cleanup and  load-fresh is adopted
             -- First delete the email rules and course subject setings
             delete from clr_email where ucas_code=:p23_ucas_code;
@@ -172,10 +247,10 @@ begin
 exception
     when others then
         logger.log_error('Error during page processing '||:APP_PAGE_ID);
-        apex_application.g_print_success_message := '<span style="color:red">Failure processing request, try again after some time or contact your administrator</span>';        
+        apex_application.g_print_success_message := '<span style="color:red">Failure processing request, try again after some time or contact your administrator</span>';
 end;
 
-begin 
+begin
     logger.log(':request = '||:request);
     case :request
         when 'CREATE' then
@@ -190,12 +265,12 @@ end;
 declare
     l_parameters apex_exec.t_parameters;
 begin
- 
+
     -- add the primary key value as the "id" parameter; this will be appended to the URL for DELETE and APPLY_CHANGES
     if :REQUEST in ( 'DELETE', 'APPLY_CHANGES' ) then
         apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'id', p_value => :P2_EMPNO );
     end if;
- 
+
     -- add form item values as parameters for CREATE and APPLY_CHANGES
     if :REQUEST in ( 'CREATE', 'APPLY_CHANGES' ) then
         apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'ENAME',    p_value => :P2_ENAME );
@@ -207,11 +282,11 @@ begin
         apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'MGR',      p_value => :P2_MGR );
         apex_exec.add_parameter( p_parameters => l_parameters, p_name => 'DEPTNO',   p_value => :P2_DEPTNO );
     end if;
-         
+
         -- invoke Web Source Module for and select data
     apex_exec.execute_web_source(
         p_module_static_id => 'Auto_REST_Service_EMP',
-        p_operation        => case :REQUEST 
+        p_operation        => case :REQUEST
                                   when 'APPLY_CHANGES' then 'PUT'
                                   when 'CREATE'        then 'POST'
                                   when 'DELETE'        then 'DELETE' end,
@@ -227,14 +302,14 @@ begin
     --logger.log(':DEPARTMENT='||:DEPARTMENT||',:COURSE='||:COURSE);
     if :APEX$ROW_STATUS = 'D' then
         -- DELETE the record
-        delete 
+        delete
         from course_dept_vw
         where dept_id   = :P23_DEPT_ID
         and   ucas_code = :COURSE;
     elsif :APEX$ROW_STATUS = 'C' then
         insert into course_dept_vw(ucas_code,dept_id)
         values (:COURSE, :P23_DEPT_ID)
-        returning rowid into :ROWID; 
+        returning rowid into :ROWID;
         -- returning clause important otherwise newly added row will not be refreshed
         --logger.log('Row created');
     else
@@ -242,7 +317,7 @@ begin
         -- should be updating but update is restricted for this IG
         NULL;
     end if;
-exception 
+exception
     when others then
     logger.log_error('IG Save failure');
 end;
@@ -250,7 +325,7 @@ end;
 ---- validation
 
 Validation > Value Required = true
-Appearance > Template = required 
+Appearance > Template = required
 Above is a client side validation for server side validation we need to add a validation as item is not null and add appropriate error message
 
 Custom validation message instaed of "Please fill in this field."
@@ -267,12 +342,12 @@ pattern="^[1-9][0-9]?$|^100$" data-valid-message="Valid values 1-100"
 
 -- Setting Application ICON to be displayed in APP Builder
     Upload the icon as static application file better to be 64/64
-    Edit application properties > application icon and provide the file name for Icon File Name. 
-    Note that file name should not contain #APP_IMAGES# part only file name is enough. 
+    Edit application properties > application icon and provide the file name for Icon File Name.
+    Note that file name should not contain #APP_IMAGES# part only file name is enough.
     File should not be uploded into any directory structure
---- Accessing sys_context from apex session 
+--- Accessing sys_context from apex session
 dbms_session.set_identifier(null); -- This is the key for fetching session value
-select 
+select
     case regexp_substr(lower(sys_context('userenv', 'db_name')),'[^_]+',1,2)
     when 'dev' then    '<span style="color:green;font-weight:bold;text-align:center;font-size=400%">DEV</span>'
     when 'test' then '<span style="color:orange;font-weight:bold;text-align:center;font-size=400%">TEST</span>'
@@ -285,7 +360,7 @@ into
 from dual;
 -----
 
-Setting Workspace Level message > 
+Setting Workspace Level message >
 Manage instance > define login message and define system message
 
 <center><span style="color:green;font-weight:bold;text-align:center;font-size=400%">DEV</span></center>
@@ -310,7 +385,7 @@ apex_util.ir_filter(
     p_operator_abbr=>'EQ',
     p_filter_value=>'10');
 
---This resets the interactive report on a given page for the current user session 
+--This resets the interactive report on a given page for the current user session
 --and performs the same function as selecting Reset from the pull down menu.
 
 apex_util.ir_clear(p_page_id => 16);
@@ -352,7 +427,7 @@ select
     ,nvl(crs.rffer_rules,0) rffer_rules
     ,nvl(crs.other_rules,0) other_rules
     ,nvl(crs.total_rules,0) total_rules
-    , case when c.vacancies_internal = 1 
+    , case when c.vacancies_internal = 1
         then '<span aria-hidden="true" style="color:#4caf50" class="fa fa-play-circle"></span>'
         else '<span aria-hidden="true" style="color:#ffa000" class="fa fa-stop-circle"></span>'
     end open
@@ -372,7 +447,7 @@ begin
     l_email_body := 'The URL to the application is: '||l_url;
 end;
 -- apex_util.host_url('SCRIPT') Returns url : https://nsq915ap:8444/ords/
--- withoug script argument it returns https://nsq915ap:8444 (Except ords) 
+-- withoug script argument it returns https://nsq915ap:8444 (Except ords)
 
 declare
        l_hash varchar2(4000);
@@ -382,11 +457,11 @@ declare
          into l_hash
          from emp
         where empno = :P1_EMPNO;
- 
+
        if :P1_HASH <> l_hash then
            raise_application_error(-20001, 'Somebody already updated SAL/COMM');
        end if;
- 
+
        update emp
           set sal = :P1_SAL,
               comm = :P1_COMM
@@ -403,19 +478,19 @@ BEGIN
 END;
 
 -- Link straight from report query
-select 
+select
     rc.ucas_code || ' - '|| c.course_title course
     ,rc.minimum_score
     ,rc.required_for
-    , case when rh.id <0 
+    , case when rh.id <0
         then rh.description
-        else 
+        else
         '<a href="'
         || APEX_UTIL.PREPARE_URL(
             p_url => 'f?p=' || :APP_ID || ':30:' || :APP_SESSION || '::NO:RP:P30_RULE_ID:' || rh.id
             )
         ||'">'
-        || rh.description 
+        || rh.description
         ||'</a>'
         end description
     ,rh.id
@@ -435,7 +510,7 @@ simply assigning like below also works from plsql process
 
 :P1_ITEM_1 := to_char(systimestamp,'dd/mm/yyyy hh24:mi:ss:ff6');
 
---------- Creating apex session from PLSQL 
+--------- Creating apex session from PLSQL
 
 begin
   apex_session.create_session(105,1,'SRAUT');
@@ -449,7 +524,7 @@ begin
             p_page        => 2,
             p_items       => 'P2_DEPTNO',
             p_values      => '10'
-        ) 
+        )
     );
 end;
 /
@@ -458,22 +533,22 @@ end;
 -- Conditional Links for a report
 -- In this example if id is < 0 then show plain description else
 -- show anchered text with link to page 30
--- make sure to change the description column has type plain text 
+-- make sure to change the description column has type plain text
 -- and switch off escaping special characters in this report
 --
-select 
+select
     rc.ucas_code || ' - '|| c.course_title course
     ,rc.minimum_score
     ,rc.required_for
-    , case when rh.id <0 
+    , case when rh.id <0
         then rh.description
-        else 
+        else
         '<a href="'
         || APEX_UTIL.PREPARE_URL(
             p_url => 'f?p=' || :APP_ID || ':30:' || :APP_SESSION || '::NO:RP:P30_RULE_ID:' || rh.id
             )
         ||'">'
-        || rh.description 
+        || rh.description
         |'|</a>'
         end description
     ,rh.id
@@ -483,16 +558,16 @@ left join rule_course_vw rc
 join rule_header_vw rh
     on rc.rule_id = rh.id
 
-select 
+select
     username
     ,user_full_name
     ,role
     ,status
     ,created
-    ,case 
-        when status != 'Pending' 
-        then  'class="ma-button disabled  btn waves-effect waves-light"' 
-        else 'class="ma-button btn btn-outlined waves-effect waves-light icon-float-right"' 
+    ,case
+        when status != 'Pending'
+        then  'class="ma-button disabled  btn waves-effect waves-light"'
+        else 'class="ma-button btn btn-outlined waves-effect waves-light icon-float-right"'
     end   action_button_class
     ,'Approve'  Aprove_button
     ,'Reject'  Reject_button
@@ -503,7 +578,7 @@ select
     -- updated_by
 from user_access_request
 
-Change columns Aprove_button and Reject_button to Links 
+Change columns Aprove_button and Reject_button to Links
 set Link attribute = #ACTION_BUTTON_CLASS# and link text to #APROVE_BUTTON# and #REJECT_BUTTON#
 Set tatic ID for the Report region as accesRequest(Make not static ID value is without hash)
 set target Target URLs for both links as below
@@ -518,17 +593,17 @@ pData is not required.
 javascript:apex.event.trigger(accesRequest, 'APPROVE', [{userName:'#USERNAME#',  role:'#ROLE#'}]);void(0);
 javascript:apex.event.trigger(accesRequest, 'REJECT', [{userName:'#USERNAME#',  role:'#ROLE#'}]);void(0);
 
-apex.event.trigger executes the "Dynamic Action". 
+apex.event.trigger executes the "Dynamic Action".
 [{...}] defines the variables to forward.
 void(0) prevents the browser to do further actions.
 
 What this means is when we click the button it will trigger two custom events APPROVE and REJECT on JQuery Selected #accesRequest
 
-Create a Dynamic Action for custom event 
+Create a Dynamic Action for custom event
 Event = custom, Custom event = APPROVE JQuery Selector = #accesRequest
 True Actions
 Execute Java script = $s('P19_USERNAME', this.data.userName);
-Execute PLSQL = 
+Execute PLSQL =
 
 begin
     apex_acl.replace_user_roles (
@@ -537,7 +612,7 @@ begin
         p_role_static_ids => wwv_flow_t_varchar2(:P19_ROLE) );
     update user_access_request set status = 'Approved' where username=:P19_USERNAME;
     --
-    -- Inside 
+    -- Inside
     --
 end;
 
@@ -578,9 +653,9 @@ end;
 
 or use a trigger
 
-create or replace trigger trg_rule_header_aiu 
+create or replace trigger trg_rule_header_aiu
 before insert or update on rule_header
-for each row 
+for each row
 declare
 begin
     if inserting then
@@ -597,8 +672,8 @@ end;
 ---
 Dynamic action of IG to capture last changed/selected record
 
-Event on Selectionn change 
-Action execute java script 
+Event on Selectionn change
+Action execute java script
 
 -- apex.item.setvalue sets the page item value and apex.server.process submits the item value to server session
 
@@ -634,12 +709,12 @@ Reload on Submit (New Feature for 5.1)
     Only For Success
 
 ---
-Setting item value from plsql, one way is dynamic action returning value or else staright from plsql 
+Setting item value from plsql, one way is dynamic action returning value or else staright from plsql
 
 
-  select first_name into v_empname 
+  select first_name into v_empname
     from employees where employee_id = :P12_EMPNO;
-    
+
     apex_util.set_session_state('P12_EMPLOYEE_NAME', v_empname);
 ----
 
@@ -704,13 +779,13 @@ apex.server.process( "generateEmails", {
 });
 
 -- Showing a switch type column in report
-select 
-    build_option_id ID, 
-    build_option_name build_option, 
-    build_option_status, 
+select
+    build_option_id ID,
+    build_option_name build_option,
+    build_option_status,
     apex_item.hidden(p_idx => 1, p_value => build_option_id) ||
     apex_item.hidden(p_idx => 2, p_value => build_option_status) ||
-    apex_item.switch ( 
+    apex_item.switch (
        p_idx => 3,
        p_value => build_option_status,
        p_on_value => 'Include',
@@ -736,15 +811,15 @@ APEX CSS Classes : Class=step-container
 
 
 If you want to show a list of steps in the screen : Sample application customer tracker page 1000
-Create a static region: region template=alert, template options : alert display=horizontal, Alert Icons=Show Icons, Alert type = Information, 
+Create a static region: region template=alert, template options : alert display=horizontal, Alert Icons=Show Icons, Alert type = Information,
 CSS Class=step-container and Icon=fa-number-4
 
 Sttic Radio Groups can be shown using shared component list.
 
-Showing right side context menu 
+Showing right side context menu
 
-Ceate list with detail potions and target pages 
-Add a page region of type list 
+Ceate list with detail potions and target pages
+Add a page region of type list
 Position=right side coulmn
 template =standard
 Template Option=Remove body padding, style=Stack region, item width=stretch form fields, level alignment=right
@@ -797,7 +872,7 @@ if ( this.data.successMessage ) {
 $("#department_report").trigger("apexrefresh");
 
 
--- Jquery Selector 
+-- Jquery Selector
 
 All buttons with id starts with BT_ e.g BT_SAVE, BT_CANCEL, BT_DELETE
 
@@ -865,11 +940,11 @@ end;
 ----
  Interactive report with icons
 
- select 
+ select
   task_name,
   start_date,
   status,
-  case status 
+  case status
     when 'Open' then 'fa-clock-o is-open'
     when 'Closed' then 'fa-check-circle is-closed'
     when 'On-Hold' then 'fa-exclamation-circle is-holding'
@@ -883,7 +958,7 @@ Make the status_icon as hidden and add html expression for status column as  <sp
 ---
 
 
--- ora_hash can be used 
+-- ora_hash can be used
 Returns a hash function for a given user
 select ora_hash('SAROJ RANJAN',44) from dual
 
@@ -910,7 +985,7 @@ function set_item()
     $x('P4_FAMILY_NAME').value="TestSurName";
     $x('P4_NATIONALITY').value="GBR";
     $x('P4_DATE_OF_BIRTH').value= "09"+'-'+"OCT"+'-'+"2000";
- 
+
 }
 
 $s is setting the vaue of check box.
@@ -944,16 +1019,16 @@ Page Designer Alt+9 Go to Gallery Buttons
 
 -----
 They're five ways to reference variables in APEX:
- 
+
 1- :Bind_variables -- can be used in any block of SQL or PL/SQL code inside APEX. also in tabular form column name refeence
 2- &Substitution_strings. -- can be used anywhere in your APEX application such as a HTML region or even a template. You can also use them in inline SQL and PL/SQL code but it is not recommended for security reasons.
 3- V / NV functions -- If you want to reference APEX variables in compiled code, such as views, packages, and procedures, you can't use bind variables. The easiest way to reference the variables is to use the V (for strings) and NV (for numbers) functions.
 4- #Hash#  -- The hash notation of #variable# is used in multiple places. When creating column links in a report you can use the hash notation to represent column values. (example #EMPNO# can be used to reference the EMPNO column in a report)
-5 "Shortcuts". 
+5 "Shortcuts".
 
 ----- Apex Views
 
-select * from APEX_WORKSPACE_ACCESS_LOG order by access_date desc 
+select * from APEX_WORKSPACE_ACCESS_LOG order by access_date desc
 select * from APEX_WORKSPACE_ACTIVITY_LOG
 select * from APEX_WORKSPACE_LOG_SUMMARY
 select * from APEX_WORKSPACE_SESSIONS
@@ -979,33 +1054,33 @@ Dynamic Action Events
 You can define dynamic actions can to fire based on events that happen on the page. (Browser Events, Framework Events, Component Events)
 Browser Events : all supported events, including the internal JavaScript event name in brackets.
 Change (change) - Fires when a control loses the input focus and its value has been modified since gaining focus.
-Click (click), Double Click (dblclick), Get Focus (focusing), Key Down (keydown), Key Press (keypress), Key Release (keyup), Lose Focus (focusout), Mouse Button Press (mousedown), Mouse Button Release (mouseup), Mouse Enter (mouseenter), Mouse Leave (mouseleave), Orientation Change (orientationchange) - Fires when a devices orientation changes (by turning it horizontally or vertically).Page Load (Desktop User Interface uses ready, jQuery Mobile Smartphone User Interface uses pageint), Resize (resize), Scroll (scroll), Select (select) - Fires when a user selects some text in a text field., 
-Swipe (swipe) - Fires when a horizontal drag of 30px or more (and less than 75px vertically) occurs, within a 1 second duration, Swipe Left (swipeleft), Tap (tap) - Fires after a quick touch event., Tap and Hold (taphold), 
+Click (click), Double Click (dblclick), Get Focus (focusing), Key Down (keydown), Key Press (keypress), Key Release (keyup), Lose Focus (focusout), Mouse Button Press (mousedown), Mouse Button Release (mouseup), Mouse Enter (mouseenter), Mouse Leave (mouseleave), Orientation Change (orientationchange) - Fires when a devices orientation changes (by turning it horizontally or vertically).Page Load (Desktop User Interface uses ready, jQuery Mobile Smartphone User Interface uses pageint), Resize (resize), Scroll (scroll), Select (select) - Fires when a user selects some text in a text field.,
+Swipe (swipe) - Fires when a horizontal drag of 30px or more (and less than 75px vertically) occurs, within a 1 second duration, Swipe Left (swipeleft), Tap (tap) - Fires after a quick touch event., Tap and Hold (taphold),
 
 Framework Events : After Refresh (apexafterrefresh), Before Page Submit (apexbeforepagesubmit), Before Refresh (apexbeforerefresh)
-Component Events : 
+Component Events :
 
 When, selection type = Select the type of page element or construct to be used to trigger the event. Item(s) (for multiple items give a comma separated list), Button, Region, jQuery Selector, JavaScript Expression
 
 Actions are categorised into following category
-Component(clear, disable, enable, hide, show, expand tree, collapse tree, set value, set focus), 
-execute(jave script, plsql), navigation(cancel dialog, close dialog, submit page), 
-style(add class, remove class, set style), 
-notification(alert, confirm), 
+Component(clear, disable, enable, hide, show, expand tree, collapse tree, set value, set focus),
+execute(jave script, plsql), navigation(cancel dialog, close dialog, submit page),
+style(add class, remove class, set style),
+notification(alert, confirm),
 misclenaious (cancel event)
 
 dynamic action when > item equals to value, value needs to be given without quotes.
 Action hide and show hides the lebels also.
 Add/Remove Classes
-When > Event=loose focus, selection type=items, items = p7_item condition= is null, 
+When > Event=loose focus, selection type=items, items = p7_item condition= is null,
 
-True Action -> action = add class, fire when event result is = true, class= validation_error, affected elements > item = item name 
+True Action -> action = add class, fire when event result is = true, class= validation_error, affected elements > item = item name
 False Action -> action = remove class
 
 
 Add class : Define a dynamic action on event = loose focus selection type= items, items = PX_ITEM_NAME, client side condition item is null then true action add class and set class=validation_error, also add   false action of remove class
 
-Setting more prominent focus :  event= get focus, selection type = region, region = region name, 
+Setting more prominent focus :  event= get focus, selection type = region, region = region name,
 True action = add class, class=showfocus, selection type=event source
 
 also create opposite DA for loose focus
@@ -1013,15 +1088,15 @@ also create opposite DA for loose focus
 Stripe Report DA plugin : Event = after refresh, selection type=region, region=region_name
 True action = stripe report plugin, color = LemonChiffon
 
-Execute PLSQL on button press : button action = Defined by Dynamic Action, 
+Execute PLSQL on button press : button action = Defined by Dynamic Action,
 True action = action = Ececute PLSQL, PLSQL =  update eba_demo_da_emp set sal = sal * 1.1;
-True action= action=refresh, selection type= region, region name= region 
+True action= action=refresh, selection type= region, region name= region
 true action = action=alert, text=salary updated
 
-Server side Set Value : 
+Server side Set Value :
 
-event = change, selection type=items, items=item_name, 
-true action : action=setvalue, set type = sql statement, 
+event = change, selection type=items, items=item_name,
+true action : action=setvalue, set type = sql statement,
 SQL=
 select d.loc location,
        count(e.empno) num_employees
@@ -1038,7 +1113,7 @@ It can be PLSQL function body e.g return getCommission(:P1_SAL, :P1_JOB);, or de
 
 There is a highlight plug in which highlight for few seconds
 
-Timer DA 
+Timer DA
 
 
 <span class="t-Icon fa fa-trash-o" aria-hidden="true"></span>
@@ -1067,16 +1142,16 @@ Right click and choose Create Dynamic Action. Enter these attributes:
  Custom Event: dialogresizestop dialogdragstop
  Selector Type: jQuery Selector
  jQuery Selector: body
- Change the Show action to Execute JavaScript Code. 
- Change the Selection Type to - Select -. 
- Remember to set Fire on Page Load to No. 
+ Change the Show action to Execute JavaScript Code.
+ Change the Selection Type to - Select -.
+ Remember to set Fire on Page Load to No.
  Enter the following JavaScript
- 
+
  // handle dialog move and resize
 var key, value, store,
     dialog$ = $(this.browserEvent.target), // the dialog being moved or resized
     // the dragstop (move) event doesn't include size so get it from the options
-    size = this.data.size || 
+    size = this.data.size ||
         { width: dialog$.dialog("option", "width"),
          height: dialog$.dialog("option", "height") },
     pos = this.data.position;
@@ -1084,7 +1159,7 @@ var key, value, store,
 // Only save the state of apex dialogs.
 // Give your dialogs their own class if you want to target specific dialogs
 if (dialog$.parents(".ui-dialog--apex").length) {
-    // store the dialog state under a key that includes 
+    // store the dialog state under a key that includes
     //   the app id, page id, and dialog page id
     value = [size.width, size.height, pos.left, pos.top];
     key = dialog$.find("iframe").attr("src");
@@ -1103,11 +1178,11 @@ Still on the global page, create another Dynamic Action with these attributes:
  Custom Event: dialogcreate
  Selector Type: jQuery Selector
  jQuery Selector: body
- Change the Show action to Execute JavaScript Code. 
- Change the Selection Type to - Select -. 
- Remember to set Fire on Page Load to No. 
+ Change the Show action to Execute JavaScript Code.
+ Change the Selection Type to - Select -.
+ Remember to set Fire on Page Load to No.
  Enter the following JavaScript:
- 
+
  var key, value, store,
     dialog$ = $(this.browserEvent.target); // this is the dialog created
 
@@ -1124,7 +1199,7 @@ if (dialog$.parents(".ui-dialog--apex").length) {
         if (value.length === 4) {
             dialog$.dialog("option", "width", parseInt(value[0], 10));
             dialog$.dialog("option", "height", parseInt(value[1], 10));
-            dialog$.dialog("option", "position", 
+            dialog$.dialog("option", "position",
                            [parseInt(value[2], 10), parseInt(value[3], 10)]);
         }
     }
@@ -1139,7 +1214,7 @@ Apex Help Provide the following info :
  <li>Theme
  <li>Template(s)
  <li>Region/item type(s)
- 
+
 
 ----- 5
 ----- 6
@@ -1195,14 +1270,14 @@ The <span> tag is used to group inline-elements in a document. The <span> tag pr
 <span style="font-size:150%;font-weight:bold">#ENAME#</span> the #JOB#
 
 Conditional Formatting
-select e.*,      
+select e.*,
    case when e.Sal>2500 then 'red' else 'black' end as SalColor
 from EMP e
 
 <span style="color:#SALCOLOR#">#SAL#</span>
 
-select e.*,     
-   case when e.Sal>2500 then 'red' else 'black' end as SalColor,     
+select e.*,
+   case when e.Sal>2500 then 'red' else 'black' end as SalColor,
    case when e.Offsite = 'Y' then 'checkgreen.jpg' else 'checkred.jpg' end as OffsiteImage
 from EMP e
 
@@ -1221,29 +1296,29 @@ $(".test").hide() - hides all elements with class="test".
 $("#test").hide() - hides the element with id="test".
 
 $(document).ready(function(){
- 
+
    // jQuery methods go here...
 
  });
  The jQuery team has also created following shorter method for the document ready event:
- 
+
  $(function(){
- 
+
    // jQuery methods go here...
 
- }); 
- 
- 
- 
+ });
+
+
+
 
 Example : When a user clicks on a button, all <p> elements will be hidden:
- 
+
 $(document).ready(function(){
      $("button").click(function(){
          $("p").hide();
      });
  });
- 
+
 Example : When a user clicks on a button, the element with id="test" will be hidden:
 
 $(document).ready(function(){
@@ -1251,15 +1326,15 @@ $(document).ready(function(){
          $("#test").hide();
      });
  });
- 
+
  Example : When a user clicks on a button, the elements with class="test" will be hidden:
  $(document).ready(function(){
      $("button").click(function(){
          $(".test").hide();
      });
  });
- 
- 
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -1310,20 +1385,20 @@ The following example says: When a click event fires on a <p> element; hide the 
 $("p").click(function(){
      $(this).hide();
  });
- 
+
 Here are some common DOM events:
 
 Mouse Events : click, dblclick, mouseenter, mouseleave
 Keyboard Events : keypress, keydown, keyup
 Form Events : submit, change, focus, blur
 Document/Window Events : load, resize, scroll, unload
- 
+
 Example Stylesheet:
  .important {
      font-weight: bold;
      font-size: xx-large;
  }
- 
+
 .blue {
      color: blue;
  }
@@ -1336,11 +1411,11 @@ $("input").focus(function(){
  $("button").click(function(){
      $("#div1").addClass("important blue");
  });
- 
+
  $("button").click(function(){
      $("h1, h2, p").removeClass("blue");
  });
- 
+
 ----- jQuery - Get Content and Attributes
 
 <!DOCTYPE html>
@@ -1386,7 +1461,7 @@ $(document).ready(function(){
 .blue {
   color: blue;
 }
- 
+
 $(".t-LinksList-item").click(function(){
    alert("Value: " + $("#P10_SECTION_CATEGORY").val());
    $(".t-LinksList-item").removeClass("blue");
@@ -1395,8 +1470,8 @@ $(".t-LinksList-item").click(function(){
 
 
 span[data-number^="1"]{color:red;}
- 
- 
+
+
 /*
 $(document).ready(function(){
     $("#id_bc").click(function(){
@@ -1404,7 +1479,7 @@ $(document).ready(function(){
     });
 });
 */
- 
+
 select count(*) from apex_application_files; -- return 0, since we are not running the query inside the APEX environment (that is, our workspace is not defined in SQL*Plus).
 
 select  wwv_flow_api.get_security_group_id from dual;
@@ -1430,10 +1505,10 @@ To tell APEX to use a list of values when displaying a column, change the column
 :APP_USER <> 'APEX_PUBLIC_USER'
 
 
-v_vals apex_t_varchar2 := apex_t_varchar2('CLERK', 20); 
+v_vals apex_t_varchar2 := apex_t_varchar2('CLERK', 20);
 v_result varchar2(1000) := apex_util.get_hash(v_vals); -- variable v_result will contain the hash of the values {'CLERK', 20}.
 
-store the old hash value and before applying the update get the hash values again to check if the record has been updated by another session in the mean time. 
+store the old hash value and before applying the update get the hash values again to check if the record has been updated by another session in the mean time.
 
 Example SQL Expression = :REQUEST in ('Insert', 'Delete', 'Update')
 
@@ -1448,11 +1523,11 @@ Add a button and create a dynamic action to execute java script on click of the 
 add java script code as apex.jQuery(this.affectedElements).dialog();
 in the affected elements section select selection type = region and region=name of the region
 
-Basic modal dialogue > same as above only java script needs to be changed as 
+Basic modal dialogue > same as above only java script needs to be changed as
 
 apex.jQuery(this.affectedElements).dialog({modal: true});
 
-Stylized Modal Dialog > same as above only java script needs to be changed as 
+Stylized Modal Dialog > same as above only java script needs to be changed as
 
 apex.jQuery(this.affectedElements).dialog({
 	closeOnEscape   : true,
@@ -1467,12 +1542,12 @@ apex.jQuery(this.affectedElements).dialog({
 	    apex.jQuery('.ui-widget-overlay').bind('click', function() {
 	        apex.jQuery(this).prev().find('div:nth-child(2)').dialog('close');
 	    });
-	}     
+	}
 });
 
 Opening a modal page for adding department
 This can be done in two ways:
-1. By creating separate page and setting the target page's Page Mode= Modal Dialog and creating on button click page redirect to this page. 
+1. By creating separate page and setting the target page's Page Mode= Modal Dialog and creating on button click page redirect to this page.
 2. By creating separate region in the same page and setting region template to inline dialog and region position to inline dialog - This will stop appearing in normal page.
 Then Button action > redirection to URL, URL= javascript:openModal('addDept'); where addDept is the static id of the region providing functioality of adding department
 Passing row values from a interactive report to modal window : Report attribute> link column=link to custom target, target=javascript:$s('P2_ID','#DEPTNO#');openModal('editDept');
@@ -1480,12 +1555,12 @@ Passing row values from a interactive report to modal window : Report attribute>
 
 If you want to sibmit a page item after it's changed, create a dynamic action of Execute PLSQL Code, set code to NULL; and in the  page item to submitt section choose the page item.
 
-Redirecting interactive report - 
+Redirecting interactive report -
 clear cache = CIR (Clearing report settings)
 clear cache = RIR (Resetting to Developer Defaults)
 clear cache = 18,RIR set these item =IRGT_BUDGET, With these values=5000 (Filtering Report for budgets greater than 5000)
 
-Html form element attributes to adjust width of select list : Advanced > custom attributes = style="width:200px" , 
+Html form element attributes to adjust width of select list : Advanced > custom attributes = style="width:200px" ,
 mnw160 works for text boxes > advanced > CSS classes  = mnw160
 
 select  vt.template_id
@@ -1532,7 +1607,7 @@ Then change this column type as Download Blob and add further details about tabl
 Custom Buttons inside report :
 Column Action > type=link, link text=Manage Items, link attributes = class="t-Button t-Button--hot"
 
-For diaplsying icons : Link text = <span class="t-Icon fa fa-copy"></span><span class="visuallyhidden">Copy</span> 
+For diaplsying icons : Link text = <span class="t-Icon fa fa-copy"></span><span class="visuallyhidden">Copy</span>
 Link Attributes = class="t-Button t-Button--warning" title="Copy"
 -- will show icon but hiden text "copy", text will be displayed when mouse hovered.
 
@@ -1555,9 +1630,9 @@ Use large buttons in wizard type alert region.
 
 Conditional edit link
 
-select	
+select
        case when status != 'Closed'
-            then '<a href="'||apex_util.prepare_url('f?p='||:APP_ID||':2:'||:APP_SESSION||':::2:P2_ROWID:'||ROWID) || '"><img src="#IMAGE_PREFIX#menu/pencil2_16x16.gif" alt="edit"></a>' 
+            then '<a href="'||apex_util.prepare_url('f?p='||:APP_ID||':2:'||:APP_SESSION||':::2:P2_ROWID:'||ROWID) || '"><img src="#IMAGE_PREFIX#menu/pencil2_16x16.gif" alt="edit"></a>'
             else '&nbsp;'
             end edit_link,
        PROJECT,
@@ -1578,7 +1653,7 @@ Change the column type to link. Provide the link target and pass required column
 
 -- If you place any item in the position=master detail(in lay out section) that will be diaplayed as bread crumb back ground
 
---One handy JavaScript function is setFocus. 
+--One handy JavaScript function is setFocus.
 Using the Page HTML Body Attribute will modify the <body> tag as shown here:
 
 <body onLoad="javascript:setFocus('P4_USERNAME');">
@@ -1591,7 +1666,7 @@ execute immediate  'alter session set NLS_SORT=BINARY_CI';
 
 Tuning for case insensitive queries  in Application Express
 
-Depending on the size of the table and type of queries, we may want to build linguistic indexes on the columns to allow case insensitive queries.  
+Depending on the size of the table and type of queries, we may want to build linguistic indexes on the columns to allow case insensitive queries.
 create index nlsci1_gen_person on   MY_PERSON(NLSSORT(PERSON_LAST_NAME, 'NLS_SORT=BINARY_CI'));
 
 This is a great example of using case insensitive data inside Oracle and creating a case insensitive index to allow queries to made in initcap, upper or lower, all without invalidating the index
@@ -1619,7 +1694,7 @@ It is better to create a separate virtual directory to store application-specifi
 all environments use the exact same workspace name, workspace id, and application id, as well as the parsing schema.
 
 Disable Logging
-Shared Components > Edit Application Properties > Logging 
+Shared Components > Edit Application Properties > Logging
 Each time a page is accessed, a log entry is stored. You can reference it from the APEX_WORKSPACE_ACTIVITY_LOG view.
 
 The following query identifies when an error occurs at the page or region level:
@@ -1713,9 +1788,9 @@ Before transmitting any data, the sender encrypts its message, and the receiver 
 
 When we say a message was sent using HTTPS, what we are actually saying is that the message was first encrypted using SSL, transmitted and received using normal HTTP protocol, and then decrypted by the receiver, also with SSL.
 
-it's quite CPU-intensive, and it significantly slows down the speed of transmission.  
+it's quite CPU-intensive, and it significantly slows down the speed of transmission.
 
-Additional operation of decryption, encryption, and handshaking would put extra load on the server and can slow down the speed of transmission. 
+Additional operation of decryption, encryption, and handshaking would put extra load on the server and can slow down the speed of transmission.
 
 I don't think we need Certificate Signing Request(CSR) and get SSL generated by Certificate Authority(Verisign) but this means that access to apex pages will show warning message "Certificate is Un-trusted or issued by un-trusted authority." , unless the certificate is added manually to the trusted list.
 
@@ -1735,19 +1810,19 @@ If you do not know in advance how many rows you might retrieve, you should:
 1. Declare an explicit cursor.
 2. Fetch BULK COLLECT with the LIMIT clause.
 
-CREATE OR REPLACE PROCEDURE bulk_with_limit 
-   (deptno_in IN dept.deptno%TYPE) 
+CREATE OR REPLACE PROCEDURE bulk_with_limit
+   (deptno_in IN dept.deptno%TYPE)
 IS
-   CURSOR emps_in_dept_cur IS 
+   CURSOR emps_in_dept_cur IS
       SELECT * FROM emp
        WHERE deptno = deptno_in;
 
    TYPE emp_tt IS TABLE OF emps_in_dept_cur%ROWTYPE;
    emps emp_tt;
-BEGIN   
+BEGIN
    OPEN emps_in_dept_cur;
    LOOP
-      FETCH emps_in_dept_cur 
+      FETCH emps_in_dept_cur
          BULK COLLECT INTO emps LIMIT 1000;
 
       EXIT WHEN emps.COUNT = 0;
@@ -1763,7 +1838,7 @@ Use the FORALL Bulk Bind Statement
 PROCEDURE upd_for_dept (...)  IS
 BEGIN
    FORALL indx IN low_value .. high_value
-      UPDATE employee 
+      UPDATE employee
          SET salary = newsal_in
        WHERE employee_id = list_of_emps (indx);
 END;
@@ -1834,7 +1909,7 @@ select apex_string.join(apex_t_varchar2('a','b','c'),':') from dual;
 select * from apex_string.shuffle(apex_t_varchar2('One','Two','Three'));
 
 
-declare 
+declare
     x APEX_T_VARCHAR2 := apex_t_varchar2('One','Two','Three');
 begin
     null;
@@ -1847,7 +1922,7 @@ begin
   select ename
     bulk collect into v_arr
     from emp;
-  
+
   dbms_output.put_line(apex_string.join(v_arr, ':'));
 end;
 /
@@ -1864,7 +1939,7 @@ select apex_string.format('Hi %1! Hope to see you at the party. It starts at %0.
     , '18:30'
     , 'Marko'
     , p_max_length => 10) m
-from dual; 
+from dual;
 
 
 --Key value tables - PUT/GET/DELETE
@@ -1877,13 +1952,13 @@ begin
     -- put element into table
     apex_string.plist_put(v_table, i.ename, i.sal);
   end loop;
-  
-  
+
+
   -- get element from table
   dbms_output.put_line(
     apex_string.plist_get(v_table, 'JONES')
-  );  
-end;  
+  );
+end;
 /
 
 -- Email Template
@@ -1907,11 +1982,11 @@ begin
   apex_json.write('URL_LINK'      , 'n/a');
   apex_json.write('URL_NAME'      , 'n/a');
   apex_json.write('START_TIME'    , '15.10.2018.');
-  
+
   apex_json.close_object;
   v_placeholders := apex_json.get_clob_output;
-  apex_json.free_output;  
-  
+  apex_json.free_output;
+
   -- Create the email template first
   apex_mail.send (
       p_template_static_id => 'EVENT'
