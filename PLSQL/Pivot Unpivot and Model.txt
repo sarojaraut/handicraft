@@ -220,6 +220,132 @@ PRODUCT 5_SUMS 5_SUMQ 4_SUMS 4_SUMQ 2_SUMS 2_SUMQ 9_SUMS 9_SUMQ
 O/S Doc Set English 142780.36 3081 381397.99 8044 6028.66 134
 O/S Doc Set French 55503.58 1192 132000.77 2782
 
+
+Dynamic pivot using XM
+---------------------------
+
+with multi_year_quotes as(
+    select /*+ index (q cgl_s_doc_quote_ix5) result_cache */
+        nvl(par_sd_id, row_id)                               base_quote_id,
+        count(*)                                             quote_count,
+        min(eff_start_dt)                                    first_eff_start_dt,
+        max(eff_end_dt)                                      last_eff_end_dt,
+        months_between( max(eff_end_dt), min(eff_start_dt))  total_months
+    from cgl_s_doc_quote q
+    where stat_cd in (
+            'Submitted',
+            'On Hold - Approved',
+            'On Hold - Modified',
+            'Approved',
+            'On Hold -Modified',
+            'On Hold – Modified',
+            'In Progress' )
+        and sys_bu_pguid in ('USA','BIS')
+        and nvl(par_sd_id, row_id)='1-35RPOOC'
+    group by nvl(par_sd_id, row_id)
+    having months_between( max(eff_end_dt), min(eff_start_dt)) > 12
+        and max(eff_end_dt) > sysdate
+),
+quote_agree_order as(
+    select /* parallel(4) index (q cgl_s_doc_quote_ix5) index(o CGL_S_ORDER_IX7) */
+        q.row_id                quote_row_id,
+        q.eff_start_dt          quote_eff_start_dt,
+        q.eff_end_dt            quote_eff_end_dt,
+        q.stat_cd               quote_status,
+        --
+        a.row_id                agree_row_id,
+        -- a.agree_num              ,
+        -- a.rev_num                ,
+        -- a.stat_cd               agree_stat_cd,
+        -- a.eff_start_dt          agree_eff_start_dt,
+        -- a.eff_end_dt            agree_eff_end_dt,
+        --
+        o.row_id                ord_row_id,
+        -- o.status_cd             ord_stat_cd,
+        -- o.x_eff_start_dt        ord_eff_start_dt,
+        -- o.x_eff_end_dt          ord_eff_end_dt,
+        --
+        myq.base_quote_id,
+        myq.quote_count,
+        myq.first_eff_start_dt,
+        myq.last_eff_end_dt,
+        round(myq.total_months) total_months,
+        to_char(q.eff_start_dt,'YYYY') yr
+    from multi_year_quotes myq
+    join cgl_s_doc_quote q
+        on nvl(q.par_sd_id, q.row_id) =  myq.base_quote_id
+    left join cgl_s_doc_agree a
+        on a.quote_id = q.row_id
+    left join cgl_s_order o
+        on o.agree_id = a.row_id
+    where q.eff_start_dt < last_day(sysdate)
+        and base_quote_id='1-35RPOOC'
+)
+--select * from quote_agree_order;
+,yearly_quotes as(
+    select /*+ result_cache */ *
+--        base_quote_id,
+--        quote_count,
+--        first_eff_start_dt,
+--        last_eff_end_dt,
+--        total_months
+    from quote_agree_order o
+    pivot xml (
+        max(quote_row_id) as quote_row_id,
+         max(quote_eff_start_dt) as quote_eff_start_dt,
+         max(quote_eff_end_dt) as quote_eff_end_dt,
+         max(quote_status) as quote_status,
+         max(agree_row_id) as agree_row_id,
+         max(ord_row_id) as ord_row_id,
+         max(quote_count) as quote_count,
+         max(first_eff_start_dt) as first_eff_start_dt,
+         max(last_eff_end_dt) as last_eff_end_dt
+--         for yr in ('2019' as y1, '2020' as y2, '2021' as y3, '2022' as y4, '2024' as y5)
+        for yr in (any)
+    )
+)
+select 
+    1 as id,
+    'YEAR' description,
+    extractvalue(yr_xml,'PivotSet/item[1]/column[@name="YR"]') col1, 
+    extractvalue(yr_xml,'PivotSet/item[2]/column[@name="YR"]') col2,
+    extractvalue(yr_xml,'PivotSet/item[3]/column[@name="YR"]') col3,
+    extractvalue(yr_xml,'PivotSet/item[4]/column[@name="YR"]') col4,
+    extractvalue(yr_xml,'PivotSet/item[5]/column[@name="YR"]') col5
+from yearly_quotes
+union all
+select 
+    2 as id,
+    'QUOTE_ROW_ID' as description,
+    extractvalue(yr_xml,'PivotSet/item[1]/column[@name="QUOTE_ROW_ID"]') col1, 
+    extractvalue(yr_xml,'PivotSet/item[2]/column[@name="QUOTE_ROW_ID"]') col2,
+    extractvalue(yr_xml,'PivotSet/item[3]/column[@name="QUOTE_ROW_ID"]') col3,
+    extractvalue(yr_xml,'PivotSet/item[4]/column[@name="QUOTE_ROW_ID"]') col4,
+    extractvalue(yr_xml,'PivotSet/item[5]/column[@name="QUOTE_ROW_ID"]') col5
+from yearly_quotes
+union all
+select 
+    3 as id,
+    'QUOTE_EFF_START_DT' as description,
+    extractvalue(yr_xml,'PivotSet/item[1]/column[@name="QUOTE_EFF_START_DT"]') col1, 
+    extractvalue(yr_xml,'PivotSet/item[2]/column[@name="QUOTE_EFF_START_DT"]') col2,
+    extractvalue(yr_xml,'PivotSet/item[3]/column[@name="QUOTE_EFF_START_DT"]') col3,
+    extractvalue(yr_xml,'PivotSet/item[4]/column[@name="QUOTE_EFF_START_DT"]') col4,
+    extractvalue(yr_xml,'PivotSet/item[5]/column[@name="QUOTE_EFF_START_DT"]') col5
+from yearly_quotes
+union all
+select 
+    4 as id,
+    'QUOTE_EFF_END_DT' as description,
+    extractvalue(yr_xml,'PivotSet/item[1]/column[@name="QUOTE_EFF_END_DT"]') col1, 
+    extractvalue(yr_xml,'PivotSet/item[2]/column[@name="QUOTE_EFF_END_DT"]') col2,
+    extractvalue(yr_xml,'PivotSet/item[3]/column[@name="QUOTE_EFF_END_DT"]') col3,
+    extractvalue(yr_xml,'PivotSet/item[4]/column[@name="QUOTE_EFF_END_DT"]') col4,
+    extractvalue(yr_xml,'PivotSet/item[5]/column[@name="QUOTE_EFF_END_DT"]') col5
+from yearly_quotes
+;
+
+
 Unpivoting Operations
 An unpivot does not reverse a PIVOT operation. Instead, it rotates data from columns into rows. If you are working with pivoted data, an UNPIVOT operation cannot reverse any aggregations that have been made by PIVOT or any other means.
 
