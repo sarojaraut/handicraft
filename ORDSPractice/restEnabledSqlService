@@ -59,3 +59,9 @@ body : {
   statementText : "select * from dual",
   limit: 2
 } 
+
+Security Considerations
+REST Enabled SQL allows you to run any DDL or DML statement against the Schema in the Remote Database. 
+You should follow the principle of least privilege for the Schema in the Remote Database. 
+I recommend creating a dedicated schema for REST Enabled SQL that starts without access to any database objects. 
+Then add grants and synonyms to allow the Schema to access just the objects it needs.
