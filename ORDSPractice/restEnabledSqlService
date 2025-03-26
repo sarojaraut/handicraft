@@ -1,0 +1,61 @@
+Remote Database Setups
+OCI APEX instance has already this but if you have onprem ords then add the below to the settings.xml for enabling rest enabled service
+<entry key="restEnabledSql.active">true</entry>
+
+You must be running your ORDS server on HTTPS to use REST Enabled SQL.
+
+Once this is in place, you can access REST Enabled SQL using a special endpoint. The endpoint is the base URL for ORDS concatenated with /_/sql.
+
+So, if you access APEX Builder using https://example.com/ords/, then the REST Enabled SQL endpoint would be https://example.com/ords/_/sql.
+
+We need an ORDS OAuth client to secure our REST Enabled SQL Endpoint.
+
+DECLARE
+  c_client_name         CONSTANT VARCHAR2(200) := 'REST_ENABLED_SQL_ACCESS';
+  c_client_description  CONSTANT VARCHAR2(200) := 'Client for OAuth2 Secured REST Enabled SQL Access';
+  c_support_email       CONSTANT VARCHAR2(200) := 'saroj@example.com';
+BEGIN
+
+  -- REST Enable the Schema.
+  ords.enable_schema;
+
+  -- Create OAuth Client to protect the REST Enabled SQL Endpoint. --
+  oauth.delete_client(p_name => c_client_name);
+  oauth.create_client
+   (p_name            => c_client_name,
+    p_description     => c_client_description,
+    p_grant_type      => 'client_credentials',
+    p_support_email   => c_support_email,
+    p_privilege_names => NULL);
+
+  -- Grant Client 'SQL Developer' Role, Needed for REST Enabled SQL.
+  oauth.grant_client_role(c_client_name, 'SQL Developer');
+  commit;
+END;
+/
+
+SELECT name
+,      client_id
+,      client_secret 
+FROM   user_ords_clients
+WHERE  name = 'REST_ENABLED_SQL_ACCESS'
+
+
+Take note of the client_id and client_secret
+
+Get an OAuth Token
+Using the client_id and client_secret from above, we can fetch an OAuth token as follows:
+https://example.com/ords/schemaalias/oauth/token
+post request
+body type : x-www-form-urlencoded
+key: grant_type, value: client_credentials
+
+Using the code above we can send a sql for execution : Test a Basic SQL
+
+post end point /_sql/
+Authz : type bearer token, value : token
+header : content-type : application-json
+body : {
+  statementText : "select * from dual",
+  limit: 2
+} 
