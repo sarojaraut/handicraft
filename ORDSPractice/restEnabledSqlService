@@ -52,7 +52,7 @@ key: grant_type, value: client_credentials
 
 Using the code above we can send a sql for execution : Test a Basic SQL
 
-post end point /_sql/
+post end point /_/sql : e.g : https://test-gfa.lexisnexis.com/ords/dvpdb1/fin-api/_/sql
 Authz : type bearer token, value : token
 header : content-type : application-json
 body : {
