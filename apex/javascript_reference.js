@@ -76,3 +76,54 @@ apex.item( "P1_ITEM" ).setValue( "10" );
 var region = apex.region( "myRegion" );
 region.focus();
 
+// Sample JS Function for select rows in content-row region type
+
+function getSelectedStats(){
+
+    let selectedKeys = apex.item('P88_SELECTED_BULK').getValue();
+    // let selectedKeys = 'urn~ecm~422M2PLQL###1001123390###N:urn~ecm~4253WQ2QY###1001116594###Y:urn~ecm~10000BL5J###1001102530###Y';
+    let stats = { total:0, alreadyIncluded:0, alreadyExcluded:0 }
+    if (selectedKeys !== '')
+    {
+        let selected = selectedKeys.split(':');
+        selected = selected.map( i => i.split('###'));
+        stats.total = selected.length;
+        stats.alreadyIncluded = selected.filter( i => i[2] === 'Y').length;
+        stats.alreadyExcluded = selected.filter( i => i[2] === 'N').length;
+    }
+
+    if (stats.alreadyIncluded > 0 && stats.alreadyExcluded === 0){
+        // $('#exclude-selected').show();
+        $('#exclude-selected').removeAttr('disabled');
+
+    } else{
+        // $('#exclude-selected').hide();
+        $('#exclude-selected').attr('disabled', 'disabled');
+    }
+
+    if (stats.alreadyExcluded > 0 && stats.alreadyIncluded === 0){
+        // $('#include-selected').show();
+        $('#include-selected').removeAttr('disabled');
+    } else{
+        // $('#include-selected').hide();
+        $('#include-selected').attr('disabled', 'disabled')
+    }
+    if (stats.alreadyExcluded > 0 && stats.alreadyIncluded >0 ){
+        apex.item('P88_COMMENTS').hide();
+        $('#process-action-notification').html(`
+        <span class="u-text-body-3 u-italics u-warning-text">
+        Total selected count: ${stats.total}, with ${stats.alreadyIncluded} in included state and ${stats.alreadyExcluded} in excluded state. 
+        All selected items must be in either an "included" or "excluded" state before you can proceed.
+        </span>`);
+    }else{
+        apex.item('P88_COMMENTS').show();
+        $('#process-action-notification').html('')
+    }
+
+    // let processButtonText = 
+    $('#process-selected').text( `Process Selected (${stats.total})`);
+    $('#exclude-selected').text( `Exclude Selected (${stats.alreadyIncluded})`);
+    $('#include-selected').text( `Include Selected (${stats.alreadyExcluded})`);
+
+    return stats;
+}
