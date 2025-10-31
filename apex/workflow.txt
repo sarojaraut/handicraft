@@ -1,0 +1,419 @@
+
+Process Automation
+Process automation is defined as the automation of complex business processes and functions that go beyond simple data entry and record keeping.
+
+It involves setting up workflows to manage tasks, approvals, and communication within a system.
+
+In Oracle APEX, process automation can be achieved using workflows and task definitions, which allow us to design structured processes for handling business operations.
+
+What is a workflow? A workflow is an automated business process where tasks, information, or documents move from one person to another based on specific rules. These rules define the order of steps and any conditions that control how tasks transition from one stage to the next. Oracle APEX Workflow provides basic workflow capabilities for APEX developers.
+
+
+Workflow versions : development, Active, Inactive
+Workflow definitions: info about workflow including parameters, variables, activities, connections and participants
+workflow designer: GUI that models WF
+workflow console: pages for adminisration and management of WFs
+workflow runtime: Runtime engine for the execution of workflows
+workflow page process types: Page process types to start and perform other WF operations
+workflow APIs and views : Public API (APEX_WORKFLOW package) and workflow runtime views
+
+APEX workflows provide the following capabilities-- Workflow Versions for managing both a development and an active version of a workflow-- Workflow Definitions contain information about workflows, including parameters, variables, activities, connections, and participants. Workflow definitions exist on the application level in the Shared Components section.
+
+Workflow Designer is a graphical user interface that models Oracle APEX workflows. You can use Workflow Designer to create or edit workflow definitions. Workflow console pages for the administration and management of workflows-- these workflow pages can be customized by the developer once they are generated.
+
+Workflow runtime engine for the execution of workflows-- we also get a workflow page process type to start and perform other workflow operations. Finally, workflow APIs and views, which include APEX_WORKFLOW PL/SQL package, workflow metadata views, and workflow runtime views. The building blocks of a workflow include parameters-- workflow parameters are inputs for the workflow that are needed to execute the business process.
+
+For example, in a workflow to approve a leave request, parameters could include employee ID and number of leave days. Activities-- workflow activities define what happens at each step in a workflow. Each activity is a logical step that may require a person or a system to complete.
+
+For example, an activity might check data in a table to decide the next step in the workflow. Or it might request input from a workflow participant. Connections-- workflow connections link workflow activities and determine the path through the workflow at runtime.
+
+Participants-- workflow participants are APEX users with operational privileges over a workflow. Variables-- workflow variables, like parameters, are inputs to a workflow. The difference is that they are specific to a workflow version. And the value of a workflow variable can change during the workflow runtime. We will learn more about each of these building blocks in the upcoming lessons of this module.
+
+Let us look at different components of the APEX workflow visual Designer. In the left pane is the Workflow Designer tree. Expanding a workflow shows workflow activities, including activity variables, outgoing and incoming connections for each activity, workflow participants, and workflow variables. This UI is very similar to the rendering tree you get in the Page Designer.
+
+The Activities Palette is a panel that displays all available activity types, including any custom process plugins you have configured. The Activities Palette is located at the bottom of the drawing area. You can add activities to your workflow by dragging them from the Activity Palette onto the Drawing area.
+
+The Diagram toolbar contains tools for interacting with the Diagram Builder. The Workflow Diagram Builder is the central pane of the Workflow Designer. It offers a comprehensive overview of all activities to be executed throughout the workflow. A workflow can have three different user roles interacting with it, each assigned unique privileges.
+
+Workflow owner-- the workflow owner has the authority to initiate and conclude instances of the workflow and to retry any workflow that has encountered an error. 
+Workflow administrator is empowered to start, terminate, suspend, resume, and retry instances of the workflow. Additionally, they have the capability to modify variable values within a workflow instance. 
+
+Workflow initiator-- the user who starts a workflow is known as the workflow initiator. Initiators can terminate workflow instances but only for workflows they initiated.
+
+To summarize, in this lesson, we covered what process automation is. We looked into the workflow components. We also explored different workflow personas or roles which define how various participants interact with workflows. Finally, we learned how to create a workflow in Oracle APEX. I hope you have learned something new. Thank you for watching.
+
+
+create a new page for reps with prepopulated only they need to submit for approval
+
+2nd of subsequent month : submitted for Cursory check/Review Completed by Finance Partner
+Cursory check/Review Completed by Finance Partner
+Cursory check completed by Finance Partner - Finance Partner Reviewed
+Prelims sent to Sales Rep/Account Managers/Renwal Manager - which is most appropriate word? ; Sales Rep Accepted
+Prelims accepted by Sales Rep: 
+Any discrepancies/dispute needs adjustment or commission regeneration
+send to CFO for approval
+Approved by CFO
+Shared with regional HR
+
+Each activity can have three types of connection : normal, error and Timeout
+
+Reviewed by Sales Analyst
+Account Manager Review Submitted
+Account Manager Accepted
+Notify Sales Analyst
+CFO Review Submitted
+CFO Reviewed
+Notify Sales Analyst
+Regional HR Notification
+Email Sent to regional HR
+
+
+Account Manager Prelim Reviw
+CFO/FD/CM Commission Reviw
+
+Review commission payout for Account Manager &REP_FULL_NAME. and period &PERIOD.
+
+select 
+
+
+Process
+Identification Type: Human Task - Manage
+Settings Type: Complete(Without Outcome)
+Task Item ID: 
+
+Build Option - Commented Out
+
+select detail_pk
+from apex_tasks
+where task_id = :P17_TASK_ID
+
+
+declare
+    l_result clob;
+begin
+    select to_clob(replace(replace(replace('
+            <div class="a-CardView has-title has-badge">
+              <div class="a-CardView-header">
+                <div class="a-CardView-headerBody">
+                  <h3 class="a-CardView-title">#SUBJECT#</h3>
+                </div>
+                <div class="a-CardView-badge #BADGE_CSS_CLASSES#" title="#BADGE_TEXT#">
+                  <span class="a-CardView-badgeValue">#BADGE_TEXT#</span>
+                </div>
+              </div>
+            </div>',
+           '#SUBJECT#'          , subject          ),
+           '#BADGE_TEXT#'       , badge_text       ),
+           '#BADGE_CSS_CLASSES#', badge_css_classes) )
+      into l_result
+      from table ( apex_approval.get_tasks (
+                       p_context => 'SINGLE_TASK',
+                       p_task_id => :P17_TASK_ID ) );
+
+    return l_result;
+exception
+    when no_data_found then
+        return l_result;
+end;
+
+Each Activities has a type e.g. Workflow Start, Workflow End, Execute Code, Human Task Create, Invoke Workflow
+
+Each activity can have one outgoing and one incoming connection except start and end
+
+
+Human Task Create : Prelim Review - Sales Rep Input
+    Subject
+    Tasks detail Page
+    action source : None
+    potential owner
+    business admin
+    NO action
+
+
+Appraisal WF
+
+Additional Data
+    select a.id, a.appraisal_date
+    from eba_demo_appr_appraisals a
+    left join eba_demo_appr_emp e
+        on e.empno = a.empno
+    where a.id = :APEX$WORKFLOW_DETAIL_PK
+
+Comment 
+This workflow orchestrates the employee evaluation process beginning with an employee self evaluation. It's detail primary key is the ID column in the EBA_DEMO_APPR_APPRAISALS system of record table. This is configured in the "Additional Data" section above.
+
+
+Human tasks in APEX are tasks that require human intervention, essentially actions performed by people rather than scripts or automation. 
+In APEX, there are two main types of human tasks. 1-Approval tasks and 2.Action Tasks.
+
+Approval tasks are designed for situations where a decision is needed. The person assigned to the task reviews the details and then makes a choice, approve or reject
+
+Action tasks require the person assigned to perform a specific action. Once they have completed it, they mark the task as completed.
+
+The building blocks of human tasks are. 
+    Task definition, a shared component used to configure task parameters, participants, actions, and due dates.
+        task type : approval or action
+        settings: default priority 1 = urgent, 5 is least priority, task detail page, subject, deadline. action source
+            action source, you can specify the source of the data evaluated during the execution of the actions defined in this task definition.
+            Additonal data required to be used in subject
+        participants: who interact with task: initiators, potential owners, actual owners, business admin, vacation rule procedure
+        parameters: 
+        actions: action when task created, 
+    Unified Task List, page type in the Create Page wizard used to create a summary of tasks that functions like an inbox. 
+        When an end user logs in, he or she can go to My Tasks page, for example, which is a Unified Task List page, to see a list of tasks waiting to be actioned on. centralised view, based on report context(My tasks, admin tasks, initiated by me)
+    Task Details page, a page that shows details of a specific task, which can include metadata, history, comments, and actions.
+    Human task create and human task manage. These are page processes that create and act on task instances from within your pages.
+    The APEX_HUMAN_TASK PL/SQL API package used for creating, retrieving, and managing tasks programmatically.
+
+    Task state transition
+        created > unassigned, assigned, errored
+        unassigned > assigned, errored, canceled, expired, completed
+        assigned >  unassigned, errored, canceled, expired, completed, info requested, 
+        info requested > assigned, expired
+        errored > renewed
+        completed > none
+        canceled > none
+        expired > none
+
+    Task renention and purging
+        daily dbms_schedule job
+        keeps unassigned and assigned tasks
+        purges completed, terminated, errored, canceled tasks
+        default perio - 7 days and max can be 30 days
+
+Workflow Versions
+    in development : In development. In development, workflows are editable, but you can only run them in the developer session. Only one version of a workflow can be in development at a time.
+
+    Active workflows. Active workflows are partially editable. Only one version of a workflow can be active at a time. You cannot move an active version back to in development. 
+    
+    Inactive. Inactive workflows are no longer active, and you cannot use an inactive version of a workflow to start a new workflow instance.
+
+when you create a workflow version, it is in development. Once you are satisfied with the workflow model, you can move the workflow version to active. If you move a development version to active, APEX moves the currently active workflow to inactive. You can delete or duplicate inactive workflows. For applications running in a developer session, APEX uses the development version of the workflow to start a new workflow instance. Otherwise, APEX uses the active version of the workflow.
+
+workflow process type. Workflow is a new bridge process type available in Page Designer under the Processing section. Using this process type, you can invoke a workflow and perform workflow operations. The supported operations are-- start, terminate, suspend, resume, and retry.
+
+
+
+
+WorkflowPage process
+Workflow state transitions
+
+A workflow state is the current state of a workflow instance. There are five separate workflow states, and a workflow may only be in one state at a time. Let us look at these five workflow states. 
+
+Active. A workflow that is currently running will be in active state. 
+Suspended. The workflow is paused at a specific activity and can be resumed by the workflow administrator. Typically, a workflow is suspended due to a wait activity. 
+Completed. The workflow has successfully reached its end state.
+Terminated. The workflow has been stopped by the owner or administrator, or has ended with a terminated state attribute. A terminated workflow instance cannot be retried. 
+faulted. An error occurred during execution. The workflow administrator can choose to retry or stop the workflow. Workflows transition to faulted, if an activity cannot run successfully, or if there is an error in the workflow itself due to a failure to retrieve workflow variables, for example, or a system error.
+
+Faulted workflows can be retried after modifying variables, or it can be terminated if the user wants to end the workflow instance.
+
+Let us look at workflow state transitions. So what is a workflow transition? A workflow transition describes a workflow moving from one state to another. Workflow state transitions happen either by the workflow engine itself or by appropriate APIs, or as a result of a user action. For example, a workflow may transition from active state to completed state after a user approves a task.
+
+Let us look at possible transitions. The possible transitions for the active state are completed. A workflow can move from active state to completed state when the workflow reaches an end activity. Halted. It can move to faulted state when the creation of the workflow instance fails due to parameters that cannot be handled correctly, or if there is more than one start activity, or if there is no start activity at all.
+
+A workflow can transition from active state to suspended state based on user request or as per the API. It can also transition from active state to terminated state, because the workflow reaches an end activity that moves the workflow to an terminated state. So all these are possible transitions for the active state.
+
+Let us look at the possible transitions for the faulted state. A workflow can move from faulted state to active state when the workflow is retried. Retrying successfully brings a workflow back into a normal state of operation. A faulted state workflow can also move into a suspended state using the PL/SQL API or based on user request. Same is the case with the terminated state. A faulted state workflow can move into terminated state based on user request, or it can also be achieved using PL/SQL API.
+
+And the possible transitions for the suspended state are active, when the workflow is resumed by the user or using the PL/SQL API. A suspended workflow can go into faulted state when an outstanding activity, which is mostly asynchronous, returns with an error, and the activity and the workflow instance transition to faulted state. It can also go into terminated state based on user request. So these are all the possible workflow transitions for workflow states.
+
+Similar to workflow states, activities inside a workflow also have respective states and transitions. An activity state is the current state of an activity. An activity can only be in one state at a time, similar to workflows. Let us look at activity states. Active state and activity that is currently running will be in active state. Waiting state, an activity that is currently waiting for a result will be in waiting state. For example, an activity might be waiting on approval from a task or waiting for an invoked workflow to run.
+
+Completed. An activity that gets completed successfully will be in completed state. Terminated. An activity that was in active state when the workflow was stopped, that will go into terminated state. Faulted. An activity that fails to run goes into faulted state.
+
+Let us look at activity state transitions. And activity transition describes an activity moving from one state to another. The possible transitions for the active state are completed, when the activity completes successfully, and the workflow continues. Faulted, when the activity fails to run, either because the activity itself faulted, or because something leading into or out of the activity faulted.
+
+Terminated, when the workflow instance is terminated, when this particular activity is active, then that activity goes into terminated state. An activity can transition from active to waiting, when the activity is waiting for a result to come back. For example, asynchronous activities or approval activities may move into a waiting state.
+
+Transitions for the faulted state are at faulted activity can become active when the workflow instance is retried. Any faulted activities move to an active state, and the workflow runtime engine attempts to execute the activity again. The possible transitions for waiting activity state are active, when the activity operation is complete, and signals to the workflow that it is OK to continue. Then the activity will be marked as active. The duration of this transition may be very short, so the user may never experience an activity in waiting state, even when there is a pause in the workflow.
+
+A waiting activity can go to the faulted state when the activity processing fails. And it can go into terminated state when the workflow instance is terminated. These are the possible transitions for activity states.
+
+Depending on the role, various operations are enabled for a workflow instance. Let us look at who can do what operation. Terminate workflow. All the workflow participants, initiated owner, as well as administrator can terminate a workflow. Retry workflow. A workflow initiator cannot retry a workflow, whereas a workflow owner, as well as workflow administrator can retry workflow.
+
+Suspend workflow. Only workflow administrator can suspend a workflow. Workflow initiator and workflow owner cannot do that. Same is the case with update variables. Only workflow administrator can update variables of a workflow. Even the resume workflow, only workflow administrator can resume a workflow. Workflow initiator and workflow owner cannot resume a workflow.
+
+Workflow version is in development as soon as it gets created, in this version all updates are allowed but you can not delete an in development if it's used in invoke WF of another WF.
+
+You can't move an in development WF to active if it uses any WF which does not have an active version
+Version must have at least one owner to move from in devlopment to active.
+
+In active version you can add a activity variable
+To delete an active version you must first make it to inactive, at this stage Any running workflow instances based on this workflow definition continue to run, but no new workflow instances can start based on this workflow version.
+
+Then you can delete that inactive version, you can create a copy before deleting
+
+if you want to deactive an active version which has been referenced by another WF then there must be an dev version otherwise it will not deactivate the active version
+
+there can be only on in dev version of any WF
+
+if you run from an session with developer session attached to it then that uses the in dev version of WF
+
+
+select 
+    workflow_id,
+    workspace,
+    application_id
+    workflow_def_id,
+    workflow_def_name,
+    is_dev_mode,
+    title,
+    workflow_version_id,
+    workflow_version,
+    detail_pk,
+    initiator,
+    state,
+    state_code,
+    start_time,
+    end_time,
+    parent_workflow_id,
+    parent_activity_id,
+    last_updated_by,
+    last_updated_on
+from apex_workflows;
+
+select * from APEX_WORKFLOW_ACTIVITIES where workflow_id=111583262484215516 order by start_time;
+select * from APEX_WORKFLOW_PARAMETERS where workflow_id=111583262484215516;
+select * from APEX_WORKFLOW_VARIABLES where workflow_id=111583262484215516;
+select * from APEX_WORKFLOW_PARTICIPANTS where workflow_id=111583262484215516;
+select * from APEX_WORKFLOW_AUDIT where workflow_id=111583262484215516;
+select * from APEX_WORKFLOW_ACTIVITY_VARS where workflow_id=111583262484215516;
+
+
+
+select * from apex_workflows where workflow_def_static_id ='AM Monthly Commission Review';
+select name, workflow_state, type, state, error_message , static_id
+from apex_workflow_activities where workflow_id=140310533371877642 order by activity_id;
+select * from apex_workflow_parameters where workflow_id=140310533371877642;
+select
+    label,
+    variable_type,
+    display_value
+from apex_workflow_variables where workflow_id=140310533371877642;
+
+select
+    participant,
+    participant_type
+from apex_workflow_participants where workflow_id=140310533371877642;
+select * from apex_workflow_audit where workflow_id=140310533371877642 order by 1 desc;
+
+
+set serveroutput on;
+declare
+    v_pulse_app_id number := 100000;
+    v_comm_app_id  number := 1118089;
+    v_comm_wc_id  number := 103;
+    v_workflow_id number := 140310533371877642;
+    --
+    l_activity_params wwv_flow_global.vc_map;
+    -- l_activity_params apex_workflow.t_workflow_parameters; 
+begin
+
+    apex_session.create_session (
+        p_app_id   => v_comm_wc_id,
+        p_page_id  => 1,
+        p_username => 'RAUTS2' );
+
+    -- apex_workflow.refresh_participants(
+    --     p_instance_id        => v_workflow_id
+    -- );
+
+    apex_workflow.retry(
+        p_instance_id        => v_workflow_id
+    );
+
+    -- apex_workflow.continue_activity (
+    --     p_instance_id    => v_workflow_id,
+    --     p_static_id      => 'New_6',
+    --     p_activity_params => l_activity_params);
+
+    -- apex_workflow.resume(
+    --     p_instance_id        => 140310533371877642,
+    --     p_activity_static_id => 'AM Monthly Commission Review');
+end;
+/
+
+select user_name from apex_appl_acl_user_roles where application_id=103;
+
+select * from APEX_DEBUG_MESSAGES where page_view_id=2923092 order by id desc;
+
+select * from apex_appl_workflows;
+select * from apex_appl_workflows_activities;
+
+select * from all_views where view_name like '%APEX%MAIL%' and owner='APEX_240200';
+
+select * from apex_appl_taskdefs;
+select * from apex_appl_taskdef_actions;
+select * from apex_appl_taskdef_params;
+select * from apex_appl_taskdef_comp_params;
+select * from apex_appl_taskdef_participants;
+select * from apex_appl_taskdefs;
+select * from apex_appl_taskdef_actions;
+select * from apex_appl_taskdef_params;
+--
+select * from apex_tasks where application_id=103 and task_def_name='Account Manager Prelim Reviw';
+select
+    task_def_name,
+    subject,
+    task_type,
+    actual_owner,
+    state
+from apex_tasks 
+where application_id=103 
+    and task_def_name='CFO/FD/CM Commission Reviw'
+    and task_id=145340285127084016;
+select * from apex_task_history;
+select * from apex_task_comments;
+select participant, participant_type 
+from apex_task_participants where task_id=145340285127084016;
+select * from apex_task_parameters;
+--
+select * from apex_purgeable_tasks;
+
+select * from APEX_MAIL_QUEUE;
+select * from APEX_MAIL_log order by mail_id desc;
+
+select * from logger_logs_60_min;
+
+
+set serveroutput on;
+declare
+    v_pulse_app_id number := 100000;
+    v_comm_app_id  number := 1118089;
+    v_comm_wc_id   number := 103;
+    v_task_id      number := 145340285127084016;
+begin
+
+    apex_session.create_session (
+        p_app_id   => v_comm_wc_id,
+        p_page_id  => 1,
+        p_username => 'CHESTEPX' );
+
+    -- apex_human_task.add_task_potential_owner (
+    --     p_task_id               => v_task_id,
+    --     p_potential_owner       => 'RAUTS2'
+    -- );
+    -- Only the potential owner or actual owner of the task can invoke this procedure
+    -- This can be invoked on approval task not on action task
+    /*
+    apex_human_task.approve_task  (
+        p_task_id        => v_task_id
+    );
+*/
+    apex_human_task.complete_task (
+        p_task_id        => v_task_id
+    ); 
+    
+    -- apex_human_task.set_initiator_can_complete  (
+    --     p_task_id        => v_task_id,
+    --     p_initiator_can_complete    => true
+    -- );
+    
+    -- apex_human_task.delegate_task  (
+    --     p_task_id        => v_task_id,
+    --     p_to_user        => 'CHESTEPX'
+    -- );
+
+end;
+/
