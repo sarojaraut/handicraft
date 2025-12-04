@@ -1,0 +1,110 @@
+
+UX 
+ Humans are individuals, users have different needs, hard to measure if it's fine or not.
+Constraints : Time, budget, APEX, design skills etc
+we don't have infinite time or budget to think about UX
+APEX is a framework, it has it's own designs and we can't change everything in a way we want. For example regions looks how it looks.
+Sometimes it's difficult though not impossible. The question then is it really worth putting that effort to change and manage by ourself
+
+Understand your audience
+Age range, cultural background, education level
+small vs large screen
+multi monitors
+touch screen
+Usage context : how much time do users spend with the app. how critical is the impact if we don't make that change
+UX really depends on the purpose of the app
+clean professional vs playful and engaging
+There is no golden standard for UX
+Typical data driven apps for company employees
+App Structure: why structure is important
+users don't like to get lost
+users like to easily find things
+users don't like to get overwhelmed by too many options
+users value predictable navigation pattern (If they go to separate section they can apply the common patterns)
+users appreciate logical grouping of related features
+Not every page need to be accessible from main menu
+group those in logical sections
+level of details hidden by default
+imagine settings menu on your phone, there are certain least used tings that needs few clicks to get there
+
+Why are you teaching him the bad precedent that skipping school just for fun is fine
+When are you teaching him the trend of requesting is fine
+Gan re ta kahibe ki why did you not come during the death anniversary
+
+
+Style and Color
+content matters
+this is not about taste
+people come to the app because they get paid to use the app to get their task done 
+they come to the app because they have to use it not because they are liking the app
+we can make the app appealing but it's not an art contest what matters the most is the content
+Imagine a art gallery, if you remove the arts the gallery becomes boring.
+We need to present the content, e.g. look at youtube all white, just about content and the rhumb nails
+Wikipedia .. so boring look
+we are going there because of their content not fancy animation or cool design
+same as google
+it's not preference it's timeless
+making buttons colourful is bad design, they are already distingushible by name and action, extra colours wanting unnecessary attention
+highlight primary action: guiding you to do something, there should never be two primary actions
+If you think there are two primary buttons, then probably there is no primary button for highliting purpose
+
+color has meaning
+blue - highlight
+green- success, something worked
+yello-warning, caution
+red - bad, denger, destructive
+
+if you don't use these properly then you loose the meaning of colour and people tends to devalue that
+hot buttons should not be red or yellow. even if your company branding has that color, as it clashes with semantic meaning
+you don't have to give up your corporate identity as on argument
+
+Data display
+Tables: structures and analytical data display, IR sort,filter, highlight, saved report, mostly for big screens
+when everything in an interface is competing for attention, it feels noisy and chaotic
+Like one big wall of content where it's not clear what really matters
+Visual hierarchy, making something feel designed 
+
+https://www.data-to-viz.com/#treemap
+
+custom views
+easy to scan
+responsive for small screen
+most importantly it gives the visual hierarchy(most important to least important)
+if we sell products then adding custom template makes sense. for internal use consider cerefully
+
+Chart
+this is a complicated area
+it depends on what question the chart is expected to answer
+read the issue with pie chart: guessing size from angle is diff, bar gives a good sense quickly
+https://www.data-to-viz.com/
+
+Offer predictable value
+floating labels are designed for small screen. If most users are big screen
+Only use an icon if their meaning is obvious
+omit icon if they don't add value
+check: would you get what an action does only with the icon without the label
+
+Uncertainty causes fear
+You know the app as I have built it
+User's don't know what's behind UI
+Add confirmation dialog for destructive actions
+give consistent and good naming Use language everybody understand
+Don't overwhelm users
+subpages if one page gets too big
+different pages for different action
+don't show too many buttons, hide actions behind menu
+Rarely used info in a collapsible region/tabs
+
+Don't frustrate users
+huge form? let user copy entries or save drafts
+validate early
+give clear error messages
+keep pages fast
+move long running tasks to background(notify when done)
+
+Be in contact with your users
+watch how they use the app
+let them give you feedback
+consider evaluating usage metrics
+
+On key takeaway : simple boring UIs that serve the content not overwhelm the users
