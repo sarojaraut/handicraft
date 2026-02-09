@@ -26,7 +26,8 @@ a=5, b=10, c="I am a";
 
 
 
-When JavaScript variables are declared, they have an initial value of undefined. If you do a mathematical operation on an undefined variable your result will be NaN which means "Not a Number". If you concatenate a string with an undefined variable, you will get a literal string of undefined+string value
+When JavaScript variables are declared, they have an initial value of undefined. If you do a mathematical operation on an undefined variable your result will be NaN which means "Not a Number". 
+If you concatenate a string with an undefined variable, you will get a literal string of undefined+string value
 
 In JavaScript all variables and function names are case sensitive. This means that capitalization matters.
 
@@ -41,7 +42,6 @@ var titleCaseOver;
 studlyCapVar = 10;
 properCamelCase = "A string";
 titleCaseOver = 9000;
-
 
 One of the biggest problems with declaring variables with the var keyword is that you can easily overwrite variable declarations:
 
