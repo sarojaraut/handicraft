@@ -349,6 +349,39 @@ from yearly_quotes
 Unpivoting Operations
 An unpivot does not reverse a PIVOT operation. Instead, it rotates data from columns into rows. If you are working with pivoted data, an UNPIVOT operation cannot reverse any aggregations that have been made by PIVOT or any other means.
 
+Questions you need to ask your self:  how many target rows I need for each source row. let's say in the below example I need two rows for each source row
+How many target columns I need in the result
+
+with data as (
+    select 
+    1 id, 
+    trunc(sysdate,'year') y1_s, 
+    trunc(add_months(sysdate, 12), 'year') - 1/86400 y1_e, -- Using trunc/subtraction for clean date bounds
+    1000 y1_val,
+    add_months(trunc(sysdate,'year'),12) y2_s, 
+    add_months(trunc(sysdate,'year'),24) - 1/86400 y2_e,
+    2000 y2_val
+    from dual
+)
+select 
+    id,
+    start_date,
+    end_date,
+    val,
+    year_sequence
+from data
+unpivot (
+    (start_date, end_date, val) for year_sequence in (
+        (y1_s, y1_e, y1_val) as 1,
+        (y2_s, y2_e, y2_val) as 2
+    )
+);
+
+Result in CSV format
+"ID","START_DATE","END_DATE","VAL","YEAR_SEQUENCE"
+1,"2026-01-01T00:00:00Z","2026-12-31T23:59:59Z",1000,1
+1,"2027-01-01T00:00:00Z","2027-12-31T23:59:59Z",2000,2
+
 select *
 from
     (
