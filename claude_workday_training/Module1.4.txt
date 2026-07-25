@@ -1,0 +1,84 @@
+Module 1.4 Context Management: The #1 Skill
+
+The Fundamental Constraint: Context is a Finite Resource
+Every interaction with Claude Code uses tokens from your context window. Think of context as a tank of fuel: you start full, every message consumes fuel, and once you run out, performance degrades.
+
+Context
+What it means: Maximum conversation history Claude can consider (1M tokens).
+Why it matters: Once exceeded, oldest parts are dropped.
+
+Token
+What is means: A small unit of text (~4 characters). Every word, file read, and command output is tokenized.
+Why it matters: A single large log file can consume thousands of tokens.
+
+Degradation
+What is means: Claude's performance drops as context fills. It loses nuance, misses details, forgets constraints.
+Why it matters: A debugging session that starts sharp can end with mediocre suggestions.
+
+What Consumes Context (In Order of Impact)
+
+Source : Typical size : How to manage
+
+Command output : Can be enormous (build logs, test output): Pipe to files, use head/tail
+File reads : Hundreds to thousands of tokens per file : Use @file references, read selectively
+Claude's responses : Can be long, especially with code : Ask for concise output when appropriate
+Your messages : Usually small : Be specific (fewer clarification rounds)
+System instructions : CLAUDE.md, settings, tool definitions : Keep CLAUDE.md lean
+
+The Single Most Important Habit: /clear
+
+/clear wipes your current context and starts a fresh conversation within the same terminal session. It costs nothing and is the single most effective thing you can do to maintain Claude's performance.
+
+When to Use /clear
+• Between unrelated tasks: Finished debugging? About to write a new feature? /clear.
+• After a long debugging session: Even if you're continuing the same work, a fresh start with a clear prompt often produces better results than a fatigued context.
+• When Claude starts giving poor responses: If suggestions become repetitive or miss the point, /clear and rephrase.
+• After completing a commit: Natural breakpoint. New task, new context.
+
+When NOT to Use /clear
+• Mid-task with important decisions: If Claude made design choices you need to build on, clearing would lose that context. Use /compact instead.
+• During multi-step operations: If Claude is midway through a refactor, clearing would lose the plan.
+
+Secondary Strategy:  /compact Within a Task
+
+/compact summarizes your conversation so far, keeping the essential decisions and context while freeing up token budget. Use it when you're mid-task and need more room.
+
+Command : What it does  : When to use
+
+/compact : Summarizes entire conversation, replacing full history with a condensed version : When context is 50%+ full and you're mid-task
+
+/compact [focus] : Summarizes with emphasis on the specified focus area : When you want to preserve specific context:
+example : /compact focus on the auth refactor decisions
+
+Advanced Control: Checkpointing and /rewind
+
+Claude Code automatically creates checkpoints before making changes. If Claude does something wrong, you can undo it.
+
+Using /rewind  : /rewind undoes Claude's last action and removes the corresponding conversation context. This gives you a clean slate
+
+You can also press Esc while Claude is working to stop it mid-action. The checkpoint still exists, so you can /rewind if needed.
+
+Resuming Sessions: claude --continue and claude --resume
+
+claude --continue : Resumes the most recent session in the current directory
+claude --resume : Shows a list of recent sessions to choose from
+
+Side Questions: /btw (Doesn't Consume Context)
+
+/btw lets you ask a quick side question without affecting your main conversation context. The question and response happen in a separate context—your main session stays clean.
+
+/btw what's the syntax for a C# record with a primary constructor?
+
+Use this for quick lookups, syntax questions, or anything that would clutter your main context.
+
+Reading the Status Line
+
+The status line at the bottom of your terminal shows real-time context usage. Key indicators:
+
+Indicator : What is shows : Action threshold
+
+Context usage %: How full your context window is : >50%: consider /compact. >80%: strongly consider /clear.
+Cost : Running dollar cost of this session : Check periodically to build cost awareness.
+
+One task per session, one goal per prompt. This is the foundation of effective Claude Code usage.
+

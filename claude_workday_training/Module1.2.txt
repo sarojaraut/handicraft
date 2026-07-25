@@ -1,0 +1,82 @@
+Module 1.2 Installation & First Session
+
+Claude Code runs on five surfaces. They all connect to the same engine — your CLAUDE.md(opens in a new tab) files, settings, and MCP servers work across all of them.
+
+
+If you prefer..  : Start with.. : Why
+
+Command line     : Terminal CLI  : Full-featured, faster to install, most flexible
+VS Code / Cursor : VS Code Extension : Inline diffs, @-mentions, integrated in your editor
+IntelliJ/ PyCharm / Webstorm : JetBrain Plugin : Diff viewing and selection sharing in your IDE
+Visual review, multiple sessions : Desktop App : Side-by-side sessions visual diff review, scheduled tasks
+No local setup  : Web : Runs in your browser at claude.ai/code
+
+You can @-mention files to add them to context. 
+
+Terminal CLI Installation
+
+MacOS, Linux: curl -fsSL https://claude.ai/install.sh | bash
+Windows Powershell : irm https://claude.ai/install.ps1 | iex
+Windows CMD : curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
+
+VS Code Extension Installation : Ctrl+Shift+X to Open the Extensions view and search claude code
+
+Your First Session
+
+cd /path/to/your/project
+claude
+
+Try
+what does this project do?
+
+what technologies does this project use?
+where is the main entry point?
+explain the folder structure
+
+When Claude needs to do something beyond reading files — like running a command or editing a file — it asks for your permission first.
+
+Response 
+y (yes) : Approve this action
+n (no) : Deny this action
+a (always) : Approve and don't ask again for this command in this project
+
+**** Read permission prompts carefully, especially in the first few sessions. Understanding what Claude is doing builds your intuition for when to trust and when to redirect. We'll cover permissions in depth in Module 1.3.
+
+Make a Small Change : add a comment at the top of the main file explaining what this project does
+
+If your project uses git, try: 
+what files have I changed?
+show me the last 5 commits
+
+Essential Commands
+claude : Start an interactive session in the current directory
+claude "task" : Start a session with an initial task
+claude -p "query" : Run a one-off query, print the result, and exit
+claude -c : Continue the most recent conversation
+claude -r : Resume a previous conversation (select from a list)
+
+/help : Show all available commands
+/clear : Clear conversation history (critical- you'll learn why in Module 1.4)
+/model : Switch the AI model during a session
+Esc : Interrupt Claude mid-action
+Esc + Esc : Open the rewind menu to restore a previous state
+exit or Ctrl+C : Exit Claude Code
+
+Everything is reversible. Every action Claude takes creates a checkpoint. Press Esc + Esc or use /rewind to roll back to any previous state. We'll cover this in detail in Module 1.4.
+Sessions persist locally. Your conversations are saved. Use claude --continue to pick up where you left off, or claude --resume to browse recent sessions.
+
+Ask Questions You'd Ask a Colleague
+
+For example:
+
+•"How does logging work when in this project?"
+•"What happen when a user's session expires?"
+•"Why does this module use X pattern instead of Y?"
+•"What edge cases does the payment processor handle?"
+
+Summary
+Claude reads your project automatically. You don't need to paste code or specify files — just ask questions in natural language.
+
+•Permission prompts are your safety net. Claude always asks before modifying files or running commands.
+•Everything is reversible. Checkpoints and rewind let you undo any change Claude makes.
+•Start with questions. Before asking Claude to change code, use it to understand code. That's the fastest way to build trust in the tool.

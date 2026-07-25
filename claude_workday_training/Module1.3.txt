@@ -1,0 +1,180 @@
+Module 1.3 Safety, Security & Enterprise Guardrails
+
+AI coding agents are powerful and power requires guardrails. Claude Code can read your entire project, run arbitrary shell commands, and make coordinated changes across files. This is exactly what makes it useful, but it's also why you need to understand the boundaries.
+
+The good news: Claude Code was designed with security as a first-class concern. It has multiple layers of protection built in permissions, sandboxing, checkpoints, and managed policies. Your job is to understand these layers and configure them for your workflow. 
+
+What Claude Code Can See
+When you run claude in a directory, Claude gains access to:
+
+Auto memory : Learnings Claude saves automatically across sessions (build commands, patterns, preferences).
+CLAUDE.md : Your project's persistent instructions file (covered in Phase 2).
+Extensions you configure : MCP servers, skills, subagents, Chrome integration — only what you explicitly connect.
+Your git state : Current branch, uncommitted changes, recent commit history.
+Your project files : All files in the current directory and subdirectories. Claude reads these on demand — it doesn't load everything upfront.
+Your terminal : Any command you could run: git, npm, dotnet, kubectl, etc. Claude proposes commands; you approve them.
+
+What Claude Code does NOT See
+Other repositories : Claude only sees the directory where you started the session (plus any you explicitly add with --add-dir).
+Your browser : Unless you connect the Chrome extension, Claude has no access to web pages, tabs, or browser state.
+Internal systems : Jira, Slack, databases, CI pipelines — none of these are visible unless you connect them via MCP or CLI tools.
+Other users' sessions : Sessions are local and isolated. Your conversations are stored on your machine only.
+Your secrets and credentials : Claude does not have access to your keychain, password manager, or SSH keys — but it can read .env files if they're in your project directory.
+
+The Permission Model
+Claude Code uses a tiered permission system
+
+Reading files, searching with grep, globbing: is readonly permission and claude does not need approval
+Shell Commands : needs approval, can set to don't ask again Permanently per project + command
+File modifications : needs approval, can set to don't ask again untill session ends
+
+Permission Modes
+
+You can cycle through permission modes by pressing Shift+Tab during a session:
+
+Mode : What it means
+Default : Claude asks before file edits and shell commands. This is where you should start.
+Auto-accept edits : Claude edits files without asking, but still asks for shell commands.
+Plan Mode : Claude uses read-only tools only - no changes, no commands. Perfect for research and exploration 
+
+Configuring Permission Allowlists
+
+Once you know which commands are safe in your project, you can pre-approve them so Claude doesn't ask every time. Use the /permissions command to manage allowlists, or edit .claude/settings.json directly.
+
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run lint)",
+      "Bash(npm run test *)",
+      "Bash(dotnet build *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)"
+    ],
+    "deny": [
+      "Bash(git push *)",
+      "Bash(rm -rf *)",
+      "Read(./.env)"
+    ]
+  }
+}
+
+Key Rules for Permission Configuration
+
+•Deny rules always win. If a tool is denied at any level, no other level can allow it.
+
+•Be specific with allows. Bash(npm run test * ) is better than Bash (npm * ) because it limits what's pre-approved.
+
+•Deny rules apply to Claude's built-in tools, not Bash subprocesses. A Read(./.env) deny rule blocks Claude's Read tool but does not prevent cat .env in Bash. For OS-level enforcement, enable the sandbox.
+
+•Wildcards use glob patterns. Bash(npm run *) matches any command starting with npm run followed by arguments.
+
+Sandboxing: OS-Level Isolation
+
+Permissions control vs Sandboxing
+
+Permissions control what Claude chooses to do. Sandboxing controls what Claude's commands can do — even if something unexpected happens. This is defense-in-depth: two independent layers of protection.
+
+What Sandboxing Does
+
+Layer : Protection
+
+Filesystem isolation : Bash commands and their child processes can only write to your project directory by default. Attempts to modify system files, home directory configs, or other projects are blocked at the OS level.
+
+Network isolation : Bash commands can only reach explicitly approved domains. Attempts to contact unapproved servers are blocked and you're notified.
+
+Why Sandboxing Matters
+
+Even with careful permission configuration, sandboxing protects against:
+
+•Malicious dependencies — an npm package with harmful install scripts
+•Prompt injection — a crafted file or error message that tricks Claude into running harmful commands
+•Accidental damage — a command that affects more than intended
+•Data exfiltration — a subprocess that sends your code to an external server
+
+Enabling the Sandbox
+
+Run the /sandbox command during a session:
+
+The Golden Rules of AI Security
+These rules apply to every sessions, every day, without exception:
+Rule 1: Never Put Secrets in Prompts
+
+Rule 1: Never type or paste the following into a Claude Code prompt:
+
+•API keys, tokens, or credentials
+•Passwords or secrets
+•Database connection strings with credentials
+•Private keys (SSH, TLS, signing keys)
+•Personal data (SSNs, financial data, health records)
+
+Why
+
+Your prompts are sent to Anthropic's API for processing. While Anthropic has strong data handling policies, secrets should never leave your local machine through AI tools.
+
+What to do instead:
+
+•Use environment variables and reference them by name: “Read the DATABASE_URL environment variable and connect to it”
+•Use .env files that are in .gitignore and add a Read(./.env) deny rule
+•Reference credentials by their secret manager path, not their value.
+
+Rule 2: Review AI-Generated Code Like a PR 
+
+Treat every change Claude makes like a pull request from a junior engineer. It's usually good, sometimes excellent, and occasionally wrong in subtle ways.
+
+Review checklist for AI-generated code:
+
+
+Does the logic actually handle the edge cases? (Don't just check that it compiles.)
+Are there security concerns? (Input validation, SQL injection, XSS, auth checks)
+Does it follow your team's conventions? (Naming, error handling, logging)
+Did it change anything you didn't ask for?
+Are the tests actually testing meaningful behavior, or are they trivially passing?
+
+Rule 3: Understand Your Cost Budget 
+Every interaction with Claude Code uses API tokens. Your context window is both a performance resource and a cost resource.
+
+Key cost facts:
+
+•Everything uses tokens: Every message, file read, command output, and system instruction
+•Context fills up fast: A single debugging session can consume tens of thousands of tokens
+•Performance degrades as context fills: Claude may start “forgetting” instructions when the window is full
+•/clear is free: Resetting context between tasks costs nothing and improves both performance and cost
+
+Enterprise Guardrails for Organization
+Claude Code supports organization-wide security policies through managed settings — configuration that administrators deploy and that individual users cannot override.
+
+What Managed Settings Can Control
+Permission deny rules: Block specific commands or file access org-widen (e.g., deny git push --force)
+Mandatory sandboxing : Require sandbox to be enabled for all users
+Network domain restriction : Limit which domains Claude's Bash commands can reach
+Model restrictions : Limit which AI models are available
+Disable bypass mode : Prevent users from skipping permission prompts
+Managed hooks only : Restrict custom hooks to admin-approved ones
+MCP server restrictions : Limit which external tools can be connected
+
+Setting Precedence
+
+When multiple levels of settings exist, they're resolved in this order (highest priority first):
+
+1 Managed settings (org-wide, cannot be overridden)
+2 Command-line arguments (temporary session overrides)
+3 Local project settings (.claude/settings.local.json — personal, not committed)
+4 Shared project settings (.claude/settings.json — committed, shared with team)
+5 User settings (~/.claude/settings.json — personal, applies to all projects)
+
+How Permissions and Sandboxing Work Together
+
+These are complementary layers, not alternatives:
+Use both for defense-in-depth
+
+•Permissions stop Claude from choosing to do something harmful
+•Sandboxing stops harmful things from happening even if a command is approved (e.g., a dependency install script tries to phone home)
+
+Review AI-Generated Code Critically
+
+Does it handle edge cases? (null inputs, empty strings, concurrent access)
+Does it follow your team's conventions?
+Did it change anything you didn't ask for?
+Are there any security concerns?
+

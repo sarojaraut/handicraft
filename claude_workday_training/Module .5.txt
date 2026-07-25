@@ -1,0 +1,49 @@
+Module 1.5 Prompt Engineering for Code
+
+
+A vague prompt to Claude is like a vague ticket to an engineer: it costs time and often produces the wrong solution. Specific prompts are force multipliers—they reduce iteration, cut debugging time, and help Claude understand your constraints upfront.
+
+Principle 1: Scope, Reference, Constrain
+
+Every prompt should answer three questions:
+
+1 What is the scope?
+    What to include: Which file(s), what feature, what part of the system?
+    Example: "In src/app/search/search.component.ts, update the executeSearch() method..."
+2 What are the constraints?
+    What to include: Browser compatibility, performance, dependencies, style guides?
+    Example: "Must support Angular 14+, ES2020. Follow our .eslintrc config."
+3 How will we verify?
+    What to include: Tests, manual steps, performance benchmarks?
+    Example: "Write unit tests in Jest. Run npm test and confirm all pass."
+
+Principle 2: Provide Verification Criteria
+Always tell Claude how you'll validate the work.
+
+Verification criteria come in three flavors:
+Automation
+    Run tests
+    Linters
+    Type checks
+
+manual
+    Visual inspection
+    Performance profiling
+    Cross-browser testing
+
+Process
+    "Commit with a clear message"
+    "Write a PR description following our template"
+
+Principle 3: Use @ to Reference Files Directly
+    Instead of describing file paths, use @ to attach files
+    Claude reads them instantly, understands the full context, and can make precision edits.
+
+Not goot prompt
+"Update the search component to fix the issue with the search results not loading correctly."
+
+Better Prompt
+@src/app/search/search.component.ts: Update the executeSearch() method so search results load correctly when the API returns delayed results. Keep the existing public behavior unchanged and run npm test to verify the fix."
+
+
+Principle 4: Provide Rich Context

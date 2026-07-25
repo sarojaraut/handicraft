@@ -1,0 +1,111 @@
+Module1.8 Common Failure Patterns and How to avoid them
+
+Why Failure Patterns Matter
+Claude is powerful, but like any tool, it can be used inefficiently. When you mix too many goals, let errors compound, or ask it to explore aimlessly, the session breaks down.
+
+This module teaches you to recognize these patterns early and fix them fast.
+
+Pattern 1: The "Kitchen Sink Session"
+
+What it looks like: 
+
+You start by fixing a bug in the auth module, pivot to refactoring the form component, then ask Claude to write unit tests, debug a deployment script, and review a colleague's PR—all in one session.
+
+Why it happens: 
+
+Context seems unlimited. It's tempting to pile on tasks.
+
+The problem:
+
+Claude loses coherence. It forgets earlier decisions. It cuts corners on quality.
+
+The fix:
+
+Solution : How to Use
+
+/clear between unrelated tasks :  : When you finish one project goal and start another, run /clear. Reset the context.
+One primary goal per session : Aim for a single, well-defined outcome.
+Use subagents for parallel work : If you genuinely need parallel efforts, spin up another session.
+
+Pattern 2: The "Correction Spiral"
+
+What it looks like: 
+
+Claude writes code with a subtle bug. You ask for a fix. The fix introduces a different bug. By turn 7, you're dealing with three layers of band-aids.
+
+Why it happens: 
+
+Correcting context-dependent code is harder than writing from scratch. Each fix is local.
+
+The fix:
+When This Happens : Do This
+
+After 2–3 failed attempts : /clear and rewrite from scratch with a better prompt
+Before the first fix : Ask Claude to explain its approach before coding
+When fixes feel like band-aids : Stop and ask: "Should we redesign this?"
+
+Pattern 3: The "Trust-Then-Verify Gap
+
+What it looks like: 
+
+Claude writes code that looks right. You ship it. Two weeks later, a customer finds an edge case it doesn't handle.
+
+Why it happens: 
+
+Claude is confident. Plausible ≠ correct. Without rigorous verification, subtle bugs hide in edge cases.
+
+The fix:
+
+Risk Level
+
+Verification Strategy
+
+Critical path / customer-facing : Unit tests + integration tests + manual testing. Ask Claude to write test cases first.
+Business logic : Unit tests minimum. Ask Claude: "What edge cases could break this?"
+Internal tooling : Manual testing of 2–3 happy paths + sad paths.
+
+Pattern 4: The "Infinite Exploration"
+
+What it looks like: 
+
+You ask Claude to "explore options for refactoring the monorepo." Fifteen turns later, you've mapped seventeen architectures, and your context is 60% rabbit holes.
+
+Why it happens: 
+
+Exploration is open-ended. Claude can always find "one more thing" to consider.
+
+The fix:
+
+Situation : How to Scope
+
+Architectural decisions : "Compare exactly 3 options. Evaluate on: cost, timeline, team skill fit. Recommend 1. Stop."
+Bug investigation : "Narrow down to the top 2 likely causes. Test them."
+Feature design : "Outline the design with clear scope. What's in v1, what's v2+."
+
+Pattern 5: The "Over-Specified Claude.md"
+
+What it looks like: 
+
+Your CLAUDE.md is 800 lines. Claude's context limit is effectively halved before you even ask a question.
+
+Why it happens: 
+
+Context seems free. You add "just one more" reference doc. Over time, bloat accumulates.
+
+The fix:
+
+Guideline : Example
+
+Keep it under 500 lines : If it's longer, you have too much.
+Include only what Claude needs this week : Purge old project notes, irrelevant team info.
+Link to external docs instead : "For full details, see [Confluence link]." Not a 200-line summary.
+Update ruthlessly : Quarterly review. Delete what's stale.
+
+Key Concepts
+
+Failure patterns aren't rare—they're predictable. Once you know them, you'll see them coming.
+/clear is your most powerful tool for breaking bad patterns. It costs nothing and resets your context.
+Focus beats breadth. One well-executed goal per session beats four mediocre ones.
+Verification isn't paranoia—it's professionalism. Trust Claude's output, but verify it handles edge cases.
+Your CLAUDE.md is a living document. Prune it ruthlessly. Every line should earn its place.
+Awareness is the first fix. Most teams that excel with Claude Code have just internalized these patterns.

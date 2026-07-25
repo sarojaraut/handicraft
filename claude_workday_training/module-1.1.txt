@@ -1,0 +1,80 @@
+Module 1.1
+
+The Paradigm Shift : Lesson 2 of 14 
+The mental model shift is significant: instead of writing code and asking AI to help, you describe the outcome and let the agent build it. You move from being the typist to being the technical lead who reviews, steers, and approves.
+
+Claude Code is Anthropic's agentic coding tool
+
+CLAUDE.md : A markdown file where you store project-specific instructions that Claude reads every session
+
+The Three Phase Loop 
+
+Every interaction with Claude Code follows a three-phase loop:
+Gather Context : Claude runs the test suite to see what's failing, reads the error output, searches for the relevant source files, and reads them to understand the code.
+Take Action : Claude edits the files to fix the issue.
+Verify Results : Claude runs the tests again to confirm the fix works. Note: If tests still fail, it loops back — gathering more context about the remaining failures and trying again
+
+What Claude Code Can and Cannot Do
+
+What Claude Code Can Do
+
+Claude Code is designed to help with real development work, not just isolated prompts. The categories below show the types of tasks it can support across everyday development, git workflows, automation, and external integrations.
+
+
+What Claude Code Cannot Do
+
+• It doesn't know your intent unless you tell it. Vague prompts produce vague results. Being specific dramatically improves outcomes.
+
+• It can produce plausible-looking code that doesn't work. Always verify — run tests, review diffs, check edge cases. Treat Claude's output like a junior engineer's PR.
+
+• It works within a context window. Everything Claude reads, writes, and discusses uses tokens. Long sessions degrade performance. Context management is the #1 skill (covered in Module 1.4).
+
+• It can't access systems it isn't connected to. Claude only sees your local project files and any external tools you explicitly connect via MCP or CLI tools.
+
+• It makes mistakes. Like any tool, it has failure modes. Recognizing and recovering from these is a core skill (covered in Module 1.8).
+
+
+The Golden Rule: Claude Code is a powerful collaborator, not a replacement for engineering judgement. You remain the accountable engineer who reviews, approves, and ships. 
+
+ChatGPT/Copilot vs Claude Code
+
+ChatGPT/Copilot You copy-paste code into a chat box vs Claude reads your actual files
+ChatGPT/Copilot You manually apply suggested changes vs Claude edits files directly (with your approval)
+ChatGPT/Copilot You run commands yourself and paste output vs Claude runs commands and reads output
+ChatGPT/Copilot One-shot suggestions vs Multi-step autonomous execution
+ChatGPT/Copilot You are the hands; AI is the advisor vs You are the lead; AI is the hands
+
+Stop thinking about what to type and start thinking about what to delegate. Instead of writing code and asking Claude to review it, describe the outcome and let Claude write the code while you review.
+
+Look at your current sprint or task list and identify 3 tasks that fit one of these categories:
+
+1 Tedious but well-defined — writing tests for existing code, updating documentation, fixing lint errors, migrating files to a new format
+
+2 Investigation — understanding a new codebase, tracing a bug through multiple files, researching how a module works
+
+3 Multi-file changes — adding a feature that touches the API layer, database, and frontend; refactoring a shared utility
+
+Task : Claude Code Prompt 
+
+Add unit tests for the payment module : "Write unit tests for src/payments/processor.ts covering the happy path, expired card, and insufficient funds cases. Run the tests and fix any failures.”
+
+Understand the auth flow : “Read src/auth/ and explain how session tokens are created, refreshed, and invalidated. Include a sequence diagram.”
+
+Rename userId to accountId across the project : “Rename all occurrences of userId to accountId across the codebase. Update types, variables, database queries, and API contracts. Run tests after.”
+
+The summary below reinforces the most important concepts from the lesson, and the additional resources provide an opportunity to continue building your understanding.
+
+1 AI coding agents can act, not just suggest. Claude Code reads files, runs commands, edits code, and verifies results autonomously.
+
+2 The agentic loop is the core mental model. Gather context → take action → verify results → repeat.
+
+3 You're the technical lead, not the typist. Describe outcomes, review results, course-correct as needed.
+
+4 Verification is non-negotiable. Always give Claude a way to check its own work (tests, linters, screenshots).
+
+5 Context management is the #1 skill. Everything uses tokens; performance degrades as context fills. You'll learn this in Module 1.4.
+
+Usefull Links
+https://code.claude.com/docs/en/overview
+https://code.claude.com/docs/en/how-claude-code-works
+https://code.claude.com/docs/en/common-workflows
