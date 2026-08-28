@@ -75,6 +75,31 @@ apex.item( "P1_ITEM" ).setValue( "10" );
 // The following example will focus the region with Static ID "myRegion".
 var region = apex.region( "myRegion" );
 region.focus();
+//ChRT initialization JavaScript function,
+function(options) {
+  options.dataFilter = function(data) {
+    data.series[0].color = '#0B6623';
+    data.series[1].color = '#9DC183';
+    data.series[2].color = '#708238';
+
+    return data;
+  };
+  return options;
+}
+//disable item
+$('#P1_SEARCH').attr('disabled', 'disabled');
+
+$('#P1_SEARCH').removeAttr('disabled');
+
+$('#dashboard-reg').hide();
+
+$('#dashboard-reg').show();
+
+$('img').on('click', function() {
+  console.log('You clicked an image!');
+});
+
+
 
 // Sample JS Function for select rows in content-row region type
 
